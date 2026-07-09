@@ -66,13 +66,6 @@ class CommandRegistry:
         "zoom": "https://zoom.us",
         "messenger": "https://www.messenger.com",
         "telegram": "https://web.telegram.org",
-        # Known sites that should NOT open as .com (site only, no TLD needed)
-        "youtube": "https://www.youtube.com",
-        "github": "https://github.com",
-        "reddit": "https://www.reddit.com",
-        "discord": "https://www.discord.com",
-        "notion": "https://www.notion.so",
-        "figma": "https://www.figma.com",
     }
     
     # Windows known apps (for disambiguation)
@@ -328,13 +321,14 @@ class CommandRegistry:
                 (r"(?:what[']?s\s+)?(?:your\s+)?state", None),
             ],
             "repeat": [
-                (r"(?:do\s+)?(?:that\s+)?again", None),
-                (r"repeat\s+(?:that\s+)?", None),
-                (r"redo", None),
+                # "do that again", "that again", "again", "repeat", "repeat that"
+                (r"(?:do\s+(?:that\s+)?)?again\b", None),
+                (r"\brepeat\b", None),
+                (r"redo\b", None),
             ],
             "undo": [
-                (r"undo", None),
-                (r"go\s+back", None),
+                (r"\bundo\b", None),
+                (r"go\s+back\b", None),
             ],
         })
         

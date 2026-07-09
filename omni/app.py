@@ -5,6 +5,7 @@ Built for Accessibility | Voice-First | Privacy-Safe
 """
 
 import sys
+import os
 import asyncio
 from pathlib import Path
 
@@ -139,11 +140,15 @@ class OMNIApp:
     def _on_ptt_pressed(self, event) -> None:
         """Handle PTT key pressed - start recording"""
         logger.debug("PTT pressed")
-        
+
+        # Guard: don't re-trigger while processing a release
+        if self.ptt._is_ptt_processing:
+            return
+
         # Stop any current speech
         if self.is_speaking and self.tts:
             self.tts.stop()
-        
+
         # Start voice capture
         self.voice_pipeline.start()
         self.event_bus.emit(EventType.STATUS_UPDATE, "recording", "OMNI")
@@ -151,31 +156,39 @@ class OMNIApp:
     def _on_ptt_released(self, event) -> None:
         """Handle PTT key released - transcribe"""
         logger.debug("PTT released")
-        
-        # Stop capture and get audio
-        self.voice_pipeline.stop()
-        audio = self.voice_pipeline.get_audio()
-        
-        if audio is not None and len(audio) > 0:
-            # Transcribe
-            self.event_bus.emit(EventType.STATUS_UPDATE, "processing", "OMNI")
-            self._on_transcription(audio)
-        else:
-            # No audio detected
-            self._speak("No speech detected")
-            self.event_bus.emit(EventType.STATUS_UPDATE, "idle", "OMNI")
+
+        # Mark as processing so press handler won't re-trigger
+        self.ptt._is_ptt_processing = True
+
+        try:
+            # Stop capture and get audio
+            self.voice_pipeline.stop()
+            audio = self.voice_pipeline.get_audio()
+
+            if audio is not None and len(audio) > 0:
+                # Transcribe
+                self.event_bus.emit(EventType.STATUS_UPDATE, "processing", "OMNI")
+                self._on_transcription(audio)
+            else:
+                # No audio detected
+                self._speak("No speech detected")
+                self.event_bus.emit(EventType.STATUS_UPDATE, "idle", "OMNI")
+        finally:
+            self.ptt._is_ptt_processing = False
     
     def _on_transcription(self, audio) -> None:
         """Handle transcribed text"""
         text = self.whisper.transcribe(audio)
-        
-        if text:
+
+        if text and text.strip():
             logger.info(f"Transcribed: '{text}'")
             self.metrics.increment("transcriptions_total")
             self.event_bus.emit(EventType.TRANSCRIPTION_COMPLETE, {"text": text}, "OMNI")
             self._process_command(text)
         else:
-            self._speak("Didn't catch that, try again")
+            # Transcription failed or empty — non-fatal
+            logger.warning(f"Transcription returned empty (audio may be too quiet or unclear)")
+            self._speak("Didn't catch that, please try again")
             self.event_bus.emit(EventType.STATUS_UPDATE, "idle", "OMNI")
     
     def _on_voice_status(self, status: str) -> None:
@@ -193,53 +206,87 @@ class OMNIApp:
         """Parse and execute voice command"""
         logger.info(f"Processing: '{text}'")
         self._last_command = text
-        
+
         # Parse command
         parsed = self.command_registry.parse(text)
-        
+
         if parsed.action == "unknown":
             self._speak(f"I don't understand: {text}")
             self.event_bus.emit(EventType.STATUS_UPDATE, "error", "OMNI")
             return
-        
-        # Learn command pattern (adaptive learning)
-        # TODO: Integrate adaptive parser
-        
-        # Execute command
-        asyncio.create_task(self._execute_command(parsed))
+
+        # Build execution context
+        context_dict = {
+            "original": parsed.original,
+            "plugin_count": len(self.plugin_manager.get_all_plugins()),
+            "last_command": self._last_command,
+        }
+
+        # Execute — use run_until_complete when no loop is running (demo/sync path),
+        # otherwise schedule via create_task (normal async path)
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            # No running loop — execute synchronously (demo mode, tests)
+            loop = None
+
+        if loop is None:
+            try:
+                event_loop = asyncio.get_event_loop()
+            except RuntimeError:
+                event_loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(event_loop)
+            event_loop.run_until_complete(self._execute_command(parsed, context_dict))
+        else:
+            asyncio.create_task(self._execute_command(parsed, context_dict))
     
-    async def _execute_command(self, parsed: ParsedCommand) -> None:
+    async def _execute_command(self, parsed: ParsedCommand, context_extra: dict = None) -> None:
         """Execute command via plugin system"""
+        context_extra = context_extra or {}
         try:
             # Get plugin for action
             plugin = self.plugin_manager.get_plugin(parsed.action)
-            
+
             if not plugin:
                 self._speak(f"Command not available: {parsed.action}")
                 self.event_bus.emit(EventType.STATUS_UPDATE, "error", "OMNI")
                 return
-            
+
             # Execute
             self.event_bus.emit(EventType.COMMAND_EXECUTING, parsed.action, "OMNI")
-            
-            result = await plugin.execute(parsed.entities, {
+
+            plugin_context = {
                 "original": parsed.original,
-                "plugin_count": len(self.plugin_manager.get_all_plugins())
-            })
+                "plugin_count": len(self.plugin_manager.get_all_plugins()),
+                "last_command": context_extra.get("last_command"),
+            }
+            result = await plugin.execute(parsed.entities, plugin_context)
             
             # Handle result
             if result.success:
                 self.event_bus.emit(EventType.COMMAND_COMPLETE, result.data, "OMNI")
-                
-                # Speak response if message
-                if result.message:
-                    if result.data and result.data.get("action") == "open_settings":
-                        self.tray.open_settings()
-                    else:
-                        self._speak(result.message)
-                elif result.data and result.data.get("macro"):
+
+                # Handle special result actions
+                data = result.data or {}
+
+                if data.get("action") == "open_settings":
+                    self.tray.open_settings()
+                elif data.get("action") == "repeat_last":
+                    # Re-execute the last command directly (no re-parsing = no nested task)
+                    last = data.get("command")
+                    if last:
+                        logger.info(f"Repeating last command: '{last}'")
+                        self._speak(f"Repeating: '{last}'")
+                        parsed = self.command_registry.parse(last)
+                        if parsed.action != "unknown":
+                            await self._execute_command(parsed, {"last_command": self._last_command})
+                        return  # Don't emit idle status twice
+                elif data.get("macro"):
                     # Handle macro execution
-                    await self._execute_macro(result.data["macro"])
+                    await self._execute_macro(data["macro"])
+                elif result.message:
+                    # Normal response — speak it
+                    self._speak(result.message)
             else:
                 self.event_bus.emit(EventType.COMMAND_FAILED, result.error, "OMNI")
                 self._speak(result.message)
@@ -308,29 +355,65 @@ class OMNIApp:
             "tts_active": self.tts is not None,
         }
     
-    # ===== MAIN LOOP =====
-    
-def run(self) -> None:
+# ===== MAIN LOOP =====
+
+    def run(self) -> None:
         """Start OMNI application"""
         logger.info("Starting OMNI...")
 
-        # Start PTT monitoring
-        self.ptt.start()
-        
+        # Check for demo mode
+        demo_cmd = os.environ.get("OMNI_DEMO_COMMAND", "")
+
+        # Start PTT monitoring — skip in demo mode
+        if not demo_cmd:
+            self.ptt.start()
+        else:
+            logger.info("DEMO MODE: PTT monitoring skipped")
+
+        # Schedule demo command execution after event loop starts
+        if demo_cmd:
+            QTimer.singleShot(800, lambda: self._run_demo_command(demo_cmd))
+
         # Greeting
         QTimer.singleShot(500, lambda: self._speak(
-            "OMNI ready. Press CapsLock to speak. Say 'help' for commands."
+            "OMNI demo ready." if demo_cmd else "OMNI ready. Press CapsLock to speak. Say 'help' for commands."
         ))
-        
+
         # Enter Qt event loop
         sys.exit(self.app.exec_())
 
+    def _run_demo_command(self, text: str) -> None:
+        """Execute a demo command without microphone."""
+        logger.info(f"Demo: executing '{text}'")
+        self._process_command(text)
 
-def main():
-    """Entry point"""
+
+def main(debug: bool = False):
+    """Entry point — supports normal and demo mode."""
+    import argparse
+
+    # Parse demo-mode argument
+    demo_cmd = None
+    if "--demo-mode" in sys.argv:
+        idx = sys.argv.index("--demo-mode")
+        if idx + 1 < len(sys.argv) and sys.argv[idx + 1]:
+            demo_cmd = sys.argv[idx + 1]
+        else:
+            demo_cmd = "demo"  # flag only
+
+    if demo_cmd is not None and demo_cmd != "demo":
+        # Specific demo command passed
+        logger.info(f"OMNI Demo Mode: '{demo_cmd}'")
+
     try:
         logger.info("Starting OMNI v1.0.0...")
+
+        # In demo mode, skip PTT monitoring (no mic needed)
+        if demo_cmd is not None:
+            logger.info("DEMO MODE ACTIVE — PTT monitoring disabled")
+
         app = OMNIApp()
+
         app.run()
     except KeyboardInterrupt:
         logger.info("OMNI stopped by user")
@@ -339,7 +422,7 @@ def main():
         logger.error(f"Fatal error: {e}")
         try:
             QMessageBox.critical(None, "OMNI Error", f"Fatal error: {e}")
-        except:
+        except Exception:
             pass
         sys.exit(1)
 

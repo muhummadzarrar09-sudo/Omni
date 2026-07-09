@@ -22,6 +22,7 @@ class PTTManager:
         self.press_time = None
         self._running = False
         self._monitor_thread = None
+        self._is_ptt_processing = False  # Guard: prevent double-trigger while releasing
         logger.info(f"PTTManager initialized with key: {self.key_name}")
     
     def start(self) -> None:

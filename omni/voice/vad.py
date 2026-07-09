@@ -3,6 +3,7 @@ OMNI Voice Pipeline - Complete Voice Recognition System
 Handles: Audio Capture → VAD → Whisper STT → Command Execution
 """
 
+import pyaudio
 import numpy as np
 import threading
 import queue
@@ -159,11 +160,11 @@ class VoicePipeline:
         return energy > 0.02
     
     def _check_silence(self) -> bool:
-        """Check if recording should end"""
-        if len(self.audio_buffer) < 10:
+        """Check if recording should end — require at least 5 chunks of speech (~0.5s)."""
+        if len(self.audio_buffer) < 5:
             return False
-        
-        # Check last ~0.3 seconds
+
+        # Check last ~0.3 seconds (5 frames × 1024 samples @ 16kHz)
         recent = np.concatenate(self.audio_buffer[-5:])
         energy = np.abs(recent).mean()
         return energy < 0.01
@@ -208,7 +209,19 @@ class WhisperSTT:
         self._load_model()
     
     def _load_model(self) -> None:
-        """Load Whisper model — auto-falls back to CPU if CUDA fails."""
+        """Load Whisper model — auto-falls back to CPU if CUDA fails.
+
+        On first run, the model (~75MB for base.en) is downloaded from HuggingFace.
+        This may take a moment — we'll show download progress via loguru.
+        """
+        logger.info(f"Loading Whisper {self.model_name}...")
+
+        def progress_callback(progress: float, desc: str) -> None:
+            """Called by snapshot_download with progress 0.0-1.0."""
+            pct = int(progress * 100)
+            bar = "█" * (pct // 5) + "░" * (20 - pct // 5)
+            logger.debug(f"Whisper download: [{bar}] {pct}% — {desc}")
+
         # Try CUDA first if requested
         if self.device == "cuda":
             try:
@@ -216,26 +229,30 @@ class WhisperSTT:
                 self.model = WhisperModel(
                     self.model_name,
                     device="cuda",
-                    compute_type="float16"
+                    compute_type="float16",
+                    download_progress_callback=progress_callback,
                 )
                 self._loaded = True
                 logger.info(f"Whisper loaded: {self.model_name} on CUDA")
                 return
             except Exception as e:
                 logger.warning(f"Whisper CUDA failed ({e}), falling back to CPU...")
-        
+
         # Fallback: CPU with int8 (works on any hardware, no GPU needed)
         try:
             from faster_whisper import WhisperModel
             self.model = WhisperModel(
                 self.model_name,
                 device="cpu",
-                compute_type="int8"
+                compute_type="int8",
+                download_progress_callback=progress_callback,
             )
             self._loaded = True
             logger.info(f"Whisper loaded: {self.model_name} on CPU (int8)")
         except ImportError:
-            logger.error("faster-whisper not installed — run: pip install faster-whisper")
+            logger.error(
+                "faster-whisper not installed — run: pip install faster-whisper"
+            )
         except Exception as e:
             logger.error(
                 f"Whisper load error: {e}\n"
@@ -244,38 +261,47 @@ class WhisperSTT:
             )
     
     def transcribe(self, audio: np.ndarray, language: str = "en") -> Optional[str]:
-        """Transcribe audio to text"""
+        """Transcribe audio to text.
+
+        IMPORTANT: faster-whisper expects int16 PCM audio (numpy int16 or float32 in [-1, 1]).
+        Our VAD pipeline collects float32 in [-1, 1]. We convert to int16 here to match
+        faster-whisper's expected format regardless of how the audio was accumulated.
+        """
         if not self._loaded:
             return None
-        
+
         if len(audio) == 0:
             return None
-        
+
         try:
-            import torch
-            
-            if not isinstance(audio, torch.Tensor):
-                audio_tensor = torch.from_numpy(audio).float()
+            # Ensure audio is float32 in [-1, 1]
+            if isinstance(audio, np.ndarray):
+                audio_float = audio.astype(np.float32)
             else:
-                audio_tensor = audio
-            
+                import torch
+                audio_float = audio.float().cpu().numpy() if hasattr(audio, 'float') else np.array(audio, dtype=np.float32)
+
+            # Convert to int16 PCM (faster-whisper's expected format)
+            audio_int16 = (audio_float * 32767).astype(np.int16)
+
+            # VAD already done in pipeline — don't double-filter
             segments, info = self.model.transcribe(
-                audio_tensor,
+                audio_int16,
                 language=language,
                 beam_size=5,
-                vad_filter=True,
-                vad_parameters=dict(min_silence_duration_ms=300)
+                vad_filter=False,  # Already VAD-filtered in pipeline
             )
-            
+
             text_parts = []
             for segment in segments:
                 text_parts.append(segment.text.strip())
-            
+
             result = " ".join(text_parts)
-            logger.info(f"Transcribed: '{result}'")
-            
+            if result:
+                logger.info(f"Transcribed: '{result}'")
+
             return result.strip() if result else None
-            
+
         except Exception as e:
             logger.error(f"Transcription error: {e}")
             return None

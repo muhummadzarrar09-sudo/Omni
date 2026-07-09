@@ -16,6 +16,8 @@ class OMNISettings:
     browser_port: int = 9222
     vscode_port: int = 8765
     debug_mode: bool = False
+    demo_mode: bool = False
+    demo_command: str = ""
     
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> 'OMNISettings':
