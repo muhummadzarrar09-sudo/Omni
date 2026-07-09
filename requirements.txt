@@ -1,26 +1,36 @@
 # OMNI - Requirements
-# Python 3.10+ required
+# Python 3.10+ required | Windows 10/11 recommended
+#
+# IMPORTANT: Run in admin PowerShell first:
+#   Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 
 # Core UI
 PyQt5==5.15.10
 
 # Voice - Speech to Text
+# NOTE: faster-whisper includes torch as a dependency.
+# Silero VAD is loaded via torch.hub from GitHub (no pip install needed).
+# If VAD fails, the app falls back to energy-based speech detection automatically.
 faster-whisper==1.0.3
-silero-vad==0.3.0
 
-# Audio capture
+# Audio capture (must be installed via wheel for Windows)
 PyAudio==0.2.14
 numpy>=1.24.0
 
-# Text to Speech
+# Text to Speech - OPTIONAL
+# Kokoro TTS from nazdridoy fork (ONNX-based, local, no cloud)
+# If installation fails, OMNI falls back to Windows SAPI automatically.
+# To install Kokoro separately after main deps:
+#   pip install kokoro-tts
+# OR comment out the line below if you only want SAPI TTS.
 kokoro-tts @ git+https://github.com/nazdridoy/kokoro-tts
 
-# Windows automation
+# Windows automation (pyautogui + subprocess, NO uiauto needed)
 pyautogui>=0.9.54
 pyperclip>=1.8.2
-uiauto @ git+https://github.com/yinkaisheng/Python-UIAutomation-for-Windows
+comtypes>=1.1.14
 
-# Browser Control (CDP)
+# Browser Control (CDP - Chrome DevTools Protocol)
 websocket-client>=1.6.0
 
 # System utilities

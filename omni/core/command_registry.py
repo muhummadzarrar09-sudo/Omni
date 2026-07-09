@@ -1,6 +1,16 @@
 """
 Command Registry - Pattern-based Command Parser
 Maps natural language to structured commands for ALL phases (MVP + ALPHA + BETA)
+
+Priority order (first match wins):
+  1. integrations (specific, context-rich patterns)
+  2. alpha (accessibility)
+  3. windows (desktop apps)
+  4. browser (websites)
+  5. vscode (code files)
+  6. system
+  7. omni (generic control)
+  8. accessibility
 """
 
 import re
@@ -25,7 +35,7 @@ class CommandRegistry:
     # URL shortcuts for common sites
     URL_SHORTCUTS = {
         "youtube": "https://www.youtube.com",
-        "github": "https://www.github.com",
+        "github": "https://github.com",
         "google": "https://www.google.com",
         "chatgpt": "https://chat.openai.com",
         "chat": "https://chat.openai.com",
@@ -44,7 +54,39 @@ class CommandRegistry:
         "amazon": "https://www.amazon.com",
         "instagram": "https://www.instagram.com",
         "facebook": "https://www.facebook.com",
+        "bing": "https://www.bing.com",
+        "stackoverflow": "https://stackoverflow.com",
+        "gitlab": "https://gitlab.com",
+        "bitbucket": "https://bitbucket.org",
+        "trello": "https://trello.com",
+        "notion": "https://www.notion.so",
+        "figma": "https://www.figma.com",
+        "slack": "https://slack.com",
+        "teams": "https://teams.microsoft.com",
+        "zoom": "https://zoom.us",
+        "messenger": "https://www.messenger.com",
+        "telegram": "https://web.telegram.org",
+        # Known sites that should NOT open as .com (site only, no TLD needed)
+        "youtube": "https://www.youtube.com",
+        "github": "https://github.com",
+        "reddit": "https://www.reddit.com",
+        "discord": "https://www.discord.com",
+        "notion": "https://www.notion.so",
+        "figma": "https://www.figma.com",
     }
+    
+    # Windows known apps (for disambiguation)
+    WINDOWS_KNOWN_APPS = [
+        "notepad", "calculator", "explorer", "cmd", "powershell",
+        "paint", "wordpad", "taskmgr", "regedit", "control",
+        "magnifier", "snipping", "mspaint", "word", "excel",
+        "chrome", "firefox", "edge", "teams", "zoom",
+        "discord", "spotify", "vlc", "steam",
+        "terminal", "taskmanager",
+    ]
+    
+    # Code file extensions (VSCode only, NOT web TLDs like .com, .org)
+    CODE_EXTENSIONS = r"(?:py|js|ts|jsx|tsx|json|md|txt|csv|html|css|xml|yaml|yml|sh|bat|ps1|go|rs|java|cpp|c|h|pyw|pyi)"
     
     def __init__(self):
         self._patterns: Dict[str, Dict[str, List[Tuple[str, str]]]] = {}
@@ -52,164 +94,41 @@ class CommandRegistry:
         logger.info("CommandRegistry initialized with all phases")
     
     def _register_all_patterns(self) -> None:
-        """Register patterns for MVP + ALPHA + BETA"""
+        """Register patterns for MVP + ALPHA + BETA.
+        Order matters: first category+action to match wins.
+        """
         
-        # ===== BROWSER COMMANDS (MVP) =====
-        self.register_patterns("browser", {
-            "navigate": [
-                (r"open\s+(?:the\s+)?(?:website\s+)?(?P<site>\w+(?:\.\w+)?)", "site"),
-                (r"go\s+to\s+(?P<url>https?://[^\s]+)", "url"),
-                (r"navigate\s+(?:to\s+)?(?P<url>https?://[^\s]+)", "url"),
-                (r"(?:visit|load)\s+(?P<site>\w+(?:\.\w+)?)", "site"),
-            ],
-            "search": [
-                (r"search\s+(?:for\s+)?(?P<query>.+)", "query"),
-                (r"google\s+(?P<query>.+)", "query"),
-                (r"find\s+(?P<query>.+)", "query"),
-            ],
-            "click": [
-                (r"click\s+(?:on\s+)?(?:the\s+)?(?:button\s+)?(?P<element>.+)", "element"),
-                (r"press\s+(?:the\s+)?(?P<element>.+?)(?:\s+button)?$", "element"),
-                (r"tap\s+(?:on\s+)?(?P<element>.+)", "element"),
-            ],
-            "type": [
-                (r"type\s+(?P<text>.+)", "text"),
-                (r"enter\s+(?P<text>.+)", "text"),
-                (r"fill\s+(?P<text>.+)", "text"),
-            ],
-            "scroll": [
-                (r"scroll\s+(up|down)", "direction"),
-            ],
-        })
-        
-        # ===== WINDOWS COMMANDS (MVP) =====
-        self.register_patterns("windows", {
-            "launch": [
-                (r"open\s+(?:the\s+)?(?P<app>\w+(?:\s+\w+)?)", "app"),
-                (r"launch\s+(?:the\s+)?(?P<app>\w+(?:\s+\w+)?)", "app"),
-                (r"start\s+(?:the\s+)?(?P<app>\w+(?:\s+\w+)?)", "app"),
-            ],
-            "close": [
-                (r"close\s+(?:this\s+)?(?:window)?", None),
-                (r"exit\s+(?:this\s+)?(?:window)?", None),
-            ],
-            "minimize": [
-                (r"minimize\s+(?:this\s+)?(?:window)?", None),
-            ],
-            "maximize": [
-                (r"maximize\s+(?:this\s+)?(?:window)?", None),
-            ],
-        })
-        
-        # ===== VS CODE COMMANDS (MVP) =====
+        # ===== VS CODE COMMANDS (MVP) - FIRST for file disambiguation =====
+        # Only code file extensions (NOT .com, .org, .net, .io, .co, etc.)
         self.register_patterns("vscode", {
             "open": [
-                (r"open\s+(?:file\s+)?(?P<file>[^\s]+(?:\.\w+)?)", "file"),
-                (r"show\s+(?:file\s+)?(?P<file>[^\s]+(?:\.\w+)?)", "file"),
-                (r"find\s+file\s+(?P<file>[^\s]+(?:\.\w+)?)", "file"),
+                # "open main.py" - \b after extension prevents greedy .com → .c trick
+                (r"open\s+(?:file\s+)?(?P<file>\S+\." + self.CODE_EXTENSIONS + r")\b", "file"),
+                (r"show\s+(?:file\s+)?(?P<file>\S+\." + self.CODE_EXTENSIONS + r")\b", "file"),
+                (r"find\s+file\s+(?P<file>\S+\." + self.CODE_EXTENSIONS + r")\b", "file"),
             ],
             "terminal": [
-                (r"run\s+(?:command\s+)?(?P<command>.+)", "command"),
-                (r"execute\s+(?P<command>.+)", "command"),
+                # "run command echo hello" - explicit "command" keyword required
+                (r"run\s+command\s+(?P<command>.+)", "command"),
+                (r"execute\s+in\s+terminal\s+(?P<command>.+)", "command"),
                 (r"terminal\s+(?P<command>.+)", "command"),
             ],
             "save": [
-                (r"save\s+(?:file)?", None),
+                # "save" alone or "save file" - must be standalone (not "save macro...")
+                (r"^save(?:\s+file)?$", None),
                 (r"(?:ctrl\s+\+\s*)?s\s+save", None),
             ],
             "create": [
-                (r"create\s+(?:new\s+)?file\s+(?P<file>.+)", "file"),
-                (r"new\s+file\s+(?P<file>.+)", "file"),
+                # "create new file main.py" - code files with explicit "file" keyword
+                (r"create\s+(?:new\s+)?file\s+(?P<file>\S+\." + self.CODE_EXTENSIONS + r")\b", "file"),
+                (r"new\s+file\s+(?P<file>\S+\." + self.CODE_EXTENSIONS + r")\b", "file"),
             ],
         })
         
-        # ===== SYSTEM COMMANDS (MVP) =====
-        self.register_patterns("system", {
-            "screenshot": [
-                (r"(?:take\s+)?(?:a\s+)?screenshot", None),
-                (r"capture\s+screen", None),
-            ],
-            "copy": [
-                (r"copy\s+(?:the\s+)?(?P<text>.+)", "text"),
-                (r"(?:ctrl\s+\+\s*c)", None),
-            ],
-            "paste": [
-                (r"paste", None),
-                (r"(?:ctrl\s+\+\s*v)", None),
-            ],
-            "volume": [
-                (r"volume\s+(up|down|mute)", "action"),
-            ],
-        })
-        
-        # ===== OMNI CONTROL (MVP) =====
-        self.register_patterns("omni", {
-            "help": [
-                (r"(?:what\s+can\s+you\s+do|help|commands|what[']?s\s+available)", None),
-            ],
-            "settings": [
-                (r"(?:open\s+)?settings", None),
-                (r"(?:change|modify)\s+settings", None),
-            ],
-            "status": [
-                (r"status", None),
-                (r"(?:what[']?s\s+)?(?:your\s+)?state", None),
-            ],
-            "repeat": [
-                (r"(?:do\s+)?(?:that\s+)?again", None),
-                (r"repeat\s+(?:that\s+)?", None),
-                (r"redo", None),
-            ],
-            "undo": [
-                (r"undo", None),
-                (r"go\s+back", None),
-            ],
-        })
-        
-        # ===== ALPHA: ACCESSIBILITY INNOVATION =====
-        self.register_patterns("alpha", {
-            "record": [
-                (r"record\s+(?:this|macro)", None),
-                (r"start\s+recording", None),
-            ],
-            "save_macro": [
-                (r"save\s+macro\s+(?P<name>\w+)", "name"),
-                (r"save\s+this", None),
-            ],
-            "cancel_recording": [
-                (r"cancel\s+(?:recording|macro)", None),
-                (r"stop\s+recording", None),
-            ],
-            "run_macro": [
-                (r"run\s+(?P<macro>\w+)", "macro"),
-                (r"execute\s+macro\s+(?P<macro>\w+)", "macro"),
-            ],
-            "show_hints": [
-                (r"(?:what\s+can\s+i\s+say|available\s+commands|hints)", None),
-                (r"show\s+commands", None),
-                (r"help\s+me", None),
-            ],
-            "screen_desc": [
-                (r"what[']?s?\s+(?:on\s+)?screen", None),
-                (r"describe\s+screen", None),
-                (r"read\s+page", None),
-                (r"where\s+(?:am\s+i|is)", None),
-            ],
-            "find": [
-                (r"find\s+(?P<element>.+)", "element"),
-                (r"locate\s+(?P<element>.+)", "element"),
-                (r"where\s+(?:is|are)\s+(?P<element>.+)", "element"),
-            ],
-            "learn": [
-                (r"learn\s+this", None),
-                (r"remember\s+this", None),
-            ],
-        })
-        
-        # ===== BETA: INTEGRATIONS =====
+        # ===== INTEGRATIONS (BETA) - HIGH PRIORITY =====
         self.register_patterns("integrations", {
             "send_email": [
-                (r"(?:send|compose)\s+(?:an?\s+)?email\s+(?:to\s+)?(?P<recipient>[^\s]+)", "recipient"),
+                (r"(?:send|compose)\s+(?:an?\s+)?email\s+(?:to\s+)?(?P<recipient>\w[\w.-]*)", "recipient"),
             ],
             "read_emails": [
                 (r"(?:read|check)\s+(?:my\s+)?emails?", None),
@@ -222,6 +141,7 @@ class CommandRegistry:
                 (r"(?:schedule|book)\s+(?:meeting|event)\s+(?:called\s+)?(?P<title>.+)", "title"),
             ],
             "show_calendar": [
+                # "what's on my calendar" / "show my calendar" / "what's today"
                 (r"(?:what[']?s|show|check)\s+(?:on\s+)?(?:my\s+)?calenda?r", None),
                 (r"what[']?s?\s+today", None),
             ],
@@ -232,7 +152,9 @@ class CommandRegistry:
                 (r"(?:turn\s+)?on\s+(?:the\s+)?lights?", None),
             ],
             "lights_off": [
+                # "turn off the lights" / "lights off" / "turn the lights off"
                 (r"(?:turn\s+)?off\s+(?:the\s+)?lights?", None),
+                (r"lights\s+off", None),
             ],
             "set_temperature": [
                 (r"(?:set|adjust)\s+(?:temperature|thermostat)\s+(?:to\s+)?(?P<temp>\d+)", "temp"),
@@ -254,6 +176,165 @@ class CommandRegistry:
             "optimize": [
                 (r"optimize", None),
                 (r"cleanup", None),
+            ],
+        })
+        
+        # ===== ALPHA: ACCESSIBILITY INNOVATION =====
+        self.register_patterns("alpha", {
+            "record": [
+                (r"record\s+(?:this|macro)", None),
+                (r"start\s+recording", None),
+            ],
+            "save_macro": [
+                (r"save\s+macro\s+(?P<name>\w+)", "name"),
+                (r"save\s+this", None),
+            ],
+            "cancel_recording": [
+                (r"cancel\s+(?:recording|macro)", None),
+                (r"stop\s+recording", None),
+            ],
+            "run_macro": [
+                # "run mymacro" (no "macro" keyword) - macro execution
+                # "run macro mymacro" (with "macro" keyword) - also macro
+                (r"run\s+(?:macro\s+)?(?P<macro>\w+)", "macro"),
+                (r"execute\s+macro\s+(?P<macro>\w+)", "macro"),
+                (r"play\s+(?P<macro>\w+)", "macro"),
+            ],
+            "show_hints": [
+                # "show commands", "what can I say", "available commands", "hints"
+                # Must have "show" or "available" at start - NOT just "what"
+                (r"show\s+commands", None),
+                (r"(?:what\s+can\s+i\s+say|available\s+commands|hints)\b", None),
+                (r"help\s+me\b", None),
+            ],
+            "screen_desc": [
+                # "what's on screen" / "describe screen" / "read page" / "where am i"
+                (r"what[']?s?\s+(?:on|there)\s+(?:on\s+)?(?:the\s+)?screen", None),
+                (r"describe\s+(?:the\s+)?screen", None),
+                (r"read\s+(?:the\s+)?page", None),
+                (r"where\s+(?:am\s+i|is\s+the)", None),
+            ],
+            "find": [
+                (r"find\s+(?P<element>.+)\b", "element"),
+                (r"locate\s+(?P<element>.+)\b", "element"),
+                (r"where\s+(?:is|are)\s+(?P<element>.+)\b", "element"),
+            ],
+            "learn": [
+                (r"learn\s+this", None),
+                (r"remember\s+this", None),
+            ],
+        })
+        
+        # ===== WINDOWS COMMANDS (MVP) =====
+        # Only known desktop apps or .exe - avoids collision with browser/omni
+        self.register_patterns("windows", {
+            "launch": [
+                # "open notepad", "open calculator" (known desktop apps only)
+                (r"open\s+(?:the\s+)?(?P<app>" + "|".join(self.WINDOWS_KNOWN_APPS) + r")(?:\s+\w+)?", "app"),
+                (r"launch\s+(?:the\s+)?(?P<app>" + "|".join(self.WINDOWS_KNOWN_APPS) + r")(?:\s+\w+)?", "app"),
+                (r"start\s+(?:the\s+)?(?P<app>" + "|".join(self.WINDOWS_KNOWN_APPS) + r")(?:\s+\w+)?", "app"),
+                # "open appname.exe" - explicit executable files
+                (r"open\s+(?:the\s+)?(?P<app>\w+\.exe)", "app"),
+                (r"launch\s+(?:the\s+)?(?P<app>\w+\.exe)", "app"),
+            ],
+            "close": [
+                (r"close\s+(?:this\s+)?(?:window)?", None),
+                (r"exit\s+(?:this\s+)?(?:window)?", None),
+            ],
+            "minimize": [
+                (r"minimize\s+(?:this\s+)?(?:window)?", None),
+            ],
+            "maximize": [
+                (r"maximize\s+(?:this\s+)?(?:window)?", None),
+            ],
+        })
+        
+        # ===== BROWSER COMMANDS (MVP) =====
+        # Negative lookahead (?!\S+\.\w+$) prevents matching code file paths like "main.py"
+        self.register_patterns("browser", {
+            "navigate": [
+                # "go to https://..." / "navigate to https://..." - explicit URLs first
+                (r"go\s+to\s+(?P<url>https?://\S+)", "url"),
+                (r"navigate\s+(?:to\s+)?(?P<url>https?://\S+)", "url"),
+                # "open github" / "open reddit" - known shortcuts (no TLD needed)
+                (r"open\s+(?:the\s+)?(?P<site>github|reddit|youtube|discord|notion|figma)\b", "site"),
+                # "open google.com" - domains with TLD, NOT code files (.py, .js, etc.)
+                (r"open\s+(?:the\s+)?(?P<site>\w+(?:\.\w+){1,3})\b", "site"),
+                (r"(?:visit|load)\s+(?:the\s+)?(?P<site>\w+(?:\.\w+){1,3})", "site"),
+            ],
+            "search": [
+                (r"search\s+(?:for\s+)?(?P<query>.+)", "query"),
+                (r"google\s+(?P<query>.+)", "query"),
+                (r"find\s+(?P<query>.+)", "query"),
+            ],
+            "click": [
+                (r"click\s+(?:on\s+)?(?:the\s+)?(?:button\s+)?(?P<element>.+)", "element"),
+                (r"press\s+(?:the\s+)?(?P<element>.+?)(?:\s+button)?$", "element"),
+                (r"tap\s+(?:on\s+)?(?P<element>.+)", "element"),
+            ],
+            "type": [
+                (r"type\s+(?P<text>.+)", "text"),
+                (r"enter\s+(?P<text>.+)", "text"),
+                (r"fill\s+(?P<text>.+)", "text"),
+            ],
+            "scroll": [
+                (r"scroll\s+(up|down)", "direction"),
+            ],
+        })
+        
+        
+        
+        # ===== SYSTEM COMMANDS (MVP) =====
+        self.register_patterns("system", {
+            "screenshot": [
+                (r"(?:take\s+)?(?:a\s+)?screenshot", None),
+                (r"capture\s+screen", None),
+            ],
+            "copy": [
+                (r"copy\s+(?:the\s+)?(?P<text>.+)", "text"),
+                (r"(?:ctrl\s+\+\s*c)", None),
+            ],
+            "paste": [
+                (r"paste", None),
+                (r"(?:ctrl\s+\+\s*v)", None),
+            ],
+            "volume": [
+                (r"volume\s+(up|down|mute)", "action"),
+            ],
+        })
+        
+        # ===== OMNI CONTROL (MVP) - LOWEST PRIORITY =====
+        # Generic help/status - only matches standalone help commands
+        # Never matches context-specific queries like "what's on screen" or "what's on my calendar"
+        self.register_patterns("omni", {
+            "help": [
+                # "help" or "commands" alone - must be the ONLY content
+                (r"^help$", None),
+                (r"^commands$", None),
+                # "what can you do" / "what's available" - standalone only
+                (r"^(?:what\s+can\s+you\s+do|what[']?s\s+available)\??$", None),
+                # "show me commands" - explicit phrase
+                (r"^show\s+me\s+commands$", None),
+            ],
+            "settings": [
+                # "open settings" → OMNI settings panel
+                (r"open\s+(?:the\s+)?settings\b", None),
+                # "settings" alone (not settings.com)
+                (r"(?<!\.com)(?<!\.org)(?<!\.io)(?<!\.net)(?<!\.app)\bsettings\b", None),
+                (r"(?:change|modify)\s+settings", None),
+            ],
+            "status": [
+                (r"status", None),
+                (r"(?:what[']?s\s+)?(?:your\s+)?state", None),
+            ],
+            "repeat": [
+                (r"(?:do\s+)?(?:that\s+)?again", None),
+                (r"repeat\s+(?:that\s+)?", None),
+                (r"redo", None),
+            ],
+            "undo": [
+                (r"undo", None),
+                (r"go\s+back", None),
             ],
         })
         
@@ -285,7 +366,7 @@ class CommandRegistry:
         """Parse voice input into a structured command."""
         text = text.lower().strip()
         
-        # Try each category and action
+        # Try each category and action in registration order
         for category, actions in self._patterns.items():
             for action, pattern_list in actions.items():
                 for pattern, entity_name in pattern_list:
@@ -299,7 +380,10 @@ class CommandRegistry:
                             site = entities["site"].lower()
                             if site in self.URL_SHORTCUTS:
                                 entities["url"] = self.URL_SHORTCUTS[site]
+                            elif "." in site:
+                                entities["url"] = f"https://{site}"
                             else:
+                                # No TLD and not in shortcuts - use .com as fallback
                                 entities["url"] = f"https://{site}.com"
                             del entities["site"]
                         
@@ -327,12 +411,10 @@ class CommandRegistry:
     def parse_compound(self, text: str) -> List[ParsedCommand]:
         """Parse compound commands (separated by 'and', 'then', etc.)"""
         parts = re.split(r'\s+(?:and|then|also|plus)\s+', text, flags=re.IGNORECASE)
-        
         commands = []
         for part in parts:
             cmd = self.parse(part.strip())
             commands.append(cmd)
-        
         return commands
     
     def get_all_commands(self) -> Dict[str, List[str]]:
@@ -350,18 +432,13 @@ class CommandRegistry:
             "═══════════════════════════════════════════",
             ""
         ]
-        
         for category, actions in self._patterns.items():
             cat_title = category.upper().replace("_", " ")
             lines.append(f"── {cat_title} ──")
-            
             for action, pattern_list in actions.items():
-                patterns = [p[0] for p in pattern_list[:2]]  # Show max 2
+                patterns = [p[0] for p in pattern_list[:2]]
                 lines.append(f"  • {action}: {patterns[0] if patterns else 'N/A'}")
-            
             lines.append("")
-        
         lines.append("Say 'help' anytime to see this list.")
         lines.append("───────────────────────────────────────────")
-        
         return "\n".join(lines)

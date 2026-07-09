@@ -15,7 +15,7 @@ from loguru import logger
 # OMNI Core
 from omni.core import EventBus, ConfigManager, PluginManager, CommandRegistry
 from omni.core.event_bus import EventType
-from omni.core.plugin_manager import ParsedCommand
+from omni.core.command_registry import ParsedCommand
 
 # OMNI Voice Pipeline
 from omni.voice import PTTManager, VoicePipeline, WhisperSTT
