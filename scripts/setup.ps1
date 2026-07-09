@@ -1,51 +1,46 @@
-# OMNI Setup Script - Install dependencies
+# OMNI Setup Script - Install dependencies on Windows
 
-Write-Host "OMNI Setup - Installing dependencies..." -ForegroundColor Cyan
+Write-Host "OMNI Setup" -ForegroundColor Cyan
+Write-Host "=" * 50 -ForegroundColor Cyan
 
 # Check Python
-$pythonVersion = python --version 2>&1
-if ($LASTEXITCODE -ne 0) {
-    Write-Host "ERROR: Python not found. Please install Python 3.10+" -ForegroundColor Red
+try {
+    $pythonVersion = python --version 2>&1
+    Write-Host "Found: $pythonVersion" -ForegroundColor Green
+} catch {
+    Write-Host "ERROR: Python not found. Install Python 3.10+ from python.org" -ForegroundColor Red
     exit 1
 }
-Write-Host "Found: $pythonVersion" -ForegroundColor Green
 
-# Create venv (optional)
-$v = Read-Host "Create virtual environment? (y/n)"
-if ($v -eq "y") {
-    python -m venv .venv
-    .\.venv\Scripts\activate
-    Write-Host "Virtual environment created" -ForegroundColor Green
+# Python version check
+$versionMatch = python --version 2>&1 | Select-String "Python 3.(1[0-9]|[2-9][0-9])"
+if (-not $versionMatch) {
+    Write-Host "WARNING: Python 3.10+ recommended for best compatibility" -ForegroundColor Yellow
 }
 
-# Upgrade pip
-python -m pip install --upgrade pip
+# Run the main install from requirements.txt
+Write-Host ""
+Write-Host "Installing dependencies from requirements.txt..." -ForegroundColor Cyan
+Write-Host "(This may take a few minutes on first run)" -ForegroundColor Yellow
 
-# Install PyQt5
-Write-Host "Installing PyQt5..." -ForegroundColor Yellow
-pip install PyQt5==5.15.10
+pip install -r requirements.txt
 
-# Install voice
-pip install faster-whisper==1.0.3
-pip install silero-vad==0.3.0
-
-# Install audio
-pip install PyAudio
-pip install numpy>=1.24.0
-
-# Install TTS
-pip install kokoro-tts
-
-# Install automation
-pip install pyautogui pyperclip
-pip install websocket-client
-
-# Install utilities
-pip install keyboard psutil loguru
+if ($LASTEXITCODE -ne 0) {
+    Write-Host ""
+    Write-Host "ERROR: Some packages failed to install." -ForegroundColor Red
+    Write-Host "Try running as Administrator: Right-click PowerShell → Run as Administrator" -ForegroundColor Yellow
+    Write-Host "Then re-run: pip install -r requirements.txt" -ForegroundColor Yellow
+    exit 1
+}
 
 Write-Host ""
 Write-Host "Setup complete!" -ForegroundColor Green
 Write-Host ""
-Write-Host "Next steps:" -ForegroundColor Yellow
-Write-Host "  1. Run: .\scripts\launch-chrome.ps1"
-Write-Host "  2. Run: python omni.py"
+Write-Host "Next steps:" -ForegroundColor Cyan
+Write-Host "  1. (Optional) Launch Chrome with CDP: .\scripts\launch-chrome.ps1"
+Write-Host "  2. Run OMNI: python omni.py"
+Write-Host "  3. Press CapsLock to speak"
+Write-Host ""
+Write-Host "For GPU acceleration (Whisper CUDA):" -ForegroundColor Yellow
+Write-Host "  Install Visual C++ Redistributable:" -ForegroundColor Yellow
+Write-Host "  https://aka.ms/vs/17/release/vc_redist.x64.exe" -ForegroundColor Yellow

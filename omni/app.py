@@ -260,23 +260,29 @@ class OMNIApp:
     # ===== TTS =====
     
     def _speak(self, text: str) -> None:
-        """Speak text via TTS"""
+        """Speak text via TTS — failures are non-fatal."""
         if not self.tts or not self.config.get("tts_enabled", True):
             logger.info(f"TTS (disabled): {text}")
             return
         
-        if self.is_speaking:
-            self.tts.stop()
-        
-        self.is_speaking = True
-        self.event_bus.emit(EventType.TTS_START, {"text": text[:50]}, "OMNI")
-        
-        def on_complete():
+        try:
+            if self.is_speaking and self.tts:
+                self.tts.stop()
+            
+            self.is_speaking = True
+            self.event_bus.emit(EventType.TTS_START, {"text": text[:50]}, "OMNI")
+            
+            def on_complete():
+                self.is_speaking = False
+                self.event_bus.emit(EventType.TTS_END, source="OMNI")
+                self.event_bus.emit(EventType.STATUS_UPDATE, "idle", "OMNI")
+            
+            self.tts.speak(text, callback=on_complete)
+        except Exception as e:
+            # TTS failure is non-fatal — app keeps running
+            logger.warning(f"TTS speak error: {e}")
             self.is_speaking = False
-            self.event_bus.emit(EventType.TTS_END, source="OMNI")
             self.event_bus.emit(EventType.STATUS_UPDATE, "idle", "OMNI")
-        
-        self.tts.speak(text, callback=on_complete)
     
     # ===== CONTROLS =====
     
@@ -304,13 +310,10 @@ class OMNIApp:
     
     # ===== MAIN LOOP =====
     
-    def run(self) -> None:
+def run(self) -> None:
         """Start OMNI application"""
         logger.info("Starting OMNI...")
-        
-        # Start event bus
-        asyncio.create_task(self.event_bus.start())
-        
+
         # Start PTT monitoring
         self.ptt.start()
         

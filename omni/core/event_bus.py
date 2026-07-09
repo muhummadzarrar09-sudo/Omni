@@ -12,6 +12,7 @@ class EventType(Enum):
     TRANSCRIPTION_COMPLETE = auto()
     COMMAND_EXECUTING = auto()
     COMMAND_COMPLETE = auto()
+    COMMAND_FAILED = auto()
     TTS_START = auto()
     TTS_END = auto()
     STATUS_UPDATE = auto()

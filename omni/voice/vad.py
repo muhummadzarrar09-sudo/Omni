@@ -46,11 +46,11 @@ class VoicePipeline:
         logger.info("VoicePipeline initialized")
     
     def _load_vad(self) -> None:
-        """Load Silero VAD model"""
+        """Load Silero VAD model — falls back to energy-based if torch fails."""
         try:
             import torch
             torch.set_num_threads(1)
-            
+
             self.vad_model, utils = torch.hub.load(
                 repo_or_dir='snakers4/silero-vad',
                 model='silero_vad',
@@ -58,9 +58,13 @@ class VoicePipeline:
             )
             self.get_speech_ts = utils[0]
             logger.info("Silero VAD loaded")
-            
+
         except Exception as e:
-            logger.warning(f"VAD not loaded: {e}. Using energy-based fallback.")
+            logger.warning(
+                f"VAD not loaded ({e}). Using energy-based speech detection. "
+                "If you see torch DLL errors, install Visual C++ Redistributable "
+                "or update your GPU drivers."
+            )
             self.vad_model = None
     
     def start(self) -> None:
@@ -204,25 +208,40 @@ class WhisperSTT:
         self._load_model()
     
     def _load_model(self) -> None:
-        """Load Whisper model"""
+        """Load Whisper model — auto-falls back to CPU if CUDA fails."""
+        # Try CUDA first if requested
+        if self.device == "cuda":
+            try:
+                from faster_whisper import WhisperModel
+                self.model = WhisperModel(
+                    self.model_name,
+                    device="cuda",
+                    compute_type="float16"
+                )
+                self._loaded = True
+                logger.info(f"Whisper loaded: {self.model_name} on CUDA")
+                return
+            except Exception as e:
+                logger.warning(f"Whisper CUDA failed ({e}), falling back to CPU...")
+        
+        # Fallback: CPU with int8 (works on any hardware, no GPU needed)
         try:
             from faster_whisper import WhisperModel
-            
-            compute_type = "float16" if self.device == "cuda" else "int8"
-            
             self.model = WhisperModel(
                 self.model_name,
-                device=self.device,
-                compute_type=compute_type
+                device="cpu",
+                compute_type="int8"
             )
-            
             self._loaded = True
-            logger.info(f"Whisper loaded: {self.model_name} on {self.device}")
-            
+            logger.info(f"Whisper loaded: {self.model_name} on CPU (int8)")
         except ImportError:
-            logger.error("faster-whisper not installed")
+            logger.error("faster-whisper not installed — run: pip install faster-whisper")
         except Exception as e:
-            logger.error(f"Whisper load error: {e}")
+            logger.error(
+                f"Whisper load error: {e}\n"
+                "If you see torch DLL errors, install the Visual C++ Redistributable "
+                "from: https://aka.ms/vs/17/release/vc_redist.x64.exe"
+            )
     
     def transcribe(self, audio: np.ndarray, language: str = "en") -> Optional[str]:
         """Transcribe audio to text"""

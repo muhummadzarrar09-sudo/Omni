@@ -24,17 +24,21 @@ class KokoroTTS:
         self._load_model()
     
     def _load_model(self) -> None:
-        # Try Kokoro first
+        # Try Kokoro first (any failure → SAPI fallback)
         try:
             from kokoro import Kokoro
             self.kokoro = Kokoro(device="cuda")
             logger.info("Kokoro TTS loaded (CUDA)")
-        except ImportError:
-            logger.warning("Kokoro TTS not installed, checking Windows SAPI...")
-            self._check_sapi()
-        except Exception as e:
-            logger.warning(f"Kokoro failed ({e}), falling back to Windows SAPI")
-            self._check_sapi()
+        except Exception:
+            # Kokoro failed — try CPU
+            try:
+                from kokoro import Kokoro
+                self.kokoro = Kokoro(device="cpu")
+                logger.info("Kokoro TTS loaded (CPU)")
+            except Exception:
+                # Kokoro not available at all — use SAPI
+                logger.warning("Kokoro TTS not available, checking Windows SAPI...")
+                self._check_sapi()
     
     def _check_sapi(self) -> None:
         """Check if Windows SAPI is available as fallback."""

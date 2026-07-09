@@ -5,6 +5,7 @@ Includes: Gmail, Calendar, Smart Home, Performance Optimizations
 
 import subprocess
 import time
+from pathlib import Path
 from typing import Dict, Any, Optional
 from loguru import logger
 
@@ -322,5 +323,3 @@ class PerformancePlugin(CommandPlugin):
         )
 
 
-# Import Path for file operations
-from pathlib import Path

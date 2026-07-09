@@ -7,7 +7,7 @@ class SettingsDialog(QDialog):
     """Settings dialog for OMNI configuration"""
     
     def __init__(self, parent_app):
-        super().__init__(parent_app)
+        super().__init__(None)  # QDialog parent must be QWidget or None, not plain Python class
         self.parent_app = parent_app
         self.config = parent_app.config
         self.setWindowTitle("OMNI Settings")
