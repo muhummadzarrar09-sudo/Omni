@@ -4,14 +4,37 @@ OMNI - Autonomous Personal Agent
 Entry point for the application.
 
 Usage:
-    python omni.py              # Normal mode (CapsLock PTT)
+    python omni.py              # Normal mode (V key toggle PTT)
     python omni.py --demo       # Demo mode (runs built-in demo script)
     python omni.py --demo "open github"  # Demo mode with specific command
     python omni.py --demo "help"         # Show help
+    Ctrl+C                      # Graceful shutdown
 """
 import sys
 import os
+import signal
 from pathlib import Path
+
+# Graceful Ctrl+C shutdown
+_shutdown_flag = False
+
+def _handle_ctrl_c(signum, frame):
+    global _shutdown_flag
+    if _shutdown_flag:
+        print("\n[OMNI] Force exit — bye!")
+        sys.exit(0)
+    _shutdown_flag = True
+    print("\n[OMNI] Shutting down... (Ctrl+C again to force exit)")
+    # Let Qt handle the quit via atexit
+    try:
+        import PyQt5.QtWidgets
+        app = PyQt5.QtWidgets.QApplication.instance()
+        if app:
+            app.quit()
+    except Exception:
+        pass
+
+signal.signal(signal.SIGINT, _handle_ctrl_c)
 
 # Add omni/ to sys.path so 'from omni' works
 sys.path.insert(0, str(Path(__file__).parent / "omni"))

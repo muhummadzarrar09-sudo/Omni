@@ -7,7 +7,7 @@ from loguru import logger
 
 @dataclass
 class OMNISettings:
-    ptt_key: str = "caps_lock"
+    ptt_key: str = "v"
     whisper_model: str = "base.en"
     whisper_device: str = "cuda"
     tts_enabled: bool = True

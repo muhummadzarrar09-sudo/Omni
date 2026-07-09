@@ -9,7 +9,8 @@ PyQt5==5.15.10
 
 # Voice - Speech to Text
 # NOTE: faster-whisper includes torch as a dependency.
-# Silero VAD is loaded via torch.hub from GitHub (no pip install needed).
+# Silero VAD requires torchaudio (same torch build as torch):
+#   pip install torchaudio --index-url https://download.pytorch.org/whl/cu121
 # If VAD fails, the app falls back to energy-based speech detection automatically.
 faster-whisper==1.0.3
 
@@ -17,13 +18,19 @@ faster-whisper==1.0.3
 PyAudio==0.2.14
 numpy>=1.24.0
 
-# Text to Speech - OPTIONAL
-# Kokoro TTS from nazdridoy fork (ONNX-based, local, no cloud)
-# If installation fails, OMNI falls back to Windows SAPI automatically.
-# To install Kokoro separately after main deps:
-#   pip install kokoro-tts
-# OR comment out the line below if you only want SAPI TTS.
-kokoro-tts @ git+https://github.com/nazdridoy/kokoro-tts
+# Text to Speech - LOCAL (no cloud, no API keys)
+# Kokoro-ONNX: pip install kokoro-onnx
+#   Then download model files from:
+#   https://github.com/nazdridoy/kokoro-tts/releases/tag/v1.0.0
+#   → kokoro-v1.0.onnx  (place in omni/models/)
+#   → voices-v1.0.bin   (place in omni/models/)
+# Fallback: Windows SAPI (pyttsx3) — works automatically if Kokoro unavailable
+kokoro-onnx>=0.1.0
+pyttsx3>=2.90
+
+# Audio playback for TTS (sounddevice with simpleaudio fallback)
+sounddevice>=0.4.6
+simpleaudio>=0.2.4
 
 # Windows automation (pyautogui + subprocess, NO uiauto needed)
 pyautogui>=0.9.54

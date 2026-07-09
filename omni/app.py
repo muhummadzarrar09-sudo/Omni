@@ -19,7 +19,10 @@ from omni.core.event_bus import EventType
 from omni.core.command_registry import ParsedCommand
 
 # OMNI Voice Pipeline
-from omni.voice import PTTManager, VoicePipeline, WhisperSTT
+from omni.voice import (
+    PTTManager, VoicePipeline, WhisperSTT,
+    AudioDeviceManager, AudioCaptureError,
+)
 
 # OMNI TTS
 from omni.tts import KokoroTTS
@@ -69,35 +72,68 @@ class OMNIApp:
         logger.info("=" * 50)
     
     def _init_voice(self) -> None:
-        """Initialize the complete voice pipeline"""
+        """Initialize the complete voice pipeline — Phase 3 STT Robustness."""
         logger.info("Initializing voice pipeline...")
-        
-        # PTT Manager (CapsLock detection)
+
+        # ── Step 1: Audio device detection ─────────────────────────────────
+        # Detect microphones and probe the default device before use.
+        # This catches bad/muted/no microphone BEFORE the user presses PTT.
+        self.audio_device_manager = AudioDeviceManager(
+            preferred_device_index=None  # Use system default
+        )
+        audio_status = self.audio_device_manager.get_status()
+        logger.info(f"Audio system: {audio_status.summary()}")
+
+        if not audio_status.pyaudio_available:
+            logger.error("CRITICAL: PyAudio not available. Voice input will not work.")
+            logger.error("Run: pip install PyAudio")
+        elif audio_status.device_count == 0:
+            logger.error("CRITICAL: No microphone devices found.")
+            logger.error("Check your microphone connection and Windows Sound settings.")
+        elif audio_status.current_probe_status != "ok":
+            logger.warning(
+                f"WARNING: Default microphone probe failed. "
+                f"Error: {audio_status.last_error}. "
+                f"Voice input may not work correctly."
+            )
+
+        # ── Step 2: PTT Manager (V key toggle) ───────────────────────────
         self.ptt = PTTManager(
-            key=self.config.get("ptt_key", "caps_lock"),
+            key=self.config.get("ptt_key", "v"),
             event_bus=self.event_bus
         )
-        
-        # Whisper STT
+
+        # ── Step 3: Whisper STT ───────────────────────────────────────────
         self.whisper = WhisperSTT(
             model_name=self.config.get("whisper_model", "base.en"),
-            device=self.config.get("whisper_device", "cuda")
+            device=self.config.get("whisper_device", "cuda"),
+            language="auto",
         )
-        
-        # Voice Pipeline (VAD + capture)
+
+        whisper_status = self.whisper.status
+        if whisper_status["loaded"]:
+            logger.info(
+                f"Whisper loaded: {whisper_status['model_name']} | "
+                f"{whisper_status['device']} / {whisper_status['compute_type']} | "
+                f"lang={whisper_status['language']}"
+            )
+        else:
+            logger.error(f"Whisper FAILED to load: {whisper_status['load_error']}")
+
+        # ── Step 4: Voice Pipeline (VAD + capture) ────────────────────────
         self.voice_pipeline = VoicePipeline(
             event_bus=self.event_bus,
+            device_manager=self.audio_device_manager,
             on_transcription=self._on_transcription,
-            on_status=self._on_voice_status
+            on_status=self._on_voice_status,
+            on_error=self._on_audio_error,
+            speech_threshold=0.008,
+            silence_threshold=0.005,
+            min_recording_s=0.4,
+            max_recording_s=60.0,
         )
-        
-        # Connect PTT events
-        self.event_bus.subscribe(EventType.PTT_PRESSED, self._on_ptt_pressed)
-        self.event_bus.subscribe(EventType.PTT_RELEASED, self._on_ptt_released)
-        
-        # Connect status events
-        self.event_bus.subscribe(EventType.STATUS_UPDATE, self._on_status_update)
-        
+
+        logger.info(f"VAD engine: {self.voice_pipeline.vad_info}")
         logger.info("Voice pipeline ready")
     
     def _init_command_system(self) -> None:
@@ -118,13 +154,17 @@ class OMNIApp:
         logger.info(f"Registered {len(plugins)} plugins: {[p.metadata.name for p in plugins]}")
     
     def _init_tts(self) -> None:
-        """Initialize TTS"""
+        """Initialize TTS engine (three-tier: Kokoro-ONNX → SAPI → Silent)."""
         if self.config.get("tts_enabled", True):
             self.tts = KokoroTTS(
                 voice=self.config.get("tts_voice", "af_sarah"),
                 speed=self.config.get("tts_speed", 1.0)
             )
-            logger.info("TTS ready")
+            status = self.tts.get_status()
+            logger.info(f"TTS ready — engine: {status['engine_type']}, voice: {status['voice']}, speed: {status['speed']}x")
+            if status['engine_type'] == 'silent':
+                logger.warning("TTS operating in SILENT mode. Download Kokoro models:")
+                logger.warning("  python scripts/download_models.py --kokoro")
         else:
             self.tts = None
             logger.info("TTS disabled")
@@ -191,6 +231,25 @@ class OMNIApp:
             self._speak("Didn't catch that, please try again")
             self.event_bus.emit(EventType.STATUS_UPDATE, "idle", "OMNI")
     
+    def _on_audio_error(self, error: AudioCaptureError) -> None:
+        """Handle audio device/capture errors — speak to user and log."""
+        logger.error(f"Audio error [{error.code}]: {error.message}")
+
+        if error.recoverable:
+            # Non-fatal — app continues, just tell the user
+            if error.code == -9999 or error.code == -9996:
+                # Device unavailable — mic unplugged or bad device index
+                self._speak("Your microphone is unavailable. Please check the connection.")
+            elif error.code == -9986:
+                self._speak("Audio stream error. Restarting recording.")
+            else:
+                self._speak(f"Audio error: {error.suggestion}")
+        else:
+            # Fatal — app cannot continue with voice
+            self._speak("Critical audio error. Voice input disabled.")
+
+        self.event_bus.emit(EventType.STATUS_UPDATE, "error", "OMNI")
+
     def _on_voice_status(self, status: str) -> None:
         """Handle voice pipeline status updates"""
         self.event_bus.emit(EventType.STATUS_UPDATE, status, "VoicePipeline")
@@ -338,21 +397,49 @@ class OMNIApp:
         self.is_listening = not self.is_listening
         
         if self.is_listening:
-            self._speak("Listening on. Press CapsLock to speak.")
+            self._speak("Listening on. Press V to speak.")
         else:
             self._speak("Listening off.")
         
         logger.info(f"Listening: {self.is_listening}")
     
     def get_status(self) -> dict:
-        """Get OMNI status"""
+        """Get comprehensive OMNI status including all subsystems."""
+        # Audio system status
+        audio_status = None
+        if hasattr(self, 'audio_device_manager'):
+            a = self.audio_device_manager.get_status()
+            audio_status = {
+                "system": a.system,
+                "pyaudio_available": a.pyaudio_available,
+                "device_count": a.device_count,
+                "default_mic": a.default_input_device.name if a.default_input_device else None,
+                "probe_status": a.current_probe_status,
+                "last_error": a.last_error,
+            }
+
+        # VAD status
+        vad_status = None
+        if hasattr(self, 'voice_pipeline'):
+            vad_status = {
+                "engine": self.voice_pipeline.vad_engine.name,
+                "speech_threshold": self.voice_pipeline.speech_threshold,
+                "silence_threshold": self.voice_pipeline.silence_threshold,
+            }
+
         return {
             "version": "1.0.0",
+            "phase": "Phase 3 — STT Robustness",
             "listening": self.is_listening,
             "speaking": self.is_speaking,
             "plugins": len(self.plugin_manager.get_all_plugins()),
             "whisper_loaded": self.whisper.is_loaded(),
+            "whisper_model": self.whisper.model_name,
+            "whisper_compute": self.whisper.compute_type,
             "tts_active": self.tts is not None,
+            "tts_engine": self.tts.engine_type if self.tts else None,
+            "audio": audio_status,
+            "vad": vad_status,
         }
     
 # ===== MAIN LOOP =====
@@ -376,7 +463,7 @@ class OMNIApp:
 
         # Greeting
         QTimer.singleShot(500, lambda: self._speak(
-            "OMNI demo ready." if demo_cmd else "OMNI ready. Press CapsLock to speak. Say 'help' for commands."
+            "OMNI demo ready." if demo_cmd else "OMNI ready. Press V to speak. Say 'help' for commands."
         ))
 
         # Enter Qt event loop
