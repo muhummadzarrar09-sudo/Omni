@@ -63,8 +63,8 @@ class OMNIApp:
         
         # ===== INITIALIZE ALL COMPONENTS =====
         self._init_voice()
-        self._init_command_system()
         self._init_tts()
+        self._init_command_system()
         self._setup_ui()
         
         # Visual Core: The Voice Orb
@@ -134,7 +134,7 @@ class OMNIApp:
             speech_threshold=0.008,
             silence_threshold=0.005,
             min_recording_s=0.4,
-            max_recording_s=60.0,
+            max_recording_s=120.0,
         )
 
         logger.info(f"VAD engine: {self.voice_pipeline.vad_info}")

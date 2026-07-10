@@ -203,8 +203,14 @@ class AudioDeviceManager:
     def _probe_default_device(self) -> None:
         """Probe the default (or preferred) input device to verify it works."""
         target_index = self._preferred_index
-        if target_index is None and self._status.default_input_device:
-            target_index = self._status.default_input_device.index
+        if target_index is None:
+            # Try to get the system default
+            if self._status.default_input_device:
+                target_index = self._status.default_input_device.index
+            elif self._status.all_input_devices:
+                # FALLBACK: If no system default is set, just pick the first available mic
+                target_index = self._status.all_input_devices[0].index
+                logger.info(f"No system default mic found. Using first available device [{target_index}]")
 
         if target_index is None:
             self._status.current_probe_status = "failed"
@@ -250,11 +256,11 @@ class AudioDeviceManager:
                 import numpy as np
                 audio = np.frombuffer(data, dtype=np.int16)
                 max_val = np.abs(audio).max()
-                if max_val < 10:
+                if max_val < 1:
                     stream.stop_stream()
                     stream.close()
                     probe.terminate()
-                    return False, f"Device produces silence (max amplitude={max_val})"
+                    return False, f"Device produces absolute silence (max amplitude={max_val})"
 
                 stream.stop_stream()
                 stream.close()

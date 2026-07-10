@@ -62,8 +62,8 @@ from omni.core.event_bus import EventBus, EventType
 DEFAULT_SAMPLE_RATE = 16000
 DEFAULT_CHUNK_SIZE = 1024       # 1024 samples @ 16kHz = 64ms per callback
 DEFAULT_MIN_RECORDING_S = 0.4   # Force-record first 0.4s (bypass VAD, capture speech start)
-DEFAULT_MAX_RECORDING_S = 60.0  # Hard limit — prevent buffer overflow / OOM
-DEFAULT_SILENCE_CHUNKS = 8      # ~0.5s of silence (8 × 64ms = 512ms)
+DEFAULT_MAX_RECORDING_S = 120.0  # Hard limit — prevent buffer overflow / OOM
+DEFAULT_SILENCE_CHUNKS = 16      # ~1.0s of silence (16 × 64ms = 1024ms)
 DEFAULT_SILENCE_THRESHOLD = 0.005  # Energy threshold for silence detection
 DEFAULT_SPEECH_THRESHOLD = 0.008  # Energy threshold for speech detection
 DEFAULT_WHISPER_TIMEOUT_S = 30.0   # Transcription timeout
@@ -632,7 +632,7 @@ class VoicePipeline:
             avg_rms=rms,
             silence_ratio=silence_ratio,
             is_too_short=(duration_s < DEFAULT_MIN_AUDIO_S),
-            is_too_quiet=(rms < 0.01),  # RMS amplitude less than 1%
+            is_too_quiet=(rms < 0.005),  # RMS amplitude less than 0.5%
             is_noise_only=(silence_ratio > 0.95 and max_amp < 0.05),
         )
 
@@ -757,40 +757,27 @@ class WhisperSTT:
 
         # Try CUDA first
         if self.device == "cuda":
-            try:
-                from faster_whisper import WhisperModel
-                # GTX 1050 Ti Optimization: Force int8 on CUDA to avoid float16 crashes
-                # and reduce VRAM usage while maintaining speed.
-                self.model = WhisperModel(
-                    self.model_name,
-                    device="cuda",
-                    compute_type="int8",
-                )
-                self._loaded = True
-                self.compute_type = "int8"
-                logger.info(f"Whisper loaded: {self.model_name} on CUDA (int8)")
-                return
-            except Exception as e:
-                logger.warning(f"Whisper CUDA failed ({e}), falling back to CPU...")
-                self._load_error = str(e)
+            # We try float32 first because it's the most stable on 10-series cards.
+            # int8 can be faster but often causes silent segfaults on older drivers/hardware.
+            for compute_type in ["float32", "int8"]:
+                try:
+                    from faster_whisper import WhisperModel
+                    logger.debug(f"Attempting CUDA load with compute_type={compute_type}...")
+                    self.model = WhisperModel(
+                        self.model_name,
+                        device="cuda",
+                        compute_type=compute_type,
+                    )
+                    self._loaded = True
+                    self.compute_type = compute_type
+                    logger.info(f"Whisper loaded: {self.model_name} on CUDA ({compute_type})")
+                    return
+                except Exception as e:
+                    logger.warning(f"Whisper CUDA {compute_type} failed: {e}")
+            
+            self._load_error = "All CUDA compute types failed"
 
-        # Try CUDA int8 as intermediate step
-        if self.device == "cuda":
-            try:
-                from faster_whisper import WhisperModel
-                self.model = WhisperModel(
-                    self.model_name,
-                    device="cuda",
-                    compute_type="int8",
-                )
-                self._loaded = True
-                self.compute_type = "int8"
-                logger.info(f"Whisper loaded: {self.model_name} on CUDA (int8)")
-                return
-            except Exception:
-                logger.info("CUDA int8 also failed, falling back to CPU...")
-
-        # Fallback: CPU with int8
+        # Fallback: CPU with int8 (most stable and efficient for CPU)
         try:
             from faster_whisper import WhisperModel
             self.model = WhisperModel(
