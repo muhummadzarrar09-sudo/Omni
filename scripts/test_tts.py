@@ -4,7 +4,7 @@ OMNI TTS Test Script
 ====================
 Tests the TTS engine end-to-end — all three tiers.
 
-Usage:
+Usage (run from project root):
     python scripts/test_tts.py                    # Test all engines
     python scripts/test_tts.py --kokoro           # Test Kokoro only
     python scripts/test_tts.py --sapi             # Test SAPI only
@@ -23,8 +23,10 @@ import time
 import argparse
 from pathlib import Path
 
-# Add omni/ to path for imports (after Path is defined)
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "omni"))
+# ── Fix: Add project root (omni/) to path, NOT omni/omni ──────────────────────
+# Before: parent.parent / "omni"  →  omni/omni  ❌
+# After:  parent.parent           →  omni/      ✅
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 
 def _color(code: str) -> str:
@@ -139,8 +141,8 @@ def test_kokoro_speak(tts: "KokoroTTS", text: str = "Hello! OMNI text to speech 
     start_time = time.time()
     tts.speak(text, callback=on_complete)
 
-    # Wait for completion (up to 30s)
-    timeout = 30
+    # Wait for completion (up to 60s — Kokoro can be slow on CPU)
+    timeout = 60
     while not completed and (time.time() - start_time) < timeout:
         time.sleep(0.1)
 
@@ -193,9 +195,9 @@ def test_voice_preview() -> bool:
     log(f"{BOLD}Test 4: Voice Preview (4 recommended voices){RESET}", CYAN)
     print("-" * 40)
     print(f"  Each voice will speak a test sentence.")
-    print(f"  Press Enter to hear the next voice, or Q to skip.\n")
+    print(f"  Press Enter to hear the next voice, or S to skip.\n")
 
-    from omni.tts.kokoro_tts import KokoroTTS, VOICE_CATALOG, VOICE_DEFAULTS
+    from omni.tts.kokoro_tts import KokoroTTS, VOICE_CATALOG
 
     tts = KokoroTTS()
     if tts.engine_type != 'kokoro-onnx':
@@ -227,7 +229,7 @@ def test_voice_preview() -> bool:
         timeout = 20
         start = time.time()
         while not completed[0] and (time.time() - start) < timeout:
-            time.time()
+            time.sleep(0.1)
         if completed[0]:
             ok(f"{voice_id} — completed")
             results.append((voice_id, True))
@@ -273,7 +275,7 @@ def test_edge_cases() -> bool:
     tts.stop()
     completed = [False]
     tts.speak(long_text, callback=lambda: completed.__setitem__(0, True))
-    timeout = 30
+    timeout = 60
     start = time.time()
     while not completed[0] and (time.time() - start) < timeout:
         time.sleep(0.1)

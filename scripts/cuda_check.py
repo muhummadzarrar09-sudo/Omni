@@ -2,7 +2,7 @@
 OMNI CUDA Diagnostic — Run this on your Windows PC
 Paste the output into the chat if something fails.
 """
-import sys, subprocess
+import sys, subprocess, os
 
 print("=" * 60)
 print("  OMNI CUDA + VAD DIAGNOSTIC")
@@ -12,7 +12,6 @@ print(f"Executable: {sys.executable}\n")
 
 # 1. Visual C++ Redistributable check
 print("--- Visual C++ Redistributable ---")
-import os
 vc_paths = [
     r"C:\Windows\System32\vcruntime140.dll",
     r"C:\Windows\System32\vcruntime140_1.dll",
@@ -96,25 +95,35 @@ except ImportError:
 except Exception as e:
     print(f"  Error: {e}")
 
-# 5. TTS
+# 5. TTS — Kokoro-ONNX (FIX: check the correct package name)
 print("\n--- Kokoro TTS ---")
 try:
-    from kokoro import Kokoro
-    print("  kokoro package: ✓ installed")
+    # FIX: The correct package is 'kokoro-onnx' which imports as 'kokoro_onnx'
+    from kokoro_onnx import Kokoro
+    print("  kokoro-onnx: ✓ installed (correct package)")
     try:
-        k = Kokoro(device="cpu")
-        print("  Kokoro CPU: ✓ loaded")
-        del k
-    except Exception as e:
-        print(f"  Kokoro CPU error: {e}")
-    try:
-        k = Kokoro(device="cuda")
-        print("  Kokoro CUDA: ✓ loaded")
-        del k
-    except Exception as e:
-        print(f"  Kokoro CUDA error: {e}")
+        # Check model files exist
+        from omni.tts.kokoro_tts import KokoroTTS
+        tts = KokoroTTS()
+        model_ok, voices_ok = tts.model_files_present
+        engine = tts.engine_type
+        print(f"  Engine type: {engine}")
+        print(f"  Model file:  {'✓ present' if model_ok else '✗ missing'}")
+        print(f"  Voices file: {'✓ present' if voices_ok else '✗ missing'}")
+        if engine == 'kokoro-onnx':
+            print(f"  ✓ Kokoro-ONNX is ACTIVE — high quality TTS")
+        elif engine == 'pyttsx3':
+            print(f"  ⚠ Kokoro-ONNX inactive — Windows SAPI fallback active")
+            print(f"  → Download model files: python scripts/download_models.py --kokoro")
+        else:
+            print(f"  ⚠ No TTS engine active")
+    except ImportError:
+        print("  ⚠ Could not import KokoroTTS (omni package not in path)")
+        print("  → Run this script from the project root: python scripts/cuda_check.py")
 except ImportError:
-    print("  kokoro NOT installed")
+    print("  kokoro-onnx: ✗ NOT installed")
+    print("  → Run: pip install kokoro-onnx")
+    print("  → Then: python scripts/download_models.py --kokoro")
 except Exception as e:
     print(f"  Error: {e}")
 
@@ -128,7 +137,15 @@ try:
         model='silero_vad',
         trust_repo=True
     )
-    print("  Silero VAD: ✓ loaded via torch.hub")
+    # Check if torchaudio is available (for best VAD accuracy)
+    try:
+        import torchaudio
+        print(f"  Silero VAD: ✓ loaded via torch.hub")
+        print(f"  Torchaudio: ✓ {torchaudio.__version__} — VAD accuracy is OPTIMAL")
+    except ImportError:
+        print(f"  Silero VAD: ✓ loaded via torch.hub")
+        print(f"  Torchaudio: ✗ not installed — VAD runs on CPU (acceptable)")
+        print(f"  → Install torchaudio for optimal VAD: pip install torchaudio --index-url https://download.pytorch.org/whl/cu121")
 except Exception as e:
     print(f"  Silero VAD: ✗ failed — {e}")
     print("  → Energy-based fallback will be used")
@@ -138,17 +155,25 @@ print("\n--- PyAudio ---")
 try:
     import pyaudio
     p = pyaudio.PyAudio()
-    print(f"  PyAudio: ✓ (version {p.get_version()})")
+    # FIX: get_version() doesn't exist in PyAudio 0.2.14 — just print 'OK'
+    print(f"  PyAudio: ✓ (installed, version unknown but working)")
     # List input devices
+    mic_count = 0
     for i in range(p.get_device_count()):
         dev = p.get_device_info_by_index(i)
         if dev['maxInputChannels'] > 0:
             print(f"  MIC {i}: {dev['name']} ({dev['defaultSampleRate']} Hz)")
+            mic_count += 1
+    if mic_count == 0:
+        print(f"  ⚠ No input devices found — check Windows Sound settings")
+    print(f"  Total input devices: {mic_count}")
     p.terminate()
 except ImportError:
     print("  ✗ PyAudio NOT installed")
+    print("  → Run: pip install PyAudio")
 except Exception as e:
     print(f"  PyAudio error: {e}")
+    print(f"  (This is non-fatal — voice capture may still work)")
 
 print("\n" + "=" * 60)
 print("  RECOMMENDATIONS:")
@@ -172,8 +197,13 @@ If Whisper still fails on CUDA:
   → CPU works fine — just slightly slower.
   → For GTX 1050 Ti: CPU+int8 is still very usable.
 
+If Kokoro TTS is not active:
+  → Run: python scripts/download_models.py --kokoro
+  → This downloads ~82MB of TTS model files.
+
 For BEST performance on your GTX 1050 Ti:
   → Install VC++ Redistributable (link above)
-  → Then: pip install torch --index-url https://download.pytorch.org/whl/cu121
+  → Then: pip install torchaudio --index-url https://download.pytorch.org/whl/cu121
+  → Then: python scripts/download_models.py --kokoro
   → Then re-run: python omni.py
 """)

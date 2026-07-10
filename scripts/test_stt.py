@@ -4,7 +4,7 @@ OMNI STT Test Script
 ====================
 Tests the complete voice pipeline end-to-end.
 
-Usage:
+Usage (run from project root):
     python scripts/test_stt.py                 # Run all tests
     python scripts/test_stt.py --mic           # Test microphone detection
     python scripts/test_stt.py --vad           # Test VAD loading
@@ -27,8 +27,10 @@ import argparse
 from pathlib import Path
 import numpy as np  # Used across all tests
 
-# Add omni/ to path for imports
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "omni"))
+# ── Fix: Add project root (omni/) to path, NOT omni/omni ──────────────────────
+# Before: parent.parent / "omni"  →  omni/omni  ❌
+# After:  parent.parent           →  omni/      ✅
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from loguru import logger
 
 # Remove default loguru handler to avoid duplicate output
@@ -248,26 +250,29 @@ def test_audio_quality_detection() -> bool:
         print("\n  Testing VADAudioQuality assessment on synthetic audio...")
 
         test_cases = [
-            # (name, audio, is_too_short, is_too_quiet, should_transcribe)
-            ("normal_speech", lambda: np.random.randn(16000) * 0.3, False, False, True),
-            ("very_short", lambda: np.random.randn(800) * 0.3, True, False, False),  # 50ms
-            ("very_quiet", lambda: np.random.randn(16000) * 0.005, False, True, False),
-            ("silence", lambda: np.random.randn(16000) * 0.001, False, True, False),
-            ("noise_only", lambda: np.random.randn(16000) * 0.002, False, True, False),
+            # (name, generator, expected_should_transcribe)
+            ("normal_speech", lambda: np.random.randn(16000) * 0.3, True),
+            ("very_short",    lambda: np.random.randn(800) * 0.3, False),   # 50ms
+            ("very_quiet",    lambda: np.random.randn(16000) * 0.005, False),
+            ("silence",       lambda: np.random.randn(16000) * 0.001, False),
+            ("noise_only",    lambda: np.random.randn(16000) * 0.002, False),
         ]
 
-        import numpy as np
-
         all_passed = True
-        for name, generator, expected_short, expected_quiet, expected_transcribe in test_cases:
+        for name, generator, expected_transcribe in test_cases:
             audio = generator()
+            duration_s = len(audio) / 16000
+            max_amp = float(np.abs(audio).max())
+            rms = float(np.sqrt(np.mean(audio ** 2)))
+            silence_ratio = float((np.abs(audio) < 0.005).mean())
+
             q = VADAudioQuality(
-                duration_s=len(audio) / 16000,
-                max_amplitude=float(np.abs(audio).max()),
-                avg_rms=float(np.sqrt(np.mean(audio ** 2))),
-                silence_ratio=float((np.abs(audio) < 0.005).mean()),
-                is_too_short=expected_short,
-                is_too_quiet=expected_quiet,
+                duration_s=duration_s,
+                max_amplitude=max_amp,
+                avg_rms=rms,
+                silence_ratio=silence_ratio,
+                is_too_short=(duration_s < 0.3),
+                is_too_quiet=(max_amp < 0.01),
                 is_noise_only=False,
             )
             result = q.should_transcribe()
@@ -329,7 +334,6 @@ def test_record_and_transcribe(duration_s: float = 3.0) -> bool:
         print(f"\n  Captured: {duration:.2f}s of audio ({len(audio)} samples)")
 
         from omni.voice.vad import VADAudioQuality
-        import numpy as np
         q = VADAudioQuality(
             duration_s=duration,
             max_amplitude=float(np.abs(audio).max()),
