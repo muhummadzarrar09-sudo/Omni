@@ -8,36 +8,27 @@
 PyQt5==5.15.10
 
 # Voice - Speech to Text
-# NOTE: faster-whisper includes torch as a dependency.
-# Silero VAD requires torchaudio (same torch build as torch):
-#   pip install torchaudio --index-url https://download.pytorch.org/whl/cu121
-# If VAD fails, the app falls back to energy-based speech detection automatically.
 faster-whisper==1.0.3
+sentence-transformers>=2.2.2
 
-# Audio capture (must be installed via wheel for Windows)
+# Audio capture
 PyAudio==0.2.14
 numpy>=1.24.0
 
-# Text to Speech - LOCAL (no cloud, no API keys)
-# Kokoro-ONNX: pip install kokoro-onnx
-#   Then download model files from:
-#   https://github.com/nazdridoy/kokoro-tts/releases/tag/v1.0.0
-#   → kokoro-v1.0.onnx  (place in omni/models/)
-#   → voices-v1.0.bin   (place in omni/models/)
-# Fallback: Windows SAPI (pyttsx3) — works automatically if Kokoro unavailable
+# Text to Speech - LOCAL
 kokoro-onnx>=0.1.0
 pyttsx3>=2.90
 
-# Audio playback for TTS (sounddevice with simpleaudio fallback)
+# Audio playback
 sounddevice>=0.4.6
 simpleaudio>=0.2.4
 
-# Windows automation (pyautogui + subprocess, NO uiauto needed)
+# Windows automation
 pyautogui>=0.9.54
 pyperclip>=1.8.2
 comtypes>=1.1.14
 
-# Browser Control (CDP - Chrome DevTools Protocol)
+# Browser Control (CDP)
 websocket-client>=1.6.0
 
 # System utilities

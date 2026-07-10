@@ -14,9 +14,21 @@ Priority order (first match wins):
 """
 
 import re
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Optional
 from dataclasses import dataclass
 from loguru import logger
+from omni.core.intent_mapper import IntentMapper
+
+
+@dataclass
+class ParsedCommand:
+    """A parsed voice command"""
+    action: str
+    entities: Dict[str, str]
+    original: str
+    confidence: float
+    patterns_matched: List[str]
+
 
 
 @dataclass
@@ -83,8 +95,10 @@ class CommandRegistry:
     
     def __init__(self):
         self._patterns: Dict[str, Dict[str, List[Tuple[str, str]]]] = {}
+        self.intent_mapper = IntentMapper()
         self._register_all_patterns()
-        logger.info("CommandRegistry initialized with all phases")
+        logger.info("CommandRegistry initialized with Semantic Intent Mapping")
+
     
     def _register_all_patterns(self) -> None:
         """Register patterns for MVP + ALPHA + BETA.
@@ -347,7 +361,7 @@ class CommandRegistry:
         })
     
     def register_patterns(self, category: str, patterns: Dict[str, List[Tuple[str, str]]]) -> None:
-        """Register command patterns for a category"""
+        """Register command patterns and their semantic intents for a category"""
         if category not in self._patterns:
             self._patterns[category] = {}
         
@@ -355,12 +369,60 @@ class CommandRegistry:
             if action not in self._patterns[category]:
                 self._patterns[category][action] = []
             self._patterns[category][action].extend(pattern_list)
+            
+            # Register semantic intents using the patterns as examples
+            # This allows the AI to understand the "vibe" of the command
+            examples = [p[0].replace(r"\s+", " ").replace(r"\(?:.+?\)", "").strip() for p, _ in pattern_list]
+            self.intent_mapper.register_command(f"{category}_{action}", examples)
+
     
     def parse(self, text: str) -> ParsedCommand:
-        """Parse voice input into a structured command."""
+        """Parse voice input into a structured command using Semantic Mapping + Regex."""
         text = text.lower().strip()
         
-        # Try each category and action in registration order
+        # ─── Step 1: Semantic Intent Mapping (The Brain) ─────────────────────
+        # This allows OMNI to understand the MEANING of the request
+        best_intent, score = self.intent_mapper.match(text)
+        if best_intent:
+            logger.info(f"Semantic match found: '{text}' → {best_intent} (conf: {score:.2f})")
+            
+            # Split intent into category and action
+            try:
+                category, action = best_intent.split("_", 1)
+                
+                # Try to extract entities using the same regex patterns
+                # since the intent match tells us WHICH action to use
+                entities = {}
+                for pattern, entity_name in self._patterns[category][action]:
+                    match = re.search(pattern, text, re.IGNORECASE)
+                    if match:
+                        entity_data = match.groupdict()
+                        entities.update({k: v for k, v in entity_data.items() if v is not None})
+                        break
+                
+                # URL shortcut resolution
+                if "site" in entities:
+                    site = entities["site"].lower()
+                    if site in self.URL_SHORTCUTS:
+                        entities["url"] = self.URL_SHORTCUTS[site]
+                    elif "." in site:
+                        entities["url"] = f"https://{site}"
+                    else:
+                        entities["url"] = f"https://{site}.com"
+                    del entities["site"]
+
+                return ParsedCommand(
+                    action=best_intent,
+                    entities=entities,
+                    original=text,
+                    confidence=score,
+                    patterns_matched=[f"semantic_{best_intent}"]
+                )
+            except ValueError:
+                pass
+
+        # ─── Step 2: Regex Fallback (The Safety Net) ───────────────────────
+        # If semantic matching fails or is low confidence, use explicit patterns
         for category, actions in self._patterns.items():
             for action, pattern_list in actions.items():
                 for pattern, entity_name in pattern_list:
@@ -377,7 +439,6 @@ class CommandRegistry:
                             elif "." in site:
                                 entities["url"] = f"https://{site}"
                             else:
-                                # No TLD and not in shortcuts - use .com as fallback
                                 entities["url"] = f"https://{site}.com"
                             del entities["site"]
                         

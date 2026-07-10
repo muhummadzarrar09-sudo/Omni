@@ -632,7 +632,7 @@ class VoicePipeline:
             avg_rms=rms,
             silence_ratio=silence_ratio,
             is_too_short=(duration_s < DEFAULT_MIN_AUDIO_S),
-            is_too_quiet=(max_amp < 0.01),  # Max amplitude less than 1%
+            is_too_quiet=(rms < 0.01),  # RMS amplitude less than 1%
             is_noise_only=(silence_ratio > 0.95 and max_amp < 0.05),
         )
 
@@ -759,25 +759,19 @@ class WhisperSTT:
         if self.device == "cuda":
             try:
                 from faster_whisper import WhisperModel
+                # GTX 1050 Ti Optimization: Force int8 on CUDA to avoid float16 crashes
+                # and reduce VRAM usage while maintaining speed.
                 self.model = WhisperModel(
                     self.model_name,
                     device="cuda",
-                    compute_type="float16",
-                    download_progress_callback=self._make_progress_callback(),
+                    compute_type="int8",
                 )
                 self._loaded = True
-                self.compute_type = "float16"
-                logger.info(f"Whisper loaded: {self.model_name} on CUDA (float16)")
+                self.compute_type = "int8"
+                logger.info(f"Whisper loaded: {self.model_name} on CUDA (int8)")
                 return
             except Exception as e:
-                err_str = str(e).lower()
-                if "float16" in err_str or "compute" in err_str or "not supported" in err_str:
-                    logger.warning(
-                        f"Whisper CUDA float16 not supported on this GPU "
-                        f"(GTX 1050 Ti has no FP16 tensor ops). Falling back to int8."
-                    )
-                else:
-                    logger.warning(f"Whisper CUDA failed ({e}), falling back to CPU...")
+                logger.warning(f"Whisper CUDA failed ({e}), falling back to CPU...")
                 self._load_error = str(e)
 
         # Try CUDA int8 as intermediate step
@@ -788,7 +782,6 @@ class WhisperSTT:
                     self.model_name,
                     device="cuda",
                     compute_type="int8",
-                    download_progress_callback=self._make_progress_callback(),
                 )
                 self._loaded = True
                 self.compute_type = "int8"
@@ -804,7 +797,6 @@ class WhisperSTT:
                 self.model_name,
                 device="cpu",
                 compute_type="int8",
-                download_progress_callback=self._make_progress_callback(),
             )
             self._loaded = True
             self.compute_type = "int8"

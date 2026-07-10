@@ -14,7 +14,7 @@ from PyQt5.QtCore import QTimer
 from loguru import logger
 
 # OMNI Core
-from omni.core import EventBus, ConfigManager, PluginManager, CommandRegistry
+from omni.core import EventBus, ConfigManager, PluginManager, CommandRegistry, OmniReasoner
 from omni.core.event_bus import EventType
 from omni.core.command_registry import ParsedCommand
 
@@ -31,7 +31,7 @@ from omni.tts import KokoroTTS
 from omni.plugins import get_all_plugins
 
 # OMNI UI
-from omni.ui import TrayIcon
+from omni.ui import TrayIcon, VoiceOrb
 from omni.utils import setup_logger, MetricsCollector
 
 
@@ -66,6 +66,10 @@ class OMNIApp:
         self._init_command_system()
         self._init_tts()
         self._setup_ui()
+        
+        # Visual Core: The Voice Orb
+        self.orb = VoiceOrb()
+        self.orb.show()
         
         logger.info("=" * 50)
         logger.info("OMNI Initialized - ALL PHASES ACTIVE")
@@ -146,10 +150,17 @@ class OMNIApp:
         # Plugin manager
         self.plugin_manager = PluginManager()
         
+        # Reasoning Engine
+        self.reasoner = OmniReasoner(
+            plugin_manager=self.plugin_manager,
+            tts=self.tts
+        )
+        
         # Register all plugins
         plugins = get_all_plugins()
         for plugin in plugins:
             self.plugin_manager.register(plugin)
+
         
         logger.info(f"Registered {len(plugins)} plugins: {[p.metadata.name for p in plugins]}")
     
@@ -189,12 +200,16 @@ class OMNIApp:
         if self.is_speaking and self.tts:
             self.tts.stop()
 
+        # Visual feedback
+        if hasattr(self, 'orb'):
+            self.orb.set_state("listening")
+
         # Start voice capture
         self.voice_pipeline.start()
         self.event_bus.emit(EventType.STATUS_UPDATE, "recording", "OMNI")
     
     def _on_ptt_released(self, event) -> None:
-        """Handle PTT key released - transcribe"""
+        """Handle PTT released - transcribe"""
         logger.debug("PTT released")
 
         # Mark as processing so press handler won't re-trigger
@@ -252,6 +267,17 @@ class OMNIApp:
 
     def _on_voice_status(self, status: str) -> None:
         """Handle voice pipeline status updates"""
+        # Update visual orb
+        if hasattr(self, 'orb'):
+            # Map pipeline status to orb state
+            state_map = {
+                "recording": "listening",
+                "processing": "thinking",
+                "idle": "idle",
+                "error": "idle"
+            }
+            self.orb.set_state(state_map.get(status, "idle"))
+            
         self.event_bus.emit(EventType.STATUS_UPDATE, status, "VoicePipeline")
     
     def _on_status_update(self, event) -> None:
@@ -265,6 +291,10 @@ class OMNIApp:
         """Parse and execute voice command"""
         logger.info(f"Processing: '{text}'")
         self._last_command = text
+
+        # Visual feedback
+        if hasattr(self, 'orb'):
+            self.orb.set_state("thinking")
 
         # Parse command
         parsed = self.command_registry.parse(text)
@@ -300,61 +330,39 @@ class OMNIApp:
             asyncio.create_task(self._execute_command(parsed, context_dict))
     
     async def _execute_command(self, parsed: ParsedCommand, context_extra: dict = None) -> None:
-        """Execute command via plugin system"""
+        """Execute command via the Reasoning Loop for autonomous goal achievement."""
         context_extra = context_extra or {}
         try:
-            # Get plugin for action
-            plugin = self.plugin_manager.get_plugin(parsed.action)
-
-            if not plugin:
-                self._speak(f"Command not available: {parsed.action}")
-                self.event_bus.emit(EventType.STATUS_UPDATE, "error", "OMNI")
-                return
-
-            # Execute
-            self.event_bus.emit(EventType.COMMAND_EXECUTING, parsed.action, "OMNI")
-
+            # Build execution context
             plugin_context = {
                 "original": parsed.original,
                 "plugin_count": len(self.plugin_manager.get_all_plugins()),
                 "last_command": context_extra.get("last_command"),
             }
-            result = await plugin.execute(parsed.entities, plugin_context)
+
+            # Use the Reasoner instead of calling plugins directly
+            self.event_bus.emit(EventType.COMMAND_EXECUTING, parsed.action, "OMNI")
             
-            # Handle result
+            result = await self.reasoner.solve(parsed, plugin_context)
+            
+            # Handle reasoning result
             if result.success:
-                self.event_bus.emit(EventType.COMMAND_COMPLETE, result.data, "OMNI")
-
-                # Handle special result actions
-                data = result.data or {}
-
-                if data.get("action") == "open_settings":
+                self.event_bus.emit(EventType.COMMAND_COMPLETE, result.final_message, "OMNI")
+                
+                # Handle special results (settings, etc)
+                if parsed.action == "omni_settings":
                     self.tray.open_settings()
-                elif data.get("action") == "repeat_last":
-                    # Re-execute the last command directly (no re-parsing = no nested task)
-                    last = data.get("command")
-                    if last:
-                        logger.info(f"Repeating last command: '{last}'")
-                        self._speak(f"Repeating: '{last}'")
-                        parsed = self.command_registry.parse(last)
-                        if parsed.action != "unknown":
-                            await self._execute_command(parsed, {"last_command": self._last_command})
-                        return  # Don't emit idle status twice
-                elif data.get("macro"):
-                    # Handle macro execution
-                    await self._execute_macro(data["macro"])
-                elif result.message:
-                    # Normal response — speak it
-                    self._speak(result.message)
+                
+                self._speak(result.final_message)
             else:
-                self.event_bus.emit(EventType.COMMAND_FAILED, result.error, "OMNI")
-                self._speak(result.message)
+                self.event_bus.emit(EventType.COMMAND_FAILED, result.final_message, "OMNI")
+                self._speak(result.final_message)
             
             self.event_bus.emit(EventType.STATUS_UPDATE, "idle", "OMNI")
             
         except Exception as e:
-            logger.error(f"Command execution error: {e}")
-            self._speak("Command execution failed")
+            logger.error(f"Reasoning loop error: {e}")
+            self._speak("I encountered a problem while thinking through the task.")
             self.event_bus.emit(EventType.COMMAND_FAILED, str(e), "OMNI")
             self.event_bus.emit(EventType.STATUS_UPDATE, "error", "OMNI")
     
@@ -372,6 +380,10 @@ class OMNIApp:
             return
         
         try:
+            # Visual feedback
+            if hasattr(self, 'orb'):
+                self.orb.set_state("speaking")
+
             if self.is_speaking and self.tts:
                 self.tts.stop()
             
@@ -382,6 +394,9 @@ class OMNIApp:
                 self.is_speaking = False
                 self.event_bus.emit(EventType.TTS_END, source="OMNI")
                 self.event_bus.emit(EventType.STATUS_UPDATE, "idle", "OMNI")
+                # Return orb to idle
+                if hasattr(self, 'orb'):
+                    self.orb.set_state("idle")
             
             self.tts.speak(text, callback=on_complete)
         except Exception as e:
@@ -389,6 +404,8 @@ class OMNIApp:
             logger.warning(f"TTS speak error: {e}")
             self.is_speaking = False
             self.event_bus.emit(EventType.STATUS_UPDATE, "idle", "OMNI")
+            if hasattr(self, 'orb'):
+                self.orb.set_state("idle")
     
     # ===== CONTROLS =====
     

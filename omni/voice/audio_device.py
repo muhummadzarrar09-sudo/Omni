@@ -147,8 +147,6 @@ class AudioDeviceManager:
         try:
             pa = self._pyaudio.PyAudio()
             device_count = pa.get_device_count()
-            default_host = pa.get_default_host_api()
-            default_input = pa.get_default_input_device_info()
 
             # Get default device index safely
             try:
@@ -185,8 +183,6 @@ class AudioDeviceManager:
 
             if input_devices:
                 logger.info(f"AudioDeviceManager: found {len(input_devices)} input device(s)")
-                for d in input_devices:
-                    logger.debug(f"  [{d.index}] {d.name} {'(default)' if d.is_default else ''}")
             else:
                 self._status.last_error = "No microphone input devices found"
                 logger.warning("AudioDeviceManager: no input devices found")

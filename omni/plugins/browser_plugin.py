@@ -84,6 +84,39 @@ class BrowserPlugin(CommandPlugin):
             logger.error(f"Failed to open URL: {e}")
             return CommandResult.error(f"Could not open {url}")
 
+    async def verify_action(self, entities: Dict[str, Any], context: Dict[str, Any]) -> bool:
+        """
+        The Observation Phase: Verify if the action actually achieved the goal.
+        """
+        try:
+            if not await self._connect():
+                return False # Cannot verify if not connected
+            
+            # Verification logic based on the entity type
+            if "url" in entities:
+                target_url = entities["url"].strip().lower()
+                # Get the actual current URL from Chrome
+                result = await self._send_cdp("Runtime.evaluate", {"expression": "window.location.href"})
+                current_url = result.get("result", {}).get("value", {}).get("value", "")
+                
+                if target_url in current_url.lower():
+                    return True
+            
+            if "element" in entities:
+                element = entities["element"].strip()
+                # Check if element exists in DOM
+                result = await self._send_cdp(
+                    "Runtime.evaluate",
+                    {"expression": f"!!document.querySelector('{element}')"}
+                )
+                return result.get("result", {}).get("value", {}).get("value", False)
+
+            # If we don't know how to verify, we assume the plugin result was enough
+            return True
+        except Exception as e:
+            logger.warning(f"Verification failed: {e}")
+            return False
+
     async def execute(
         self, entities: Dict[str, Any], context: Dict[str, Any]
     ) -> CommandResult:

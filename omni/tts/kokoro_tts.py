@@ -386,7 +386,6 @@ class KokoroTTS:
             self._kokoro = Kokoro(
                 str(self._model_path),
                 str(self._voices_path),
-                providers=providers,
             )
             self._engine_type = "kokoro-onnx"
             self._engine_info = (
