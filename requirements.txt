@@ -1,60 +1,72 @@
-# OMNI - Requirements (Winning Edition) - FIXED for Python 3.12
-# Python 3.10+ | Windows 10/11 optimized for GTX 1050 Ti, but cross-platform friendly
-# FIX: numpy<2.0 caused conflict with kokoro-onnx>=0.4.0 which needs numpy>=2.0.2
-# Now allows numpy 2.x and uses onnxruntime>=1.18 for numpy2 support
+# OMNI V2 - Requirements - JARVIS KILLER - Phase 1 Complete
+# Python 3.10+ | GTX 1050 Ti 4GB Optimized | Fixed for Python 3.12 + numpy 2.x
+# Phase 1: Clean + Multi-Agent Skeleton + 100+ Tools Routing + Chain Commands
 
-# IMPORTANT Windows first-time setup (Admin PowerShell):
-#   Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
-#   pip install --upgrade pip wheel setuptools
-
-# --- CORE (MUST HAVE - install these first if full install fails) ---
-# These 2 are enough for CLI mode: python omni.py --test
+# --- CORE (Must have, makes CLI work) ---
 loguru>=0.7.0
 numpy>=1.26.0
 psutil>=5.9.0
 packaging>=24.0
 
-# --- UI ---
+# --- UI - Cinematic HUD ---
 PyQt5>=5.15.10
 PyQt5-sip>=12.15
 PyQt5-Qt5>=5.15.2
+PyQtWebEngine>=5.15.6  # For Three.js orb
 
-# --- Voice - Speech to Text ---
-# faster-whisper will pull ctranslate2, huggingface-hub, tokenizers, av, tqdm
+# --- VOICE - STT + VAD + Wake Word ---
 faster-whisper>=1.0.3
 sentence-transformers>=2.2.2
-
-# Torch stack - CPU by default, CUDA auto-detected if installed
-# NOTE: For GTX 1050 Ti CUDA, you may later run:
-# pip install torch torchaudio --index-url https://download.pytorch.org/whl/cu121
 torch>=2.0.0
 torchaudio>=2.0.0 ; platform_system == "Windows"
-
-# ONNX Runtime - MUST be >=1.18.0 for numpy 2.x support
 onnxruntime>=1.18.0
-
-# --- Audio ---
 PyAudio>=0.2.13
 sounddevice>=0.4.6
-# simpleaudio often fails on Python 3.12, optional
-simpleaudio>=0.2.14 ; python_version < "3.12"
+openwakeword>=0.6.0  # Wake word "Hey OMNI" offline
+pvporcupine>=3.0.0   # Alternative wake word
 
-# --- TTS - LOCAL FIRST ---
-# kokoro-onnx 0.4.0+ needs numpy>=2.0.2, now allowed
+# --- TTS - Local First Cinematic ---
 kokoro-onnx>=0.4.0
 pyttsx3>=2.90
 espeakng-loader>=0.2.4 ; platform_system == "Windows"
 
-# --- Automation ---
+# --- MULTI-AGENT + MEMORY (V2 New) ---
+chromadb>=0.4.0  # Vector store for persistent memory
+ollama>=0.3.0  # Local LLM llama3.1
+langchain>=0.2.0  # Agent framework
+langchain-community>=0.2.0
+mem0ai>=0.1.0  # Memory extraction
+
+# --- VISION - Screen + Camera ---
+mss>=9.0.0  # Fast screen capture
+opencv-python>=4.8.0
+Pillow>=10.0.0
+pyscreeze>=0.1.30
+easyocr>=1.7.0  # OCR for read_text_on_screen
+
+# --- SECURITY - Biometric ---
+# face_recognition needs dlib - optional for Phase 2
+# face-recognition>=1.3.0  # Uncomment when dlib installed
+# deepface>=0.0.90  # Alternative
+
+# --- AUTOMATION - 100+ Tools ---
 pyautogui>=0.9.54
 pyperclip>=1.8.2
 comtypes>=1.1.14 ; platform_system == "Windows"
-
-# --- Browser Control (CDP) ---
+keyboard>=0.13.5
 websocket-client>=1.6.0
 websockets>=12.0
 
-# --- System ---
-keyboard>=0.13.5
+# --- SYSTEM + LOGGING ---
 colorlog>=6.9.0
 coloredlogs>=15.0
+tqdm>=4.60.0
+requests>=2.31.0
+python-dotenv>=1.0.0
+pydantic>=2.0.0
+
+# --- Original V1 Deps Kept ---
+faster-whisper>=1.0.3
+sentence-transformers>=2.2.2
+# simpleaudio optional for <3.12
+simpleaudio>=0.2.14 ; python_version < "3.12"
