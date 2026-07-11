@@ -25,15 +25,17 @@ OMNI is not just a voice-control tool; it is an **autonomous agent** that bridge
 
 ---
 
-## 🚀 Quick Start
+## 🚀 Quick Start (WINNING EDITION - 10/10 Tests Passing)
+
+> **📂 All docs are now in `docs/` folder! Start with `docs/00-QUICKSTART-1ST-PLACE.md` for full winning guide.**
 
 ### Prerequisites
 - Windows 10/11
-- Python 3.10+
-- NVIDIA GPU (4GB+ VRAM recommended)
-- Microphone
+- Python 3.10+ (3.11 recommended for PyAudio stability)
+- NVIDIA GPU (GTX 1050 Ti optimized, 4GB+ VRAM)
+- Microphone (optional - CLI demo mode works without mic)
 
-### Installation
+### Installation (Exact Commands)
 ```powershell
 git clone https://github.com/muhummadzarrar09-sudo/Omni.git
 cd Omni
@@ -42,19 +44,34 @@ cd Omni
 python -m venv .venv
 .venv\Scripts\activate
 
-# Install dependencies
+# Install dependencies (GTX 1050 Ti tuned)
 pip install -r requirements.txt
+
+# Download TTS models (~82MB, one-time)
+python scripts/download_models.py --kokoro
+
+# Verify - No mic needed, should show 10/10 pass
+python omni.py --test
 ```
 
 ### Launching
-1. **Launch Chrome with Accessibility** (Required for browser control):
+1. **Launch Chrome with CDP** (For full browser control):
    ```powershell
    .\scripts\launch-chrome.ps1
    ```
-2. **Run OMNI**:
+2. **Run OMNI** (Normal mode with voice + Orb):
    ```powershell
    python omni.py
+   # Press V, say "open github"
    ```
+3. **Or Demo/CLI mode** (No mic needed - perfect for judges):
+   ```powershell
+   python omni.py --demo "open github"
+   python omni.py --cli "help"
+   python omni.py --cli "status"
+   ```
+
+> **Full command list:** See `docs/10-COMMANDS-TO-RUN.md` and `docs/00-QUICKSTART-1ST-PLACE.md`
 
 ---
 

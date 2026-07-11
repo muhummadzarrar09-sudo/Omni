@@ -258,6 +258,16 @@ class AlphaPlugin(CommandPlugin):
             "find the login button"
         ]
     )
+    SUPPORTED_ACTIONS = [
+        "alpha_record",
+        "alpha_save_macro",
+        "alpha_cancel_recording",
+        "alpha_run_macro",
+        "alpha_show_hints",
+        "alpha_screen_desc",
+        "alpha_find",
+        "alpha_learn",
+    ]
     
     def __init__(self):
         super().__init__()
@@ -376,6 +386,7 @@ class ScreenDescriberPlugin(CommandPlugin):
             "where am i"
         ]
     )
+    SUPPORTED_ACTIONS = ["screen_description", "alpha_screen_desc", "accessibility_screen"]
     
     async def execute(self, entities: Dict[str, Any], context: Dict[str, Any]) -> CommandResult:
         """Describe the current screen"""
@@ -413,6 +424,7 @@ class AccessibilityPlugin(CommandPlugin):
             "audio only mode"
         ]
     )
+    SUPPORTED_ACTIONS = ["accessibility_high_contrast", "accessibility_large_text", "accessibility_audio_only", "accessibility_mode"]
     
     async def execute(self, entities: Dict[str, Any], context: Dict[str, Any]) -> CommandResult:
         """Toggle accessibility mode"""

@@ -22,18 +22,7 @@ from omni.core.intent_mapper import IntentMapper
 
 @dataclass
 class ParsedCommand:
-    """A parsed voice command"""
-    action: str
-    entities: Dict[str, str]
-    original: str
-    confidence: float
-    patterns_matched: List[str]
-
-
-
-@dataclass
-class ParsedCommand:
-    """A parsed voice command"""
+    """A parsed voice command - SINGLE canonical definition"""
     action: str
     entities: Dict[str, str]
     original: str

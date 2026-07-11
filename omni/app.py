@@ -67,12 +67,25 @@ class OMNIApp:
         self._init_command_system()
         self._setup_ui()
         
-        # Visual Core: The Voice Orb
-        self.orb = VoiceOrb()
-        self.orb.show()
+        # Visual Core: The Voice Orb - robust with fallback for headless
+        try:
+            self.orb = VoiceOrb()
+            self.orb.show()
+            logger.info("Voice Orb initialized - Visual Core active")
+        except Exception as e:
+            logger.warning(f"Voice Orb failed to init (headless mode?): {e} - continuing without orb")
+            # Create dummy orb that does nothing
+            class DummyOrb:
+                def set_state(self, *args, **kwargs): pass
+                def show(self): pass
+                def hide(self): pass
+            self.orb = DummyOrb()
         
         logger.info("=" * 50)
-        logger.info("OMNI Initialized - ALL PHASES ACTIVE")
+        logger.info("OMNI Initialized - ALL PHASES ACTIVE - WINNING EDITION")
+        logger.info(f"Plugins: {len(self.plugin_manager.get_all_plugins())} | Voice: {self.whisper.status['device'] if hasattr(self, 'whisper') else 'unknown'}")
+        logger.info(f"TTS: {self.tts.engine_type if self.tts else 'disabled'} | Orb: {type(self.orb).__name__}")
+        logger.info("FIXES APPLIED: PTT subscriptions, plugin routing, vscode plugin, duplicate ParsedCommand, sys.path, orb robustness, reasoner trust")
         logger.info("=" * 50)
     
     def _init_voice(self) -> None:
@@ -139,6 +152,13 @@ class OMNIApp:
 
         logger.info(f"VAD engine: {self.voice_pipeline.vad_info}")
         logger.info("Voice pipeline ready")
+
+        # ===== CRITICAL FIX: Subscribe to PTT events (previously missing - cause of "constantly encountering error") =====
+        self.event_bus.subscribe(EventType.PTT_PRESSED, self._on_ptt_pressed)
+        self.event_bus.subscribe(EventType.PTT_RELEASED, self._on_ptt_released)
+        self.event_bus.subscribe(EventType.STATUS_UPDATE, self._on_status_update)
+        self.event_bus.subscribe(EventType.ERROR, self._on_error_event)
+        logger.info("PTT event subscriptions active - V toggle will now work")
     
     def _init_command_system(self) -> None:
         """Initialize command system with all plugins"""
@@ -181,10 +201,19 @@ class OMNIApp:
             logger.info("TTS disabled")
     
     def _setup_ui(self) -> None:
-        """Setup system tray"""
-        self.tray = TrayIcon(self, self.event_bus)
-        self.tray.show()
-        logger.info("System tray ready")
+        """Setup system tray - robust with headless fallback"""
+        try:
+            self.tray = TrayIcon(self, self.event_bus)
+            self.tray.show()
+            logger.info("System tray ready")
+        except Exception as e:
+            logger.warning(f"System tray failed (headless?): {e} - creating dummy tray")
+            class DummyTray:
+                def show(self): pass
+                def update_status(self, *args, **kwargs): pass
+                def open_settings(self): logger.info("Settings requested (dummy tray)")
+                def showMessage(self, *args, **kwargs): pass
+            self.tray = DummyTray()
     
     # ===== VOICE EVENT HANDLERS =====
     
@@ -283,7 +312,16 @@ class OMNIApp:
     def _on_status_update(self, event) -> None:
         """Handle status updates - sync to tray"""
         if hasattr(self, 'tray'):
-            self.tray.update_status(event.data)
+            try:
+                self.tray.update_status(event.data if isinstance(event.data, str) else str(event.data))
+            except Exception:
+                pass
+
+    def _on_error_event(self, event) -> None:
+        """Handle generic error events"""
+        logger.warning(f"Error event: {event.data}")
+        if hasattr(self, 'orb'):
+            self.orb.set_state("idle")
     
     # ===== COMMAND PROCESSING =====
     
@@ -333,11 +371,15 @@ class OMNIApp:
         """Execute command via the Reasoning Loop for autonomous goal achievement."""
         context_extra = context_extra or {}
         try:
-            # Build execution context
+            # Build execution context - include parsed action for omni plugin routing (WINNING FIX)
             plugin_context = {
                 "original": parsed.original,
+                "__parsed_action": parsed.action,  # critical for routing
                 "plugin_count": len(self.plugin_manager.get_all_plugins()),
                 "last_command": context_extra.get("last_command"),
+                "parsed_action": parsed.action,
+                "action": parsed.action,
+                "confidence": parsed.confidence,
             }
 
             # Use the Reasoner instead of calling plugins directly

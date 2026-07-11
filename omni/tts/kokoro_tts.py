@@ -641,20 +641,60 @@ class KokoroTTS:
                 logger.warning(f"TTS callback error: {e}")
 
     # ── Private: Kokoro-ONNX speak ─────────────────────────────────────────
+    # WINNING FIX: handle multiple return types (audio, (audio, sr), list)
 
     def _speak_kokoro(self, text: str, callback: Optional[Callable]) -> None:
-        """Generate and play audio using Kokoro-ONNX."""
+        """Generate and play audio using Kokoro-ONNX - handles all API variants."""
         try:
-            # Validate voice is still loaded (could have been changed mid-thread)
             if self._kokoro is None:
                 self._log_silent(text, callback)
                 return
 
-            # Generate audio
-            audio = self._kokoro.generate(text, voice=self._voice, speed=self._speed)
+            # Generate - API varies across versions
+            result = self._kokoro.create(text, voice=self._voice, speed=self._speed) if hasattr(self._kokoro, 'create') else self._kokoro.generate(text, voice=self._voice, speed=self._speed)
+
+            if result is None:
+                logger.warning("Kokoro: generate() returned None")
+                self._log_silent(text, callback)
+                return
+
+            # Unwrap possible return types:
+            # - np.ndarray
+            # - tuple (audio, sr) or (audio, sr, ...)
+            # - list [audio]
+            audio = None
+            sr = 24000
+
+            if isinstance(result, tuple):
+                # (audio, sr) or (audio, ...)
+                if len(result) >= 1 and isinstance(result[0], np.ndarray):
+                    audio = result[0]
+                    if len(result) >= 2 and isinstance(result[1], int):
+                        sr = result[1]
+                elif len(result) == 2 and isinstance(result[0], (list, tuple)):
+                    # some forks return list of chunks
+                    audio = result[0]
+                    sr = result[1] if isinstance(result[1], int) else 24000
+                else:
+                    # Try first element that is ndarray
+                    for item in result:
+                        if isinstance(item, np.ndarray):
+                            audio = item
+                            break
+                    if audio is None:
+                        audio = result[0] if isinstance(result[0], np.ndarray) else np.array(result[0])
+            elif isinstance(result, list):
+                # List of audio chunks - concatenate
+                try:
+                    chunks = [np.array(c) if not isinstance(c, np.ndarray) else c for c in result]
+                    audio = np.concatenate(chunks) if chunks else None
+                except Exception:
+                    audio = result[0] if result and isinstance(result[0], np.ndarray) else None
+            else:
+                audio = result
 
             if audio is None:
-                logger.warning("Kokoro: generate() returned None")
+                logger.warning("Kokoro: could not extract audio array")
                 self._log_silent(text, callback)
                 return
 
@@ -667,25 +707,36 @@ class KokoroTTS:
                     self._log_silent(text, callback)
                     return
 
-            # Determine sample rate (kokoro-onnx outputs 24kHz by default)
-            sr = 24000
+            # Determine sample rate if audio object has sr attribute
             if hasattr(audio, 'sr'):
-                sr = int(getattr(audio, 'sr', 24000))
-            elif len(audio.shape) > 1 and audio.shape[1] > 1:
-                sr = getattr(audio, 'sampling_rate', 24000)
+                try:
+                    sr = int(getattr(audio, 'sr', sr))
+                except Exception:
+                    pass
+            elif hasattr(result, 'sample_rate'):
+                try:
+                    sr = int(result.sample_rate)
+                except Exception:
+                    pass
 
-            # Play audio
+            # Handle multi-dim audio (stereo -> mono)
+            if audio.ndim > 1:
+                try:
+                    audio = audio.mean(axis=1) if audio.shape[0] < audio.shape[1] else audio.mean(axis=0)
+                except Exception:
+                    audio = audio.flatten()
+
             success = self._audio_backend.play(audio, sr)
             if not success:
-                # Playback failed — log as fallback
                 self._log_silent(text, callback)
                 return
 
         except MemoryError:
-            logger.error("Kokoro: out of memory generating audio. Text may be too long.")
+            logger.error("Kokoro: out of memory generating audio.")
             self._log_silent(text, callback)
         except Exception as e:
             logger.error(f"Kokoro speech error: {e}")
+            import traceback; logger.debug(traceback.format_exc())
             self._log_silent(text, callback)
         finally:
             self.is_speaking = False
