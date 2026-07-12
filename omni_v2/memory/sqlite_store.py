@@ -1,4 +1,4 @@
-"""SQLite Store V2 - Phase 2 - Persistent Memory"""
+"""SQLite Store V2 - Phase 2 Hardened - Data Inside Project Root"""
 import sqlite3
 import json
 import time
@@ -11,15 +11,20 @@ except ImportError:
     import logging
     logger = logging.getLogger("SQLiteStore")
 
+try:
+    from omni_v2.core.paths import MEMORY_DB_PATH
+except ImportError:
+    MEMORY_DB_PATH = Path.home() / ".omni_v2" / "memory.db"
+
 class SQLiteMemoryStore:
-    """Persistent memory via SQLite - stores facts, preferences, interactions"""
+    """Persistent memory via SQLite - now inside project/data/ for unanimous portability"""
 
     def __init__(self, db_path: Optional[Path] = None):
-        self.db_path = db_path or (Path.home() / ".omni_v2" / "memory.db")
+        self.db_path = db_path or MEMORY_DB_PATH
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
         self.conn = None
         self._init_db()
-        logger.info(f"SQLiteMemoryStore V2 at {self.db_path}")
+        logger.info(f"SQLiteMemoryStore V2 at {self.db_path} (project data/)")
 
     def _init_db(self):
         try:
@@ -60,7 +65,6 @@ class SQLiteMemoryStore:
 
     def remember(self, key: str, value: str, category: str = "general"):
         try:
-            # Upsert
             existing = self.conn.execute("SELECT count FROM memories WHERE key = ?", (key,)).fetchone()
             if existing:
                 self.conn.execute(
@@ -79,7 +83,6 @@ class SQLiteMemoryStore:
 
     def recall(self, query: str, limit: int = 5) -> List[Dict[str, Any]]:
         try:
-            # Simple keyword search - Phase 2, Phase 3 will use vector search
             like_query = f"%{query}%"
             rows = self.conn.execute(
                 "SELECT key, value, category, count FROM memories WHERE key LIKE ? OR value LIKE ? ORDER BY updated_at DESC LIMIT ?",

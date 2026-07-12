@@ -1,4 +1,4 @@
-"""Vector Store V2 - Phase 2 - ChromaDB + Fallback"""
+"""Vector Store V2 - Phase 2 Hardened - Data Inside Project Root"""
 import json
 import time
 from pathlib import Path
@@ -10,17 +10,28 @@ except ImportError:
     import logging
     logger = logging.getLogger("VectorStore")
 
+try:
+    from omni_v2.core.paths import VECTOR_DB_PATH, VECTOR_FALLBACK_PATH
+except ImportError:
+    VECTOR_DB_PATH = Path.home() / ".omni_v2" / "chroma"
+    VECTOR_FALLBACK_PATH = Path.home() / ".omni_v2" / "vector_fallback.json"
+
 class VectorMemoryStore:
-    """Vector store for semantic memory - ChromaDB if available, JSON fallback"""
+    """Vector store for semantic memory - ChromaDB if available, now inside project/data/"""
 
     def __init__(self, persist_dir: Optional[Path] = None):
-        self.persist_dir = persist_dir or (Path.home() / ".omni_v2" / "chroma")
+        self.persist_dir = persist_dir or VECTOR_DB_PATH
         self.persist_dir.mkdir(parents=True, exist_ok=True)
         
         self.chroma_available = False
         self.collection = None
         self.fallback_memory: List[Dict[str, Any]] = []
-        self.fallback_file = self.persist_dir.parent / "vector_fallback.json"
+
+        try:
+            from omni_v2.core.paths import VECTOR_FALLBACK_PATH as FB_PATH
+            self.fallback_file = FB_PATH
+        except ImportError:
+            self.fallback_file = self.persist_dir.parent / "vector_fallback.json"
         
         self._init_chroma()
         self._load_fallback()
@@ -38,7 +49,7 @@ class VectorMemoryStore:
                 metadata={"hnsw:space": "cosine"}
             )
             self.chroma_available = True
-            logger.info(f"ChromaDB initialized at {self.persist_dir} - vector search enabled")
+            logger.info(f"ChromaDB initialized at {self.persist_dir} (project data/) - vector search enabled")
         except ImportError:
             logger.warning("ChromaDB not installed - using JSON fallback. pip install chromadb")
             self.chroma_available = False
@@ -51,7 +62,7 @@ class VectorMemoryStore:
             try:
                 with open(self.fallback_file, 'r') as f:
                     self.fallback_memory = json.load(f)
-                logger.info(f"Loaded {len(self.fallback_memory)} fallback vector memories")
+                logger.info(f"Loaded {len(self.fallback_memory)} fallback vector memories from project data/")
             except Exception as e:
                 logger.warning(f"Failed to load fallback vector memory: {e}")
                 self.fallback_memory = []
@@ -69,7 +80,6 @@ class VectorMemoryStore:
         
         if self.chroma_available and self.collection:
             try:
-                # ChromaDB needs unique id
                 doc_id = f"mem_{int(timestamp*1000)}_{hash(text) % 10000}"
                 self.collection.add(
                     documents=[text],
@@ -81,13 +91,11 @@ class VectorMemoryStore:
             except Exception as e:
                 logger.warning(f"Chroma add failed: {e}, using fallback")
 
-        # Fallback: simple list
         self.fallback_memory.append({
             "text": text,
             "metadata": metadata,
             "timestamp": timestamp
         })
-        # Keep only last 100
         if len(self.fallback_memory) > 100:
             self.fallback_memory = self.fallback_memory[-100:]
         self._save_fallback()
@@ -100,7 +108,6 @@ class VectorMemoryStore:
                     query_texts=[query],
                     n_results=n_results
                 )
-                # Chroma returns dict with documents, metadatas, distances
                 docs = results.get('documents', [[]])[0]
                 metas = results.get('metadatas', [[]])[0]
                 distances = results.get('distances', [[]])[0]
@@ -118,16 +125,13 @@ class VectorMemoryStore:
             except Exception as e:
                 logger.warning(f"Chroma search failed: {e}, using fallback")
 
-        # Fallback: keyword search
         query_lower = query.lower()
         results = []
         for mem in self.fallback_memory:
             text_lower = mem["text"].lower()
-            # Simple keyword overlap score
             if query_lower in text_lower:
                 score = 0.8
             else:
-                # Jaccard similarity of words
                 q_words = set(query_lower.split())
                 t_words = set(text_lower.split())
                 if q_words and t_words:
@@ -144,15 +148,9 @@ class VectorMemoryStore:
                     "score": score
                 })
 
-        # Sort by score descending
         results.sort(key=lambda x: x.get("score", 0), reverse=True)
         return results[:n_results]
 
     def get_recent(self, n: int = 5) -> List[Dict[str, Any]]:
-        if self.chroma_available:
-            # Chroma doesn't have easy "recent" query, use fallback list
-            pass
-
-        # Fallback: return last n from fallback_memory
         recent = sorted(self.fallback_memory, key=lambda x: x.get("timestamp", 0), reverse=True)[:n]
         return [{"text": r["text"], "metadata": r["metadata"]} for r in recent]

@@ -1,4 +1,4 @@
-"""Memory Agent V2 - Phase 2 - SQLite + ChromaDB + mem0"""
+"""Memory Agent V2 - Phase 2 Hardened - Data Inside Project Root (Unanimous)"""
 import time
 from pathlib import Path
 from typing import List, Dict, Any, Optional
@@ -10,7 +10,11 @@ except ImportError:
     import logging
     logger = logging.getLogger("MemoryV2")
 
-# Try to import new stores, fallback to old JSON if not available
+try:
+    from omni_v2.core.paths import DATA_DIR
+except ImportError:
+    DATA_DIR = Path.home() / ".omni_v2"
+
 try:
     from omni_v2.memory.sqlite_store import SQLiteMemoryStore
     from omni_v2.memory.vector_store import VectorMemoryStore
@@ -22,16 +26,14 @@ except ImportError as e:
     VectorMemoryStore = None
 
 class MemoryAgent:
-    """Memory V2 Phase 2: SQLite persistent + ChromaDB vector + 5-turn context + preferences"""
+    """Memory V2 Phase 2 Hardened: SQLite + ChromaDB inside project/data/ for unanimous portability"""
 
     def __init__(self, memory_dir: Optional[Path] = None):
-        self.memory_dir = memory_dir or (Path.home() / ".omni_v2")
+        self.memory_dir = memory_dir or DATA_DIR
         self.memory_dir.mkdir(parents=True, exist_ok=True)
 
-        # Short-term: 5-turn context
         self.context = deque(maxlen=5)
 
-        # New Phase 2 stores
         self.sqlite_store = None
         self.vector_store = None
         self.use_new_stores = False
@@ -41,18 +43,20 @@ class MemoryAgent:
                 self.sqlite_store = SQLiteMemoryStore(self.memory_dir / "memory.db")
                 self.vector_store = VectorMemoryStore(self.memory_dir / "chroma")
                 self.use_new_stores = True
-                logger.info("MemoryAgent V2 Phase 2: SQLite + ChromaDB enabled")
+                logger.info(f"MemoryAgent V2 Phase 2 Hardened: SQLite + ChromaDB in {self.memory_dir} (project data/)")
             except Exception as e:
                 logger.warning(f"Failed to init new stores: {e} - using fallback")
                 self.use_new_stores = False
 
-        # Fallback JSON
         if not self.use_new_stores:
             self.long_term_file = self.memory_dir / "memory.json"
             self.long_term_memory: Dict[str, Any] = {}
             self._load_fallback()
+        else:
+            self.long_term_file = self.memory_dir / "memory.json"
+            self.long_term_memory = {}
 
-        logger.info(f"MemoryAgent V2 Phase 2 initialized: context=5, new_stores={self.use_new_stores}")
+        logger.info(f"MemoryAgent V2 Phase 2 Hardened: context=5, new_stores={self.use_new_stores}, dir={self.memory_dir}")
 
     def _load_fallback(self):
         import json
@@ -60,7 +64,7 @@ class MemoryAgent:
             try:
                 with open(self.long_term_file, 'r') as f:
                     self.long_term_memory = json.load(f)
-                logger.info(f"Loaded {len(self.long_term_memory)} fallback memories")
+                logger.info(f"Loaded {len(self.long_term_memory)} fallback memories from project data/")
             except Exception as e:
                 logger.warning(f"Failed to load fallback memory: {e}")
                 self.long_term_memory = {}
@@ -74,14 +78,12 @@ class MemoryAgent:
             logger.error(f"Failed to save fallback memory: {e}")
 
     def remember(self, key: str, value: str):
-        # Short-term
         self.context.append({
             "key": key,
             "value": value,
             "timestamp": time.time()
         })
 
-        # Long-term new stores
         if self.use_new_stores:
             try:
                 self.sqlite_store.remember(key, value)
@@ -90,7 +92,6 @@ class MemoryAgent:
             except Exception as e:
                 logger.warning(f"Failed to remember in new stores: {e}")
         else:
-            # Fallback JSON
             self.long_term_memory[key] = {
                 "value": value,
                 "timestamp": time.time(),
@@ -98,19 +99,17 @@ class MemoryAgent:
             }
             self._save_fallback()
 
-        logger.debug(f"Memory V2 remembered: '{key}'")
+        logger.debug(f"Memory V2 remembered: '{key}' in project data/")
 
     def recall(self, query: str) -> List[str]:
         results = []
 
         if self.use_new_stores:
             try:
-                # SQLite keyword search
                 sqlite_results = self.sqlite_store.recall(query, limit=3)
                 for r in sqlite_results:
                     results.append(f"{r['key']}: {r['value']}")
 
-                # Vector semantic search
                 vector_results = self.vector_store.search(query, n_results=3)
                 for r in vector_results:
                     results.append(f"[vector] {r['text']}")
@@ -118,15 +117,11 @@ class MemoryAgent:
             except Exception as e:
                 logger.warning(f"Recall from new stores failed: {e}")
 
-        # Also search context and fallback
         query_lower = query.lower()
-
-        # Context search
         for item in self.context:
             if query_lower in item["key"].lower() or query_lower in item["value"].lower():
                 results.append(f"[context] {item['key']}: {item['value']}")
 
-        # Fallback JSON search if not using new stores
         if not self.use_new_stores:
             for k, v in self.long_term_memory.items():
                 if query_lower in k.lower() or query_lower in str(v).lower():
@@ -135,7 +130,7 @@ class MemoryAgent:
                     else:
                         results.append(f"{k}: {v}")
 
-        logger.debug(f"Memory V2 recall '{query}' -> {len(results)} results")
+        logger.debug(f"Memory V2 recall '{query}' -> {len(results)} results from project data/")
         return results[:5]
 
     def get_context(self) -> List[Dict[str, Any]]:
@@ -144,7 +139,6 @@ class MemoryAgent:
     def learn_preference(self, text: str):
         lower = text.lower()
 
-        # Learn preferences and store in SQLite preferences table if available
         if "prefer" in lower and "voice" in lower:
             if "british" in lower:
                 self.remember("tts_voice_preference", "bf_gemma")
@@ -181,7 +175,6 @@ class MemoryAgent:
                 return self.sqlite_store.get_recent_interactions(limit)
             except Exception:
                 pass
-        # Fallback: return context as recent interactions
         return [{"user": item["key"], "assistant": item["value"], "timestamp": item["timestamp"]} for item in list(self.context)[-limit:]]
 
     def clear_context(self):
@@ -189,9 +182,6 @@ class MemoryAgent:
         logger.info("Context cleared")
 
     def clear_long_term(self):
-        if self.use_new_stores:
-            # Clear SQLite would need delete, for Phase 2 we just clear fallback
-            pass
         self.long_term_memory = {}
         self._save_fallback()
         logger.info("Long-term memory cleared")

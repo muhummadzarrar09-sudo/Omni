@@ -1,2 +1,4 @@
-"""Voice V2"""
-# pvporcupine wake word + Silero + Whisper for Phase 2
+"""Voice V2 - Phase 3 - Wake Word + VAD + Whisper"""
+from .wake_word import WakeWordDetector
+
+__all__ = ['WakeWordDetector']

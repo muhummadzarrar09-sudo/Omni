@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>OMNI V2 Orb - Three.js 2400 Particles</title>
+    <style>
+        body { margin: 0; background: transparent; overflow: hidden; }
+        canvas { display: block; }
+        #info {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: cyan;
+            font-family: monospace;
+            font-size: 12px;
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+    <div id="info">OMNI V2 Orb - 2400 Particles<br>Blue: idle | Green: listening | Orange: thinking | Red: error</div>
+    <script>
+        // Phase 3 - Three.js 2400 particle orb (from qartex research)
+        let scene, camera, renderer;
+        let particles, particleCount = 2400;
+        let state = "idle";
+
+        const stateColors = {
+            idle: { color: 0x00ccff, speed: 0.001 },
+            listening: { color: 0x00ff88, speed: 0.01 },
+            thinking: { color: 0xff8800, speed: 0.02 },
+            speaking: { color: 0xffffff, speed: 0.005 },
+            error: { color: 0xff0044, speed: 0.03 }
+        };
+
+        init();
+        animate();
+
+        function init() {
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.z = 5;
+
+            renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setClearColor(0x000000, 0);
+            document.body.appendChild(renderer.domElement);
+
+            // Create 2400 particles
+            const geometry = new THREE.BufferGeometry();
+            const positions = [];
+            const colors = [];
+
+            for (let i = 0; i < particleCount; i++) {
+                // Random points on sphere
+                const theta = Math.random() * Math.PI * 2;
+                const phi = Math.acos(2 * Math.random() - 1);
+                const r = 2 + Math.random() * 0.5;
+
+                const x = r * Math.sin(phi) * Math.cos(theta);
+                const y = r * Math.sin(phi) * Math.sin(theta);
+                const z = r * Math.cos(phi);
+
+                positions.push(x, y, z);
+
+                // Initial blue color
+                colors.push(0, 0.8, 1);
+            }
+
+            geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+            geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+
+            const material = new THREE.PointsMaterial({
+                size: 0.05,
+                vertexColors: true,
+                transparent: true,
+                opacity: 0.8,
+                blending: THREE.AdditiveBlending
+            });
+
+            particles = new THREE.Points(geometry, material);
+            scene.add(particles);
+
+            window.addEventListener('resize', onWindowResize);
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            const config = stateColors[state] || stateColors.idle;
+
+            // Rotate based on state
+            particles.rotation.y += config.speed;
+            particles.rotation.x += config.speed * 0.5;
+
+            // Pulse for listening
+            if (state === "listening") {
+                const scale = 1 + Math.sin(Date.now() * 0.01) * 0.1;
+                particles.scale.set(scale, scale, scale);
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        // API for Python via WebChannel
+        function setState(newState) {
+            state = newState;
+            const config = stateColors[newState] || stateColors.idle;
+            document.getElementById('info').innerHTML = 
+                `OMNI V2 Orb - 2400 Particles<br>State: ${newState} | Color: #${config.color.toString(16)}<br>Blue: idle | Green: listening | Orange: thinking | Red: error`;
+
+            // Update particle colors
+            const colors = particles.geometry.attributes.color.array;
+            const color = new THREE.Color(config.color);
+            for (let i = 0; i < particleCount; i++) {
+                colors[i*3] = color.r;
+                colors[i*3+1] = color.g;
+                colors[i*3+2] = color.b;
+            }
+            particles.geometry.attributes.color.needsUpdate = true;
+        }
+
+        // For testing, cycle states
+        let states = ["idle", "listening", "thinking", "speaking", "idle"];
+        let idx = 0;
+        setInterval(() => {
+            idx = (idx + 1) % states.length;
+            // setState(states[idx]);
+        }, 3000);
+
+        // Expose to Python
+        window.setOrbState = setState;
+
+        console.log("OMNI V2 Three.js Orb - 2400 particles ready");
+        console.log("Call window.setOrbState('listening') from Python via WebChannel");
+    </script>
+</body>
+</html>

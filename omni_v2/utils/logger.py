@@ -1,11 +1,11 @@
-"""Logger V2"""
+"""Logger V2 - Data Inside Project Root"""
 import sys
 from pathlib import Path
+
 try:
-    from loguru import logger
+    from omni_v2.core.paths import LOGS_DIR
 except ImportError:
-    import logging
-    logger = logging.getLogger("OMNI_V2")
+    LOGS_DIR = Path.home() / ".omni_v2" / "logs"
 
 def setup_logger(debug=False, log_dir=None):
     try:
@@ -14,9 +14,9 @@ def setup_logger(debug=False, log_dir=None):
         level = "DEBUG" if debug else "INFO"
         loguru_logger.add(sys.stderr, format="<green>{time:HH:mm:ss}</green> | <level>{level: <8}</level> | <level>{message}</level>", level=level, colorize=True)
         if log_dir is None:
-            log_dir = Path.home() / ".omni_v2" / "logs"
+            log_dir = LOGS_DIR
         log_dir.mkdir(parents=True, exist_ok=True)
         loguru_logger.add(log_dir / "omni_v2_{time}.log", rotation="100 MB", retention="7 days", level="DEBUG")
-        loguru_logger.info(f"Logger V2 initialized (level={level})")
+        loguru_logger.info(f"Logger V2 initialized (level={level}) in project data/: {log_dir}")
     except Exception:
         pass
