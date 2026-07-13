@@ -16,11 +16,35 @@ def get_project_root() -> Path:
     return project_root
 
 def get_data_dir() -> Path:
-    """Get data directory inside project root - unanimous and portable"""
+    """Get data directory inside project root - unanimous and portable - Phase 4 Hardened with validation"""
     # Allow env override for custom location
     env_data_dir = os.environ.get("OMNI_DATA_DIR")
     if env_data_dir:
-        return Path(env_data_dir).expanduser().resolve()
+        try:
+            resolved = Path(env_data_dir).expanduser().resolve()
+            # Phase 4 Hardened: Validate data dir is inside project root or home, not arbitrary like /etc
+            project_root = get_project_root()
+            home = Path.home().resolve()
+
+            # Allow if inside project root, or inside home, or exactly /tmp/omni (for testing)
+            is_inside_project = str(resolved).startswith(str(project_root))
+            is_inside_home = str(resolved).startswith(str(home))
+            is_tmp = str(resolved).startswith(("/tmp", "/var/tmp")) and "omni" in str(resolved).lower()
+
+            if not (is_inside_project or is_inside_home or is_tmp):
+                print(f"[OMNI V2 WARNING] OMNI_DATA_DIR {resolved} is outside project and home, using default data/ for security")
+                print(f"[OMNI V2] Allowed: inside {project_root} or inside {home} or /tmp/omni*")
+                # Use default
+                data_dir = project_root / "data"
+                data_dir.mkdir(parents=True, exist_ok=True)
+                return data_dir
+
+            resolved.mkdir(parents=True, exist_ok=True)
+            print(f"[OMNI V2] Using custom data dir from OMNI_DATA_DIR: {resolved}")
+            return resolved
+
+        except Exception as e:
+            print(f"[OMNI V2] Invalid OMNI_DATA_DIR {env_data_dir}: {e}, using default")
     
     # Default: project_root / data
     project_root = get_project_root()

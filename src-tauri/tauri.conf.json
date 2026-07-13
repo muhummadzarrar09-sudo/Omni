@@ -1,0 +1,157 @@
+{
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "beforeBuildCommand": "npm run build",
+    "devPath": "http://localhost:5173",
+    "distDir": "../frontend/dist",
+    "withGlobalTauri": true
+  },
+  "package": {
+    "productName": "OMNI V2",
+    "version": "2.0.0"
+  },
+  "tauri": {
+    "allowlist": {
+      "all": false,
+      "shell": {
+        "all": false,
+        "open": true,
+        "execute": true,
+        "sidecar": true,
+        "scope": [
+          {
+            "name": "python-sidecar",
+            "cmd": "python",
+            "args": ["-m", "omni_v2.tools.browser"]
+          },
+          {
+            "name": "omni-backend",
+            "cmd": "omni-backend",
+            "args": []
+          }
+        ]
+      },
+      "fs": {
+        "all": false,
+        "readFile": true,
+        "writeFile": true,
+        "readDir": true,
+        "createDir": true,
+        "removeFile": true,
+        "scope": [
+          "$APPDATA/omni-v2/*",
+          "$HOME/.omni_v2/*",
+          "$RESOURCE/../data/*",
+          "$RESOURCE/data/*"
+        ]
+      },
+      "dialog": {
+        "all": false,
+        "open": true,
+        "save": true,
+        "message": true,
+        "ask": true
+      },
+      "notification": {
+        "all": true
+      },
+      "globalShortcut": {
+        "all": true
+      },
+      "window": {
+        "all": false,
+        "create": true,
+        "center": true,
+        "close": true,
+        "hide": true,
+        "maximize": true,
+        "minimize": true,
+        "setAlwaysOnTop": true,
+        "setSize": true,
+        "setPosition": true,
+        "startDragging": true
+      }
+    },
+    "bundle": {
+      "active": true,
+      "category": "Productivity",
+      "copyright": "MIT - OMNI Team",
+      "deb": {
+        "depends": []
+      },
+      "externalBin": [
+        "bin/api/omni-backend"
+      ],
+      "icon": [
+        "icons/32x32.png",
+        "icons/128x128.png",
+        "icons/128x128@2x.png",
+        "icons/icon.icns",
+        "icons/icon.ico"
+      ],
+      "identifier": "com.omni.v2",
+      "longDescription": "OMNI V2 - JARVIS KILLER - Local, Private, GTX 1050 Ti Optimized, 100+ Tools, Multi-Agent, Chain Commands, Cinematic HUD - Phase 5 Fable 5 + GPT 5.6 Sol",
+      "macOS": {
+        "entitlements": null,
+        "exceptionDomain": "",
+        "frameworks": [],
+        "providerShortName": null,
+        "signingIdentity": null
+      },
+      "resources": [
+        "../data/*",
+        "../assets/*",
+        "../omni_v2/**/*"
+      ],
+      "shortDescription": "OMNI V2 - JARVIS KILLER",
+      "targets": "all",
+      "windows": {
+        "certificateThumbprint": null,
+        "digestAlgorithm": "sha256",
+        "wix": {
+          "language": {
+            "default": "en-US",
+            "gl": null
+          }
+        }
+      }
+    },
+    "security": {
+      "csp": "default-src 'self' https://cdnjs.cloudflare.com; connect-src ipc: http://ipc.localhost http://localhost:8000 https://huggingface.co https://alphacephei.com; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' asset: https://asset.localhost data: blob:; font-src 'self' data:"
+    },
+    "updater": {
+      "active": false
+    },
+    "windows": [
+      {
+        "fullscreen": false,
+        "height": 900,
+        "resizable": true,
+        "title": "OMNI V2 - JARVIS KILLER - Phase 5 Fable 5 + GPT 5.6 Sol",
+        "width": 1400,
+        "minWidth": 1200,
+        "minHeight": 700,
+        "center": true,
+        "decorations": true,
+        "transparent": false,
+        "alwaysOnTop": false
+      },
+      {
+        "label": "widget",
+        "url": "widget.html",
+        "fullscreen": false,
+        "height": 120,
+        "width": 600,
+        "resizable": false,
+        "title": "OMNI V2 Widget - Whisper Flow Style",
+        "decorations": false,
+        "transparent": true,
+        "alwaysOnTop": true,
+        "skipTaskbar": true,
+        "center": false,
+        "x": 660,
+        "y": 900
+      }
+    ]
+  }
+}

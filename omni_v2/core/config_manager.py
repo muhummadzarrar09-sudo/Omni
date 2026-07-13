@@ -28,6 +28,8 @@ class OMNISettings:
     # STT
     whisper_model: str = "base.en"
     whisper_device: str = "cuda"
+    stt_engine: str = "auto"  # auto, realtimestt, vosk, google, faster_whisper
+    no_cloud: bool = False  # For 100% offline, disable Google cloud STT
     # TTS
     tts_enabled: bool = True
     tts_voice: str = "af_sarah"
@@ -45,6 +47,9 @@ class OMNISettings:
     browser_port: int = 9222
     debug_mode: bool = False
     demo_mode: bool = False
+    # Privacy - Phase 4 Hardened
+    pii_logging: bool = False  # If False, logs show len(text) not text itself, for privacy
+    log_commands: bool = True  # Log all voice commands to data/logs/commands.log for audit trail
     
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> 'OMNISettings':

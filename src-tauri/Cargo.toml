@@ -1,0 +1,36 @@
+[package]
+name = "omni-v2"
+version = "2.0.0"
+description = "OMNI V2 - JARVIS KILLER - Rust shell + Python sidecar - Phase 5 Fable 5 + GPT 5.6 Sol"
+authors = ["OMNI Team - Zarrar"]
+license = "MIT"
+repository = "https://github.com/muhummadzarrar09-sudo/Omni"
+edition = "2021"
+rust-version = "1.77.2"
+
+[build-dependencies]
+tauri-build = { version = "2.0", features = [] }
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+tauri = { version = "2.0", features = ["shell-open"] }
+tauri-plugin-shell = "2.0"
+tauri-plugin-dialog = "2.0"
+tauri-plugin-fs = "2.0"
+tauri-plugin-notification = "2.0"
+tauri-plugin-global-shortcut = "2.0"
+
+[features]
+default = ["custom-protocol"]
+custom-protocol = ["tauri/custom-protocol"]
+
+[profile.dev]
+incremental = true
+
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = "s"
+panic = "abort"
+strip = true

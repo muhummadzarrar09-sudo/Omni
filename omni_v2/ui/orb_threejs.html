@@ -15,7 +15,14 @@
             font-size: 12px;
         }
     </style>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- Phase 4 Hardened: Local Three.js to avoid CDN XSS risk, with CDN fallback -->
+    <script src="../../assets/three.min.js"></script>
+    <script>
+        // Fallback to CDN if local fails
+        if (typeof THREE === 'undefined') {
+            document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\/script>');
+        }
+    </script>
 </head>
 <body>
     <div id="info">OMNI V2 Orb - 2400 Particles<br>Blue: idle | Green: listening | Orange: thinking | Red: error</div>

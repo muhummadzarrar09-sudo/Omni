@@ -13,7 +13,7 @@ PyQt5-sip>=12.15
 PyQt5-Qt5>=5.15.2
 PyQtWebEngine>=5.15.6
 
-# VOICE - STT + VAD + Wake Word
+# VOICE - STT + VAD + Wake Word - Phase 4 Accessibility 4 Tiers
 faster-whisper>=1.0.3
 sentence-transformers>=2.2.2
 torch>=2.0.0
@@ -23,6 +23,11 @@ PyAudio>=0.2.13
 sounddevice>=0.4.6
 openwakeword>=0.6.0
 pvporcupine>=3.0.0
+# NEW - 4-Tier STT for Accessibility - Actually HEARS Everyone
+RealtimeSTT>=0.3.0  # Tier 1 - Most robust, streaming, Silero VAD + Whisper
+vosk>=0.3.45  # Tier 2 - Offline 50MB, lightweight, no internet
+SpeechRecognition>=3.10.0  # Tier 3 - Google cloud fallback, super reliable
+pyaudio>=0.2.13  # Already above, but needed for all STT
 
 # TTS
 kokoro-onnx>=0.4.0
@@ -70,3 +75,8 @@ tqdm>=4.60.0
 requests>=2.31.0
 python-dotenv>=1.0.0
 pydantic>=2.0.0
+
+# TTS Fallbacks for Bagillion Loop - Never fails to speak
+gTTS>=2.4.0
+playsound>=1.3.0
+pydub>=0.25.0

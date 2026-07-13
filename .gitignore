@@ -106,12 +106,22 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-# OMNI specific
+# OMNI specific - Local data (should NOT be in GitHub - too large + private)
 .omni/
+.omni_v2/
+data/
+!data/.gitkeep
+!data/README.md
+
+# But allow docs/ data/ .gitkeep to keep folder structure
+# data/ is ignored except .gitkeep
+
+# Logs, screenshots, recordings
 *.log
 screenshots/
 *.wav
 *.mp3
+recordings/
 
 # IDE
 .vscode/
@@ -124,9 +134,61 @@ screenshots/
 Thumbs.db
 desktop.ini
 
-# Downloaded models
+# Downloaded models - LARGE FILES - MUST NOT PUSH TO GITHUB (100MB limit)
+# GitHub limit 100MB, models are 50MB-5GB
 *.pt
+*.pth
 *.onnx
 *.bin
+*.gguf
+*.ggml
+*.ckpt
+*.safetensors
 huggingface/
 .cache/
+
+# Specific model folders
+data/models/
+models/
+*.gguf
+*.bin
+*.onnx
+
+# Vosk models (50MB zip + extracted)
+data/models/stt/*.zip
+vosk-model-*
+
+# ChromaDB
+data/chroma/
+chroma.sqlite3
+
+# SQLite DBs (can be large, private)
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3
+
+# Logs
+logs/
+data/logs/
+*.log
+
+# Screenshots and recordings
+screenshots/
+data/screenshots/
+data/recordings/
+recordings/
+
+# Node
+node_modules/
+frontend/node_modules/
+frontend/dist/
+src-tauri/target/
+
+# Tauri
+src-tauri/target/
+src-tauri/bin/
+
+# Rust
+**/*.rs.bk
+Cargo.lock

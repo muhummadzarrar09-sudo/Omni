@@ -1,0 +1,26 @@
+{
+  "name": "omni-v2-frontend",
+  "private": true,
+  "version": "2.0.0",
+  "type": "module",
+  "description": "OMNI V2 Frontend - Tauri + Svelte + Three.js 2400 Particles + Whisper Flow Widget - Fable 5 + GPT 5.6 Sol",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "tauri": "tauri",
+    "build:sidecar-winos": "pyinstaller --onefile --name omni-backend-x86_64-pc-windows-msvc src/backends/main.py --distpath ../src-tauri/bin/api --clean",
+    "build:sidecar-macos": "pyinstaller --onefile --name omni-backend-x86_64-apple-darwin src/backends/main.py --distpath ../src-tauri/bin/api --clean",
+    "build:sidecar-linux": "pyinstaller --onefile --name omni-backend-x86_64-unknown-linux-gnu src/backends/main.py --distpath ../src-tauri/bin/api --clean"
+  },
+  "dependencies": {
+    "@tauri-apps/api": "^2.0.0",
+    "three": "^0.160.0"
+  },
+  "devDependencies": {
+    "@sveltejs/vite-plugin-svelte": "^3.0.0",
+    "@tauri-apps/cli": "^2.0.0",
+    "svelte": "^4.2.0",
+    "vite": "^5.0.0"
+  }
+}
