@@ -1,0 +1,98 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: #1E222D;
+  --card: #232933;
+  --card-inset: #1E242F;
+  --card-light: #2A313F;
+  --text: #E2E8F0;
+  --text2: #A0AEC0;
+  --text3: #6B7280;
+  --accent: #38BDF8;
+  --green: #4ADE80;
+  --orange: #FB923C;
+  --red: #F87171;
+  --purple: #C4B5FD;
+  --shadow-dark: rgba(0,0,0,0.55);
+  --shadow-dark-strong: rgba(0,0,0,0.75);
+  --shadow-light: rgba(255,255,255,0.055);
+}
+
+* { box-sizing: border-box; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', -apple-system, sans-serif;
+  min-height: 100vh;
+  margin: 0;
+  overflow-x: hidden;
+}
+
+/* === CORRECT NEOMORPHISM - REAL DOUBLE BOX-SHADOW === */
+.neu {
+  background: var(--card);
+  border-radius: 22px;
+  box-shadow: 12px 12px 24px var(--shadow-dark), -8px -8px 20px var(--shadow-light);
+  transition: all 0.2s ease;
+}
+
+.neu-inset {
+  background: var(--card-inset);
+  border-radius: 22px;
+  box-shadow: inset 8px 8px 16px var(--shadow-dark-strong), inset -6px -6px 16px var(--shadow-light);
+}
+
+.neu-sm {
+  border-radius: 14px;
+  box-shadow: 8px 8px 16px var(--shadow-dark), -6px -6px 14px var(--shadow-light);
+}
+
+.neu-button {
+  background: var(--card);
+  border: none;
+  border-radius: 14px;
+  padding: 14px 18px;
+  color: var(--text);
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  box-shadow: 8px 8px 16px var(--shadow-dark), -6px -6px 14px var(--shadow-light);
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  user-select: none;
+}
+
+.neu-button:hover {
+  box-shadow: 10px 10px 20px var(--shadow-dark), -8px -8px 18px var(--shadow-light);
+  transform: translateY(-1px);
+}
+
+.neu-button:active {
+  background: var(--card-inset);
+  box-shadow: inset 6px 6px 12px var(--shadow-dark-strong), inset -4px -4px 12px var(--shadow-light);
+  transform: translateY(1px);
+}
+
+.neu-input {
+  background: var(--card-inset);
+  border: none;
+  border-radius: 14px;
+  padding: 14px 16px;
+  color: var(--text);
+  font-family: 'Inter', sans-serif;
+  box-shadow: inset 5px 5px 12px var(--shadow-dark-strong), inset -4px -4px 12px var(--shadow-light);
+  outline: none;
+  width: 100%;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--card-light); border-radius: 4px; }

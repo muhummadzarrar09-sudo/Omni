@@ -1,0 +1,54 @@
+# OMNI V3 FINAL - NO PyAudio - Sounddevice only - Fixes 404 and -9999 and psutil 6.0.0
+# Python 3.12 Windows - NO PyAudio (fails with ImpImporter on 3.12)
+# Your test shows sounddevice works RMS 0.014 LOUD = mic works, no need PyAudio
+
+# === TORCH - Install separately with cu121 index ===
+# pip install torch==2.2.2 torchaudio==2.2.2 --index-url https://download.pytorch.org/whl/cu121
+# If that fails, skip torch for now - brain still works with regex intent mapper
+
+numpy==1.26.4
+packaging>=24.0
+
+# === FIXED: psutil version that EXISTS ===
+# You had psutil 7.2.2 installed, 6.0.0 doesn't exist for cp312 win_amd64
+# Use any recent that exists
+psutil
+
+# === AUDIO - SOUNDDEVICE ONLY - NO PyAudio ===
+# PyAudio 0.2.13 fails on Python 3.12 with pkgutil.ImpImporter error
+# sounddevice 0.4.6 works perfect, your test RMS 0.014 proves it, fixes -9999
+sounddevice==0.4.6
+# PyAudio==0.2.13  # REMOVED - fails on 3.12, not needed, sounddevice fixes -9999
+faster-whisper==1.0.3
+
+# === TTS - SAPI5 only, no kokoro needed for final ===
+pyttsx3==2.90
+
+# === UI - WEB NEOMORPHISM (PyQt optional) ===
+# PyQt5==5.15.11  # Optional, web UI is better
+# PyQt5-sip==12.15.0
+# PyQt5-Qt5==5.15.2
+# PyQtWebEngine==5.15.6
+
+# === TOOLS ===
+mss==9.0.0
+Pillow==10.4.0
+pyautogui==0.9.54
+pyperclip==1.8.2
+requests==2.32.0
+python-dotenv==1.0.0
+pydantic==2.0.0
+
+# === LOGGING ===
+loguru==0.7.2
+colorama==0.4.6
+colorlog==6.9.0
+
+# === WEB SERVER (built-in http.server, no extra deps) ===
+# No FastAPI needed - uses http.server
+
+# Install steps:
+# 1. pip install torch==2.2.2 torchaudio==2.2.2 --index-url https://download.pytorch.org/whl/cu121
+# 2. pip install -r requirements-final-no-pyaudio.txt
+# 3. python -m omni_v2.voice.test_mic_fixed  -> should show RMS 0.014 LOUD, no -9999
+# 4. python -m omni_v2.web_server_fixed  -> opens http://localhost:8765/ with neomorphism UI, no 404

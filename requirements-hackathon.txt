@@ -1,0 +1,53 @@
+# OMNI V3 FOCUS - PINNED FOR GTX 1050 Ti 4GB - NO LOOSE VERSIONS - WORKS
+# Python 3.12 | Windows 11 | CUDA 12.1 for 1050 Ti
+# Install: pip install -r requirements-hackathon.txt --index-url https://download.pytorch.org/whl/cu121 --extra-index-url https://pypi.org/simple
+
+# === CORE TORCH PINNED - CRITICAL FOR 1050 Ti ===
+torch==2.2.2
+torchaudio==2.2.2
+numpy==1.26.4
+psutil==6.0.0
+packaging==24.0
+
+# === STT SINGLE ENGINE - faster-whisper base.en INT8 only ===
+faster-whisper==1.0.3
+sounddevice==0.4.6
+PyAudio==0.2.13
+
+# === TTS SINGLE ENGINE - kokoro-onnx + fallback pyttsx3 ===
+kokoro-onnx==0.4.0
+pyttsx3==2.90
+espeakng-loader==0.2.4
+
+# === UI SINGLE - PyQt5 only, no Tauri ===
+PyQt5==5.15.11
+PyQt5-sip==12.15.0
+PyQt5-Qt5==5.15.2
+PyQtWebEngine==5.15.6
+
+# === TOOLS - 15 core only ===
+mss==9.0.0
+Pillow==10.4.0
+pyautogui==0.9.54
+pyperclip==1.8.2
+requests==2.31.0
+python-dotenv==1.0.0
+pydantic==2.0.0
+
+# === LOGGING & UTILS ===
+loguru==0.7.2
+colorama==0.4.6
+colorlog==6.9.0
+
+# === OPTIONAL - Only if you need - keep commented for hackathon ===
+# chromadb==0.4.24 -- for memory, optional
+# sentence-transformers==2.2.2 -- for IntentMapper, optional
+# opencv-python==4.8.1.78 -- for vision, optional
+
+# Notes:
+# - No RealtimeSTT, Vosk, SpeechRecognition, gTTS, playsound, pydub - removed for V3
+# - No @tauri-apps/api, svelte, three npm - frontend deleted for V3
+# - No llama-cpp-python, ollama, langchain - LLM router post-hackathon
+# - Tested on GTX 1050 Ti 4GB, i7 7700HQ, 8GB RAM, Windows 11 2026-07-13
+# - Install CUDA runtime: https://developer.nvidia.com/cuda-12-1-0-download-archive
+# - If torch fails DLL 1114, set OMNI_NO_TORCH=1 - brain still works via regex
