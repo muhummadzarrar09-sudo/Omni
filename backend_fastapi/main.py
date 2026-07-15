@@ -24,6 +24,7 @@ from pathlib import Path
 import sys
 import asyncio
 import json
+from typing import Optional, Any, Dict
 
 # Ensure repo root in path
 THIS_FILE = Path(__file__).resolve()
@@ -117,6 +118,14 @@ async def startup():
         get_proactive_agent().start()
     except Exception:
         pass
+    # PROACTIVE-02: start the new proactive engine
+    try:
+        from omni_v2.agents.proactive_v2 import get_proactive_engine
+        engine = get_proactive_engine(interval_sec=60.0)
+        engine.start()
+        logger.info("🟢 ProactiveEngine V2 started (60s interval, 9 rules)")
+    except Exception as e:
+        logger.warning(f"ProactiveEngine V2 start failed: {e}")
     print("="*70)
     print("  OMNI V3 FastAPI - Pretty Damn Good Backend")
     print(f"  REPO_ROOT: {REPO_ROOT} (portable, not D:/Omni)")
@@ -161,6 +170,66 @@ async def health():
         "tts": brain.tts.get_status() if brain.tts else "No TTS",
         "fix": "sounddevice only, no PyAudio, no 404, no D:/Omni hardcode"
     }
+
+
+# PROACTIVE-01: Proactive Engine V2 endpoints
+@app.get("/api/proactive/suggestions")
+async def get_proactive_suggestions():
+    """Get pending proactive suggestions for the UI."""
+    try:
+        from omni_v2.agents.proactive_v2 import get_proactive_engine
+        engine = get_proactive_engine()
+        return {
+            "status": "ok",
+            "suggestions": engine.get_pending_suggestions(),
+            "daily_count": engine._daily_suggestion_count,
+        }
+    except Exception as e:
+        return {"status": "error", "error": str(e), "suggestions": []}
+
+
+class ProactiveAction(BaseModel):
+    suggestion_id: str
+    action: str  # "dismiss" | "act" | "execute"
+
+
+@app.post("/api/proactive/action")
+async def proactive_action(req: ProactiveAction):
+    """Handle a proactive suggestion action (dismiss / act / execute a command)."""
+    try:
+        from omni_v2.agents.proactive_v2 import get_proactive_engine
+        engine = get_proactive_engine()
+        if req.action == "dismiss":
+            engine.dismiss(req.suggestion_id)
+            return {"status": "ok", "action": "dismissed"}
+        elif req.action == "act":
+            engine.mark_acted_on(req.suggestion_id)
+            return {"status": "ok", "action": "acted_on"}
+        else:
+            return {"status": "error", "error": f"Unknown action: {req.action}"}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+class ProactiveContext(BaseModel):
+    """Push context into the engine (calendar, inbox, code, system)."""
+    calendar: Optional[Dict[str, Any]] = None
+    inbox: Optional[Dict[str, Any]] = None
+    code: Optional[Dict[str, Any]] = None
+    system: Optional[Dict[str, Any]] = None
+
+
+@app.post("/api/proactive/context")
+async def update_proactive_context(ctx: ProactiveContext):
+    """Update the proactive engine's context (called periodically by the UI)."""
+    try:
+        from omni_v2.agents.proactive_v2 import get_proactive_engine
+        engine = get_proactive_engine()
+        payload = {k: v for k, v in ctx.dict().items() if v is not None}
+        engine.update_context(**payload)
+        return {"status": "ok", "context_keys": list(payload.keys())}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
 
 @app.get("/api/devices")
 async def devices():

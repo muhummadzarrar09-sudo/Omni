@@ -124,6 +124,10 @@ export default function Home() {
   const [devices, setDevices] = useState([])
   const [isMuted, setIsMuted] = useState(true)
 
+  // PROACTIVE-UI: incoming suggestions from the AGI brain
+  const [proactiveSuggestions, setProactiveSuggestions] = useState([])
+  const [proactiveBanner, setProactiveBanner] = useState(null)
+
   const logRef = useRef(null)
   const thoughtsRef = useRef(null)
 
@@ -142,6 +146,9 @@ export default function Home() {
         addLog(d.brain_ready
           ? '[Brain] LLM-loaded brain ready - Qwen2.5-1.5B reasoning online'
           : '[Brain] No LLM detected - using regex fallback')
+        if (d.proactive_active) {
+          addLog('[Proactive] 💡 AGI proactive engine online - watching for helpful moments')
+        }
       })
       .catch(e => {
         setState('error')
@@ -158,12 +165,77 @@ export default function Home() {
     if (thoughtsRef.current) thoughtsRef.current.scrollTop = thoughtsRef.current.scrollHeight
   }, [thoughts])
 
+  // PROACTIVE-UI: poll for new suggestions every 30s
+  useEffect(() => {
+    let mounted = true
+    const pollProactive = async () => {
+      try {
+        const res = await fetch('http://localhost:8765/api/proactive/suggestions')
+        const data = await res.json()
+        if (!mounted) return
+        const suggestions = data.suggestions || []
+        setProactiveSuggestions(suggestions)
+        // Show top-priority one as a banner
+        if (suggestions.length > 0 && !proactiveBanner) {
+          setProactiveBanner(suggestions[0])
+          addLog(`[Proactive] 💡 ${suggestions[0].title} — ${suggestions[0].body.slice(0, 80)}`)
+        }
+      } catch (e) {
+        // silent
+      }
+    }
+    pollProactive()
+    const interval = setInterval(pollProactive, 30000)
+    return () => { mounted = false; clearInterval(interval) }
+  }, [proactiveBanner])
+
   async function fetchDevices() {
     try {
       const res = await fetch('http://localhost:8765/api/devices')
       const data = await res.json()
       if (data.devices) setDevices(data.devices)
     } catch (e) { /* silent */ }
+  }
+
+  // PROACTIVE-UI: dismiss a suggestion
+  async function dismissProactive(suggestionId) {
+    try {
+      await fetch('http://localhost:8765/api/proactive/action', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ suggestion_id: suggestionId, action: 'dismiss' }),
+      })
+      addLog(`[Proactive] Dismissed: ${suggestionId}`)
+      setProactiveSuggestions(prev => prev.filter(s => s.id !== suggestionId))
+      if (proactiveBanner?.id === suggestionId) {
+        setProactiveBanner(null)
+      }
+    } catch (e) {
+      addLog(`[Proactive] Dismiss failed: ${e.message}`)
+    }
+  }
+
+  // PROACTIVE-UI: act on a suggestion (execute its first action command)
+  async function actOnProactive(suggestion) {
+    if (!suggestion.actions || suggestion.actions.length === 0) {
+      return dismissProactive(suggestion.id)
+    }
+    const firstAction = suggestion.actions[0]
+    if (firstAction.command === '_ack' || firstAction.command === '_snooze') {
+      return dismissProactive(suggestion.id)
+    }
+    // Mark as acted on
+    try {
+      await fetch('http://localhost:8765/api/proactive/action', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ suggestion_id: suggestion.id, action: 'act' }),
+      })
+    } catch (e) {}
+    addLog(`[Proactive] Acting: ${firstAction.label} → ${firstAction.command}`)
+    setProactiveBanner(null)
+    setProactiveSuggestions(prev => prev.filter(s => s.id !== suggestion.id))
+    await handleCommand(firstAction.command)
   }
 
   /**
@@ -342,6 +414,50 @@ export default function Home() {
             {toolCalls.map((c, i) => (
               <ToolCallCard key={i} tc={c.tc} result={c.result} isActive={c.isActive} />
             ))}
+          </div>
+        )}
+
+        {/* PROACTIVE-UI: floating suggestion banner - the AGI interrupts with helpful nudges */}
+        {proactiveBanner && (
+          <div className="w-full max-w-2xl px-6 mt-4">
+            <div className="border border-amber-500/40 bg-gradient-to-br from-amber-500/10 to-orange-500/5 rounded-2xl p-4 backdrop-blur-md shadow-2xl shadow-amber-500/20">
+              <div className="flex items-start gap-3">
+                <div className="text-2xl">💡</div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <div className="text-xs font-mono tracking-widest text-amber-400 font-bold uppercase">
+                      OMNI Proactive
+                    </div>
+                    <div className="text-[10px] font-mono text-white/40">
+                      {proactiveBanner.category} · priority {proactiveBanner.priority}
+                    </div>
+                  </div>
+                  <div className="mt-1 text-sm text-white font-medium">
+                    {proactiveBanner.title}
+                  </div>
+                  <div className="mt-0.5 text-xs text-white/70 leading-relaxed">
+                    {proactiveBanner.body}
+                  </div>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {proactiveBanner.actions && proactiveBanner.actions.map((a, i) => (
+                      <button
+                        key={i}
+                        onClick={() => actOnProactive(proactiveBanner)}
+                        className="px-3 py-1.5 text-[11px] font-mono rounded-full bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 border border-amber-500/30 transition-all"
+                      >
+                        {a.label}
+                      </button>
+                    ))}
+                    <button
+                      onClick={() => dismissProactive(proactiveBanner.id)}
+                      className="px-3 py-1.5 text-[11px] font-mono rounded-full bg-white/5 hover:bg-white/10 text-white/60 border border-white/10 transition-all"
+                    >
+                      Dismiss
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         )}
 
