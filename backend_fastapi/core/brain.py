@@ -285,11 +285,41 @@ class OMNIBrain:
             if not final_msg:
                 final_msg = brain_resp.text or "Done."
             success = any(r.success for r in results)
+            # PHASE-2: track success/failure for mood
+            try:
+                from omni_v2.agents.personality import get_personality
+                p = get_personality()
+                if success:
+                    # Big win = many tools succeeded
+                    p.record_success(big_win=(len(results) >= 3))
+                else:
+                    p.record_failure()
+            except Exception:
+                pass
         else:
             # Pure conversational response from the LLM
             final_msg = brain_resp.text or "..."
             success = True
             logs.append(f"[Brain] conversational response (no tools)")
+
+        # PHASE-2: opinion injection - the butler has opinions
+        opinion = None
+        try:
+            from omni_v2.agents.opinion import get_opinion_engine
+            op = get_opinion_engine()
+            # Record all tool calls
+            for r, tc in zip(results, brain_resp.tool_calls):
+                op.record_tool_call(tc["tool"])
+                op.record_command(tc.get("args", {}).get("text", "") or str(tc))
+            if brain_resp.tool_calls:
+                last_result = results[-1] if results else None
+                last_tc = brain_resp.tool_calls[-1]
+                opinion = op.maybe_opine(last_tc["tool"], last_result, {"command": command})
+                if opinion:
+                    logs.append(f"[Opinion] 💬 {opinion[:80]}")
+                    final_msg = f"{final_msg}\n\n💬 {opinion}"
+        except Exception:
+            pass
 
         logs.append(f"[Evaluator] final: success={success} in {(time.time()-t0)*1000:.0f}ms")
 

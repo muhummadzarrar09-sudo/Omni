@@ -616,6 +616,82 @@ async def list_voice_personas():
     except Exception as e:
         return {"status": "error", "error": str(e)}
 
+
+# PHASE-2: Personality endpoints
+class PersonalityUpdate(BaseModel):
+    formality: Optional[float] = None
+    warmth: Optional[float] = None
+    wit: Optional[float] = None
+    verbosity: Optional[float] = None
+    use_emoji: Optional[bool] = None
+    use_dry_humor: Optional[bool] = None
+    address_by_name: Optional[bool] = None
+
+
+@app.get("/api/personality")
+async def get_personality():
+    """Get OMNI's personality settings."""
+    try:
+        from omni_v2.agents.personality import get_personality
+        p = get_personality()
+        return {"status": "ok", "personality": p.get_all()}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+@app.post("/api/personality")
+async def update_personality(update: PersonalityUpdate):
+    """Update personality dimensions."""
+    try:
+        from omni_v2.agents.personality import get_personality
+        p = get_personality()
+        payload = {k: v for k, v in update.dict().items() if v is not None}
+        # Clamp values to [0, 1]
+        for k in ("formality", "warmth", "wit", "verbosity"):
+            if k in payload:
+                payload[k] = max(0.0, min(1.0, payload[k]))
+        results = p.set_many(**payload)
+        return {"status": "ok", "updated": list(payload.keys())}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+class MoodReq(BaseModel):
+    mood: str  # "helpful" | "focused" | "playful" | "concerned" | "celebratory"
+
+
+@app.post("/api/personality/mood")
+async def set_mood(req: MoodReq):
+    """Manually set OMNI's mood."""
+    try:
+        from omni_v2.agents.personality import get_personality
+        p = get_personality()
+        valid = ("helpful", "focused", "playful", "concerned", "celebratory")
+        if req.mood not in valid:
+            return {"status": "error", "error": f"Invalid mood. Use: {list(valid)}"}
+        p.set_mood(req.mood)
+        return {"status": "ok", "mood": req.mood, "tone": p.get_mood_tone()}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+@app.post("/api/personality/test")
+async def test_personality_phrase():
+    """Test personality by generating a sample phrase."""
+    try:
+        from omni_v2.agents.personality import get_personality
+        p = get_personality()
+        return {
+            "status": "ok",
+            "acknowledgment": p.pick_acknowledgment(),
+            "success": p.format_success(ms=120),
+            "empathy": p.pick_failure_empathy(),
+            "observation": p.observe_activity("Twitter", count=4),
+            "mood": p.get_mood(),
+        }
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
 @app.get("/api/devices")
 async def devices():
     brain = get_brain()
