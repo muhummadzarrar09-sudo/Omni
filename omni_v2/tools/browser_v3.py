@@ -115,7 +115,25 @@ class BrowserToolV3(CommandPlugin):
         original = context.get('original', '').lower()
         url = entities.get('url', '')
         query = entities.get('query', '')
-        
+
+        # GUARD-06: validate URL before doing anything
+        if url:
+            try:
+                from omni_v2.core.guardrails import safe_url
+                is_safe, err = safe_url(url)
+                if not is_safe:
+                    logger.warning(f"Guardrail blocked URL: {url[:80]} | {err}")
+                    try:
+                        from omni_v2.core.plugin_manager import CommandResult
+                        return CommandResult.error(
+                            f"URL blocked by security guardrail: {err}. "
+                            f"OMNI only allows http/https/ftp URLs to safe destinations."
+                        )
+                    except:
+                        return {"success": False, "message": f"URL blocked: {err}"}
+            except ImportError:
+                pass  # guardrails unavailable, fall through
+
         # Determine intent from original text if no entities
         if not url and not query:
             if 'github' in original:

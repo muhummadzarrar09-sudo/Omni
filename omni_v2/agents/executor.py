@@ -48,13 +48,11 @@ class ExecutorAgent:
                 logger.error(f"No plugin for {step.action}")
                 return CommandResult.error(f"Plugin not found for {step.action}")
 
-        try:
-            result = await plugin.execute(step.entities, context)
-            logger.info(f"Executor result: {step.action} -> success={result.success} msg={result.message[:80]}")
-            return result
-        except Exception as e:
-            logger.error(f"Executor error for {step.action}: {e}")
-            return CommandResult.error(str(e))
+        # SAFE-EXEC-01: use safe wrapper that never crashes
+        from omni_v2.core.safe_execute import safe_execute
+        result = await safe_execute(plugin, step.entities, context)
+        logger.info(f"Executor result: {step.action} -> success={result.success} msg={result.message[:80]}")
+        return result
 
     async def execute_step_with_retry(
         self,
