@@ -237,7 +237,7 @@ def cap_string(s: str, max_len: int = 10_000, name: str = "input") -> str:
 # Patterns that suggest prompt injection or malicious output
 PROMPT_INJECTION_PATTERNS = [
     re.compile(r"ignore\s+(previous|all|the)\s+(instructions?|prompts?)", re.IGNORECASE),
-    re.compile(r"disregard\s+(previous|all|the)\s+(instructions?|prompts?)", re.IGNORECASE),
+    re.compile(r"disregard\s+(previous|all|the|my)\s+(instructions?|prompts?|system)", re.IGNORECASE),
     re.compile(r"forget\s+(previous|all|the)\s+(instructions?|prompts?)", re.IGNORECASE),
     re.compile(r"you\s+are\s+now\s+(a|an)\s+", re.IGNORECASE),
     re.compile(r"new\s+instructions?\s*:", re.IGNORECASE),

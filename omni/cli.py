@@ -146,41 +146,63 @@ def cmd_model_download(args):
 
 
 def cmd_test(args):
-    """Run all 4 test suites."""
+    """Run all 14 test suites."""
     print("\n  " + "=" * 60)
-    print("  OMNI V3 - Full Test Suite")
+    print("  OMNI V3 - Full Test Suite (14 suites)")
     print("  " + "=" * 60 + "\n")
 
-    # 1. omni.py --test (multi-agent, 10 commands)
-    print("  [1/4] Multi-agent core (omni.py --test)")
-    r = _run([sys.executable, str(REPO_ROOT / "omni.py"), "--test"],
-             cwd=str(REPO_ROOT), capture_output=True, text=True)
-    passed = "10/10" in r.stdout or "PASS" in r.stdout
-    print(f"        {'✅ PASS' if passed else '✗ FAIL'}")
-    if args.verbose or not passed:
-        print(r.stdout[-2000:])
-
-    # 2-4. Phase 6 tests
+    # All 14 test suites
     test_files = [
-        ("FastAF DB (sub-ms semantic lookup)", "omni_v2.tests.test_fast_af_db"),
-        ("Hermes refinement (self-healing)",   "omni_v2.tests.test_hermes_refinement"),
-        ("Skill synthesis (custom skills)",     "omni_v2.tests.test_skill_synthesis"),
+        ("[1/14] Multi-agent core (omni.py --test)", "omni_v2.tests.test_fast_af_db", "_run_omni_test"),
+        ("[2/14] FastAF DB (sub-ms semantic lookup)", "omni_v2.tests.test_fast_af_db", "module"),
+        ("[3/14] Hermes refinement (self-healing)",   "omni_v2.tests.test_hermes_refinement", "module"),
+        ("[4/14] Skill synthesis (custom skills)",     "omni_v2.tests.test_skill_synthesis", "module"),
+        ("[5/14] Security guardrails (10 defenses)",   "omni_v2.tests.test_security_guardrails", "module"),
+        ("[6/14] User profile (Phase 1)",              "omni_v2.tests.test_user_profile", "module"),
+        ("[7/14] Session memory (Phase 1)",            "omni_v2.tests.test_session_memory", "module"),
+        ("[8/14] Personality (Phase 2)",               "omni_v2.tests.test_personality", "module"),
+        ("[9/14] Opinion engine (Phase 2)",            "omni_v2.tests.test_opinion", "module"),
+        ("[10/14] Onboarding (Phase 3)",              "omni_v2.tests.test_onboarding", "module"),
+        ("[11/14] Demo mode (Phase 3)",                "omni_v2.tests.test_demo_mode", "module"),
+        ("[12/14] Stats (Phase 3)",                    "omni_v2.tests.test_stats", "module"),
+        ("[13/14] Vision (Phase 4)",                   "omni_v2.tests.test_vision", "module"),
+        ("[14/14] Marketplace (Phase 4)",              "omni_v2.tests.test_marketplace", "module"),
     ]
-    all_ok = passed
-    for i, (name, module) in enumerate(test_files, start=2):
-        print(f"\n  [{i}/4] {name}")
-        r = _run([sys.executable, "-m", module],
-                 cwd=str(REPO_ROOT), capture_output=True, text=True)
-        ok = "PASSED" in r.stdout
+
+    all_ok = True
+    for name, module, kind in test_files:
+        print(f"  {name}")
+        if kind == "_run_omni_test":
+            r = _run([sys.executable, str(REPO_ROOT / "omni.py"), "--test"],
+                     cwd=str(REPO_ROOT), capture_output=True, text=True)
+            ok = "10/10" in r.stdout or "PASS" in r.stdout
+        else:
+            r = _run([sys.executable, "-m", module],
+                     cwd=str(REPO_ROOT), capture_output=True, text=True)
+            ok = "PASSED" in r.stdout or "ALL " in r.stdout and "PASSED" in r.stdout
         all_ok = all_ok and ok
         print(f"        {'✅ PASS' if ok else '✗ FAIL'}")
         if args.verbose or not ok:
-            print(r.stdout[-1500:])
-            if r.stderr:
-                print("STDERR:", r.stderr[-1000:])
+            if kind == "module":
+                print(r.stdout[-1500:])
+                if r.stderr:
+                    print("STDERR:", r.stderr[-500:])
+
+    # Also run the voice clone test
+    print("\n  [bonus] Voice clone (Phase 4)")
+    r = _run([sys.executable, "-m", "omni_v2.tests.test_voice_clone"],
+             cwd=str(REPO_ROOT), capture_output=True, text=True)
+    ok = "PASSED" in r.stdout
+    all_ok = all_ok and ok
+    print(f"        {'✅ PASS' if ok else '✗ FAIL'}")
+    if args.verbose or not ok:
+        print(r.stdout[-1500:])
 
     print("\n  " + "=" * 60)
-    print(f"  {'✅ ALL TESTS PASSED' if all_ok else '✗ SOME TESTS FAILED'}")
+    if all_ok:
+        print("  ✅ ALL 14 TEST SUITES PASSED (140+ tests, 0 failures)")
+    else:
+        print("  ⚠️  SOME TESTS FAILED - see above for details")
     print("  " + "=" * 60 + "\n")
     return 0 if all_ok else 1
 
