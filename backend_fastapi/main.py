@@ -899,6 +899,223 @@ async def get_stats_time_saved():
     except Exception as e:
         return {"status": "error", "error": str(e)}
 
+
+# PHASE-4A: Vision endpoints
+class VisionReq(BaseModel):
+    file_path: Optional[str] = None
+    query: str = "Describe this"
+    capture_screen: bool = False
+
+
+@app.post("/api/vision")
+async def vision_process(req: VisionReq):
+    """Process a file with multi-modal vision (image, PDF, screenshot)."""
+    try:
+        from omni_v2.vision.multimodal import get_vision
+        v = get_vision()
+        if req.capture_screen:
+            result = v.process_screenshot(req.query)
+        elif req.file_path:
+            result = v.process_file(req.file_path, req.query)
+        else:
+            return {"status": "error", "error": "file_path or capture_screen required"}
+        return {
+            "status": "ok" if result.success else "error",
+            "result": {
+                "success": result.success,
+                "file_type": result.file_type,
+                "description": result.description,
+                "extracted_text": result.extracted_text,
+                "objects_detected": result.objects_detected,
+                "metadata": result.metadata,
+                "duration_ms": result.duration_ms,
+                "model_used": result.model_used,
+                "error": result.error,
+            }
+        }
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+@app.get("/api/vision/status")
+async def vision_status():
+    """Get vision engine status."""
+    try:
+        from omni_v2.vision.multimodal import get_vision
+        return {"status": "ok", "vision": get_vision().get_status()}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+# PHASE-4B: Voice cloning endpoints
+@app.post("/api/voice/clone/start")
+async def voice_clone_start():
+    """Start recording audio for voice cloning."""
+    try:
+        from omni_v2.voice.voice_clone import get_voice_cloner
+        vc = get_voice_cloner()
+        if not vc.is_available():
+            return {"status": "error", "error": "Piper TTS not installed. Run: pip install piper-tts"}
+        ok = vc.start_recording()
+        if ok:
+            return {"status": "ok", "recording": True, "message": "Speak for 30+ seconds"}
+        return {"status": "error", "error": "Failed to start recording (already recording?)"}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+@app.post("/api/voice/clone/stop")
+async def voice_clone_stop():
+    """Stop recording and save the sample."""
+    try:
+        from omni_v2.voice.voice_clone import get_voice_cloner
+        vc = get_voice_cloner()
+        path = vc.stop_recording()
+        if path:
+            return {"status": "ok", "sample_path": str(path)}
+        return {"status": "error", "error": "No recording in progress"}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+class VoiceTrainReq(BaseModel):
+    sample_path: str
+    voice_name: Optional[str] = None
+
+
+@app.post("/api/voice/clone/train")
+async def voice_clone_train(req: VoiceTrainReq):
+    """Train a custom voice from a recorded sample."""
+    try:
+        from omni_v2.voice.voice_clone import get_voice_cloner
+        vc = get_voice_cloner()
+        result = vc.train_voice(req.sample_path, req.voice_name)
+        return result
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+@app.get("/api/voice/clone/samples")
+async def voice_clone_samples():
+    """List voice samples."""
+    try:
+        from omni_v2.voice.voice_clone import get_voice_cloner
+        return {"status": "ok", "samples": get_voice_cloner().list_samples()}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+@app.get("/api/voice/clone/voices")
+async def voice_clone_voices():
+    """List cloned voices."""
+    try:
+        from omni_v2.voice.voice_clone import get_voice_cloner
+        return {"status": "ok", "voices": get_voice_cloner().list_voices()}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+@app.get("/api/voice/clone/status")
+async def voice_clone_status():
+    """Get voice clone status."""
+    try:
+        from omni_v2.voice.voice_clone import get_voice_cloner
+        return {"status": "ok", "voice_clone": get_voice_cloner().get_status()}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+# PHASE-4C: Skill Marketplace endpoints
+@app.get("/api/skills/marketplace")
+async def skills_marketplace(category: Optional[str] = None, search: Optional[str] = None):
+    """Browse the skill marketplace."""
+    try:
+        from omni_v2.skills.marketplace import get_marketplace
+        m = get_marketplace()
+        items = m.get_index(category=category, search=search)
+        return {
+            "status": "ok",
+            "items": items,
+            "categories": m.get_categories(),
+            "total": len(items),
+        }
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+class SkillInstallReq(BaseModel):
+    skill_id: str
+
+
+@app.post("/api/skills/install")
+async def skill_install(req: SkillInstallReq):
+    """Install a skill from the marketplace."""
+    try:
+        from omni_v2.skills.marketplace import get_marketplace
+        m = get_marketplace()
+        return m.install(req.skill_id)
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+@app.post("/api/skills/uninstall")
+async def skill_uninstall(req: SkillInstallReq):
+    """Uninstall a skill."""
+    try:
+        from omni_v2.skills.marketplace import get_marketplace
+        m = get_marketplace()
+        ok = m.uninstall(req.skill_id)
+        return {"status": "ok" if ok else "not_found", "uninstalled": ok}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+@app.get("/api/skills/installed")
+async def skills_installed():
+    """List installed skills."""
+    try:
+        from omni_v2.skills.marketplace import get_marketplace
+        return {"status": "ok", "installed": get_marketplace().list_installed()}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+@app.get("/api/skills/updates")
+async def skills_updates():
+    """Check for skill updates."""
+    try:
+        from omni_v2.skills.marketplace import get_marketplace
+        return {"status": "ok", "updates": get_marketplace().check_updates()}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+@app.get("/api/skills/marketplace/status")
+async def skills_marketplace_status():
+    """Get marketplace status."""
+    try:
+        from omni_v2.skills.marketplace import get_marketplace
+        return {"status": "ok", "marketplace": get_marketplace().get_status()}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+# PHASE-4D: Plugin SDK info endpoint
+@app.get("/api/sdk")
+async def sdk_info():
+    """Info about the Plugin SDK."""
+    return {
+        "status": "ok",
+        "sdk": {
+            "name": "OMNI V3 Plugin SDK",
+            "version": "1.0.0",
+            "import": "from omni_v2.sdk import skill, command, ok, fail, reply",
+            "example_code_path": "omni_v2/sdk/__init__.py",
+            "skills_dir": "data/skills/installed/",
+            "marketplace_count": 8,
+        }
+    }
+
 @app.get("/api/devices")
 async def devices():
     brain = get_brain()
