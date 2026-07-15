@@ -1,96 +1,117 @@
 [build-system]
-requires = ["setuptools>=68", "wheel"]
+requires = ["setuptools>=83", "wheel>=0.47"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "omni-agi"
-version = "3.1.0"
-description = "OMNI - Local, private, cinematic AGI assistant. Multi-agent brain powered by Qwen2.5-1.5B GGUF, with voice (faster-whisper), vision (Moondream2), and 100+ tools."
+version = "3.2.0"
+description = "OMNI - Local, private, cinematic AGI assistant. Multi-agent brain powered by Qwen2.5-1.5B GGUF, with voice (faster-whisper, edge-tts, openwakeword), vision (Moondream2), Playwright browser, and 100+ tools."
 readme = "README.md"
 license = {text = "MIT"}
 authors = [{name = "Zarrar + Agent", email = "team@omni-agi.dev"}]
 requires-python = ">=3.10"
-keywords = ["agi", "voice-assistant", "llama-cpp", "whisper", "local-ai", "hackathon"]
+keywords = ["agi", "voice-assistant", "llama-cpp", "whisper", "edge-tts", "openwakeword", "playwright", "local-ai", "hackathon", "jarvis"]
 
-# Runtime deps - pinned to versions that work on Win/Mac/Linux with Python 3.10-3.12
-# We list only what's needed for the BRAIN. Optional features (vision, web UI) are extras.
+# Runtime deps - LATEST versions (as of 2026-07-15) for the BEST experience
 dependencies = [
     # Core
-    "loguru>=0.7.0",
-    "numpy>=1.26.0",
-    "psutil>=5.9.0",
+    "loguru>=0.7.3",
+    "numpy>=2.5.1",
+    "psutil>=7.2.2",
     "packaging>=24.0",
     # LLM brain (PRIMARY)
-    "llama-cpp-python>=0.3.0",
-    # Voice - BEST OF THE BEST
-    "faster-whisper>=1.0.3",          # STT: fastest Whisper.cpp binding
-    "sounddevice>=0.4.6",             # Audio capture (reliable cross-platform)
-    "edge-tts>=6.1.9",                # TTS: Microsoft Edge natural voices (FREE, offline-quality)
-    "openwakeword>=0.6.0",            # Wake word: "Hey OMNI" detection (free, ONNX, offline)
-    # Browser automation - REAL one
-    "playwright>=1.40.0",             # Headless browser, screenshots, JS exec, isolated profiles
-    "selenium>=4.15.0",               # Backup browser automation
-    # Memory
-    "chromadb>=0.4.0",                # Vector store
-    "lancedb>=0.5.0",                 # 10x faster vector store (alt)
-    # Embeddings
-    "sentence-transformers>=2.5.0",   # For BGE / MiniLM embeddings
+    "llama-cpp-python>=0.3.34",        # LLaMA.cpp Python bindings (latest)
+    # Voice STT - BEST OF THE BEST
+    "faster-whisper>=1.2.1",           # Whisper.cpp binding, fastest
+    "sounddevice>=0.5.5",              # Reliable cross-platform audio
+    # Voice TTS - NATURAL VOICES
+    "edge-tts>=7.2.8",                 # Microsoft Edge natural voices (FREE)
+    "piper-tts>=1.4.2",                # Offline neural TTS (optional)
+    # Wake word - REAL detection
+    "openwakeword>=0.6.0",             # "Hey OMNI" detection (ONNX, free)
+    "pvporcupine>=4.0.3",              # Best accuracy (requires Picovoice key)
+    # Browser automation - REAL browser
+    "playwright>=1.61.0",              # Headless Chromium automation
+    "playwright-stealth>=2.0.3",       # Bypass bot detection
+    # Vector memory - FAST
+    "chromadb>=1.5.9",                 # Vector store
+    "lancedb>=0.34.0",                 # 10x faster alt
+    "sentence-transformers>=5.6.0",    # BGE/MiniLM embeddings
+    "faiss-cpu>=1.14.3",               # Fast similarity search
     # Tools
-    "pyautogui>=0.9.54",              # UI automation (mouse/keyboard)
-    "pyperclip>=1.8.2",               # Clipboard
-    "requests>=2.31.0",
-    "pydantic>=2.0.0",
-    "pytesseract>=0.3.10",            # OCR (uses Tesseract)
-    "Pillow>=10.0.0",                 # Image processing
-    "apscheduler>=3.10.0",            # Proper cron-style scheduling
-    "pedalboard>=0.7.0",              # Audio effects (Spotify's library)
+    "pyautogui>=0.9.54",               # UI automation
+    "pynput>=1.8.2",                   # Keyboard/mouse
+    "pytesseract>=0.3.13",             # OCR
+    "Pillow>=12.3.0",                  # Image processing
+    "opencv-python>=5.0.0.93",         # Computer vision
+    "mss>=10.2.0",                     # Screen capture
+    "pyperclip>=1.11.0",               # Clipboard
+    "psutil>=7.2.2",                   # System stats
+    "pywin32>=312; sys_platform == 'win32'",  # Windows API
+    "apscheduler>=3.11.3",             # Cron-style scheduling
+    "schedule>=1.2.2",                 # Lightweight scheduling
+    "pedalboard>=0.9.24",              # Audio effects (Spotify's library)
+    "pydub>=0.25.1",                   # Audio manipulation
+    "soundfile>=0.14.0",               # Audio I/O
+    "requests>=2.34.2",
+    "pydantic>=2.13.4",
+    "httpx>=0.28.1",
+    "beautifulsoup4>=4.15.0",          # HTML parsing
+    "trafilatura>=2.1.0",              # Web content extraction
+    "duckdb>=1.5.4",                   # In-process OLAP
 ]
 
 [project.optional-dependencies]
 # Optional features - install what you need
 brain = [
-    "llama-cpp-python>=0.3.0",
+    "llama-cpp-python>=0.3.34",
 ]
 voice = [
-    "faster-whisper>=1.0.3",
-    "sounddevice>=0.4.6",
-    "edge-tts>=6.1.9",
+    "faster-whisper>=1.2.1",
+    "sounddevice>=0.5.5",
+    "edge-tts>=7.2.8",
     "openwakeword>=0.6.0",
+    "pyttsx3>=2.99",
+    "piper-tts>=1.4.2",
 ]
 vision = [
-    "mss>=9.0.0",
-    "opencv-python>=4.8.0",
-    "Pillow>=10.0.0",
-    "pytesseract>=0.3.10",
+    "mss>=10.2.0",
+    "opencv-python>=5.0.0.93",
+    "Pillow>=12.3.0",
+    "pytesseract>=0.3.13",
 ]
 browser = [
-    "playwright>=1.40.0",
-    "selenium>=4.15.0",
+    "playwright>=1.61.0",
+    "playwright-stealth>=2.0.3",
+    "selenium>=4.46.0",
 ]
 memory = [
-    "chromadb>=0.4.0",
-    "lancedb>=0.5.0",
-    "sentence-transformers>=2.5.0",
+    "chromadb>=1.5.9",
+    "lancedb>=0.34.0",
+    "sentence-transformers>=5.6.0",
+    "faiss-cpu>=1.14.3",
 ]
 ui = [
-    "PyQt5>=5.15.10",
-    "PyQt5-Qt5>=5.15.2",
-    "PyQtWebEngine>=5.15.6",
+    "PyQt6>=6.11.0",
+    "customtkinter>=6.0.0",
 ]
 fastapi = [
-    "fastapi>=0.110.0",
-    "uvicorn[standard]>=0.27.0",
-    "python-multipart>=0.0.9",
-    "websockets>=12.0",
+    "fastapi>=0.139.0",
+    "uvicorn[standard]>=0.51.0",
+    "python-multipart>=0.0.32",
+    "websockets>=16.1",
+    "starlette>=1.3.1",
 ]
 all = [
     "omni-agi[brain,voice,vision,browser,memory,ui,fastapi]",
 ]
 dev = [
-    "pytest>=7.4.0",
-    "pytest-asyncio>=0.23.0",
-    "black>=24.0.0",
-    "mypy>=1.8.0",
+    "pytest>=9.1.1",
+    "pytest-asyncio>=1.4.0",
+    "black>=26.5.1",
+    "mypy>=2.3.0",
+    "ruff>=0.15.21",
+    "uv>=0.11.28",
 ]
 
 [project.urls]
@@ -102,18 +123,5 @@ Issues = "https://github.com/muhummadzarrar09-sudo/Omni/issues"
 omni = "omni.cli:main"
 
 [tool.setuptools]
-# Auto-discover packages (omni, omni_v2) but exclude tests, archive, and any
-# data/cache directories that would bloat the wheel.
 packages = ["omni", "omni_v2"]
-
-[tool.setuptools.package-data]
-omni = ["py.typed"]
-
-[tool.black]
-line-length = 100
-target-version = ["py310", "py311", "py312"]
-
-[tool.pytest.ini_options]
-asyncio_mode = "auto"
-testpaths = ["omni_v2/tests", "omni/tests"]
-python_files = ["test_*.py"]
+include-package-data = true
