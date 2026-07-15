@@ -184,6 +184,32 @@ async def startup():
         logger.info(f"⏰ Scheduler initialized: {len(sched.list_tasks())} existing tasks")
     except Exception as e:
         logger.warning(f"Scheduler init failed: {e}")
+
+    # PHASE-5A: mDNS service discovery (laptop broadcasts, phone discovers)
+    try:
+        from omni_v2.network.mdns import OMNIMDNSBroadcaster
+        from omni_v2.network.discovery import generate_pairing_code, make_discovery_info
+        from omni_v2.agents.user_profile import get_user_profile
+
+        # Get user name for the broadcast
+        try:
+            profile = get_user_profile()
+            user_name = profile.get("name", "User")
+        except Exception:
+            user_name = "User"
+        broadcast_name = f"{user_name}'s OMNI" if user_name else "OMNI"
+        mdns_broadcaster = OMNIMDNSBroadcaster(
+            port=8765,
+            name=broadcast_name,
+            capabilities=["voice", "vision", "wake_word", "memory", "personality", "marketplace"],
+        )
+        mdns_broadcaster.start()
+        info = make_discovery_info(broadcast_name, 8765)
+        logger.info(f"📡 mDNS Broadcaster started: {info.http_url}")
+        logger.info(f"📱 Mobile companion can discover on WiFi at {info.host}:{info.port}")
+    except Exception as e:
+        logger.warning(f"mDNS Broadcaster init failed: {e}")
+        mdns_broadcaster = None
     print("="*70)
     print("  OMNI V3 FastAPI - Pretty Damn Good Backend")
     print(f"  REPO_ROOT: {REPO_ROOT} (portable, not D:/Omni)")
@@ -1115,6 +1141,152 @@ async def sdk_info():
             "marketplace_count": 8,
         }
     }
+
+
+# PHASE-5A: Network discovery endpoints
+@app.get("/api/network/info")
+async def get_network_info():
+    """Get this OMNI brain's network info (for mobile discovery)."""
+    try:
+        from omni_v2.network.discovery import make_discovery_info
+        # Get user name for the broadcast name
+        name = "OMNI"
+        try:
+            from omni_v2.agents.user_profile import get_user_profile
+            user_name = get_user_profile().get("name", "")
+            if user_name:
+                name = f"{user_name}'s OMNI"
+        except Exception:
+            pass
+        info = make_discovery_info(name, 8765)
+        return {
+            "status": "ok",
+            "network": info.to_dict(),
+        }
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+@app.post("/api/network/pair")
+async def generate_pairing():
+    """Generate a one-time pairing code (5 min TTL) for mobile device."""
+    try:
+        from omni_v2.network.discovery import generate_pairing_code, make_discovery_info
+        info = make_discovery_info("OMNI", 8765)
+        code = generate_pairing_code(info.host, info.port, ttl_sec=300)
+        return {
+            "status": "ok",
+            "pair": code.to_dict(),
+            "uri": code.to_uri(),
+            "qr_payload": make_qr_payload_for_pair(code, info),
+        }
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+@app.get("/api/network/qr")
+async def get_qr_code():
+    """Get the current QR code (for phone to scan) as base64-encoded PNG."""
+    try:
+        from omni_v2.network.discovery import generate_pairing_code, make_discovery_info
+        info = make_discovery_info("OMNI", 8765)
+        code = generate_pairing_code(info.host, info.port, ttl_sec=300)
+        uri = code.to_uri()
+        # Try to generate a real QR code PNG if qrcode is installed
+        qr_image_b64 = None
+        try:
+            import qrcode
+            import io
+            import base64
+            qr = qrcode.QRCode(version=1, box_size=10, border=4)
+            qr.add_data(uri)
+            qr.make(fit=True)
+            img = qr.make_image(fill_color="black", back_color="white")
+            buf = io.BytesIO()
+            img.save(buf, format="PNG")
+            qr_image_b64 = base64.b64encode(buf.getvalue()).decode("ascii")
+        except ImportError:
+            pass
+        return {
+            "status": "ok",
+            "uri": uri,
+            "pair": code.to_dict(),
+            "qr_image_base64": qr_image_b64,
+            "note": "Scan with phone or open the URI directly",
+        }
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+def make_qr_payload_for_pair(code, info) -> str:
+    """Build the QR payload string (combines pair info with brain info)."""
+    import json
+    return json.dumps({
+        "type": "omni-discover",
+        "name": info.name,
+        "host": info.host,
+        "port": info.port,
+        "version": info.version,
+        "model": info.model,
+        "caps": info.capabilities,
+        "pair_code": code.code,
+    })
+
+
+# PHASE-5B: Mobile WebSocket (dedicated for phone clients)
+@app.websocket("/ws/mobile")
+async def websocket_mobile(websocket):
+    """Dedicated WebSocket for mobile companion clients.
+    Same events as /ws but with mobile-specific extensions (location push, etc)."""
+    await manager.connect(websocket)
+    try:
+        while True:
+            data = await websocket.receive_text()
+            try:
+                import json
+                msg = json.loads(data)
+                msg_type = msg.get("type")
+                if msg_type == "ping":
+                    await websocket.send_json({"type": "pong", "ts": time.time()})
+                elif msg_type == "voice":
+                    # Mobile voice command - same as web
+                    text = msg.get("text", "")
+                    if text:
+                        try:
+                            brain_inst = get_brain()
+                            result = await brain_inst.execute(text)
+                            await websocket.send_json({
+                                "type": "voice_result",
+                                "result": result,
+                                "ts": time.time(),
+                            })
+                        except Exception as e:
+                            await websocket.send_json({
+                                "type": "error",
+                                "error": str(e),
+                            })
+                elif msg_type == "location":
+                    # Mobile location push
+                    lat = msg.get("lat")
+                    lon = msg.get("lon")
+                    logger.info(f"📍 Mobile location: ({lat}, {lon})")
+                    # Feed into proactive engine
+                    try:
+                        from omni_v2.agents.proactive_v2 import get_proactive_engine
+                        engine = get_proactive_engine()
+                        engine.update_context(location={"lat": lat, "lon": lon})
+                    except Exception:
+                        pass
+                    await websocket.send_json({"type": "ack", "ts": time.time()})
+                else:
+                    await websocket.send_json({"type": "echo", "data": msg})
+            except json.JSONDecodeError:
+                await websocket.send_json({"type": "error", "error": "Invalid JSON"})
+    except WebSocketDisconnect:
+        manager.disconnect(websocket)
+    except Exception as e:
+        logger.error(f"Mobile WS error: {e}")
+        manager.disconnect(websocket)
 
 @app.get("/api/devices")
 async def devices():
