@@ -7,6 +7,13 @@ import time
 import sys
 from pathlib import Path
 
+# Windows console UTF-8 (must be FIRST after stdlib)
+try:
+    from omni_v2.utils.utf8 import setup_utf8_console
+    setup_utf8_console()
+except Exception:
+    pass
+
 # Ensure repo root
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 if str(REPO_ROOT) not in sys.path:

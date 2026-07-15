@@ -47,17 +47,25 @@ class AudioDeviceV3:
             import pyaudio
             self._pyaudio = pyaudio
             pa = pyaudio.PyAudio()
-            
+
             try:
                 default_idx = pa.get_default_input_device_info()['index'] if pa.get_default_input_device_info() else -1
-            except:
+            except Exception:
                 default_idx = -1
-            
+
+            # AUDIO-BUG-01 fix: guard against invalid default_idx
+            if default_idx < 0:
+                default_idx = None
+                logger.warning("No default input device reported by system")
+
             count = pa.get_device_count()
             logger.info(f"🎤 Scanning {count} audio devices...")
-            
+
             mics = []
             for i in range(count):
+                # AUDIO-BUG-01 fix: skip invalid indices
+                if i < 0:
+                    continue
                 try:
                     info = pa.get_device_info_by_index(i)
                     if info['maxInputChannels'] > 0:
@@ -65,7 +73,7 @@ class AudioDeviceV3:
                         is_default = (i == default_idx)
                         is_virtual = self._is_virtual(name)
                         score = self._score(name, info['defaultSampleRate'], is_default, i)
-                        
+
                         dev = {
                             "index": i,
                             "name": name,
@@ -80,13 +88,13 @@ class AudioDeviceV3:
                         logger.info(f"  [{i}] {tag} {name[:50]} | ch={info['maxInputChannels']} rate={info['defaultSampleRate']} default={is_default} score={score:.1f}")
                 except Exception as e:
                     continue
-            
+
             pa.terminate()
-            
+
             # Sort by score desc
             mics.sort(key=lambda x: x['score'], reverse=True)
             self.devices = mics
-            
+
             # Best non-virtual
             real_mics = [d for d in mics if not d['is_virtual']]
             if real_mics:
@@ -98,7 +106,7 @@ class AudioDeviceV3:
             else:
                 logger.error("❌ No mics found!")
                 self.best_device = None
-                
+
         except ImportError:
             logger.error("PyAudio not installed - pip install pyaudio")
             self.devices = []
@@ -140,15 +148,18 @@ class AudioDeviceV3:
         return self.get_best_index()
     
     def test_mic_rms(self, device_index: int = None, duration: float = 1.0) -> dict:
-        """Quick RMS test - returns max, rms for UI bar"""
+        """Quick RMS test - returns max, rms for UI bar.
+        AUDIO-BUG-02 fix: try/finally for stream cleanup"""
+        pa = None
+        stream = None
         try:
             import pyaudio
             import numpy as np
-            
+
             idx = device_index if device_index is not None else self.get_best_index()
-            if idx is None:
+            if idx is None or idx < 0:
                 return {"max": 0, "rms": 0, "error": "No device"}
-            
+
             pa = pyaudio.PyAudio()
             stream = pa.open(
                 format=pyaudio.paInt16,
@@ -158,27 +169,36 @@ class AudioDeviceV3:
                 input_device_index=idx,
                 frames_per_buffer=1024,
             )
-            
+
             import time
             time.sleep(0.1)
             frames = []
             for _ in range(int(16000 / 1024 * duration)):
                 data = stream.read(1024, exception_on_overflow=False)
                 frames.append(data)
-            
-            stream.stop_stream()
-            stream.close()
-            pa.terminate()
-            
+
             audio = b''.join(frames)
             arr = np.frombuffer(audio, dtype=np.int16).astype(np.float32) / 32767.0
             max_v = float(np.abs(arr).max())
             rms = float(np.sqrt(np.mean(arr**2)))
-            
+
             return {"max": max_v, "rms": rms, "device": idx}
-            
+
         except Exception as e:
             return {"max": 0, "rms": 0, "error": str(e)}
+        finally:
+            # AUDIO-BUG-02 fix: always clean up
+            if stream is not None:
+                try:
+                    stream.stop_stream()
+                    stream.close()
+                except Exception:
+                    pass
+            if pa is not None:
+                try:
+                    pa.terminate()
+                except Exception:
+                    pass
 
 # Global for V3 UI
 _device_v3_instance = None

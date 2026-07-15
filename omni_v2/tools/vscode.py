@@ -75,26 +75,48 @@ class VSCodeTool(CommandPlugin):
             cmd = entities["command"]
             cmd = cmd.strip()
 
-            # FIXED: Allowlist + dangerous check (Codex Sol Patch)
-            is_dangerous, pattern = self._is_dangerous(cmd)
-            if is_dangerous:
-                logger.warning(f"Blocked dangerous command: {cmd} (pattern: {pattern})")
-                self._log_command(cmd, f"BLOCKED dangerous pattern {pattern}")
-                return CommandResult.error(
-                    f"Dangerous command blocked: '{cmd}' contains '{pattern}'. "
-                    f"For security, commands with {pattern} require confirmation. "
-                    f"If you really want this, run manually in terminal. "
-                    f"Logged to {LOGS_DIR / 'commands.log'}"
-                )
+            # GUARD-01 fix: defense-in-depth shell command validation
+            try:
+                from omni_v2.core.guardrails import safe_shell_command
+                is_safe, err = safe_shell_command(cmd)
+                if not is_safe:
+                    logger.warning(f"Guardrail blocked shell command: {cmd[:80]} | {err}")
+                    self._log_command(cmd, f"GUARDRAIL_BLOCKED {err}")
+                    return CommandResult.error(
+                        f"Command blocked by security guardrail: {err}. "
+                        f"OMNI only allows safe commands like dir, echo, python, etc."
+                    )
+            except ImportError:
+                # Fallback to existing dangerous-pattern check
+                is_dangerous, pattern = self._is_dangerous(cmd)
+                if is_dangerous:
+                    logger.warning(f"Blocked dangerous command: {cmd} (pattern: {pattern})")
+                    self._log_command(cmd, f"BLOCKED dangerous pattern {pattern}")
+                    return CommandResult.error(
+                        f"Dangerous command blocked: '{cmd}' contains '{pattern}'. "
+                        f"For security, commands with {pattern} require confirmation. "
+                        f"If you really want this, run manually in terminal. "
+                        f"Logged to {LOGS_DIR / 'commands.log'}"
+                    )
+
+            # Length cap
+            if len(cmd) > 500:
+                return CommandResult.error(f"Command too long ({len(cmd)} chars, max 500)")
 
             # Log all commands for audit trail
-            logger.info(f"Executing terminal command (logged): {cmd}")
+            logger.info(f"Executing terminal command (logged): {cmd[:100]}")
 
             try:
-                # For complex commands like "echo hello && dir", shell=True is needed
-                # But we now log and block dangerous patterns
-                # Use shell=True but with timeout and capture, and log result
-                result = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=10)
+                # FIXED: Even with allowlist, use shell=False with shlex.split
+                # This is the truly safe approach
+                import shlex
+                try:
+                    cmd_list = shlex.split(cmd, posix=False)
+                except ValueError as e:
+                    return CommandResult.error(f"Command parse error: {e}")
+                result = subprocess.run(
+                    cmd_list, shell=False, capture_output=True, text=True, timeout=10
+                )
                 output = result.stdout[:500] if result.stdout else result.stderr[:500] if result.stderr else "No output"
 
                 self._log_command(cmd, f"exit={result.returncode} output={output[:100]}")
@@ -102,12 +124,14 @@ class VSCodeTool(CommandPlugin):
                 if result.returncode == 0:
                     return CommandResult.ok(f"Ran: {cmd}\n{output[:200]}", data={"output": output, "exit_code": result.returncode})
                 else:
-                    # Non-zero but still show output (maybe error is expected)
                     return CommandResult.ok(f"Ran: {cmd} (exit {result.returncode})\n{output[:200]}", data={"output": output, "exit_code": result.returncode})
 
             except subprocess.TimeoutExpired:
                 self._log_command(cmd, "TIMEOUT")
                 return CommandResult.error(f"Command timed out after 10s: {cmd}")
+            except FileNotFoundError as e:
+                self._log_command(cmd, f"NOT_FOUND {e}")
+                return CommandResult.error(f"Command not found: {e}")
             except Exception as e:
                 self._log_command(cmd, f"ERROR {e}")
                 logger.error(f"Terminal error: {e}")

@@ -44,6 +44,7 @@ class WindowsTool(CommandPlugin):
         "chrome": "chrome.exe",
         "firefox": "firefox.exe",
         "edge": "msedge.exe",
+        "msedge": "msedge.exe",
         "code": "code",
         "vscode": "code",
         "spotify": "spotify.exe",
@@ -51,6 +52,9 @@ class WindowsTool(CommandPlugin):
         "vlc": "vlc.exe",
         "steam": "steam.exe",
         "wordpad": "wordpad.exe",
+        "idle": "python -m idlelib",
+        "python": "python.exe",
+        "py": "python.exe",
     }
 
     DANGEROUS_PATTERNS = [
@@ -134,13 +138,19 @@ class WindowsTool(CommandPlugin):
             # Safe app - use shell=False with list args (FIXED from shell=True)
             try:
                 logger.info(f"Launching safe app: {app} -> {safe_exe} with shell=False")
-                subprocess.Popen([safe_exe], shell=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                # Some apps need to be split into command + args (e.g. "python -m idlelib")
+                if isinstance(safe_exe, str) and " " in safe_exe:
+                    cmd_list = safe_exe.split()
+                else:
+                    cmd_list = [safe_exe]
+                subprocess.Popen(cmd_list, shell=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
                 self._log_action("launch", app, f"Opened {safe_exe} via shell=False")
                 return CommandResult.ok(f"Opened {app}")
             except FileNotFoundError:
                 # Try via shell as fallback for apps not in PATH but safe
                 try:
-                    subprocess.Popen(safe_exe, shell=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                    fallback_cmd = safe_exe.split() if isinstance(safe_exe, str) and " " in safe_exe else [safe_exe]
+                    subprocess.Popen(fallback_cmd, shell=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
                     self._log_action("launch", app, f"Opened {safe_exe} fallback")
                     return CommandResult.ok(f"Opened {app}")
                 except Exception as e:

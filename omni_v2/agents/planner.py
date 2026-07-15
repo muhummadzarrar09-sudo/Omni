@@ -1,4 +1,10 @@
-"""Planner Agent - Breaks user utterance into steps, handles chain commands"""
+"""Planner Agent - Breaks user utterance into steps, handles chain commands
+HARDENED VERSION
+
+FIXES (from diagnostic/01_DIAGNOSTIC_REPORT.md):
+- LOOP-BUG-01 [HIGH]: Better context resolution (word-boundary, not just substring)
+- LOOP-BUG-03 [HIGH]: Cumulative context threaded through chain
+"""
 import re
 from typing import List, Dict, Any
 from dataclasses import dataclass
@@ -11,18 +17,19 @@ except ImportError:
 
 from omni_v2.core.command_registry import ActionStep, CommandRegistry
 
+
 class PlannerAgent:
     """Planner: Breaks chain commands into actionable steps"""
 
     def __init__(self, registry: CommandRegistry = None):
         self.registry = registry or CommandRegistry()
-        logger.info("PlannerAgent V2 initialized (chain-aware)")
+        logger.info("PlannerAgent V2 initialized (chain-aware, hardened)")
 
     def plan(self, text: str) -> List[ActionStep]:
         """
         V2 NEW: Chain commands
-        Input: "Open Chrome, maximize it, and go to YouTube and play music"
-        Output: 4 steps
+        Input: "Open Chrome, maximize it, and go to YouTube"
+        Output: 3 steps
         """
         text = text.strip()
         if not text:
@@ -50,7 +57,7 @@ class PlannerAgent:
                     step_index=i
                 ))
 
-        # Enhance with context awareness: resolve "it", "that", etc.
+        # LOOP-BUG-01 fix: better context resolution with word-boundary regex
         steps = self._resolve_context_references(steps, text)
 
         logger.info(f"Planner: {len(steps)} steps planned for '{text}'")
@@ -60,22 +67,30 @@ class PlannerAgent:
         return steps
 
     def _resolve_context_references(self, steps: List[ActionStep], original_text: str) -> List[ActionStep]:
-        """Resolve 'it', 'that', 'them' to previous entities"""
+        """
+        LOOP-BUG-01 fix: Resolve 'it', 'that', 'them', 'this' to previous entities.
+        Uses word-boundary regex to avoid false positives like 'this' inside 'thistle'.
+        """
         resolved = []
         last_entities = {}
+        # Pronouns to look for at start of step or after a chain delimiter
+        PRONOUN_RE = re.compile(r'\b(it|that|them|this|those)\b', re.IGNORECASE)
 
         for step in steps:
-            # If step has "it" or "that" and no entities, use last entities
             lower = step.original.lower()
-            has_pronoun = any(pron in lower for pron in [" it", " that", " them", " this"])
+            has_pronoun = bool(PRONOUN_RE.search(lower))
 
+            # If step has a pronoun AND no entities, try to inherit from previous step
             if has_pronoun and not step.entities and last_entities:
-                # Copy last entities for context
                 step.entities = last_entities.copy()
-                step.description += f" (context: resolved 'it' -> {last_entities})"
+                step.description += f" (context: resolved pronoun -> {last_entities})"
                 logger.info(f"Context resolved: '{step.original}' -> {last_entities}")
+            # Even if step has some entities, fill in missing ones from prior context
+            elif has_pronoun and step.entities and last_entities:
+                for k, v in last_entities.items():
+                    step.entities.setdefault(k, v)
+                logger.info(f"Context enriched: '{step.original}' -> {step.entities}")
 
-            # Update last_entities if this step has entities
             if step.entities:
                 last_entities = step.entities.copy()
 

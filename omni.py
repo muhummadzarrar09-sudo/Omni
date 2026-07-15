@@ -22,6 +22,13 @@ import os
 import signal
 from pathlib import Path
 
+# Fix Windows cp1252 console encoding (must run before any module prints emoji)
+try:
+    from omni_v2.utils.utf8 import setup_utf8_console
+    setup_utf8_console()
+except Exception:
+    pass
+
 # Graceful Ctrl+C
 _shutdown_flag = False
 def _handle_ctrl_c(signum, frame):
@@ -129,11 +136,14 @@ if _cli_cmd or _test_mode:
                     # Planner breaks chain into steps
                     steps = planner.plan(cmd)
                     print(f"Planner: {len(steps)} steps -> {[s.description for s in steps]}")
-                    
-                    # Execute each step
+
+                    # LOOP-BUG-03 fix: use execute_chain with cumulative context + retry/self-healing
+                    results_list = await executor.execute_chain(
+                        steps, context={"original": cmd},
+                        max_retries=2, evaluator=evaluator, monitor=monitor
+                    )
                     results = []
-                    for step in steps:
-                        result = await executor.execute_step(step)
+                    for step, result in zip(steps, results_list):
                         is_ok = monitor.monitor(step, result)
                         results.append((step, result, is_ok))
                         print(f"  Executor: {step.action} -> {result.success} | Monitor: {is_ok}")
@@ -141,7 +151,7 @@ if _cli_cmd or _test_mode:
                     # Evaluate overall goal
                     eval_result = evaluator.evaluate(cmd, [s for s,_,_ in results], [r for _,r,_ in results])
                     print(f"Evaluator: {eval_result.success} -> {eval_result.final_message[:80]}")
-                    
+
                     # Memory store
                     memory.remember(cmd, eval_result.final_message)
 

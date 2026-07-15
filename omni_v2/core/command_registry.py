@@ -237,9 +237,21 @@ class CommandRegistry:
         return ParsedCommand("unknown", {"text": text}, text, 0.0, [])
 
     def parse_chain(self, text: str) -> List[ActionStep]:
-        """V2 NEW: Parse chain commands like 'open chrome and maximize it and go to youtube'"""
-        # Split by chain delimiters: and, then, , , plus
-        parts = re.split(r'\s+(?:and|then|,|plus|after\s+that)\s+', text, flags=re.IGNORECASE)
+        """V2 NEW: Parse chain commands like 'open chrome and maximize it and go to youtube'.
+        LOOP-BUG-05 fix: protect URLs from being split on '&'"""
+        # Protect URLs by replacing ' & ' and ' &=' with placeholders inside URL substrings
+        # Simple approach: find URLs, mask any 'and'/'&' inside them
+        url_re = re.compile(r'https?://[^\s]+', re.IGNORECASE)
+        protected = text
+        for m in url_re.finditer(text):
+            url = m.group(0)
+            # Replace ' and ' with a placeholder inside the URL
+            safe = url.replace(' and ', ' ANDPLACEHOLDER ').replace('&', 'AMPPLACEHOLDER')
+            protected = protected.replace(url, safe, 1)
+        # Split by chain delimiters
+        parts = re.split(r'\s+(?:and|then|,|plus|after\s+that)\s+', protected, flags=re.IGNORECASE)
+        # Restore placeholders in each part
+        parts = [p.replace(' ANDPLACEHOLDER ', ' and ').replace('AMPPLACEHOLDER', '&') for p in parts]
         steps = []
         for i, part in enumerate(parts):
             part = part.strip()

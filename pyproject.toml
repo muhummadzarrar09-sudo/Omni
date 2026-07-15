@@ -1,0 +1,96 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "omni-agi"
+version = "3.1.0"
+description = "OMNI - Local, private, cinematic AGI assistant. Multi-agent brain powered by Qwen2.5-1.5B GGUF, with voice (faster-whisper), vision (Moondream2), and 100+ tools."
+readme = "README.md"
+license = {text = "MIT"}
+authors = [{name = "Zarrar + Agent", email = "team@omni-agi.dev"}]
+requires-python = ">=3.10"
+keywords = ["agi", "voice-assistant", "llama-cpp", "whisper", "local-ai", "hackathon"]
+
+# Runtime deps - pinned to versions that work on Win/Mac/Linux with Python 3.10-3.12
+# We list only what's needed for the BRAIN. Optional features (vision, web UI) are extras.
+dependencies = [
+    # Core
+    "loguru>=0.7.0",
+    "numpy>=1.26.0",
+    "psutil>=5.9.0",
+    "packaging>=24.0",
+    # LLM brain (PRIMARY)
+    "llama-cpp-python>=0.3.0",
+    # Voice
+    "faster-whisper>=1.0.3",
+    "sounddevice>=0.4.6",
+    "pyttsx3>=2.90",
+    # Memory
+    "chromadb>=0.4.0",
+    # Tools
+    "pyautogui>=0.9.54",
+    "pyperclip>=1.8.2",
+    "requests>=2.31.0",
+    "pydantic>=2.0.0",
+]
+
+[project.optional-dependencies]
+# Optional features - install what you need
+brain = [
+    "llama-cpp-python>=0.3.0",
+]
+voice = [
+    "faster-whisper>=1.0.3",
+    "sounddevice>=0.4.6",
+    "pyttsx3>=2.90",
+]
+vision = [
+    "mss>=9.0.0",
+    "opencv-python>=4.8.0",
+    "Pillow>=10.0.0",
+]
+ui = [
+    "PyQt5>=5.15.10",
+    "PyQt5-Qt5>=5.15.2",
+    "PyQtWebEngine>=5.15.6",
+]
+fastapi = [
+    "fastapi>=0.110.0",
+    "uvicorn[standard]>=0.27.0",
+    "python-multipart>=0.0.9",
+]
+all = [
+    "omni-agi[brain,voice,vision,ui,fastapi]",
+]
+dev = [
+    "pytest>=7.4.0",
+    "pytest-asyncio>=0.23.0",
+    "black>=24.0.0",
+    "mypy>=1.8.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/muhummadzarrar09-sudo/Omni"
+Issues = "https://github.com/muhummadzarrar09-sudo/Omni/issues"
+
+[project.scripts]
+# After `pip install -e .` you get an `omni` command
+omni = "omni.cli:main"
+
+[tool.setuptools]
+# Auto-discover packages (omni, omni_v2) but exclude tests, archive, and any
+# data/cache directories that would bloat the wheel.
+packages = ["omni", "omni_v2"]
+
+[tool.setuptools.package-data]
+omni = ["py.typed"]
+
+[tool.black]
+line-length = 100
+target-version = ["py310", "py311", "py312"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["omni_v2/tests", "omni/tests"]
+python_files = ["test_*.py"]

@@ -112,6 +112,13 @@ dmypy.json
 data/
 !data/.gitkeep
 !data/README.md
+!data/models/.gitkeep
+
+# OMNI scaffolding artifacts
+omni.egg-info/
+build/
+dist/
+*.egg-info/
 
 # But allow docs/ data/ .gitkeep to keep folder structure
 # data/ is ignored except .gitkeep

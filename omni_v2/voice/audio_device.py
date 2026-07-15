@@ -1,5 +1,11 @@
 """
 Audio Device Manager V2 - Fixed for Realtek Mic + No Sound Mapper
+
+HARDENED: Re-exports from V3 module for single source of truth
+(AUDIO-BUG-03 fix).
+
+Original implementation is kept below for backwards compat, but
+callers should prefer `from omni_v2.voice.audio_device_v3 import ...`.
 """
 
 import platform
@@ -13,6 +19,19 @@ try:
 except ImportError:
     import logging
     logger = logging.getLogger("AudioDeviceV2")
+
+# AUDIO-BUG-03 fix: re-export V3 as the canonical implementation
+try:
+    from omni_v2.voice.audio_device_v3 import (
+        AudioDeviceV3 as AudioDeviceManager,
+        get_audio_v3 as _get_audio_v3,
+    )
+    get_audio_v3 = _get_audio_v3
+    # Re-export helper
+    get_best_index = lambda: _get_audio_v3().get_best_index()
+    get_best_name = lambda: _get_audio_v3().get_best_name()
+except Exception as _e:
+    logger.debug(f"V3 re-export failed: {_e}")
 
 @dataclass
 class AudioDevice:
