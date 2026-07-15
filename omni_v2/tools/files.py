@@ -85,7 +85,7 @@ class FilesTool(CommandPlugin):
             p.write_text(str(content), encoding="utf-8")
             return CommandResult.ok(
                 f"✅ Wrote {len(str(content))} chars to {path}",
-                metadata={"path": str(p.resolve()), "size": len(str(content))}
+                data={"path": str(p.resolve()), "size": len(str(content))}
             )
         except Exception as e:
             return CommandResult.fail(f"Write failed: {e}")
@@ -98,7 +98,7 @@ class FilesTool(CommandPlugin):
             if not p.exists():
                 return CommandResult.fail(f"File not found: {path}")
             content = p.read_text(encoding="utf-8", errors="replace")
-            return CommandResult.ok(content[:2000], metadata={"path": str(p.resolve())})
+            return CommandResult.ok(content[:2000], data={"path": str(p.resolve())})
         except Exception as e:
             return CommandResult.fail(f"Read failed: {e}")
 
