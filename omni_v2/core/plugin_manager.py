@@ -26,10 +26,15 @@ class CommandResult:
     @classmethod
     def ok(cls, message: str, data: Any = None):
         return cls(success=True, message=message, data=data)
-    
+
     @classmethod
     def error(cls, message: str, error: str = None):
         return cls(success=False, message=message, error=error or message)
+
+    @classmethod
+    def fail(cls, message: str, error: str = None):
+        """Alias for error() — some tools call fail(), some call error()."""
+        return cls.error(message, error)
 
 class CommandPlugin:
     metadata: CommandMetadata = None
