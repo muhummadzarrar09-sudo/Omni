@@ -1,10 +1,12 @@
 """
-Intent Mapper V2 - Same as V1 fixed, ultra robust
+Intent Mapper V2 - Phase 6.1 Fast AF Semantic Router
+Integrates FastAFStore Tier 1 (<1.5ms lookup) + optional SentenceTransformers
 """
 from __future__ import annotations
 from typing import Optional, Tuple, Dict, List
 import re
 import os
+import time
 
 try:
     from loguru import logger
@@ -16,6 +18,11 @@ try:
     import numpy as np
 except ImportError:
     np = None
+
+try:
+    from omni_v2.memory.fast_af_store import get_fast_af_store
+except ImportError:
+    get_fast_af_store = None
 
 ST_AVAILABLE = False
 SentenceTransformer = None
@@ -40,6 +47,7 @@ else:
         _IMPORT_ERROR_MSG = str(e)
 
 class IntentMapper:
+    """Fast AF Semantic Router + Intent Mapper V2"""
     def __init__(self, model_name: str = "all-MiniLM-L6-v2", threshold: float = 0.58):
         self.model_name = model_name
         self.threshold = threshold
@@ -47,11 +55,12 @@ class IntentMapper:
         self._intent_map: Dict[str, any] = {}
         self._command_ids: List[str] = []
         self._fallback_examples: Dict[str, List[str]] = {}
+        self.fast_af = get_fast_af_store() if get_fast_af_store else None
         self._load_model()
 
     def _load_model(self) -> None:
         if not ST_AVAILABLE:
-            logger.info(f"IntentMapper V2: ST not available, regex only")
+            logger.info(f"IntentMapper V2: ST not available, using Fast AF DB + regex")
             return
         try:
             logger.info(f"Loading Intent Mapper V2 model: {self.model_name}")
@@ -70,6 +79,14 @@ class IntentMapper:
             return
         cleaned = [re.sub(r"[^a-z0-9 ]", " ", ex.lower()).strip() for ex in examples if ex.strip()]
         self._fallback_examples[command_id] = cleaned
+        
+        # Register right into Fast AF DB Tier 1 (<1ms)
+        if self.fast_af:
+            try:
+                self.fast_af.remember_skill(command_id, "command_intent", command_id, [], cleaned, persist=False)
+            except Exception as e:
+                logger.debug(f"FastAF register error: {e}")
+
         if self.model is None:
             return
         try:
@@ -85,6 +102,18 @@ class IntentMapper:
         if not user_input or not user_input.strip():
             return None, 0.0
         user_input_clean = user_input.lower().strip()
+        
+        # Step 1: Sub-millisecond Tier 1 check via FastAFStore (<1.5 ms)
+        if self.fast_af:
+            try:
+                matches, lookup_ms = self.fast_af.semantic_lookup(user_input_clean, threshold=min(0.42, self.threshold), top_k=1)
+                if matches and matches[0]["score"] >= min(0.45, self.threshold):
+                    logger.debug(f"⚡ FastAF match ({lookup_ms:.2f}ms): {matches[0]['name']} | score={matches[0]['score']:.2f}")
+                    return matches[0]["name"], matches[0]["score"]
+            except Exception as e:
+                logger.debug(f"FastAF match error: {e}")
+
+        # Step 2: SentenceTransformers check if loaded
         if self.model is None or not self._intent_map:
             return None, 0.0
         try:

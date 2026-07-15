@@ -68,14 +68,15 @@ class CommandRegistry:
     def __init__(self):
         self._patterns: Dict[str, Dict[str, List[Tuple[str, str]]]] = {}
         try:
-            if _INTENT_AVAILABLE and IntentMapper and os.environ.get("OMNI_NO_TORCH", "") != "1":
+            if _INTENT_AVAILABLE and IntentMapper:
                 self.intent_mapper = IntentMapper()
             else:
                 class Dummy:
                     def register_command(self, *a, **k): pass
                     def match(self, t): return None, 0.0
                 self.intent_mapper = Dummy()
-        except Exception:
+        except Exception as e:
+            logger.debug(f"IntentMapper init failed: {e}")
             class Dummy:
                 def register_command(self, *a, **k): pass
                 def match(self, t): return None, 0.0

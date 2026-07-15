@@ -42,6 +42,12 @@ def _handle_ctrl_c(signum, frame):
 signal.signal(signal.SIGINT, _handle_ctrl_c)
 sys.path.insert(0, str(Path(__file__).parent))
 
+try:
+    from omni_v2.core.paths import bootstrap_workspace
+    bootstrap_workspace()
+except Exception:
+    pass
+
 # Handle torch DLL WinError 1114 - auto fallback to regex-only mode
 try:
     import torch

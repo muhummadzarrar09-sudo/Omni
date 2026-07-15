@@ -4,8 +4,13 @@ export default function ChatHistory({ messages, onClear }) {
   return (
     <div className="neu p-5 flex flex-col h-full">
       <div className="flex items-center justify-between mb-4">
-        <div className="text-[9px] font-extrabold tracking-[2.5px] text-[#A0AEC0]">💬 CHAT HISTORY — LIKE CHATGPT</div>
-        <button onClick={onClear} className="neu-button small text-[10px] py-1 px-2">🗑️ Clear</button>
+        <div className="flex items-center gap-2 flex-wrap">
+          <div className="text-[9px] font-extrabold tracking-[2px] text-[#A0AEC0]">💬 CHAT & ORCHESTRATION</div>
+          <span className="bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full text-[9px] font-semibold border border-emerald-500/30">🔒 OMNI-Profile Isolated</span>
+          <span className="bg-cyan-500/20 text-cyan-400 px-2 py-0.5 rounded-full text-[9px] font-semibold border border-cyan-500/30">✨ Proactive Polling Active</span>
+          <span className="bg-purple-500/20 text-purple-300 px-2 py-0.5 rounded-full text-[9px] font-semibold border border-purple-500/30">🧠 GTX 1050 Ti GGUF</span>
+        </div>
+        <button onClick={onClear} className="neu-button small text-[10px] py-1 px-2.5 shrink-0">🗑️ Clear</button>
       </div>
       
       <div className="flex-1 overflow-y-auto space-y-3 pr-1" style={{ maxHeight: '65vh' }}>

@@ -22,13 +22,14 @@ except ImportError:
 MODELS_DIR = DATA_DIR / "models"
 
 class LlamaCppDirect:
-    """Direct llama.cpp - WAY FASTER than Ollama wrapper"""
+    """Direct llama.cpp - WAY FASTER than Ollama wrapper - GTX 1050 Ti 4GB Tuned"""
 
-    def __init__(self, model_path: Path = None, n_gpu_layers: int = 35, n_ctx: int = 4096, n_threads: int = 8):
+    def __init__(self, model_path: Path = None, n_gpu_layers: int = 24, n_ctx: int = 2048, n_threads: int = 8, n_batch: int = 256):
         self.model_path = model_path or self._find_model()
         self.n_gpu_layers = n_gpu_layers
         self.n_ctx = n_ctx
         self.n_threads = n_threads
+        self.n_batch = n_batch
         self.llm = None
         self._init_model()
 
@@ -68,18 +69,25 @@ class LlamaCppDirect:
         try:
             from llama_cpp import Llama
 
-            logger.info(f"Loading llama.cpp model: {self.model_path} (n_gpu_layers={self.n_gpu_layers}, n_ctx={self.n_ctx}) - WAY FASTER than Ollama")
+            # Dynamic VRAM Clamping for GTX 1050 Ti 4GB (Risk P1 remediation)
+            model_name_lower = self.model_path.name.lower()
+            if any(s in model_name_lower for s in ["3b", "1.5b", "2b", "moondream"]):
+                gpu_layers = -1  # Small GGUF fits 100% inside 4GB VRAM
+            else:
+                gpu_layers = min(self.n_gpu_layers, 22)  # Clamp 8B models to ~3GB VRAM leaving headroom for Whisper INT8
+
+            logger.info(f"Loading llama.cpp model: {self.model_path} (n_gpu_layers={gpu_layers}, n_ctx={self.n_ctx}, n_batch={self.n_batch}) - GTX 1050 Ti Tuned")
 
             self.llm = Llama(
                 model_path=str(self.model_path),
-                n_gpu_layers=self.n_gpu_layers,  # 35 for 1050 Ti 4GB, rest to CPU
+                n_gpu_layers=gpu_layers,
                 n_ctx=self.n_ctx,
                 n_threads=self.n_threads,
-                n_batch=512,
+                n_batch=self.n_batch,
                 verbose=False
             )
 
-            logger.info(f"Llama.cpp loaded: {self.model_path.name} - {self.n_gpu_layers} GPU layers, {self.n_ctx} ctx - WAY FASTER than Ollama (10-81%)")
+            logger.info(f"Llama.cpp loaded: {self.model_path.name} - {gpu_layers} GPU layers, {self.n_ctx} ctx - WAY FASTER than Ollama (10-81%)")
 
         except ImportError:
             logger.error("llama-cpp-python not installed - pip install llama-cpp-python --upgrade")

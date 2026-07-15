@@ -1,5 +1,6 @@
-"""Monitor Agent - Watches if step succeeded"""
-from typing import Dict, Any
+"""Monitor Agent - Watches execution & captures failure context (Phase 6.2)"""
+import time
+from typing import Dict, Any, Optional
 
 try:
     from loguru import logger
@@ -10,37 +11,85 @@ except ImportError:
 from omni_v2.core.command_registry import ActionStep
 from omni_v2.core.plugin_manager import CommandResult
 
+try:
+    from omni_v2.memory.fast_af_store import get_fast_af_store
+except ImportError:
+    get_fast_af_store = None
+
 class MonitorAgent:
-    """Monitor: Checks if action actually succeeded (screen changed? process running?)"""
+    """Monitor: Checks if action succeeded and extracts deep failure diagnostics"""
 
     def __init__(self):
-        logger.info("MonitorAgent V2 initialized (observes execution)")
+        self.fast_af = get_fast_af_store() if get_fast_af_store else None
+        logger.info("MonitorAgent V2 Phase 6.2 initialized (observes & diagnoses)")
 
     def monitor(self, step: ActionStep, result: CommandResult) -> bool:
-        """Check if step succeeded - best-effort verification"""
-
-        # If plugin says failed, monitor says failed
+        """Check if step succeeded - best-effort verification + FastAF telemetry"""
+        t0 = time.perf_counter()
+        
         if not result.success:
-            logger.debug(f"Monitor: Step {step.step_index} failed per plugin")
+            logger.debug(f"Monitor: Step {step.step_index} ({step.action}) failed -> {result.message[:100]}")
+            if self.fast_af:
+                try:
+                    self.fast_af.log_execution(step.action, False, (time.perf_counter() - t0) * 1000.0, result.message)
+                except Exception:
+                    pass
             return False
 
-        # For trusted categories, trust plugin success
         trusted = ["browser", "system", "windows", "vscode", "omni", "alpha", "media", "files", "ai", "integrations"]
         category = step.action.split("_")[0] if "_" in step.action else ""
         if category in trusted:
             logger.debug(f"Monitor: Step {step.step_index} trusted category {category} -> success")
-            return True
-
-        # For other categories, try to verify via plugin's verify_action if available
-        # For Phase 1, simple trust
-        logger.debug(f"Monitor: Step {step.step_index} -> success (best-effort)")
+        else:
+            logger.debug(f"Monitor: Step {step.step_index} -> success (best-effort)")
+            
+        if self.fast_af:
+            try:
+                self.fast_af.log_execution(step.action, True, (time.perf_counter() - t0) * 1000.0, result.message)
+            except Exception:
+                pass
+                
         return True
+
+    def capture_failure_context(self, step: ActionStep, result: CommandResult) -> Dict[str, Any]:
+        """Phase 6.2: Extract structured failure context for Evaluator / GGUF refinement"""
+        error_msg = result.message or "Unknown error"
+        
+        # Check error types
+        is_missing_app = any(k in error_msg.lower() for k in ["no such file", "not found", "errno 2", "cannot find"])
+        is_unknown_plugin = "plugin not found" in error_msg.lower() or "no plugin for" in error_msg.lower()
+        is_permission_err = "permission denied" in error_msg.lower() or "errno 13" in error_msg.lower()
+        
+        # Extract stderr / Errno code
+        errno_code = None
+        if "errno " in error_msg.lower():
+            try:
+                errno_code = int(error_msg.lower().split("errno ")[1].split("]")[0].split(":")[0].strip())
+            except Exception:
+                pass
+
+        context = {
+            "failed_step": step.action,
+            "step_index": step.step_index,
+            "entities": step.entities,
+            "original_goal": step.original,
+            "error_message": error_msg,
+            "errno_code": errno_code,
+            "is_missing_app": is_missing_app,
+            "is_unknown_plugin": is_unknown_plugin,
+            "is_permission_err": is_permission_err,
+            "can_retry": not is_permission_err,  # Don't blind-retry permission errors
+            "timestamp": time.time()
+        }
+        
+        logger.info(f"🔍 Monitor diagnosed failure: {step.action} | missing_app={is_missing_app} | can_retry={context['can_retry']}")
+        return context
 
     def monitor_chain(self, steps: list[ActionStep], results: list[CommandResult]) -> Dict[str, Any]:
         """Monitor entire chain"""
         success_count = sum(1 for r in results if r.success)
         total = len(results)
-        overall_success = success_count == total or success_count >= total * 0.7  # 70% success = overall success for chain
+        overall_success = success_count == total or success_count >= total * 0.7
 
         report = {
             "total_steps": total,
@@ -51,5 +100,4 @@ class MonitorAgent:
         }
 
         logger.info(f"Monitor Chain: {success_count}/{total} steps succeeded, overall={overall_success}")
-
         return report

@@ -133,8 +133,9 @@ def migrate_old_data():
     except Exception as e:
         print(f"[OMNI V2] Migration failed: {e} - continuing with fresh data")
 
-# Auto-migrate on import
-try:
-    migrate_old_data()
-except Exception as e:
-    print(f"[OMNI V2] Auto-migration failed: {e}")
+def bootstrap_workspace():
+    """Explicit bootstrap to run migrations and directory checks cleanly without import side-effects"""
+    try:
+        migrate_old_data()
+    except Exception as e:
+        print(f"[OMNI V2] Workspace bootstrap warning: {e}")

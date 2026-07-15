@@ -67,6 +67,16 @@ class ExecuteResponse(BaseModel):
 # Startup
 @app.on_event("startup")
 async def startup():
+    try:
+        from omni_v2.core.paths import bootstrap_workspace
+        bootstrap_workspace()
+    except Exception:
+        pass
+    try:
+        from omni_v2.agents.proactive import get_proactive_agent
+        get_proactive_agent().start()
+    except Exception:
+        pass
     print("="*70)
     print("  OMNI V3 FastAPI - Pretty Damn Good Backend")
     print(f"  REPO_ROOT: {REPO_ROOT} (portable, not D:/Omni)")
@@ -94,9 +104,16 @@ async def root():
 @app.get("/api/health")
 async def health():
     brain = get_brain()
+    proactive_active = False
+    try:
+        from omni_v2.agents.proactive import get_proactive_agent
+        proactive_active = get_proactive_agent()._running
+    except Exception:
+        pass
     return {
         "status": "ok",
         "brain_ready": brain.ready,
+        "proactive_active": proactive_active,
         "repo_root": str(REPO_ROOT),
         "portable": True,
         "audio": brain.audio_mgr.get_best_name() if brain.audio_mgr else "No audio",
@@ -127,7 +144,27 @@ async def demo(demo_type: str):
 @app.post("/api/test-mic")
 async def test_mic():
     brain = get_brain()
-    result = brain.test_mic()
+    result = brain.test_mic() if hasattr(brain, 'test_mic') else {}
+    if not isinstance(result, dict):
+        result = {"message": str(result)}
+    
+    status = "idle"
+    last_text = None
+    rms = result.get("rms", 0.0)
+    
+    if brain.voice_pipeline:
+        status = getattr(brain.voice_pipeline, "current_status", "idle")
+        auto_txt = getattr(brain.voice_pipeline, "last_auto_text", None)
+        if auto_txt:
+            last_text = auto_txt
+            # Clear it so we don't process twice
+            brain.voice_pipeline.last_auto_text = None
+        if hasattr(brain.voice_pipeline, "last_rms") and brain.voice_pipeline.last_rms > 0:
+            rms = brain.voice_pipeline.last_rms
+            
+    result["status"] = status
+    result["last_auto_text"] = last_text
+    result["rms"] = rms
     return result
 
 @app.post("/api/ptt/start")

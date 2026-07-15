@@ -146,9 +146,23 @@ class SimpleTTS:
                 
                 elif self.engine_type == "sapi":
                     logger.info(f"🔊 Speaking via SAPI5: '{text[:80]}...'")
-                    self.sapi_engine.say(text)
-                    if blocking:
-                        self.sapi_engine.runAndWait()
+                    try:
+                        import pythoncom
+                        pythoncom.CoInitialize()
+                    except Exception:
+                        pass
+                    import pyttsx3
+                    # Initialize pyttsx3 on the active thread to avoid Windows COM RPC_E_WRONG_THREAD errors
+                    engine = pyttsx3.init()
+                    engine.setProperty('rate', 185)
+                    voices = engine.getProperty('voices')
+                    if voices:
+                        for v in voices:
+                            if 'zira' in v.name.lower() or 'female' in v.name.lower() or 'sarah' in v.name.lower():
+                                engine.setProperty('voice', v.id)
+                                break
+                    engine.say(text)
+                    engine.runAndWait()
                     logger.info(f"✅ SAPI5 speak done")
                 
             except Exception as e:

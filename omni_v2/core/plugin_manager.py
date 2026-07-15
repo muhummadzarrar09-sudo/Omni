@@ -147,8 +147,14 @@ class PluginManager:
         for cname, plugin in self._plugins.items():
             if cname.lower() in name_lower or name_lower in cname.lower():
                 return plugin
-        logger.warning(f"Plugin not found for action '{name}'. Available: {list(self._plugins.keys())}")
-        return None
+
+        # Universal AGI routing fallback: never return None or say "Plugin not found for unknown"
+        if name == "unknown" or "unknown" in name_lower:
+            logger.info(f"⚡ Routing unknown action '{name}' to universal ai_chat plugin")
+            return self._plugins.get("ai_chat") or self._plugins.get("omni_help")
+
+        logger.info(f"⚡ Plugin not explicitly matched for action '{name}'. Routing to universal ai_chat engine.")
+        return self._plugins.get("ai_chat") or self._plugins.get("omni_help")
 
     def get_all_plugins(self) -> List[CommandPlugin]:
         return list(self._plugins.values())

@@ -29,6 +29,9 @@ class SQLiteMemoryStore:
     def _init_db(self):
         try:
             self.conn = sqlite3.connect(str(self.db_path), check_same_thread=False)
+            self.conn.execute("PRAGMA journal_mode=WAL;")
+            self.conn.execute("PRAGMA synchronous=NORMAL;")
+            self.conn.execute("PRAGMA wal_autocheckpoint=1000;")
             self.conn.execute("""
                 CREATE TABLE IF NOT EXISTS memories (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,

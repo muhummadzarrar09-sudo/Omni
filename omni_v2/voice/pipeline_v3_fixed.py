@@ -43,6 +43,9 @@ class VoicePipelineV3Fixed:
         self.on_mic_level = on_mic_level
         self.hud = hud
         self.device_index = device_index
+        self.current_status = "idle"
+        self.last_auto_text = None
+        self.last_rms = 0.0
         
         self.is_recording = False
         self.audio_buffer = []
@@ -140,6 +143,8 @@ class VoicePipelineV3Fixed:
             return
         self.audio_buffer = []
         self.is_recording = True
+        self.current_status = "recording"
+        self.last_auto_text = None
         if self.on_status:
             try:
                 self.on_status("recording")
@@ -147,12 +152,13 @@ class VoicePipelineV3Fixed:
                 pass
         self.record_thread = threading.Thread(target=self._record_loop, daemon=True, name="V3FixedRecord")
         self.record_thread.start()
-        logger.info("🔴 V3.1 Recording started - SPEAK LOUD 1 inch!")
+        logger.info("🔴 V3.1 Recording started (Auto-VAD Half-Duplex Active) - SPEAK NOW!")
     
     def stop(self):
-        if not self.is_recording:
+        if not self.is_recording and self.current_status != "recording":
             return
         self.is_recording = False
+        self.current_status = "processing"
         if self.on_status:
             try:
                 self.on_status("processing")
@@ -205,10 +211,15 @@ class VoicePipelineV3Fixed:
             logger.info("🔍 Transcribing via SINGLE STT...")
             text = self.stt.transcribe(audio, sample_rate=self.sample_rate)
             if text and text.strip():
+                self.last_auto_text = text.strip()
                 logger.info(f"✅ HEARD: '{text}'")
                 if self.on_transcription:
                     self.on_transcription(text)
+                self.current_status = "idle"
+                if self.on_status:
+                    self.on_status("idle")
             else:
+                self.current_status = "idle"
                 logger.warning(f"❌ Empty | max={max_amp:.3f} rms={rms:.5f}")
                 if self.hud:
                     try:
@@ -249,6 +260,9 @@ class VoicePipelineV3Fixed:
                         latency='low'
                     ) as stream:
                         logger.info(f"✅ SD stream opened @ {sr}Hz - recording...")
+                        self.actual_sr = sr
+                        speech_detected = False
+                        silence_start_time = 0.0
                         
                         while self.is_recording:
                             try:
@@ -259,35 +273,27 @@ class VoicePipelineV3Fixed:
                                 # data is (chunk, channels)
                                 mono = data[:, 0] if data.ndim > 1 else data
                                 
-                                # Resample if needed to 16000
-                                if sr != 16000:
-                                    # Simple resample via linear interpolation for V3
-                                    # For hackathon, just take every Nth sample or repeat
-                                    # Better: use librosa? But avoid dependency, do simple
-                                    import math
-                                    ratio = sr / 16000
-                                    # For 48000->16000, take every 3rd sample
-                                    if sr == 48000:
-                                        mono_resampled = mono[::3]
-                                    elif sr == 44100:
-                                        # Approx: 44100/16000 = 2.756, need resample
-                                        # Use simple decimation for demo - will work for STT because whisper resamples internally anyway
-                                        # Actually faster-whisper expects 16000, but we can feed 44100 trimmed - it will handle?
-                                        # For now, keep 44100 as is and let STT handle, or simple
-                                        indices = np.linspace(0, len(mono)-1, int(len(mono)/ratio)).astype(int)
-                                        mono_resampled = mono[indices]
-                                    else:
-                                        mono_resampled = mono
-                                else:
-                                    mono_resampled = mono
+                                # Store raw high-fidelity samples directly; clean resample happens once inside _get_audio()
+                                self.audio_buffer.extend(mono.tolist())
                                 
-                                self.audio_buffer.extend(mono_resampled.tolist())
+                                max_v = float(np.abs(mono).max())
+                                rms = float(np.sqrt(np.mean(mono**2)))
+                                self.last_rms = rms
+                                
+                                # Auto-VAD Half-Duplex Turn Detection: auto-stop after speech finishes!
+                                if rms > 0.012:
+                                    speech_detected = True
+                                    silence_start_time = time.time()
+                                elif speech_detected and rms < 0.007:
+                                    if time.time() - silence_start_time > 1.3:
+                                        logger.info("🟢 Auto-VAD: 1.3s silence after speech detected! Automatically stopping & transcribing turn...")
+                                        self.is_recording = False
+                                        threading.Thread(target=self._auto_process_turn, daemon=True, name="AutoProcessTurn").start()
+                                        break
                                 
                                 # Live mic level callback
                                 if self.on_mic_level:
                                     try:
-                                        max_v = float(np.abs(mono).max())
-                                        rms = float(np.sqrt(np.mean(mono**2)))
                                         self.on_mic_level(rms, max_v)
                                     except:
                                         pass
@@ -397,4 +403,17 @@ class VoicePipelineV3Fixed:
     def _get_audio(self):
         if not self.audio_buffer:
             return None
-        return np.array(self.audio_buffer, dtype=np.float32)
+        raw_audio = np.array(self.audio_buffer, dtype=np.float32)
+        if hasattr(self, 'actual_sr') and self.actual_sr != 16000 and self.actual_sr > 0 and len(raw_audio) > 0:
+            logger.info(f"✨ High-precision linear interpolation resampling: {self.actual_sr}Hz -> 16000Hz ({len(raw_audio)} samples)")
+            t_old = np.linspace(0, len(raw_audio) / self.actual_sr, len(raw_audio))
+            t_new = np.linspace(0, len(raw_audio) / self.actual_sr, int(len(raw_audio) * 16000 / self.actual_sr))
+            return np.interp(t_new, t_old, raw_audio).astype(np.float32)
+        return raw_audio
+
+    def _auto_process_turn(self):
+        """Automatically process the captured audio turn on VAD silence"""
+        try:
+            self.stop()
+        except Exception as e:
+            logger.error(f"Auto VAD turn processing error: {e}")
