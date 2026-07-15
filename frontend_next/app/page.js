@@ -165,6 +165,58 @@ export default function Home() {
     if (thoughtsRef.current) thoughtsRef.current.scrollTop = thoughtsRef.current.scrollHeight
   }, [thoughts])
 
+  // WAKEWORD-UI: WebSocket for live "Hey OMNI" detection
+  useEffect(() => {
+    let ws = null
+    let reconnectTimer = null
+    const connect = () => {
+      try {
+        ws = new WebSocket('ws://localhost:8765/ws')
+        ws.onmessage = (event) => {
+          try {
+            const msg = JSON.parse(event.data)
+            if (msg.type === 'wake') {
+              setState('listening')
+              addLog('[Wake] 🟢 "Hey OMNI" detected - listening for command...')
+              setIsMuted(false)
+            } else if (msg.type === 'voice_command') {
+              addLog(`[Wake] 🗣️ Heard: "${msg.text}"`)
+              setIsMuted(true)
+            } else if (msg.type === 'voice_result') {
+              addLog(`[Wake] ✅ Result: ${(msg.result?.message || '').slice(0, 120)}`)
+              if (msg.result?.message) {
+                setMessages(prev => [...prev, {
+                  role: 'assistant',
+                  text: msg.result.message,
+                  timestamp: Date.now(),
+                  brain: msg.result.brain,
+                  tier: msg.result.brain?.tier || 'voice',
+                }])
+              }
+              setState('idle')
+            }
+          } catch (e) {
+            // ignore parse errors
+          }
+        }
+        ws.onclose = () => {
+          // Reconnect after 3s
+          reconnectTimer = setTimeout(connect, 3000)
+        }
+        ws.onerror = () => {
+          try { ws.close() } catch (e) {}
+        }
+      } catch (e) {
+        reconnectTimer = setTimeout(connect, 3000)
+      }
+    }
+    connect()
+    return () => {
+      if (reconnectTimer) clearTimeout(reconnectTimer)
+      if (ws) try { ws.close() } catch (e) {}
+    }
+  }, [])
+
   // PROACTIVE-UI: poll for new suggestions every 30s
   useEffect(() => {
     let mounted = true

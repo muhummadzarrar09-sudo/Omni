@@ -24,6 +24,7 @@ from pathlib import Path
 import sys
 import asyncio
 import json
+import time
 from typing import Optional, Any, Dict
 
 # Ensure repo root in path
@@ -126,6 +127,42 @@ async def startup():
         logger.info("🟢 ProactiveEngine V2 started (60s interval, 9 rules)")
     except Exception as e:
         logger.warning(f"ProactiveEngine V2 start failed: {e}")
+
+    # WAKEWORD-01: start the always-on "Hey OMNI" service
+    try:
+        from omni_v2.voice.wake_word_v3 import WakeWordServiceV3
+
+        async def on_wake():
+            logger.info("🟢 WakeWord: on_wake fired - OMNI is listening")
+            try:
+                await manager.broadcast({"type": "wake", "ts": time.time()})
+            except Exception:
+                pass
+
+        async def on_command(text: str):
+            logger.info(f"🟢 WakeWord: voice command '{text}' - routing to brain")
+            try:
+                # Notify UI
+                await manager.broadcast({"type": "voice_command", "text": text, "ts": time.time()})
+                # Execute the command via the brain
+                brain_inst = get_brain()
+                result = await brain_inst.execute(text)
+                # Notify UI of result
+                await manager.broadcast({"type": "voice_result", "result": result, "ts": time.time()})
+            except Exception as e:
+                logger.error(f"on_command error: {e}")
+
+        wake = WakeWordServiceV3(
+            on_wake=lambda: asyncio.create_task(on_wake()),
+            on_command=lambda text: asyncio.create_task(on_command(text)),
+        )
+        if wake.is_available():
+            wake.start()
+            logger.info(f"🟢 WakeWord V3 started with {wake.get_status()}")
+        else:
+            logger.info("ℹ️ WakeWord V3 not available (no STT backend)")
+    except Exception as e:
+        logger.warning(f"WakeWord V3 start failed: {e}")
     print("="*70)
     print("  OMNI V3 FastAPI - Pretty Damn Good Backend")
     print(f"  REPO_ROOT: {REPO_ROOT} (portable, not D:/Omni)")
