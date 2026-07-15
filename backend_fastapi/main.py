@@ -692,6 +692,213 @@ async def test_personality_phrase():
     except Exception as e:
         return {"status": "error", "error": str(e)}
 
+
+# PHASE-3A: Onboarding endpoints
+@app.get("/api/onboarding")
+async def get_onboarding_state():
+    """Get the user's onboarding state."""
+    try:
+        from omni_v2.agents.onboarding import get_onboarding_state
+        s = get_onboarding_state()
+        return {"status": "ok", "onboarding": s.to_dict()}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+class OnboardingAdvance(BaseModel):
+    name: Optional[str] = None
+
+
+@app.post("/api/onboarding/advance")
+async def onboarding_advance(req: OnboardingAdvance):
+    """Advance to the next onboarding step. Optionally set name."""
+    try:
+        from omni_v2.agents.onboarding import get_onboarding_state
+        s = get_onboarding_state()
+        next_step = s.advance(name=req.name or "")
+        # If we got a name, also set it in the user profile
+        if req.name:
+            try:
+                from omni_v2.agents.user_profile import get_user_profile
+                profile = get_user_profile()
+                profile.set("name", req.name)
+            except Exception:
+                pass
+        return {
+            "status": "ok",
+            "current_step": s.to_dict(),
+        }
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+@app.post("/api/onboarding/skip")
+async def onboarding_skip():
+    """Skip onboarding."""
+    try:
+        from omni_v2.agents.onboarding import get_onboarding_state
+        s = get_onboarding_state()
+        s.skip()
+        return {"status": "ok", "skipped": True}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+@app.post("/api/onboarding/reset")
+async def onboarding_reset():
+    """Reset onboarding (re-onboard)."""
+    try:
+        from omni_v2.agents.onboarding import get_onboarding_state
+        s = get_onboarding_state()
+        s.reset()
+        return {"status": "ok", "reset": True}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+# PHASE-3B: Demo mode endpoints
+class DemoReq(BaseModel):
+    action: str  # "start" | "stop" | "pause" | "resume" | "skip_to"
+    scene_id: Optional[int] = None
+
+
+# Track demo state globally
+_demo_mode = None
+_demo_callbacks = []
+
+@app.post("/api/demo")
+async def demo_control(req: DemoReq):
+    """Control the demo mode."""
+    global _demo_mode
+    try:
+        from omni_v2.agents.demo_mode import get_demo_mode, DEMO_SCRIPT
+        if _demo_mode is None:
+            async def on_scene(scene):
+                import json
+                # Broadcast to all WebSocket clients
+                try:
+                    await manager.broadcast({
+                        "type": "demo_scene",
+                        "scene": scene.id,
+                        "title": scene.title,
+                        "narration": scene.narration,
+                        "action": scene.action,
+                        "command": scene.command,
+                        "duration_sec": scene.duration_sec,
+                    })
+                except Exception:
+                    pass
+            _demo_mode = get_demo_mode(on_scene=on_scene)
+        if req.action == "start":
+            _demo_mode.start()
+            return {"status": "ok", "action": "started", "script_size": len(DEMO_SCRIPT)}
+        elif req.action == "stop":
+            _demo_mode.stop()
+            return {"status": "ok", "action": "stopped"}
+        elif req.action == "pause":
+            _demo_mode.pause()
+            return {"status": "ok", "action": "paused"}
+        elif req.action == "resume":
+            _demo_mode.resume()
+            return {"status": "ok", "action": "resumed"}
+        elif req.action == "skip_to":
+            if req.scene_id is None:
+                return {"status": "error", "error": "scene_id required for skip_to"}
+            _demo_mode.skip_to(req.scene_id)
+            return {"status": "ok", "action": "skipped", "scene_id": req.scene_id}
+        return {"status": "error", "error": f"Unknown action: {req.action}"}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+@app.get("/api/demo/status")
+async def demo_status():
+    """Get demo mode status."""
+    try:
+        from omni_v2.agents.demo_mode import get_demo_mode, DEMO_SCRIPT
+        global _demo_mode
+        if _demo_mode is None:
+            _demo_mode = get_demo_mode()
+        return {
+            "status": "ok",
+            "demo": _demo_mode.get_status(),
+            "script": [
+                {"id": s.id, "title": s.title, "duration_sec": s.duration_sec}
+                for s in DEMO_SCRIPT
+            ],
+        }
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+@app.get("/api/demo/script")
+async def demo_script():
+    """Get the full demo script."""
+    try:
+        from omni_v2.agents.demo_mode import DEMO_SCRIPT
+        return {
+            "status": "ok",
+            "script": [
+                {
+                    "id": s.id,
+                    "title": s.title,
+                    "narration": s.narration,
+                    "action": s.action,
+                    "command": s.command,
+                    "duration_sec": s.duration_sec,
+                    "shows": s.shows,
+                }
+                for s in DEMO_SCRIPT
+            ],
+        }
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+# PHASE-3C: Stats endpoints
+@app.get("/api/stats")
+async def get_stats():
+    """Get the full stats dashboard."""
+    try:
+        from omni_v2.agents.stats import get_stats_engine
+        s = get_stats_engine()
+        return {"status": "ok", "stats": s.get_full_dashboard()}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+@app.get("/api/stats/today")
+async def get_stats_today():
+    """Get today's stats."""
+    try:
+        from omni_v2.agents.stats import get_stats_engine
+        s = get_stats_engine()
+        return {"status": "ok", "today": s.get_today_stats()}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+@app.get("/api/stats/lifetime")
+async def get_stats_lifetime():
+    """Get lifetime stats."""
+    try:
+        from omni_v2.agents.stats import get_stats_engine
+        s = get_stats_engine()
+        return {"status": "ok", "lifetime": s.get_lifetime_stats()}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+@app.get("/api/stats/time-saved")
+async def get_stats_time_saved():
+    """Get estimated time saved by using OMNI."""
+    try:
+        from omni_v2.agents.stats import get_stats_engine
+        s = get_stats_engine()
+        return {"status": "ok", "time_saved": s.estimate_time_saved()}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
 @app.get("/api/devices")
 async def devices():
     brain = get_brain()
