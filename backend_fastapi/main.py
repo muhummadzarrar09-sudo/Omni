@@ -246,6 +246,217 @@ async def get_proactive_suggestions():
         return {"status": "error", "error": str(e), "suggestions": []}
 
 
+# PHASE-1A: User Profile endpoints
+@app.get("/api/user/profile")
+async def get_user_profile():
+    """Get the user's persistent profile."""
+    try:
+        from omni_v2.agents.user_profile import get_user_profile
+        profile = get_user_profile()
+        return {"status": "ok", "profile": profile.get_all()}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+class UserProfileUpdate(BaseModel):
+    name: Optional[str] = None
+    pronouns: Optional[str] = None
+    timezone: Optional[str] = None
+    location: Optional[str] = None
+    work_start_hour: Optional[int] = None
+    work_end_hour: Optional[int] = None
+    lunch_hour: Optional[int] = None
+    favorite_voice: Optional[str] = None
+    formality: Optional[str] = None
+    theme: Optional[str] = None
+    wake_word_sensitivity: Optional[float] = None
+    proactive_frequency: Optional[str] = None
+    favorite_music: Optional[str] = None
+    birthday: Optional[str] = None
+    hobbies: Optional[list] = None
+
+
+@app.post("/api/user/profile")
+async def update_user_profile(update: UserProfileUpdate):
+    """Update user profile fields."""
+    try:
+        from omni_v2.agents.user_profile import get_user_profile
+        profile = get_user_profile()
+        # Only set non-None values
+        payload = {k: v for k, v in update.dict().items() if v is not None}
+        results = profile.set_many(**payload)
+        if not all(results.values()):
+            return {"status": "error", "error": "Some fields could not be set", "results": results}
+        return {"status": "ok", "updated": list(payload.keys())}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+@app.delete("/api/user/profile/{field}")
+async def forget_user_profile_field(field: str):
+    """Forget (reset) a specific profile field."""
+    try:
+        from omni_v2.agents.user_profile import get_user_profile
+        profile = get_user_profile()
+        success = profile.forget(field)
+        return {"status": "ok" if success else "not_found", "field": field, "forgot": success}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+@app.get("/api/user/greeting")
+async def get_user_greeting():
+    """Get a personalized greeting based on time + profile + history."""
+    try:
+        from datetime import datetime
+        from omni_v2.agents.user_profile import get_user_profile
+        from omni_v2.memory.session_memory import get_session_memory
+
+        profile = get_user_profile()
+        mem = get_session_memory()
+        name = profile.greeting_name()
+        now = datetime.now()
+        hour = now.hour
+
+        # Time-based greeting
+        if 5 <= hour < 12:
+            greeting = f"Good morning{', ' + name if name else ''} ☀️"
+        elif 12 <= hour < 17:
+            greeting = f"Good afternoon{', ' + name if name else ''}"
+        elif 17 <= hour < 22:
+            greeting = f"Good evening{', ' + name if name else ''}"
+        else:
+            greeting = f"Burning the midnight oil{', ' + name if name else ''} 🌙"
+
+        # Yesterday's context
+        yesterday_summary = ""
+        yesterday = mem.get_yesterday_digest()
+        if yesterday and yesterday.total_commands > 0:
+            top_topic = yesterday.top_topics[0][0] if yesterday.top_topics else "various things"
+            yesterday_summary = f" Yesterday you worked on {top_topic}."
+
+        # Last seen
+        last_seen = mem.get_last_seen()
+        body = f"It's {now.strftime('%A, %B %d, %Y')}.{yesterday_summary} Ready for a productive day?"
+
+        return {
+            "status": "ok",
+            "greeting": greeting,
+            "body": body,
+            "name": name,
+            "has_name": bool(name),
+            "has_history": bool(yesterday and yesterday.total_commands > 0),
+            "last_seen": last_seen.isoformat() if last_seen else None,
+        }
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+@app.get("/api/user/stats")
+async def get_user_stats():
+    """Get behavioral stats for the UI."""
+    try:
+        from omni_v2.agents.user_profile import get_user_profile
+        from omni_v2.memory.session_memory import get_session_memory
+        profile = get_user_profile()
+        mem = get_session_memory()
+        return {
+            "status": "ok",
+            "profile_stats": profile.get_stats(),
+            "session_stats": mem.get_session_stats(),
+            "weekly_summary": mem.get_weekly_summary(),
+        }
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+# PHASE-1B: Session Memory endpoints
+@app.get("/api/memory/sessions")
+async def get_sessions(days: int = 7):
+    """Get sessions from the last N days."""
+    try:
+        from omni_v2.memory.session_memory import get_session_memory
+        mem = get_session_memory()
+        sessions = mem.recall_sessions(days=days)
+        return {
+            "status": "ok",
+            "sessions": [s.to_dict() for s in sessions],
+            "count": len(sessions),
+        }
+    except Exception as e:
+        return {"status": "error", "error": str(e), "sessions": []}
+
+
+@app.get("/api/memory/session/{session_id}")
+async def get_session_details(session_id: str):
+    """Get details for a specific session."""
+    try:
+        from omni_v2.memory.session_memory import get_session_memory
+        mem = get_session_memory()
+        sessions = mem.recall_sessions(days=30)
+        for s in sessions:
+            if s.id == session_id:
+                return {"status": "ok", "session": s.to_dict()}
+        return {"status": "not_found", "session_id": session_id}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+@app.get("/api/memory/search")
+async def search_memory(q: str, days: int = 30):
+    """Search across all sessions."""
+    try:
+        from omni_v2.memory.session_memory import get_session_memory
+        mem = get_session_memory()
+        matches = mem.search_history(q, days=days)
+        return {
+            "status": "ok",
+            "query": q,
+            "matches": [s.to_dict() for s in matches],
+            "count": len(matches),
+        }
+    except Exception as e:
+        return {"status": "error", "error": str(e), "matches": []}
+
+
+@app.get("/api/memory/today")
+async def get_today_memory():
+    """Get today's digest."""
+    try:
+        from omni_v2.memory.session_memory import get_session_memory
+        mem = get_session_memory()
+        digest = mem.get_today_digest()
+        return {"status": "ok", "digest": digest.to_dict()}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+@app.get("/api/memory/yesterday")
+async def get_yesterday_memory():
+    """Get yesterday's digest."""
+    try:
+        from omni_v2.memory.session_memory import get_session_memory
+        mem = get_session_memory()
+        digest = mem.get_yesterday_digest()
+        if digest:
+            return {"status": "ok", "digest": digest.to_dict()}
+        return {"status": "no_data", "message": "No data for yesterday"}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+@app.get("/api/memory/weekly")
+async def get_weekly_memory():
+    """Get 7-day summary."""
+    try:
+        from omni_v2.memory.session_memory import get_session_memory
+        mem = get_session_memory()
+        summary = mem.get_weekly_summary()
+        return {"status": "ok", "summary": summary}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
 class ProactiveAction(BaseModel):
     suggestion_id: str
     action: str  # "dismiss" | "act" | "execute"
@@ -448,6 +659,16 @@ async def execute(req: ExecuteRequest):
             logger.warning(f"[Guardrail] Prompt injection attempt: {inj_msg} | cmd='{req.command[:80]}'")
     except ImportError:
         pass
+    # PHASE-1: record this command in session memory + profile
+    try:
+        from omni_v2.memory.session_memory import get_session_memory
+        from omni_v2.agents.user_profile import get_user_profile
+        mem = get_session_memory()
+        mem.record_command(req.command)
+        profile = get_user_profile()
+        profile.record_command(req.command)
+    except Exception:
+        pass  # don't let memory failures break the command
     brain = get_brain()
     result = await brain.execute(req.command)
     return result

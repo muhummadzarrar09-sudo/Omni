@@ -192,6 +192,7 @@ class ProactiveEngineV2:
             self._check_coding_too_long,
             self._check_idle_too_long,
             self._check_morning_routine,
+            self._check_welcome_back,
             self._check_end_of_day,
             self._check_test_failures,
             self._check_unread_important,
@@ -305,42 +306,125 @@ class ProactiveEngineV2:
         )
 
     def _check_morning_routine(self) -> Optional[ProactiveSuggestion]:
-        """Between 8-10am, greet with day overview"""
+        """Between 8-10am, greet with personalized day overview."""
         now = datetime.now()
         if not (8 <= now.hour < 10):
             return None
         sid = f"morning_{now.strftime('%Y%m%d')}"
         if self._is_dismissed(sid):
             return None
+        # Use profile + session memory for personalization (Phase 1)
+        name = ""
+        yesterday_summary = ""
+        try:
+            from omni_v2.agents.user_profile import get_user_profile
+            profile = get_user_profile()
+            name = profile.greeting_name()
+        except Exception:
+            pass
+        try:
+            from omni_v2.memory.session_memory import get_session_memory
+            sess_mem = get_session_memory()
+            yesterday = sess_mem.get_yesterday_digest()
+            if yesterday and yesterday.total_commands > 0:
+                yesterday_summary = f" Yesterday you were working on {yesterday.top_topics[0][0] if yesterday.top_topics else 'stuff'}."
+        except Exception:
+            pass
+        name_part = f" {name}" if name else ""
+        body = f"It's {now.strftime('%A, %B %d')}.{yesterday_summary} Want me to brief you on today's calendar, weather, and top emails?"
         return ProactiveSuggestion(
             id=sid,
-            title="Good morning ☀️",
-            body=f"It's {now.strftime('%A, %B %d')}. Want me to brief you on today's calendar, weather, and top emails?",
+            title=f"Good morning{name_part} ☀️",
+            body=body,
             priority=1,
             category="time",
             actions=[
                 {"label": "Brief me", "command": "brief my day"},
-                {"label": "Just the calendar", "command": "show calendar today"},
+                {"label": "What did I do yesterday?", "command": "what did I do yesterday"},
                 {"label": "Skip", "command": "_ack"},
             ],
         )
 
+    def _check_welcome_back(self) -> Optional[ProactiveSuggestion]:
+        """User returning after 1+ day absence"""
+        try:
+            from omni_v2.memory.session_memory import get_session_memory
+            sess_mem = get_session_memory()
+            last_seen = sess_mem.get_last_seen()
+            if not last_seen:
+                return None
+            now = datetime.now()
+            hours_away = (now - last_seen).total_seconds() / 3600
+            if hours_away < 18:  # less than 18 hours, normal daily return
+                return None
+            if hours_away > 24 * 7:  # more than a week, not relevant
+                return None
+            # Get yesterday's digest
+            yesterday = sess_mem.get_yesterday_digest()
+            if not yesterday or yesterday.total_commands == 0:
+                return None
+            name = ""
+            try:
+                from omni_v2.agents.user_profile import get_user_profile
+                name = get_user_profile().greeting_name()
+            except Exception:
+                pass
+            name_part = f" {name}" if name else ""
+            top_topic = yesterday.top_topics[0][0] if yesterday.top_topics else "your project"
+            sid = f"welcome_back_{now.strftime('%Y%m%d')}"
+            if self._is_dismissed(sid):
+                return None
+            return ProactiveSuggestion(
+                id=sid,
+                title=f"Welcome back{name_part}!",
+                body=f"Last time you were working on {top_topic}. {yesterday.summary[:200]}",
+                priority=1,
+                category="time",
+                actions=[
+                    {"label": "Catch me up", "command": "what did I miss"},
+                    {"label": f"Continue {top_topic}", "command": f"continue working on {top_topic}"},
+                    {"label": "Skip", "command": "_ack"},
+                ],
+            )
+        except Exception as e:
+            logger.debug(f"welcome back check: {e}")
+            return None
+
     def _check_end_of_day(self) -> Optional[ProactiveSuggestion]:
-        """Around 5-6pm, wrap-up prompt"""
+        """Around 5-7pm, wrap-up prompt with personalization."""
         now = datetime.now()
         if not (17 <= now.hour < 19):
             return None
         sid = f"eod_{now.strftime('%Y%m%d')}"
         if self._is_dismissed(sid):
             return None
+        # Get today's stats for personalization
+        today_stats = ""
+        try:
+            from omni_v2.memory.session_memory import get_session_memory
+            sess_mem = get_session_memory()
+            today = sess_mem.get_today_digest()
+            if today and today.total_commands > 0:
+                top_topic = today.top_topics[0][0] if today.top_topics else "various things"
+                today_stats = f" Today: {today.total_commands} commands, mostly {top_topic}."
+        except Exception:
+            pass
+        name = ""
+        try:
+            from omni_v2.agents.user_profile import get_user_profile
+            name = get_user_profile().greeting_name()
+        except Exception:
+            pass
+        name_part = f" {name}" if name else ""
         return ProactiveSuggestion(
             id=sid,
-            title="End of day check-in",
-            body="Want me to commit your work, close your apps, and prep tomorrow's agenda?",
+            title=f"End of day{name_part}",
+            body=f"{today_stats} Want me to commit your work, close your apps, and prep tomorrow's agenda?",
             priority=1,
             category="time",
             actions=[
                 {"label": "Wrap it up", "command": "wrap up my day"},
+                {"label": "Daily review", "command": "what did I do today"},
                 {"label": "Keep going", "command": "_ack"},
             ],
         )

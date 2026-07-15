@@ -241,6 +241,41 @@ export default function Home() {
     return () => { mounted = false; clearInterval(interval) }
   }, [proactiveBanner])
 
+  // PHASE-1-UI: Fetch user greeting on boot
+  useEffect(() => {
+    let mounted = true
+    const fetchGreeting = async () => {
+      try {
+        const res = await fetch('http://localhost:8765/api/user/greeting')
+        const data = await res.json()
+        if (!mounted || data.status !== 'ok') return
+        // Show greeting as proactive banner if user has a name
+        if (data.has_name && !proactiveBanner) {
+          setProactiveBanner({
+            id: 'greeting_today',
+            title: data.greeting,
+            body: data.body,
+            priority: 1,
+            category: 'greeting',
+            actions: [
+              { label: "What's on my plate?", command: 'brief my day' },
+              { label: 'What did I do yesterday?', command: 'what did I do yesterday' },
+              { label: 'Skip', command: '_ack' },
+            ],
+          })
+          addLog(`[Greeting] ${data.greeting} — ${data.body.slice(0, 80)}`)
+        }
+        // Check if user has no name yet - show setup prompt
+        if (!data.has_name) {
+          addLog('[Profile] No name set yet. Visit settings to tell OMNI your name.')
+        }
+      } catch (e) {
+        // silent
+      }
+    }
+    fetchGreeting()
+  }, [])
+
   async function fetchDevices() {
     try {
       const res = await fetch('http://localhost:8765/api/devices')
