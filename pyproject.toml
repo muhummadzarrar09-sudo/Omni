@@ -22,17 +22,28 @@ dependencies = [
     "packaging>=24.0",
     # LLM brain (PRIMARY)
     "llama-cpp-python>=0.3.0",
-    # Voice
-    "faster-whisper>=1.0.3",
-    "sounddevice>=0.4.6",
-    "pyttsx3>=2.90",
+    # Voice - BEST OF THE BEST
+    "faster-whisper>=1.0.3",          # STT: fastest Whisper.cpp binding
+    "sounddevice>=0.4.6",             # Audio capture (reliable cross-platform)
+    "edge-tts>=6.1.9",                # TTS: Microsoft Edge natural voices (FREE, offline-quality)
+    "openwakeword>=0.6.0",            # Wake word: "Hey OMNI" detection (free, ONNX, offline)
+    # Browser automation - REAL one
+    "playwright>=1.40.0",             # Headless browser, screenshots, JS exec, isolated profiles
+    "selenium>=4.15.0",               # Backup browser automation
     # Memory
-    "chromadb>=0.4.0",
+    "chromadb>=0.4.0",                # Vector store
+    "lancedb>=0.5.0",                 # 10x faster vector store (alt)
+    # Embeddings
+    "sentence-transformers>=2.5.0",   # For BGE / MiniLM embeddings
     # Tools
-    "pyautogui>=0.9.54",
-    "pyperclip>=1.8.2",
+    "pyautogui>=0.9.54",              # UI automation (mouse/keyboard)
+    "pyperclip>=1.8.2",               # Clipboard
     "requests>=2.31.0",
     "pydantic>=2.0.0",
+    "pytesseract>=0.3.10",            # OCR (uses Tesseract)
+    "Pillow>=10.0.0",                 # Image processing
+    "apscheduler>=3.10.0",            # Proper cron-style scheduling
+    "pedalboard>=0.7.0",              # Audio effects (Spotify's library)
 ]
 
 [project.optional-dependencies]
@@ -43,12 +54,23 @@ brain = [
 voice = [
     "faster-whisper>=1.0.3",
     "sounddevice>=0.4.6",
-    "pyttsx3>=2.90",
+    "edge-tts>=6.1.9",
+    "openwakeword>=0.6.0",
 ]
 vision = [
     "mss>=9.0.0",
     "opencv-python>=4.8.0",
     "Pillow>=10.0.0",
+    "pytesseract>=0.3.10",
+]
+browser = [
+    "playwright>=1.40.0",
+    "selenium>=4.15.0",
+]
+memory = [
+    "chromadb>=0.4.0",
+    "lancedb>=0.5.0",
+    "sentence-transformers>=2.5.0",
 ]
 ui = [
     "PyQt5>=5.15.10",
@@ -59,9 +81,10 @@ fastapi = [
     "fastapi>=0.110.0",
     "uvicorn[standard]>=0.27.0",
     "python-multipart>=0.0.9",
+    "websockets>=12.0",
 ]
 all = [
-    "omni-agi[brain,voice,vision,ui,fastapi]",
+    "omni-agi[brain,voice,vision,browser,memory,ui,fastapi]",
 ]
 dev = [
     "pytest>=7.4.0",

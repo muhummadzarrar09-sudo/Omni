@@ -130,7 +130,7 @@ async def startup():
 
     # WAKEWORD-01: start the always-on "Hey OMNI" service
     try:
-        from omni_v2.voice.wake_word_v3 import WakeWordServiceV3
+        from omni_v2.voice.wake_word_best import WakeWordServiceBest
 
         async def on_wake():
             logger.info("🟢 WakeWord: on_wake fired - OMNI is listening")
@@ -142,27 +142,48 @@ async def startup():
         async def on_command(text: str):
             logger.info(f"🟢 WakeWord: voice command '{text}' - routing to brain")
             try:
-                # Notify UI
                 await manager.broadcast({"type": "voice_command", "text": text, "ts": time.time()})
-                # Execute the command via the brain
                 brain_inst = get_brain()
                 result = await brain_inst.execute(text)
-                # Notify UI of result
                 await manager.broadcast({"type": "voice_result", "result": result, "ts": time.time()})
             except Exception as e:
                 logger.error(f"on_command error: {e}")
 
-        wake = WakeWordServiceV3(
+        wake = WakeWordServiceBest(
             on_wake=lambda: asyncio.create_task(on_wake()),
             on_command=lambda text: asyncio.create_task(on_command(text)),
         )
         if wake.is_available():
             wake.start()
-            logger.info(f"🟢 WakeWord V3 started with {wake.get_status()}")
+            logger.info(f"🟢 WakeWord Best started with {wake.get_status()}")
         else:
-            logger.info("ℹ️ WakeWord V3 not available (no STT backend)")
+            logger.info("ℹ️ WakeWord Best not available (no STT backend)")
     except Exception as e:
-        logger.warning(f"WakeWord V3 start failed: {e}")
+        logger.warning(f"WakeWord Best start failed: {e}")
+
+    # BEST-01: TTS upgrade - edge-tts for natural voices
+    try:
+        from omni_v2.voice.tts_best import get_tts_best
+        global_tts = get_tts_best(voice="jarvis")
+        logger.info(f"🔊 TTS Best initialized: {global_tts.get_status()}")
+    except Exception as e:
+        logger.warning(f"TTS Best init failed: {e}")
+
+    # BEST-02: APScheduler for cron-style tasks
+    try:
+        from omni_v2.agents.scheduler import get_scheduler
+        async def fire_scheduled_task(task):
+            logger.info(f"📅 Scheduled task firing: {task.name}")
+            try:
+                await manager.broadcast({"type": "scheduled_task", "task": task.name, "command": task.command, "ts": time.time()})
+                brain_inst = get_brain()
+                await brain_inst.execute(task.command)
+            except Exception as e:
+                logger.error(f"scheduled task fire: {e}")
+        sched = get_scheduler(on_task_due=lambda t: asyncio.create_task(fire_scheduled_task(t)))
+        logger.info(f"⏰ Scheduler initialized: {len(sched.list_tasks())} existing tasks")
+    except Exception as e:
+        logger.warning(f"Scheduler init failed: {e}")
     print("="*70)
     print("  OMNI V3 FastAPI - Pretty Damn Good Backend")
     print(f"  REPO_ROOT: {REPO_ROOT} (portable, not D:/Omni)")
@@ -265,6 +286,122 @@ async def update_proactive_context(ctx: ProactiveContext):
         payload = {k: v for k, v in ctx.dict().items() if v is not None}
         engine.update_context(**payload)
         return {"status": "ok", "context_keys": list(payload.keys())}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+# SCHEDULER-01: APScheduler endpoints
+class ScheduleCronReq(BaseModel):
+    name: str
+    command: str
+    cron: str  # "0 9 * * 1-5" format
+
+
+class ScheduleIntervalReq(BaseModel):
+    name: str
+    command: str
+    seconds: Optional[int] = None
+    minutes: Optional[int] = None
+    hours: Optional[int] = None
+
+
+class ScheduleOnceReq(BaseModel):
+    name: str
+    command: str
+    run_at: str  # ISO format
+
+
+@app.get("/api/scheduler/tasks")
+async def list_scheduled_tasks():
+    """List all scheduled tasks."""
+    try:
+        from omni_v2.agents.scheduler import get_scheduler
+        sched = get_scheduler()
+        return {"status": "ok", "tasks": sched.list_tasks()}
+    except Exception as e:
+        return {"status": "error", "error": str(e), "tasks": []}
+
+
+@app.post("/api/scheduler/cron")
+async def add_cron_task(req: ScheduleCronReq):
+    """Add a cron-style task. e.g. {'name': 'morning', 'command': 'brief my day', 'cron': '0 8 * * *'}"""
+    try:
+        from omni_v2.agents.scheduler import get_scheduler
+        sched = get_scheduler()
+        task = sched.add_cron(req.name, req.command, req.cron)
+        return {"status": "ok", "task_id": task.id, "name": task.name}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+@app.post("/api/scheduler/interval")
+async def add_interval_task(req: ScheduleIntervalReq):
+    """Add an interval task. e.g. {'name': 'break', 'command': 'remind me to stretch', 'minutes': 30}"""
+    try:
+        from omni_v2.agents.scheduler import get_scheduler
+        sched = get_scheduler()
+        kwargs = {k: v for k, v in req.dict().items() if k not in ("name", "command") and v is not None}
+        task = sched.add_interval(req.name, req.command, **kwargs)
+        return {"status": "ok", "task_id": task.id, "name": task.name}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+@app.post("/api/scheduler/once")
+async def add_once_task(req: ScheduleOnceReq):
+    """Add a one-shot task. e.g. {'name': 'meeting', 'command': 'remind meeting', 'run_at': '2026-07-15T15:00:00'}"""
+    try:
+        from datetime import datetime
+        from omni_v2.agents.scheduler import get_scheduler
+        sched = get_scheduler()
+        run_at = datetime.fromisoformat(req.run_at)
+        task = sched.add_once(req.name, req.command, run_at)
+        return {"status": "ok", "task_id": task.id, "name": task.name}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+class RemoveTaskReq(BaseModel):
+    task_id: str
+
+
+@app.post("/api/scheduler/remove")
+async def remove_scheduled_task(req: RemoveTaskReq):
+    """Remove a scheduled task by ID."""
+    try:
+        from omni_v2.agents.scheduler import get_scheduler
+        sched = get_scheduler()
+        removed = sched.remove(req.task_id)
+        return {"status": "ok" if removed else "not_found", "removed": removed}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+# TTS-BEST-01: Voice persona endpoints
+class VoiceReq(BaseModel):
+    persona: str  # "jarvis" | "friday" | "aria" | "davis" | "sara"
+
+
+@app.post("/api/voice/set")
+async def set_voice_persona(req: VoiceReq):
+    """Change OMNI's voice persona."""
+    try:
+        from omni_v2.voice.tts_best import get_tts_best, VOICE_PERSONAS
+        if req.persona not in VOICE_PERSONAS:
+            return {"status": "error", "error": f"Unknown persona. Available: {list(VOICE_PERSONAS.keys())}"}
+        tts = get_tts_best(voice=req.persona)
+        tts.set_voice(req.persona)
+        return {"status": "ok", "persona": req.persona, "voice": VOICE_PERSONAS[req.persona]}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+@app.get("/api/voice/personas")
+async def list_voice_personas():
+    """List available voice personas."""
+    try:
+        from omni_v2.voice.tts_best import VOICE_PERSONAS
+        return {"status": "ok", "personas": VOICE_PERSONAS}
     except Exception as e:
         return {"status": "error", "error": str(e)}
 
