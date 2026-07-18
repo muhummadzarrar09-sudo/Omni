@@ -121,6 +121,13 @@ class Brain:
 
         # Build tool descriptions for the LLM prompt
         self._tool_brief = self._build_tool_brief()
+        # Auto-register the send_to_phone tool (Phase 5D) if the plugin manager exists
+        if self.plugin_manager is not None:
+            try:
+                from omni_v2.tools.send_to_phone import get_plugin
+                self.plugin_manager.register(get_plugin())
+            except Exception as e:
+                logger.debug(f"send_to_phone auto-register: {e}")
         self._initialized = True
         logger.info(
             f"🧠 Brain initialized | LLM={'✅' if self.model_loaded else '❌'} | "
@@ -211,6 +218,8 @@ class Brain:
             ("integrations_set_temperature", "Set smart home temperature"),
             ("integrations_send_email", "Send an email"),
             ("integrations_show_calendar", "Show calendar events"),
+            ("send_to_phone", "Send a push notification to all connected phones/devices (args: message)"),
+            ("snooze_notifications", "Mute/snooze all notifications for N minutes, or unsnooze"),
         ]
         return "\n".join(f"{name} - {desc}" for name, desc in canonical)
 

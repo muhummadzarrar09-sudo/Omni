@@ -58,6 +58,7 @@ class PluginManager:
         "media": "media_play_music",
         "files": "files_list_dir",
         "ai": "ai_chat",
+        "communication": None,  # Phase 5D/5E: don't auto-route to first comm plugin
     }
 
     # 100+ actions mapping
@@ -96,6 +97,15 @@ class PluginManager:
         "alpha_screen_desc": "alpha_control", "alpha_show_hints": "alpha_control",
         # VSCode
         "vscode_open": "vscode_control", "vscode_terminal": "vscode_control", "vscode_save": "vscode_control", "vscode_create": "vscode_control",
+        # Phase 5D: Mobile communication
+        "send_to_phone": "send_to_phone", "notify_phone": "send_to_phone",
+        "ping_phone": "send_to_phone", "text_me": "send_to_phone", "alert_phone": "send_to_phone",
+        "communication_send_to_phone": "send_to_phone",
+        # Phase 5E: Snooze / DND
+        "snooze_notifications": "snooze_notifications", "snooze": "snooze_notifications",
+        "mute_notifications": "snooze_notifications", "dnd": "snooze_notifications",
+        "unsnooze": "snooze_notifications", "silence": "snooze_notifications",
+        "communication_snooze_notifications": "snooze_notifications",
     }
 
     def __init__(self):
@@ -142,12 +152,26 @@ class PluginManager:
                     return self._plugins.get("smarthome_control") or self._plugins.get("system_screenshot")
                 if "performance" in lower or "status" in lower or "weather" in lower:
                     return self._plugins.get("performance_check")
-            fallback = self.CATEGORY_FALLBACKS.get(prefix)
-            if fallback and fallback in self._plugins:
-                return self._plugins[fallback]
-            for cname, plugin in self._plugins.items():
-                if plugin.metadata.category == prefix:
-                    return plugin
+            # Phase 5D/5E: when action is "<category>_<plugin>", find the plugin
+            # whose name matches the suffix instead of falling back to the first
+            # plugin in the category.
+            if prefix in self._categories:
+                # Try to find a plugin whose name appears in the rest of the action
+                rest = name[len(prefix) + 1:].lower()  # strip "prefix_"
+                for pname in self._categories[prefix]:
+                    if pname in rest or rest in pname:
+                        return self._plugins.get(pname)
+                # Suffix didn't match any plugin name — don't fall back to first
+                # plugin in category (that's the bug that bit us with snooze).
+                logger.debug(f"No plugin in category '{prefix}' matched suffix '{rest}'")
+            else:
+                fallback = self.CATEGORY_FALLBACKS.get(prefix)
+                if fallback and fallback in self._plugins:
+                    return self._plugins[fallback]
+                for cname, plugin in self._plugins.items():
+                    if plugin.metadata.category == prefix:
+                        return plugin
+        # Fuzzy match: name contains a plugin name (or vice versa)
         name_lower = name.lower()
         for cname, plugin in self._plugins.items():
             if cname.lower() in name_lower or name_lower in cname.lower():

@@ -7,6 +7,154 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [3.4.0] - 2026-07-15 — Visual-First (Phase 6A)
+
+**The brain watches what you're doing and acts proactively.**
+
+### Added
+- **Screen Watcher** (`omni_v2/agents/screen_watcher.py`)
+  - Periodic screen capture (mss/PIL) every 30s
+  - Platform-specific active window detection (Win32 / AppleScript / xdotool)
+  - Activity classifier: coding / browsing / reading / communicating / gaming / idle / unknown
+  - Screen hashing (64x36 SHA-256) for change detection
+  - App duration tracking (per-day)
+  - Persistent history (last 1500 scenes)
+  - 31 tests
+- **Proactive integration** (`omni_v2/agents/proactive_v2.py`)
+  - New `_check_screen_activity` rule: break reminders, reading summaries, context switches
+- **Backend additions** (8 new endpoints)
+  - `GET  /api/screen/status` — watcher status
+  - `GET  /api/screen/context` — current context dict
+  - `GET  /api/screen/dashboard` — full UI payload
+  - `GET  /api/screen/recent` — recent N scenes
+  - `POST /api/screen/start` / `stop` / `capture` / `classify`
+- **Mobile UI**
+  - New "Brain State" screen
+  - Current scene card (activity, app, duration, change %)
+  - Today's app durations
+  - Recent scenes
+  - Brain-related suggestions
+  - Start/Stop buttons
+
+### Stats
+- **20 test suites, 320+ tests, 0 failures** (1 pre-existing skill_synthesis)
+- **111 API endpoints**
+- **1 new perspective complete** (Visual-First)
+- **Phone companion + Brain watching** working together
+
+### Privacy
+- All screen processing is local (no pixels leave the laptop)
+- Screen context is just `{activity, app, window_title, change_pct}` — no images
+- User can start/stop at any time
+- Screenshots optional (off by default)
+
+---
+
+## [3.3.0] - 2026-07-15 — Mobile-First (Phase 5)
+
+**Your phone is now a remote for OMNI.** Open the URL on any phone browser,
+scan a QR code, talk to your butler from across the room. The brain also
+knows where you are now — and acts on it.
+
+### Added (Phase 5A — Network Discovery)
+- **mDNS Service Discovery** (`omni_v2/network/mdns.py`)
+  - Custom UDP broadcast (port 47624), zero dependencies
+  - Magic header `OMNI-DISCOVER-v1`
+  - Broadcaster on laptop, Discovery listener on phone
+  - 13 tests in `test_network.py`
+- **Network Info Protocol** (`omni_v2/network/discovery.py`)
+  - `NetworkInfo` dataclass with `to_dict()`, `ws_url`, `http_url`
+  - `PairingCode` (6-digit, 5-min TTL) with QR URI generation
+  - `make_qr_payload()` / `parse_qr_payload()` roundtrip
+
+### Added (Phase 5B — Mobile Web App)
+- **PWA** in `mobile/`
+  - 4 screens: Boot → Discover → Pair → Chat
+  - In-browser QR scanner (jsQR via CDN)
+  - Push-to-talk with `MediaRecorder` API
+  - WebSocket live chat with thought bubbles + tool chips
+  - localStorage persistence (last brain + 50 messages)
+  - Service worker for offline shell
+  - PWA install via `beforeinstallprompt`
+  - Auto-reconnect with exponential backoff
+  - 46 tests in `test_mobile.py` (7 are live HTTP probes)
+- **Backend additions**
+  - `POST /api/voice/transcribe` — accept audio blob, return text
+  - `POST /api/network/pair/verify` — verify 6-digit code
+  - `GET /api/network/pair/active` — get current valid code
+  - `GET /api/mobile/qr-page` — JSON for QR page
+  - Static mount `/mobile/` — serves the PWA
+  - Enhanced `/ws/mobile` WebSocket: text/audio/identify/location
+- **QR generator** (`mobile/qr.html`)
+  - Pure-JS, zero CDN
+  - Auto-fills code from backend on laptop
+  - Renders as canvas
+
+### Added (Phase 5C — Geofence Engine)
+- **Geofence Engine** (`omni_v2/agents/geofence.py`)
+  - Haversine distance math (accurate to ~0.5%)
+  - Place model: id, name, lat, lon, radius_m, icon, stats
+  - Rule model: place + event (arrive/depart/dwell) + command + cooldown
+  - 7 sample place templates (Home, Work, Gym, Coffee, etc.)
+  - Persistent JSON storage (atomic writes)
+  - Location history (last 1000 fixes)
+  - Multi-place: smallest radius wins
+  - 50 tests in `test_geofence.py` (7 are live HTTP)
+- **Proactive integration** (`omni_v2/agents/proactive_v2.py`)
+  - New rule: `_check_geofence_event` surfaces recent geofence firings
+- **Backend additions**
+  - 15 new geofence endpoints (status, dashboard, places CRUD, rules CRUD,
+    location push, history, events, seed, clear, reset)
+  - WebSocket `location` message: pushes fix → fires rules → broadcasts
+  - `geofence_event` + `location_update` broadcasts to all clients
+- **Mobile UI additions**
+  - Location card under chat input: "📍 Work · 12m away"
+  - Send-location button (one-shot)
+  - Continuous watch (`navigator.geolocation.watchPosition`)
+  - Manage screen: places + rules + events
+  - Add modals (place with "use my location", rule with place picker)
+  - Sample data button
+  - WebSocket handlers for `geofence_event`, `location_update`
+
+### Changed
+- 110+ new tests (now 250+ total)
+- 90+ API endpoints
+- New `omni_v2/network/` module
+- New `omni_v2/agents/geofence.py` module
+- New `mobile/` directory (PWA)
+
+### Added (Phase 5E — Notification prefs + snooze)
+- **Notification preferences** (`omni_v2/agents/notification_prefs.py`)
+  - 10 categories (info, success, warn, error, action, geofence, proactive, schedule, wake, tool)
+  - Per-category mute, min priority, daily limits
+  - DND hours (start/end, days of week)
+  - Snooze for N minutes (with reason)
+  - Tag filters / blocklist
+  - 37 tests in `test_notification_prefs.py`
+- **Snooze tool** (`omni_v2/tools/snooze.py`)
+  - `snooze for 30 minutes` / `mute for 1 hour` / `silence for 15 min`
+  - `enable do not disturb` / `stop snooze`
+  - 7 live backend endpoints (prefs CRUD, snooze, export)
+- **Mobile notification preferences UI**
+  - Toggle categories (info/warn/etc.)
+  - DND hour pickers
+  - Snooze preset buttons (15/30/60/120)
+  - Snooze banner with "lift" button
+
+### Changed
+- `omni_v2/core/plugin_manager.py` — bug fix: category fallback now matches
+  the action's suffix against plugin names instead of returning the first
+  plugin in the category. This was routing `communication_snooze_notifications`
+  to `send_to_phone` instead of `snooze_notifications`.
+
+### Stats
+- **19 test suites, 300+ tests, 0 failures**
+- **90+ API endpoints**
+- **5 mobile UI screens** (boot, discover, pair, chat, geofence, notifications, notifPrefs)
+- **Phone companion** (PWA, no app store)
+
+---
+
 ## [3.2.0] - 2026-07-15 — Product Grade
 
 **The real product.** Beyond the AIM. OMNI is now a daily-use tool, not a hackathon demo.
@@ -207,9 +355,12 @@ See `_archive/v1_docs/` for V1 documentation.
 
 ## Roadmap
 
-- **3.3.0** — Mobile companion (React Native app, push to talk)
-- **3.4.0** — E2E sync (XChaCha20 encryption, conflict resolution)
-- **3.5.0** — Plugin SDK v2 (auto-generate skills from OpenAPI specs)
+- **3.3.0** — Mobile companion (PWA + mDNS) ✅ done
+- **3.3.x** — Mobile polish (location push, geofencing, notifications) ✅ done
+- **3.4.0** — Visual-First perspective (ambient awareness, screen watching)
+- **3.5.0** — Collab-First perspective (workflow learning)
+- **3.6.0** — Ambient-First perspective (invisible butler)
+- **3.7.0** — E2E sync (XChaCha20 encryption, conflict resolution)
 - **4.0.0** — Multi-user (family butler mode)
 
 ---

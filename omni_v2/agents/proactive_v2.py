@@ -198,6 +198,10 @@ class ProactiveEngineV2:
             self._check_unread_important,
             self._check_system_health,
             self._check_weekly_review,
+            # Phase 5C: Geofence rules (arrive/depart/dwell)
+            self._check_geofence_event,
+            # Phase 6A: Visual-First (screen watching)
+            self._check_screen_activity,
         ]
 
         for rule in rules:
@@ -538,6 +542,126 @@ class ProactiveEngineV2:
                 {"label": "Skip", "command": "_ack"},
             ],
         )
+
+    def _check_geofence_event(self) -> Optional[ProactiveSuggestion]:
+        """Phase 5C: Surface recent geofence events as proactive suggestions.
+
+        Reads the most recent un-fired geofence event from the engine
+        and converts it into a suggestion. The geofence engine itself
+        fires the underlying command; this just surfaces it to the UI
+        so the user knows OMNI is acting on location.
+        """
+        try:
+            from omni_v2.agents.geofence import get_geofence_engine
+            engine = get_geofence_engine()
+            # Get the most recent event that we haven't already shown
+            events = engine.get_recent_events(limit=5)
+            if not events:
+                return None
+            latest = events[-1]
+            # Only show events from the last 5 minutes (catch recent arrivals)
+            if time.time() - latest.ts > 300:
+                return None
+            # Skip if we've already suggested this event
+            sid = f"geo_{latest.id}"
+            if self._is_dismissed(sid):
+                return None
+            # Map event to a user-friendly title
+            if latest.event == "arrive":
+                title = f"You've arrived at {latest.place_name}"
+                body = f"Running: {latest.command}"
+            elif latest.event == "depart":
+                title = f"Leaving {latest.place_name}"
+                body = f"Running: {latest.command}"
+            elif latest.event == "dwell":
+                title = f"Still at {latest.place_name}"
+                body = f"Running: {latest.command}"
+            else:
+                return None
+            return ProactiveSuggestion(
+                id=sid,
+                title=title,
+                body=body,
+                priority=1,
+                category="location",
+                actions=[
+                    {"label": "Open", "command": latest.command},
+                    {"label": "Skip", "command": "_ack"},
+                ],
+            )
+        except Exception as e:
+            logger.debug(f"geofence check: {e}")
+            return None
+
+    def _check_screen_activity(self) -> Optional[ProactiveSuggestion]:
+        """Phase 6A: Visual-First — act on what the user is doing on screen."""
+        try:
+            from omni_v2.agents.screen_watcher import get_screen_watcher
+            watcher = get_screen_watcher()
+            ctx = watcher.get_context()
+            screen = ctx.get("screen", {})
+            if not screen.get("available"):
+                return None
+            activity = screen.get("activity", "unknown")
+            duration_min = screen.get("duration_min", 0)
+            app = screen.get("app", "")
+            title = screen.get("window_title", "")
+            # 1) Long coding session → break suggestion
+            if activity == "coding" and duration_min >= 120:
+                sid = f"break_screen_{int(duration_min)}"
+                if not self._is_dismissed(sid):
+                    hours = int(duration_min // 60)
+                    mins = int(duration_min % 60)
+                    dur_str = f"{hours}h {mins}m" if hours else f"{mins}m"
+                    return ProactiveSuggestion(
+                        id=sid,
+                        title=f"👁 {dur_str} of coding detected",
+                        body=f"You've been in {app or 'a code editor'} for a while. "
+                             f"Time for a stretch, walk, or eye break?",
+                        priority=1,
+                        category="health",
+                        actions=[
+                            {"label": "Lock 15 min", "command": "_lock 15"},
+                            {"label": "Play lo-fi", "command": "play lo-fi music"},
+                            {"label": "Just a stretch", "command": "_ack"},
+                        ],
+                    )
+            # 2) Long reading session → offer summary
+            if activity == "reading" and duration_min >= 30:
+                sid = f"reading_summary_{int(duration_min)}"
+                if not self._is_dismissed(sid):
+                    return ProactiveSuggestion(
+                        id=sid,
+                        title="👁 Reading detected",
+                        body=f"You've been reading for {int(duration_min)} min. "
+                             f"Want me to summarize the key points?",
+                        priority=0,
+                        category="proactive",
+                        actions=[
+                            {"label": "Summarize", "command": "summarize what I'm reading"},
+                            {"label": "Skip", "command": "_ack"},
+                        ],
+                    )
+            # 3) New scene detected — context switch
+            if screen.get("is_new_scene") and activity not in ("unknown", "idle"):
+                sid = f"new_scene_{activity}_{int(time.time() / 300)}"  # 5min dedup
+                if not self._is_dismissed(sid):
+                    return ProactiveSuggestion(
+                        id=sid,
+                        title=f"👁 Switched to {activity}",
+                        body=f"Now in {app or 'an app'}: {title[:60]}. "
+                             f"Want me to help with this context?",
+                        priority=0,
+                        category="proactive",
+                        actions=[
+                            {"label": "Yes", "command": f"help me with {activity}"},
+                            {"label": "Skip", "command": "_ack"},
+                        ],
+                    )
+            return None
+        except Exception as e:
+            logger.debug(f"screen check: {e}")
+            return None
 
     # ===== PUBLIC API =====
 

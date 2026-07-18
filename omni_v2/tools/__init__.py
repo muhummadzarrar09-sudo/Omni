@@ -17,6 +17,20 @@ try:
 except ImportError:
     DemoScenarios = None
 
+# Phase 5D: Mobile communication tool
+try:
+    from .send_to_phone import get_plugin as get_send_to_phone_plugin
+    _SEND_TO_PHONE_AVAILABLE = True
+except ImportError:
+    _SEND_TO_PHONE_AVAILABLE = False
+
+# Phase 5E: Snooze / DND tool
+try:
+    from .snooze import get_plugin as get_snooze_plugin
+    _SNOOZE_AVAILABLE = True
+except ImportError:
+    _SNOOZE_AVAILABLE = False
+
 __all__ = [
     'BrowserTool', 'BrowserToolV3', 'WindowsTool', 'SystemTool', 'OmniTool', 'VSCodeTool',
     'MediaTool', 'FilesTool', 'AITool',
@@ -35,6 +49,18 @@ def get_all_tools_v3():
         FilesTool(),
         AccessibilityTool(),
     ]
+    # Phase 5D: send_to_phone (mobile companion notification tool)
+    if _SEND_TO_PHONE_AVAILABLE:
+        try:
+            tools.append(get_send_to_phone_plugin())
+        except Exception:
+            pass
+    # Phase 5E: snooze (DND control)
+    if _SNOOZE_AVAILABLE:
+        try:
+            tools.append(get_snooze_plugin())
+        except Exception:
+            pass
     # Optional but keep minimal
     try:
         tools.append(SystemTool())

@@ -17,8 +17,10 @@ Endpoints:
 - POST /api/ptt/stop        -> stop + transcribe + execute
 - WebSocket /ws             -> live mic level + transcription stream
 """
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from pydantic import BaseModel, field_validator
 from pathlib import Path
 import sys
@@ -136,6 +138,16 @@ async def startup():
             logger.info("🟢 WakeWord: on_wake fired - OMNI is listening")
             try:
                 await manager.broadcast({"type": "wake", "ts": time.time()})
+                # Phase 5D: Push a notification too
+                try:
+                    from omni_v2.agents.notifications import get_notification_center, CAT_WAKE
+                    get_notification_center().notify(
+                        title="🎙 Hey OMNI",
+                        body="Wake word detected. Listening...",
+                        category=CAT_WAKE, priority=2, icon="🎙",
+                    )
+                except Exception:
+                    pass
             except Exception:
                 pass
 
@@ -210,6 +222,38 @@ async def startup():
     except Exception as e:
         logger.warning(f"mDNS Broadcaster init failed: {e}")
         mdns_broadcaster = None
+
+    # PHASE-5D: Notification center (in-app + web push)
+    try:
+        from omni_v2.agents.notifications import get_notification_center
+
+        async def _notification_broadcast(payload, device_id=None):
+            """Broadcast a notification to all (or one) WebSocket clients."""
+            try:
+                if device_id:
+                    # Targeted — for now, all clients see it (no per-device routing yet)
+                    await manager.broadcast(payload)
+                else:
+                    await manager.broadcast(payload)
+            except Exception as e:
+                logger.debug(f"Notif broadcast: {e}")
+
+        notif_center = get_notification_center()
+        notif_center.broadcast = _notification_broadcast
+        logger.info(f"🔔 NotificationCenter: VAPID={'enabled' if notif_center.get_vapid_public_key() else 'disabled'}, "
+                    f"{notif_center.get_status()['devices_count']} devices")
+    except Exception as e:
+        logger.warning(f"NotificationCenter init failed: {e}")
+
+    # PHASE-6A: Screen Watcher (Visual-First)
+    try:
+        from omni_v2.agents.screen_watcher import get_screen_watcher
+        watcher = get_screen_watcher(interval_sec=30.0, save_screenshots=False)
+        # Don't start the daemon by default — it requires a real screen.
+        # The frontend can start it explicitly via /api/screen/start.
+        logger.info(f"👁 ScreenWatcher ready (interval=30s, backend={watcher._cap_backend})")
+    except Exception as e:
+        logger.warning(f"ScreenWatcher init failed: {e}")
     print("="*70)
     print("  OMNI V3 FastAPI - Pretty Damn Good Backend")
     print(f"  REPO_ROOT: {REPO_ROOT} (portable, not D:/Omni)")
@@ -1233,23 +1277,260 @@ def make_qr_payload_for_pair(code, info) -> str:
     })
 
 
+# PHASE-5B: Mobile companion — additional endpoints
+import secrets as _secrets
+_active_pair_codes: Dict[str, Any] = {}  # code -> {created_at, expires_at, host, port}
+
+
+@app.post("/api/network/pair/verify")
+async def verify_pairing_code(req: ExecuteRequest):
+    """Verify a pairing code entered by a mobile device.
+    Currently a soft-verify (any 6-digit number is accepted in this dev build).
+    In a hardened build, the laptop would track issued codes and reject others.
+    """
+    code = (req.command or "").strip()
+    if not code or not code.isdigit() or len(code) != 6:
+        return {"valid": False, "reason": "code must be 6 digits"}
+    # For now: accept any 6-digit code (matches current PairingCode generator).
+    # Future: cross-check against _active_pair_codes dict.
+    return {"valid": True, "code": code}
+
+
+@app.post("/api/voice/transcribe")
+async def transcribe_audio(audio: UploadFile = File(...)):
+    """Accept an audio blob from the mobile PWA, transcribe it, return text.
+    Used by the phone's push-to-talk button.
+    """
+    try:
+        # Read the upload (max ~10MB)
+        data = await audio.read()
+        if len(data) > 10 * 1024 * 1024:
+            return {"status": "error", "error": "audio too large (max 10MB)"}
+        if len(data) < 100:
+            return {"status": "error", "error": "audio too small"}
+
+        # Persist to a temp file
+        import tempfile, os
+        suffix = ".webm"
+        if "mp4" in (audio.content_type or ""): suffix = ".m4a"
+        elif "ogg" in (audio.content_type or ""): suffix = ".ogg"
+        elif "wav" in (audio.content_type or ""): suffix = ".wav"
+        with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as tmp:
+            tmp.write(data)
+            tmp_path = tmp.name
+
+        # Try to transcribe using the brain's STT
+        text = ""
+        try:
+            brain = get_brain()
+            stt = getattr(brain, "stt", None)
+            if stt and getattr(stt, "model", None):
+                # Use faster-whisper directly on the file
+                from faster_whisper import WhisperModel
+                # If the STT engine has a transcribe_file method, use it
+                if hasattr(stt, "transcribe_file"):
+                    text = stt.transcribe_file(tmp_path) or ""
+                else:
+                    # Fallback: load a transient whisper model
+                    model = WhisperModel("base.en", device="cpu", compute_type="int8")
+                    segments, _ = model.transcribe(tmp_path, beam_size=5)
+                    text = " ".join(seg.text for seg in segments).strip()
+        except Exception as e:
+            logger.warning(f"Transcribe failed: {e}")
+        finally:
+            try: os.unlink(tmp_path)
+            except Exception: pass
+
+        if not text:
+            return {"status": "ok", "text": "", "message": "no speech detected"}
+
+        return {"status": "ok", "text": text, "length_ms": len(data) * 1000 // 16000}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+@app.get("/api/network/pair/active")
+async def get_active_pair_code():
+    """Return the most recent valid pairing code (for the QR page to display).
+    Auto-generates one if none exists or the last one expired.
+    """
+    try:
+        from omni_v2.network.discovery import generate_pairing_code, make_discovery_info
+        info = make_discovery_info("OMNI", 8765)
+        code = generate_pairing_code(info.host, info.port, ttl_sec=600)
+        # Store it
+        _active_pair_codes[code.code] = {
+            "created_at": code.created_at,
+            "expires_at": code.expires_at,
+            "host": info.host,
+            "port": info.port,
+        }
+        # Prune expired
+        now = time.time()
+        for k in list(_active_pair_codes.keys()):
+            if _active_pair_codes[k]["expires_at"] < now:
+                del _active_pair_codes[k]
+        return {
+            "status": "ok",
+            "pair": code.to_dict(),
+            "name": info.name,
+            "host": info.host,
+            "port": info.port,
+        }
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+# Mount the mobile PWA (Phase 5B)
+# StaticFiles is mounted FIRST so it serves the file tree.
+# A specific route at /mobile/qr/code.html serves a QR page with
+# auto-generated pairing code (no manual params needed).
+_MOBILE_DIR = REPO_ROOT / "mobile"
+
+if _MOBILE_DIR.exists():
+    # Serve the entire mobile/ directory as static assets at /mobile/
+    # (index.html will be served automatically on /mobile/)
+    app.mount("/mobile", StaticFiles(directory=str(_MOBILE_DIR), html=True), name="mobile")
+
+    @app.get("/api/mobile/qr-page")
+    async def mobile_qr_page_data():
+        """API endpoint that returns the data needed to render a QR page.
+        The frontend (qr.html) calls this to get fresh pairing code.
+        """
+        try:
+            from omni_v2.network.discovery import generate_pairing_code, make_discovery_info
+            info = make_discovery_info("OMNI", 8765)
+            code = generate_pairing_code(info.host, info.port, ttl_sec=600)
+            return {
+                "status": "ok",
+                "host": info.host,
+                "port": info.port,
+                "name": info.name,
+                "code": code.code,
+                "expires_at": code.expires_at,
+                "valid": code.is_valid(),
+            }
+        except Exception as e:
+            return {"status": "error", "error": str(e)}
+
+
 # PHASE-5B: Mobile WebSocket (dedicated for phone clients)
 @app.websocket("/ws/mobile")
-async def websocket_mobile(websocket):
+async def websocket_mobile(websocket: WebSocket):
     """Dedicated WebSocket for mobile companion clients.
-    Same events as /ws but with mobile-specific extensions (location push, etc)."""
+
+    Supported message types from phone:
+      - mobile_identify: handshake, identifies the device
+      - text: text command, routed to brain
+      - audio: base64-encoded audio blob (webm/ogg/m4a/wav), transcribed then executed
+      - voice: alias for text (pre-transcribed)
+      - location: lat/lon push for geofencing
+      - ping: heartbeat
+    """
     await manager.connect(websocket)
+    mobile_meta = {"device": "unknown", "ua": "", "paired": False, "connected_at": time.time()}
     try:
+        await websocket.send_json({
+            "type": "welcome",
+            "brain": "OMNI",
+            "ts": time.time(),
+            "endpoints": {
+                "execute": "/api/execute",
+                "transcribe": "/api/voice/transcribe",
+                "network": "/api/network/info",
+                "pair": "/api/network/pair",
+            }
+        })
         while True:
             data = await websocket.receive_text()
             try:
-                import json
+                import json, base64, tempfile, os
                 msg = json.loads(data)
                 msg_type = msg.get("type")
                 if msg_type == "ping":
                     await websocket.send_json({"type": "pong", "ts": time.time()})
+                elif msg_type == "mobile_identify":
+                    mobile_meta.update({
+                        "device": msg.get("device", "unknown"),
+                        "ua": (msg.get("ua") or "")[:200],
+                        "paired": bool(msg.get("paired", False)),
+                    })
+                    # Register the device with the notification center
+                    try:
+                        from omni_v2.agents.notifications import get_notification_center
+                        center = get_notification_center()
+                        did = f"ws_{id(websocket)}"
+                        # If the client sent a real device_id, use it
+                        if msg.get("device_id"):
+                            did = msg["device_id"]
+                        center.touch_device(did, capabilities=msg.get("capabilities", []))
+                        mobile_meta["device_id"] = did
+                    except Exception:
+                        mobile_meta["device_id"] = f"ws_{id(websocket)}"
+                    logger.info(f"📱 Mobile identified: {mobile_meta['device']} (paired={mobile_meta['paired']})")
+                    await websocket.send_json({
+                        "type": "identified",
+                        "brain": "OMNI",
+                        "device_id": mobile_meta["device_id"],
+                        "ts": time.time(),
+                    })
+                elif msg_type == "text":
+                    text = (msg.get("text") or "").strip()
+                    if not text:
+                        await websocket.send_json({"type": "error", "error": "empty text"})
+                        continue
+                    try:
+                        await websocket.send_json({"type": "thinking", "ts": time.time()})
+                        brain_inst = get_brain()
+                        result = await brain_inst.execute(text)
+                        await websocket.send_json({
+                            "type": "message",
+                            "text": result.get("message", "done."),
+                            "logs": result.get("logs", []),
+                            "success": result.get("success", True),
+                            "ts": time.time(),
+                        })
+                    except Exception as e:
+                        await websocket.send_json({"type": "error", "error": str(e)})
+                elif msg_type == "audio":
+                    audio_b64 = msg.get("data", "")
+                    fmt = msg.get("format", "webm")
+                    if not audio_b64:
+                        await websocket.send_json({"type": "error", "error": "empty audio"})
+                        continue
+                    try:
+                        audio_bytes = base64.b64decode(audio_b64)
+                        suffix = {"webm": ".webm", "ogg": ".ogg", "m4a": ".m4a", "mp4": ".m4a", "wav": ".wav"}.get(fmt, ".webm")
+                        with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as tmp:
+                            tmp.write(audio_bytes)
+                            tmp_path = tmp.name
+                        text = ""
+                        try:
+                            from faster_whisper import WhisperModel
+                            model = WhisperModel("base.en", device="cpu", compute_type="int8")
+                            segments, _ = model.transcribe(tmp_path, beam_size=5)
+                            text = " ".join(seg.text for seg in segments).strip()
+                        except Exception as e:
+                            logger.warning(f"WS audio transcribe failed: {e}")
+                        finally:
+                            try: os.unlink(tmp_path)
+                            except Exception: pass
+                        if text:
+                            await websocket.send_json({"type": "transcript", "text": text, "ts": time.time()})
+                            brain_inst = get_brain()
+                            result = await brain_inst.execute(text)
+                            await websocket.send_json({
+                                "type": "message",
+                                "text": result.get("message", "done."),
+                                "logs": result.get("logs", []),
+                                "success": result.get("success", True),
+                                "ts": time.time(),
+                            })
+                        else:
+                            await websocket.send_json({"type": "error", "error": "no speech detected"})
+                    except Exception as e:
+                        await websocket.send_json({"type": "error", "error": str(e)})
                 elif msg_type == "voice":
-                    # Mobile voice command - same as web
                     text = msg.get("text", "")
                     if text:
                         try:
@@ -1261,23 +1542,46 @@ async def websocket_mobile(websocket):
                                 "ts": time.time(),
                             })
                         except Exception as e:
-                            await websocket.send_json({
-                                "type": "error",
-                                "error": str(e),
-                            })
+                            await websocket.send_json({"type": "error", "error": str(e)})
                 elif msg_type == "location":
-                    # Mobile location push
                     lat = msg.get("lat")
                     lon = msg.get("lon")
-                    logger.info(f"📍 Mobile location: ({lat}, {lon})")
-                    # Feed into proactive engine
+                    accuracy = msg.get("accuracy_m")
+                    logger.info(f"📍 Mobile location: ({lat}, {lon}) ±{accuracy}m")
+                    fired = []
                     try:
+                        from omni_v2.agents.geofence import get_geofence_engine
+                        geo = get_geofence_engine()
+                        fired = geo.update_location(lat=lat, lon=lon,
+                                                     accuracy_m=accuracy, source="phone-ws")
+                        # Also push into proactive context
                         from omni_v2.agents.proactive_v2 import get_proactive_engine
-                        engine = get_proactive_engine()
-                        engine.update_context(location={"lat": lat, "lon": lon})
-                    except Exception:
-                        pass
-                    await websocket.send_json({"type": "ack", "ts": time.time()})
+                        get_proactive_engine().update_context(
+                            location={"lat": lat, "lon": lon},
+                        )
+                    except Exception as e:
+                        logger.warning(f"Geofence update failed: {e}")
+                    # Execute any fired rules
+                    for ev in fired:
+                        try:
+                            brain_inst = get_brain()
+                            await brain_inst.execute(ev.command)
+                            logger.info(f"📍 Geofence fired (WS): {ev.place_name}/{ev.event} -> {ev.command}")
+                        except Exception as e:
+                            logger.warning(f"Geofence exec failed: {e}")
+                    # Send fired events to the phone
+                    if fired:
+                        for ev in fired:
+                            await websocket.send_json({
+                                "type": "geofence_event",
+                                "event": ev.to_dict(),
+                                "ts": time.time(),
+                            })
+                    await websocket.send_json({
+                        "type": "location_ack",
+                        "fired_count": len(fired),
+                        "ts": time.time(),
+                    })
                 else:
                     await websocket.send_json({"type": "echo", "data": msg})
             except json.JSONDecodeError:
@@ -1287,6 +1591,690 @@ async def websocket_mobile(websocket):
     except Exception as e:
         logger.error(f"Mobile WS error: {e}")
         manager.disconnect(websocket)
+
+
+# PHASE-5D: Notification Center endpoints
+class PushSubscribeReq(BaseModel):
+    device_id: str
+    endpoint: str
+    p256dh: str
+    auth: str
+    user_agent: str = ""
+    paired: bool = False
+    capabilities: list = []
+
+
+class NotificationCreateReq(BaseModel):
+    title: str
+    body: str = ""
+    category: str = "info"
+    priority: int = 1
+    icon: str = "🔔"
+    tag: str = ""
+    dedup_key: str = ""
+    expires_sec: float = 0
+
+
+class PrefsUpdateReq(BaseModel):
+    enabled: Optional[bool] = None
+    muted_categories: Optional[list] = None
+    dnd_enabled: Optional[bool] = None
+    dnd_start_hour: Optional[int] = None
+    dnd_end_hour: Optional[int] = None
+    min_priority: Optional[int] = None
+    play_sound: Optional[bool] = None
+    show_preview: Optional[bool] = None
+
+
+class SnoozeReq(BaseModel):
+    minutes: float = 30
+    reason: str = ""
+
+
+@app.get("/api/notifications/status")
+async def notifications_status():
+    try:
+        from omni_v2.agents.notifications import get_notification_center
+        return {"status": "ok", "notifications": get_notification_center().get_status()}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+@app.get("/api/notifications/dashboard")
+async def notifications_dashboard():
+    try:
+        from omni_v2.agents.notifications import get_notification_center
+        return {"status": "ok", "dashboard": get_notification_center().get_full_dashboard()}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+@app.get("/api/notifications")
+async def list_notifications(limit: int = 50, category: Optional[str] = None,
+                              unread_only: bool = False):
+    try:
+        from omni_v2.agents.notifications import get_notification_center
+        notifs = get_notification_center().list_notifications(
+            limit=limit, category=category, unread_only=unread_only,
+        )
+        return {
+            "status": "ok",
+            "notifications": [n.to_dict() for n in notifs],
+            "count": len(notifs),
+            "unread_count": get_notification_center().get_unread_count(),
+        }
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+# IMPORTANT: specific paths must be declared BEFORE the catch-all
+# /api/notifications/{notif_id} route, otherwise FastAPI routes
+# /vapid and /devices to the notif_id parameter route (404).
+@app.get("/api/notifications/vapid")
+async def get_vapid_public_key():
+    """Get the VAPID public key for Web Push subscription."""
+    try:
+        from omni_v2.agents.notifications import get_notification_center
+        info = get_notification_center().get_vapid_info()
+        return {"status": "ok", "vapid": info}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+@app.get("/api/notifications/devices")
+async def list_devices_endpoint():
+    try:
+        from omni_v2.agents.notifications import get_notification_center
+        devices = get_notification_center().list_devices()
+        return {"status": "ok", "devices": [d.to_dict() for d in devices], "count": len(devices)}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+@app.post("/api/notifications/subscribe")
+async def subscribe_push(req: PushSubscribeReq):
+    """Register a device's web-push subscription."""
+    try:
+        from omni_v2.agents.notifications import get_notification_center
+        device = get_notification_center().register_device(
+            device_id=req.device_id, endpoint=req.endpoint,
+            p256dh=req.p256dh, auth=req.auth,
+            user_agent=req.user_agent, paired=req.paired,
+            capabilities=req.capabilities,
+        )
+        return {"status": "ok", "device": device.to_dict()}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+@app.delete("/api/notifications/subscribe/{device_id}")
+async def unsubscribe_push(device_id: str):
+    try:
+        from omni_v2.agents.notifications import get_notification_center
+        ok = get_notification_center().unregister_device(device_id)
+        return {"status": "ok" if ok else "not_found", "removed": ok}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+# PHASE-5E: Notification preferences + snooze + export
+@app.get("/api/notifications/prefs")
+async def get_notification_prefs_endpoint():
+    try:
+        from omni_v2.agents.notification_prefs import get_notification_prefs
+        prefs = get_notification_prefs()
+        return {"status": "ok", "prefs": prefs.get_all(), "snooze": prefs.get_snooze(), "status_full": prefs.get_status()}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+@app.post("/api/notifications/prefs")
+async def update_notification_prefs(req: PrefsUpdateReq):
+    try:
+        from omni_v2.agents.notification_prefs import get_notification_prefs
+        prefs = get_notification_prefs()
+        payload = {k: v for k, v in req.dict().items() if v is not None}
+        results = prefs.update(**payload)
+        return {"status": "ok", "updated": list(payload.keys()), "results": results}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+@app.post("/api/notifications/prefs/reset")
+async def reset_notification_prefs():
+    try:
+        from omni_v2.agents.notification_prefs import get_notification_prefs
+        get_notification_prefs().reset_all()
+        return {"status": "ok", "reset": True}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+@app.post("/api/notifications/snooze")
+async def snooze_notifications(req: SnoozeReq):
+    """Snooze all notifications for N minutes."""
+    try:
+        from omni_v2.agents.notification_prefs import get_notification_prefs
+        prefs = get_notification_prefs()
+        state = prefs.snooze_for(req.minutes, req.reason)
+        return {
+            "status": "ok",
+            "snooze": state.to_dict(),
+            "message": f"🔕 Snoozed for {req.minutes} min",
+        }
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+@app.delete("/api/notifications/snooze")
+async def unsnooze_notifications():
+    try:
+        from omni_v2.agents.notification_prefs import get_notification_prefs
+        ok = get_notification_prefs().unsnooze()
+        return {"status": "ok", "unsnoozed": ok}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+@app.get("/api/notifications/export")
+async def export_notifications(format: str = "json"):
+    """Export notification history as JSON or CSV."""
+    try:
+        from omni_v2.agents.notifications import get_notification_center
+        center = get_notification_center()
+        items = center.list_notifications(limit=1000)
+        if format == "csv":
+            # Build CSV
+            import io, csv
+            buf = io.StringIO()
+            writer = csv.writer(buf)
+            writer.writerow(["id", "ts", "iso", "title", "body", "category", "priority", "read", "tag"])
+            for n in items:
+                from datetime import datetime
+                iso = datetime.fromtimestamp(n.ts).isoformat() if n.ts else ""
+                writer.writerow([n.id, n.ts, iso, n.title, n.body, n.category, n.priority, n.read, n.tag])
+            from fastapi.responses import Response
+            return Response(
+                content=buf.getvalue(),
+                media_type="text/csv",
+                headers={"Content-Disposition": f"attachment; filename=omni-notifications.csv"},
+            )
+        # JSON default
+        from fastapi.responses import Response
+        import json
+        return Response(
+            content=json.dumps([n.to_dict() for n in items], indent=2, ensure_ascii=False),
+            media_type="application/json",
+            headers={"Content-Disposition": f"attachment; filename=omni-notifications.json"},
+        )
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+# PHASE-5E: Snooze tool registration
+try:
+    from omni_v2.tools import snooze as _snooze_tool
+    logger.info("🔕 snooze tool available")
+except Exception as e:
+    logger.warning(f"snooze tool not loaded: {e}")
+
+
+@app.get("/api/notifications/{notif_id}")
+async def get_notification(notif_id: str):
+    try:
+        from omni_v2.agents.notifications import get_notification_center
+        n = get_notification_center().get_notification(notif_id)
+        if not n:
+            return {"status": "not_found", "notif_id": notif_id}
+        return {"status": "ok", "notification": n.to_dict()}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+@app.post("/api/notifications/{notif_id}/read")
+async def mark_notification_read(notif_id: str):
+    try:
+        from omni_v2.agents.notifications import get_notification_center
+        ok = get_notification_center().mark_read(notif_id)
+        return {"status": "ok" if ok else "not_found", "marked": ok}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+@app.post("/api/notifications/read-all")
+async def mark_all_read(category: Optional[str] = None):
+    try:
+        from omni_v2.agents.notifications import get_notification_center
+        n = get_notification_center().mark_all_read(category=category)
+        return {"status": "ok", "marked": n}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+@app.post("/api/notifications")
+async def create_notification(req: NotificationCreateReq):
+    """Manually create a notification (e.g. for tests or external triggers)."""
+    try:
+        from omni_v2.agents.notifications import get_notification_center
+        notif = get_notification_center().notify(
+            title=req.title, body=req.body, category=req.category,
+            priority=req.priority, icon=req.icon, tag=req.tag,
+            dedup_key=req.dedup_key,
+            expires_sec=req.expires_sec,
+        )
+        return {"status": "ok", "notification": notif.to_dict()}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+@app.delete("/api/notifications")
+async def clear_notifications(category: Optional[str] = None):
+    try:
+        from omni_v2.agents.notifications import get_notification_center
+        n = get_notification_center().clear(category=category)
+        return {"status": "ok", "cleared": n}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+# PHASE-5D: "Send to my phone" tool registration
+try:
+    from omni_v2.tools import send_to_phone as _send_to_phone_tool
+    # Auto-register the tool with the brain if a registry exists
+    # The brain will pick it up via the standard plugin loader
+    logger.info("📱 send_to_phone tool available")
+except Exception as e:
+    logger.warning(f"send_to_phone tool not loaded: {e}")
+
+
+# PHASE-5C: Geofence endpoints
+# These let the phone (or any client) push GPS coordinates,
+# and the engine fires rules based on arrival/departure/dwell.
+class GeofencePlaceReq(BaseModel):
+    name: str
+    lat: float
+    lon: float
+    radius_m: float = 100.0
+    icon: str = "📍"
+    address: str = ""
+    notes: str = ""
+
+
+class GeofenceRuleReq(BaseModel):
+    place_id: str
+    event: str          # "arrive" | "depart" | "dwell"
+    command: str
+    label: str = ""
+    cooldown_sec: float = 1800.0
+    dwell_sec: float = 300.0
+
+
+class GeofenceLocationReq(BaseModel):
+    lat: float
+    lon: float
+    accuracy_m: Optional[float] = None
+    source: str = "phone"
+
+
+@app.get("/api/geofence/status")
+async def geofence_status():
+    """Get geofence engine status (places, rules, current location)."""
+    try:
+        from omni_v2.agents.geofence import get_geofence_engine
+        return {"status": "ok", "geofence": get_geofence_engine().get_status()}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+@app.get("/api/geofence/dashboard")
+async def geofence_dashboard():
+    """Full geofence dashboard (places, rules, events, current)."""
+    try:
+        from omni_v2.agents.geofence import get_geofence_engine
+        return {"status": "ok", "dashboard": get_geofence_engine().get_full_dashboard()}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+@app.get("/api/geofence/places")
+async def geofence_list_places():
+    try:
+        from omni_v2.agents.geofence import get_geofence_engine
+        places = get_geofence_engine().list_places()
+        return {"status": "ok", "places": [p.to_dict() for p in places], "count": len(places)}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+@app.post("/api/geofence/places")
+async def geofence_add_place(req: GeofencePlaceReq):
+    try:
+        from omni_v2.agents.geofence import get_geofence_engine
+        place = get_geofence_engine().add_place(
+            name=req.name, lat=req.lat, lon=req.lon,
+            radius_m=req.radius_m, icon=req.icon,
+            address=req.address, notes=req.notes,
+        )
+        return {"status": "ok", "place": place.to_dict()}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+@app.post("/api/geofence/places/{place_id}/update")
+async def geofence_update_place(place_id: str, req: GeofencePlaceReq):
+    try:
+        from omni_v2.agents.geofence import get_geofence_engine
+        place = get_geofence_engine().update_place(
+            place_id, name=req.name, lat=req.lat, lon=req.lon,
+            radius_m=req.radius_m, icon=req.icon,
+            address=req.address, notes=req.notes,
+        )
+        if not place:
+            return {"status": "not_found", "place_id": place_id}
+        return {"status": "ok", "place": place.to_dict()}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+@app.delete("/api/geofence/places/{place_id}")
+async def geofence_remove_place(place_id: str):
+    try:
+        from omni_v2.agents.geofence import get_geofence_engine
+        ok = get_geofence_engine().remove_place(place_id)
+        return {"status": "ok" if ok else "not_found", "removed": ok}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+@app.get("/api/geofence/rules")
+async def geofence_list_rules(place_id: Optional[str] = None):
+    try:
+        from omni_v2.agents.geofence import get_geofence_engine
+        rules = get_geofence_engine().list_rules(place_id=place_id)
+        # Enrich with place name
+        result = []
+        for r in rules:
+            d = r.to_dict()
+            place = get_geofence_engine().get_place(r.place_id)
+            d["place_name"] = place.name if place else "(deleted)"
+            d["place_icon"] = place.icon if place else "❓"
+            result.append(d)
+        return {"status": "ok", "rules": result, "count": len(result)}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+@app.post("/api/geofence/rules")
+async def geofence_add_rule(req: GeofenceRuleReq):
+    try:
+        from omni_v2.agents.geofence import get_geofence_engine
+        rule = get_geofence_engine().add_rule(
+            place_id=req.place_id, event=req.event, command=req.command,
+            label=req.label, cooldown_sec=req.cooldown_sec, dwell_sec=req.dwell_sec,
+        )
+        if not rule:
+            return {"status": "not_found", "error": f"place {req.place_id} not found"}
+        return {"status": "ok", "rule": rule.to_dict()}
+    except ValueError as e:
+        return {"status": "error", "error": str(e)}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+@app.delete("/api/geofence/rules/{rule_id}")
+async def geofence_remove_rule(rule_id: str):
+    try:
+        from omni_v2.agents.geofence import get_geofence_engine
+        ok = get_geofence_engine().remove_rule(rule_id)
+        return {"status": "ok" if ok else "not_found", "removed": ok}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+@app.post("/api/geofence/location")
+async def geofence_update_location(req: GeofenceLocationReq):
+    """Push a location update from the phone (or any client).
+    Returns any geofence events fired by this update.
+    """
+    try:
+        from omni_v2.agents.geofence import get_geofence_engine
+        engine = get_geofence_engine()
+        fired = engine.update_location(
+            lat=req.lat, lon=req.lon, accuracy_m=req.accuracy_m, source=req.source,
+        )
+        # Broadcast to all WebSocket clients
+        try:
+            for ev in fired:
+                await manager.broadcast({
+                    "type": "geofence_event",
+                    "event": ev.to_dict(),
+                    "ts": time.time(),
+                })
+                # Also create a notification for the fired event (Phase 5D)
+                try:
+                    from omni_v2.agents.notifications import get_notification_center, CAT_GEOFENCE
+                    get_notification_center().notify(
+                        title=f"📍 {ev.place_name}",
+                        body=f"{ev.event.capitalize()} → {ev.command}",
+                        category=CAT_GEOFENCE,
+                        priority=1,
+                        icon="📍",
+                        dedup_key=f"geo_{ev.id}",
+                        data={"place_id": ev.place_id, "event": ev.event, "command": ev.command},
+                    )
+                except Exception:
+                    pass
+            # Also push current location to all clients
+            current = engine.get_current_location()
+            current_place = engine.get_current_place()
+            await manager.broadcast({
+                "type": "location_update",
+                "location": current.to_dict() if current else None,
+                "current_place": current_place.to_dict() if current_place else None,
+                "ts": time.time(),
+            })
+        except Exception:
+            pass
+        # Execute the fired commands via the brain
+        executed = []
+        for ev in fired:
+            try:
+                brain = get_brain()
+                result = await brain.execute(ev.command)
+                executed.append({
+                    "event": ev.to_dict(),
+                    "result": result,
+                })
+                logger.info(f"📍 Geofence fired: {ev.place_name}/{ev.event} -> {ev.command}")
+            except Exception as e:
+                logger.warning(f"Geofence execute failed for {ev.command}: {e}")
+        return {
+            "status": "ok",
+            "fired": [ev.to_dict() for ev in fired],
+            "executed": executed,
+        }
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+@app.get("/api/geofence/location")
+async def geofence_current_location():
+    """Get the most recent location + which place the user is at (if any)."""
+    try:
+        from omni_v2.agents.geofence import get_geofence_engine
+        engine = get_geofence_engine()
+        loc = engine.get_current_location()
+        place = engine.get_current_place()
+        return {
+            "status": "ok",
+            "location": loc.to_dict() if loc else None,
+            "current_place": place.to_dict() if place else None,
+        }
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+@app.get("/api/geofence/location/history")
+async def geofence_location_history(limit: int = 50):
+    try:
+        from omni_v2.agents.geofence import get_geofence_engine
+        history = get_geofence_engine().get_location_history(limit=limit)
+        return {"status": "ok", "history": [h.to_dict() for h in history], "count": len(history)}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+@app.get("/api/geofence/events")
+async def geofence_recent_events(limit: int = 20):
+    try:
+        from omni_v2.agents.geofence import get_geofence_engine
+        events = get_geofence_engine().get_recent_events(limit=limit)
+        return {"status": "ok", "events": [e.to_dict() for e in events], "count": len(events)}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+@app.post("/api/geofence/seed")
+async def geofence_seed_samples():
+    """Add a few sample places (Home, Work, Gym) for first-time users.
+    Skips any that already exist (by name)."""
+    try:
+        from omni_v2.agents.geofence import get_geofence_engine, SAMPLE_PLACES
+        engine = get_geofence_engine()
+        existing_names = {p.name.lower() for p in engine.places.values()}
+        # Sample coords (just for shape — user must edit lat/lon for real use)
+        sample_coords = {
+            "home": (33.6844, 73.0479),       # Islamabad-ish
+            "work": (33.6934, 73.0589),
+            "gym": (33.6794, 73.0429),
+        }
+        added = []
+        for sp in SAMPLE_PLACES:
+            if sp["name"].lower() in existing_names:
+                continue
+            lat, lon = sample_coords.get(sp["name"].lower(), (33.6844, 73.0479))
+            p = engine.add_place(name=sp["name"], lat=lat, lon=lon,
+                                 icon=sp.get("icon", "📍"), radius_m=150.0,
+                                 address="(edit me)", notes="Sample place — update lat/lon to your real location")
+            added.append(p.to_dict())
+        return {"status": "ok", "added": added, "count": len(added)}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+@app.post("/api/geofence/clear-events")
+async def geofence_clear_events():
+    try:
+        from omni_v2.agents.geofence import get_geofence_engine
+        n = get_geofence_engine().clear_events()
+        return {"status": "ok", "cleared": n}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+@app.post("/api/geofence/reset")
+async def geofence_reset_all():
+    """Wipe all places, rules, events, location. DESTRUCTIVE."""
+    try:
+        from omni_v2.agents.geofence import get_geofence_engine
+        get_geofence_engine().reset_all()
+        return {"status": "ok", "reset": True}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+
+# PHASE-6A: Screen Watcher (Visual-First)
+@app.get("/api/screen/status")
+async def screen_status():
+    """Get screen watcher status (running, backend, current scene)."""
+    try:
+        from omni_v2.agents.screen_watcher import get_screen_watcher
+        return {"status": "ok", "screen": get_screen_watcher().get_status()}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+@app.get("/api/screen/context")
+async def screen_context():
+    """Get the current context dictionary (for the proactive engine)."""
+    try:
+        from omni_v2.agents.screen_watcher import get_screen_watcher
+        return {"status": "ok", "context": get_screen_watcher().get_context()}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+@app.get("/api/screen/dashboard")
+async def screen_dashboard():
+    """Full screen dashboard (status + context + recent scenes)."""
+    try:
+        from omni_v2.agents.screen_watcher import get_screen_watcher
+        return {"status": "ok", "dashboard": get_screen_watcher().get_full_dashboard()}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+@app.get("/api/screen/recent")
+async def screen_recent(limit: int = 20):
+    """List the N most recent scenes."""
+    try:
+        from omni_v2.agents.screen_watcher import get_screen_watcher
+        scenes = get_screen_watcher().get_recent_scenes(limit=limit)
+        return {"status": "ok", "scenes": [s.to_dict() for s in scenes], "count": len(scenes)}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+@app.post("/api/screen/start")
+async def screen_start():
+    """Start the screen watcher daemon."""
+    try:
+        from omni_v2.agents.screen_watcher import get_screen_watcher
+        get_screen_watcher().start()
+        return {"status": "ok", "started": True}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+@app.post("/api/screen/stop")
+async def screen_stop():
+    """Stop the screen watcher daemon."""
+    try:
+        from omni_v2.agents.screen_watcher import get_screen_watcher
+        get_screen_watcher().stop()
+        return {"status": "ok", "stopped": True}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+@app.post("/api/screen/capture")
+async def screen_capture():
+    """Manually trigger a screen capture (returns the current scene)."""
+    try:
+        from omni_v2.agents.screen_watcher import get_screen_watcher
+        watcher = get_screen_watcher()
+        watcher._tick()
+        scene = watcher.get_current_scene()
+        return {"status": "ok", "scene": scene.to_dict() if scene else None}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+class ScreenClassifyReq(BaseModel):
+    app: str = ""
+    title: str = ""
+
+
+@app.post("/api/screen/classify")
+async def screen_classify(req: "ScreenClassifyReq"):
+    """Classify a window title (no state, just the classifier)."""
+    try:
+        from omni_v2.agents.screen_watcher import classify_window
+        return {"status": "ok", "activity": classify_window(req.app, req.title)}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
 
 @app.get("/api/devices")
 async def devices():

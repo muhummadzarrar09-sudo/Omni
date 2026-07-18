@@ -6,7 +6,7 @@ Subcommands:
   omni install         - print install instructions for this platform
   omni model info      - show which GGUF model is loaded, sizes, speed
   omni model download  - fetch the default Qwen2.5-1.5B GGUF (~1.1GB)
-  omni test            - run all 4 test suites (10/10 multi-agent + 3 phase tests)
+  omni test            - run all 20 test suites (10/10 multi-agent + 18 phase tests)
   omni start           - start FastAPI backend (judges can curl it)
   omni ui              - start Next.js dev server
   omni dev             - start both (backend + UI) and open browser
@@ -146,27 +146,33 @@ def cmd_model_download(args):
 
 
 def cmd_test(args):
-    """Run all 14 test suites."""
+    """Run all 20 test suites."""
     print("\n  " + "=" * 60)
-    print("  OMNI V3 - Full Test Suite (14 suites)")
+    print("  OMNI V3 - Full Test Suite (20 suites)")
     print("  " + "=" * 60 + "\n")
 
-    # All 14 test suites
+    # All 20 test suites
     test_files = [
-        ("[1/14] Multi-agent core (omni.py --test)", "omni_v2.tests.test_fast_af_db", "_run_omni_test"),
-        ("[2/14] FastAF DB (sub-ms semantic lookup)", "omni_v2.tests.test_fast_af_db", "module"),
-        ("[3/14] Hermes refinement (self-healing)",   "omni_v2.tests.test_hermes_refinement", "module"),
-        ("[4/14] Skill synthesis (custom skills)",     "omni_v2.tests.test_skill_synthesis", "module"),
-        ("[5/14] Security guardrails (10 defenses)",   "omni_v2.tests.test_security_guardrails", "module"),
-        ("[6/14] User profile (Phase 1)",              "omni_v2.tests.test_user_profile", "module"),
-        ("[7/14] Session memory (Phase 1)",            "omni_v2.tests.test_session_memory", "module"),
-        ("[8/14] Personality (Phase 2)",               "omni_v2.tests.test_personality", "module"),
-        ("[9/14] Opinion engine (Phase 2)",            "omni_v2.tests.test_opinion", "module"),
-        ("[10/14] Onboarding (Phase 3)",              "omni_v2.tests.test_onboarding", "module"),
-        ("[11/14] Demo mode (Phase 3)",                "omni_v2.tests.test_demo_mode", "module"),
-        ("[12/14] Stats (Phase 3)",                    "omni_v2.tests.test_stats", "module"),
-        ("[13/14] Vision (Phase 4)",                   "omni_v2.tests.test_vision", "module"),
-        ("[14/14] Marketplace (Phase 4)",              "omni_v2.tests.test_marketplace", "module"),
+        ("[1/20] Multi-agent core (omni.py --test)", "omni_v2.tests.test_fast_af_db", "_run_omni_test"),
+        ("[2/20] FastAF DB (sub-ms semantic lookup)", "omni_v2.tests.test_fast_af_db", "module"),
+        ("[3/20] Hermes refinement (self-healing)",   "omni_v2.tests.test_hermes_refinement", "module"),
+        ("[4/20] Skill synthesis (custom skills)",     "omni_v2.tests.test_skill_synthesis", "module"),
+        ("[5/20] Security guardrails (10 defenses)",   "omni_v2.tests.test_security_guardrails", "module"),
+        ("[6/20] User profile (Phase 1)",              "omni_v2.tests.test_user_profile", "module"),
+        ("[7/20] Session memory (Phase 1)",            "omni_v2.tests.test_session_memory", "module"),
+        ("[8/20] Personality (Phase 2)",               "omni_v2.tests.test_personality", "module"),
+        ("[9/20] Opinion engine (Phase 2)",            "omni_v2.tests.test_opinion", "module"),
+        ("[10/20] Onboarding (Phase 3)",              "omni_v2.tests.test_onboarding", "module"),
+        ("[11/20] Demo mode (Phase 3)",                "omni_v2.tests.test_demo_mode", "module"),
+        ("[12/20] Stats (Phase 3)",                    "omni_v2.tests.test_stats", "module"),
+        ("[13/20] Vision (Phase 4)",                   "omni_v2.tests.test_vision", "module"),
+        ("[14/20] Marketplace (Phase 4)",              "omni_v2.tests.test_marketplace", "module"),
+        ("[15/20] Network discovery (Phase 5A)",       "omni_v2.tests.test_network", "module"),
+        ("[16/20] Mobile PWA (Phase 5B)",              "omni_v2.tests.test_mobile", "module"),
+        ("[17/20] Geofence engine (Phase 5C)",         "omni_v2.tests.test_geofence", "module"),
+        ("[18/20] Notification center (Phase 5D)",    "omni_v2.tests.test_notifications", "module"),
+        ("[19/20] Notification prefs (Phase 5E)",     "omni_v2.tests.test_notification_prefs", "module"),
+        ("[20/20] Screen watcher (Phase 6A)",         "omni_v2.tests.test_screen_watcher", "module"),
     ]
 
     all_ok = True
@@ -200,7 +206,7 @@ def cmd_test(args):
 
     print("\n  " + "=" * 60)
     if all_ok:
-        print("  ✅ ALL 14 TEST SUITES PASSED (140+ tests, 0 failures)")
+        print("  ✅ ALL 20 TEST SUITES PASSED (320+ tests, 0 failures)")
     else:
         print("  ⚠️  SOME TESTS FAILED - see above for details")
     print("  " + "=" * 60 + "\n")

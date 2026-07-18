@@ -26,6 +26,8 @@
 - **[PHASE_2_DONE.md](PHASE_2_DONE.md)** — "It Has Opinions" (Personality, Opinion Engine)
 - **[PHASE_3_DONE.md](PHASE_3_DONE.md)** — "Demo Polish" (Onboarding, Demo Mode, Stats)
 - **[PHASE_4_DONE.md](PHASE_4_DONE.md)** — "Product Grade" (Vision, Voice Clone, Marketplace, SDK)
+- **[PHASE_5_MOBILE.md](PHASE_5_MOBILE.md)** — "Mobile-First" (mDNS + Phone PWA companion)
+- **[PHASE_6_VISUAL.md](PHASE_6_VISUAL.md)** — "Visual-First" (screen watching + context)
 
 ## 🛠️ Per-Module Docs
 
@@ -54,13 +56,18 @@ Each major module has a detailed docstring at the top of its file:
 | Wake Word | `omni_v2/voice/wake_word_best.py` | "Hey OMNI" detection |
 | Browser V3 | `omni_v2/tools/browser_v3.py` | Chrome isolated profile |
 | Playwright | `omni_v2/tools/browser_playwright.py` | Real headless browser |
+| mDNS Discovery | `omni_v2/network/mdns.py` | UDP broadcast, zero deps |
+| Geofence Engine | `omni_v2/agents/geofence.py` | Places + rules + Haversine |
+| Screen Watcher | `omni_v2/agents/screen_watcher.py` | Periodically watches screen + classifies activity |
+| Mobile WebSocket | `backend_fastapi/main.py` | /ws/mobile + /api/voice/transcribe |
+| Mobile PWA | `mobile/index.html` | Phone browser companion |
 
 ## 🧪 Tests
 
-14 test suites, 140+ tests, 100% pass:
+20 test suites, 320+ tests, 100% pass:
 
 ```bash
-omni test    # runs all 14 suites
+omni test    # runs all 19 suites
 ```
 
 | Test file | Tests | Coverage |
@@ -79,6 +86,12 @@ omni test    # runs all 14 suites
 | `omni_v2/tests/test_vision.py` | 8 | Multi-modal vision |
 | `omni_v2/tests/test_voice_clone.py` | 8 | Voice cloning |
 | `omni_v2/tests/test_marketplace.py` | 14 | Skill marketplace |
+| `omni_v2/tests/test_network.py` | 13 | mDNS discovery |
+| `omni_v2/tests/test_mobile.py` | 55 | PWA + location + endpoints |
+| `omni_v2/tests/test_geofence.py` | 50 | Geofence + backend |
+| `omni_v2/tests/test_notifications.py` | 40 | Notification center |
+| `omni_v2/tests/test_notification_prefs.py` | 37 | Prefs + snooze |
+| `omni_v2/tests/test_screen_watcher.py` | 31 | Screen watcher + context |
 
 To run an individual test:
 ```bash
@@ -94,7 +107,7 @@ omni install          # Print install instructions
 omni status           # Health check
 omni model download   # Fetch Qwen2.5-1.5B GGUF (~1.1GB)
 omni model info       # Show loaded model info
-omni test             # Run all 14 test suites (140+ tests)
+omni test             # Run all 20 test suites (320+ tests)
 omni start            # Start FastAPI backend on :8765
 omni start --no-browser  # Don't auto-open browser
 omni start --reload   # Hot-reload on code changes
@@ -158,10 +171,19 @@ Omni/
 │   ├── skills/                 # AST verifier, marketplace
 │   ├── sdk/                    # Plugin SDK
 │   ├── sync/                   # E2E sync stub
-│   ├── tests/                  # 14 test suites
+│   ├── network/                # mDNS discovery (Phase 5)
+│   ├── tests/                  # 16 test suites
 │   └── ...
 │
-├── backend_fastapi/            # FastAPI server (65+ endpoints)
+├── mobile/                     # Phone PWA (Phase 5B)
+│   ├── index.html              # PWA shell
+│   ├── app.js                  # Discovery + WS + PTT + QR
+│   ├── style.css               # Dark cinematic theme
+│   ├── manifest.json           # PWA manifest
+│   ├── sw.js                   # Service worker
+│   └── qr.html                 # QR generator (laptop-side)
+│
+├── backend_fastapi/            # FastAPI server (75+ endpoints)
 │
 ├── frontend_next/              # Next.js 14 UI
 │

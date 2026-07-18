@@ -186,6 +186,24 @@ class CommandRegistry:
             "screen_desc": [(r"what'?s?\s+on\s+screen|describe\s+screen", None)],
             "show_hints": [(r"show\s+commands|what\s+can\s+i\s+say", None)],
         })
+        # Phase 5D: Mobile communication (send to phone)
+        # Phase 5E: Snooze / DND
+        self.register("communication", {
+            "send_to_phone": [
+                (r"send\s+to\s+(?:my\s+)?(?:phone|device|tablet|phones|devices)\s*[:\-]\s*(?P<message>.+)", "message"),
+                (r"notify\s+(?:my\s+)?(?:phone|device|tablet|phones|devices)\s*[:\-]\s*(?P<message>.+)", "message"),
+                (r"alert\s+(?:my\s+)?(?:phone|device|tablet)\s*[:\-]\s*(?P<message>.+)", "message"),
+                (r"text\s+(?:me|my\s+phone)\s*[:\-]\s*(?P<message>.+)", "message"),
+                (r"ping\s+(?:my\s+)?(?:phone|device|tablet)\s*[:\-]?\s*(?P<message>.*)", "message"),
+            ],
+            "snooze_notifications": [
+                (r"snooze\s+(?:notifications?|alerts?)?\s*(?:for\s+)?(?P<minutes>\d+)\s*(?:min(?:ute)?s?|hours?|hr|h)?", "minutes"),
+                (r"mute\s+(?:notifications?|alerts?)?\s*(?:for\s+)?(?P<minutes>\d+)\s*(?:min(?:ute)?s?|hours?|hr|h)?", "minutes"),
+                (r"silence\s+(?:notifications?|alerts?)?\s*(?:for\s+)?(?P<minutes>\d+)\s*(?:min(?:ute)?s?|hours?|hr|h)?", "minutes"),
+                (r"(?:enable|turn\s+on)\s+(?:do\s+not\s+disturb|dnd|quiet\s+mode)\s*(?:for\s+)?(?P<minutes>\d+)?", "minutes"),
+                (r"(?:disable|turn\s+off|stop|lift|resume)\s+(?:do\s+not\s+disturb|dnd|quiet\s+mode|snooze)", None),
+            ],
+        })
 
     def register(self, category: str, patterns: Dict[str, List[Tuple[str, str]]]):
         if category not in self._patterns:

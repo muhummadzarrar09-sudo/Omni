@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+  <meta name="theme-color" content="#06080d" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="OMNI" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="format-detection" content="telephone=no" />
+  <meta name="description" content="OMNI Brain — your private, on-device AI butler in your pocket." />
+  <link rel="manifest" href="./manifest.json" />
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><circle cx='32' cy='32' r='28' fill='%2300d4ff'/><circle cx='32' cy='32' r='8' fill='%23000'/></svg>" />
+  <link rel="apple-touch-icon" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><circle cx='32' cy='32' r='28' fill='%2300d4ff'/></svg>" />
+  <title>OMNI — Your Butler</title>
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <!-- Boot screen -->
+  <div id="boot" class="screen boot">
+    <div class="boot-ring"></div>
+    <div class="boot-label">OMNI</div>
+    <div class="boot-sub">initializing…</div>
+  </div>
+
+  <!-- Discover screen -->
+  <section id="discover" class="screen" hidden>
+    <header class="topbar">
+      <div class="logo">●</div>
+      <div class="topbar-text">
+        <div class="title">OMNI</div>
+        <div class="subtitle">tap a brain to connect</div>
+      </div>
+      <button class="iconbtn" id="scanBtn" aria-label="Scan QR">⌖</button>
+    </header>
+
+    <div class="discover-body">
+      <div id="scanArea" class="scan-area" hidden>
+        <div class="scan-frame">
+          <video id="scanVideo" playsinline muted></video>
+          <canvas id="scanCanvas" hidden></canvas>
+          <div class="scan-overlay">
+            <div class="scan-corners"></div>
+            <div class="scan-line"></div>
+          </div>
+          <button class="scan-close" id="scanCloseBtn" aria-label="Close scanner">×</button>
+          <div class="scan-hint" id="scanHint">point at QR code</div>
+        </div>
+      </div>
+
+      <div id="brainList" class="brain-list" aria-live="polite"></div>
+
+      <div class="manual-connect">
+        <details>
+          <summary>or enter host manually</summary>
+          <form id="manualForm" class="manual-form">
+            <input type="text" id="manualHost" placeholder="192.168.1.42" inputmode="url" autocomplete="off" required />
+            <input type="number" id="manualPort" placeholder="8765" min="1" max="65535" />
+            <button type="submit" class="primary-btn">connect</button>
+          </form>
+        </details>
+      </div>
+    </div>
+
+    <footer class="discover-footer">
+      <span class="dot" id="scanStatusDot"></span>
+      <span id="scanStatus">scanning local network…</span>
+    </footer>
+  </section>
+
+  <!-- Pair screen -->
+  <section id="pair" class="screen" hidden>
+    <header class="topbar">
+      <button class="iconbtn" id="pairBackBtn" aria-label="Back">‹</button>
+      <div class="topbar-text">
+        <div class="title">Pairing</div>
+        <div class="subtitle" id="pairBrainName">—</div>
+      </div>
+    </header>
+    <div class="pair-body">
+      <div class="pair-instructions">
+        Ask your brain to generate a 6-digit code, then enter it here.
+      </div>
+      <form id="pairForm" class="pair-form">
+        <input type="text" id="pairCode" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" placeholder="000000" autocomplete="one-time-code" required />
+        <button type="submit" class="primary-btn">pair</button>
+      </form>
+      <div class="pair-error" id="pairError" hidden></div>
+    </div>
+  </section>
+
+  <!-- Main chat screen -->
+  <section id="chat" class="screen" hidden>
+    <header class="topbar chat-topbar">
+      <div class="logo pulsing">●</div>
+      <div class="topbar-text">
+        <div class="title" id="chatBrainName">OMNI</div>
+        <div class="subtitle" id="chatBrainSub">connected</div>
+      </div>
+      <button class="iconbtn notif-bell" id="chatNotifBtn" aria-label="Notifications">
+        🔔
+        <span class="notif-badge" id="notifBadge" hidden>0</span>
+      </button>
+      <button class="iconbtn" id="chatMenuBtn" aria-label="Menu">⋯</button>
+    </header>
+
+    <main id="messageLog" class="message-log" aria-live="polite"></main>
+
+    <div class="input-bar">
+      <textarea id="textInput" rows="1" placeholder="say something…" aria-label="Message"></textarea>
+      <button class="ptt" id="pttBtn" aria-label="Hold to talk">
+        <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true">
+          <path fill="currentColor" d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11h-2z"/>
+        </svg>
+      </button>
+      <button class="send" id="sendBtn" aria-label="Send">↑</button>
+    </div>
+
+    <!-- Location card (Phase 5C) -->
+    <div id="locationCard" class="location-card" hidden>
+      <div class="loc-row">
+        <div class="loc-icon" id="locIcon">📍</div>
+        <div class="loc-info">
+          <div class="loc-place" id="locPlace">—</div>
+          <div class="loc-coords" id="locCoords">no fix yet</div>
+        </div>
+        <button class="loc-send" id="locSendBtn" aria-label="Send location">↑</button>
+      </div>
+      <div class="loc-actions">
+        <button class="loc-action" id="locManageBtn">⚙ manage</button>
+        <button class="loc-action" id="locSeedBtn">✨ add samples</button>
+        <button class="loc-action" id="locClearBtn">🗑 clear</button>
+      </div>
+    </div>
+
+    <!-- Menu drawer -->
+    <div id="menu" class="menu-drawer" hidden>
+      <div class="menu-card">
+        <button class="menu-item" id="menuDiscover">← discover</button>
+        <button class="menu-item" id="menuHistory">📜 session history</button>
+        <button class="menu-item" id="menuStats">📊 stats</button>
+        <button class="menu-item" id="menuLocation">📍 location & places</button>
+        <button class="menu-item" id="menuNotifications">🔔 notifications</button>
+        <button class="menu-item" id="menuBrain">👁 brain state</button>
+        <button class="menu-item" id="menuInstall">📲 install as app</button>
+        <button class="menu-item danger" id="menuDisconnect">disconnect</button>
+      </div>
+    </div>
+  </section>
+
+    <!-- Notifications screen (Phase 5D) -->
+    <section id="notifications" class="screen" hidden>
+      <header class="topbar">
+        <button class="iconbtn" id="notifBackBtn" aria-label="Back">‹</button>
+        <div class="topbar-text">
+          <div class="title">Notifications</div>
+          <div class="subtitle" id="notifSubtitle">—</div>
+        </div>
+        <button class="iconbtn" id="notifPrefsBtn" aria-label="Settings">⚙</button>
+        <button class="iconbtn" id="notifMarkAllBtn" aria-label="Mark all read">✓</button>
+      </header>
+      <div class="notif-body">
+        <!-- Snooze banner (shown when snoozed) -->
+        <div id="snoozeBanner" class="snooze-banner" hidden>
+          <div class="snooze-icon">🔕</div>
+          <div class="snooze-info">
+            <div class="snooze-title">Snoozed</div>
+            <div class="snooze-sub" id="snoozeSub">—</div>
+          </div>
+          <button class="snooze-lift" id="snoozeLiftBtn">lift</button>
+        </div>
+        <div id="notifList" class="notif-list"></div>
+      </div>
+    </section>
+
+    <!-- Brain state screen (Phase 6A - Visual-First) -->
+    <section id="brainState" class="screen" hidden>
+      <header class="topbar">
+        <button class="iconbtn" id="brainBackBtn" aria-label="Back">‹</button>
+        <div class="topbar-text">
+          <div class="title">Brain State</div>
+          <div class="subtitle" id="brainSubtitle">what OMNI sees</div>
+        </div>
+        <button class="iconbtn" id="brainStartBtn" aria-label="Start">▶</button>
+        <button class="iconbtn" id="brainStopBtn" aria-label="Stop">■</button>
+      </header>
+      <div class="brain-body">
+        <!-- Current scene -->
+        <div class="brain-card brain-current" id="brainCurrent">
+          <div class="brain-icon" id="brainIcon">👁</div>
+          <div class="brain-info">
+            <div class="brain-activity" id="brainActivity">—</div>
+            <div class="brain-app" id="brainApp">no scene yet</div>
+            <div class="brain-duration" id="brainDuration"></div>
+          </div>
+        </div>
+
+        <!-- Activity durations (today) -->
+        <div class="brain-section">
+          <div class="brain-section-title">Today</div>
+          <div id="brainDurations" class="brain-durations"></div>
+        </div>
+
+        <!-- Recent scenes -->
+        <div class="brain-section">
+          <div class="brain-section-title">Recent scenes</div>
+          <div id="brainScenes" class="brain-scenes"></div>
+        </div>
+
+        <!-- Proactive suggestions (filtered to screen-related) -->
+        <div class="brain-section">
+          <div class="brain-section-title">Suggestions</div>
+          <div id="brainSuggestions" class="brain-suggestions"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Notification preferences (Phase 5E) -->
+    <section id="notifPrefs" class="screen" hidden>
+      <header class="topbar">
+        <button class="iconbtn" id="prefsBackBtn" aria-label="Back">‹</button>
+        <div class="topbar-text">
+          <div class="title">Notification Settings</div>
+          <div class="subtitle">control what you see</div>
+        </div>
+      </header>
+      <div class="prefs-body">
+        <div class="pref-group">
+          <div class="pref-title">Master</div>
+          <label class="pref-row">
+            <span>Enable notifications</span>
+            <input type="checkbox" id="prefEnabled" />
+          </label>
+          <label class="pref-row">
+            <span>Show preview</span>
+            <input type="checkbox" id="prefShowPreview" />
+          </label>
+          <label class="pref-row">
+            <span>Play sound</span>
+            <input type="checkbox" id="prefPlaySound" />
+          </label>
+        </div>
+        <div class="pref-group">
+          <div class="pref-title">Snooze</div>
+          <div class="snooze-presets">
+            <button class="preset-btn" data-min="15">15 min</button>
+            <button class="preset-btn" data-min="30">30 min</button>
+            <button class="preset-btn" data-min="60">1 hour</button>
+            <button class="preset-btn" data-min="120">2 hours</button>
+          </div>
+        </div>
+        <div class="pref-group">
+          <div class="pref-title">Do Not Disturb</div>
+          <label class="pref-row">
+            <span>Enable DND</span>
+            <input type="checkbox" id="prefDndEnabled" />
+          </label>
+          <div class="pref-row">
+            <span>From</span>
+            <input type="number" id="prefDndStart" min="0" max="23" />
+          </div>
+          <div class="pref-row">
+            <span>Until</span>
+            <input type="number" id="prefDndEnd" min="0" max="23" />
+          </div>
+        </div>
+        <div class="pref-group">
+          <div class="pref-title">Muted categories</div>
+          <div class="cat-toggles" id="catToggles"></div>
+        </div>
+        <div class="pref-group">
+          <div class="pref-title">Actions</div>
+          <button class="primary-btn" id="prefsSaveBtn" style="width:100%;">save</button>
+          <button class="primary-btn" id="prefsResetBtn" style="width:100%; margin-top:8px; background: var(--bg-elev); color: var(--err);">reset to defaults</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Geofence management screen -->
+    <section id="geofence" class="screen" hidden>
+    <header class="topbar">
+      <button class="iconbtn" id="geoBackBtn" aria-label="Back">‹</button>
+      <div class="topbar-text">
+        <div class="title">Places & Rules</div>
+        <div class="subtitle" id="geoSubtitle">loading…</div>
+      </div>
+      <button class="iconbtn" id="geoAddBtn" aria-label="Add">+</button>
+    </header>
+    <div class="geofence-body">
+      <div class="geo-section">
+        <div class="geo-section-title">📍 Places</div>
+        <div id="placeList" class="place-list"></div>
+      </div>
+      <div class="geo-section">
+        <div class="geo-section-title">⚡ Rules</div>
+        <div id="ruleList" class="rule-list"></div>
+      </div>
+      <div class="geo-section">
+        <div class="geo-section-title">📜 Recent Events</div>
+        <div id="eventList" class="event-list"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Toast -->
+  <div id="toast" class="toast" hidden></div>
+
+  <script src="./app.js" defer></script>
+</body>
+</html>
