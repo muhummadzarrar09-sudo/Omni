@@ -3,6 +3,7 @@ OMNI V3 - Opinion Engine Tests (Phase 2B)
 """
 import sys
 import time
+from unittest.mock import patch
 import tempfile
 from pathlib import Path
 
@@ -75,9 +76,10 @@ def test_should_opine_rate_limit():
     # Force allowed
     op._last_opinion_at = 0
     # First opinion: ok
-    can1 = op._should_opine()
-    if can1:
-        op._emit("test")
+    with patch("omni_v2.agents.personality.random.random", return_value=0.0):
+        can1 = op._should_opine()
+    assert can1, "Initial opinion should be allowed in deterministic test"
+    op._emit("test")
     # Immediate second: should fail (30s cooldown)
     can2 = op._should_opine()
     assert not can2, "Should be rate limited within 30s"

@@ -124,7 +124,10 @@ class VSCodeTool(CommandPlugin):
                 if result.returncode == 0:
                     return CommandResult.ok(f"Ran: {cmd}\n{output[:200]}", data={"output": output, "exit_code": result.returncode})
                 else:
-                    return CommandResult.ok(f"Ran: {cmd} (exit {result.returncode})\n{output[:200]}", data={"output": output, "exit_code": result.returncode})
+                    return CommandResult.error(
+                        f"Command failed: {cmd} (exit {result.returncode})\n{output[:200]}",
+                        error=output,
+                    )
 
             except subprocess.TimeoutExpired:
                 self._log_command(cmd, "TIMEOUT")

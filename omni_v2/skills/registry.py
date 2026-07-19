@@ -35,20 +35,22 @@ class SkillRegistry:
     _instance = None
 
     def __new__(cls, *args, **kwargs):
-        if not cls._instance:
-            cls._instance = super(SkillRegistry, cls).__new__(cls)
-            cls._instance._initialized = False
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
         return cls._instance
 
     def __init__(self, plugin_manager: Optional[PluginManager] = None):
-        if self._initialized and self.plugin_manager:
-            return
-        self._lock = threading.RLock()
-        self.plugin_manager = plugin_manager or PluginManager()
-        self.fast_af = get_fast_af_store() if get_fast_af_store else None
-        self.loaded_skills: Dict[str, CommandPlugin] = {}
-        self._initialized = True
-        logger.info("SkillRegistry Phase 6.3 initialized (dynamic skill loader + re-entrant lock)")
+        if not hasattr(self, "_lock"):
+            self._lock = threading.RLock()
+            self.fast_af = get_fast_af_store() if get_fast_af_store else None
+            self.loaded_skills: Dict[str, CommandPlugin] = {}
+        # Explicit dependency injection owns the registry manager. This fixes
+        # the previous bug where an injected manager was silently ignored.
+        if plugin_manager is not None:
+            self.plugin_manager = plugin_manager
+        elif not hasattr(self, "plugin_manager"):
+            self.plugin_manager = PluginManager()
+        logger.info("SkillRegistry initialized (dynamic skill loader + re-entrant lock)")
 
     def load_all_skills(self) -> int:
         """Load all custom_*.py skills from data/skills/ into PluginManager + FastAFStore"""

@@ -195,6 +195,13 @@ class NotificationCenter:
         self._initialized = True
         logger.info(f"🔔 Notification center: {len(self.notifications)} notifs, {len(self.devices)} devices")
 
+    def shutdown(self) -> None:
+        """Detach delivery callbacks during application shutdown."""
+        with self._data_lock:
+            self.broadcast = None
+            self._save_notifications()
+            self._save_devices()
+
     # ===== Persistence =====
 
     def _load(self):

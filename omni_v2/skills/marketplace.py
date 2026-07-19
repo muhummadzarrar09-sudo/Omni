@@ -31,6 +31,8 @@ Marketplace sources:
 """
 from __future__ import annotations
 import json
+import hashlib
+import os
 import time
 import threading
 import tempfile
@@ -223,7 +225,7 @@ class SkillMarketplace:
 
     def get_index(self, category: Optional[str] = None, search: Optional[str] = None) -> List[Dict[str, Any]]:
         """Browse the marketplace."""
-        items = self._index
+        items = [dict(item) for item in self._index]
         if category:
             items = [i for i in items if i.get("category") == category]
         if search:
@@ -254,6 +256,13 @@ class SkillMarketplace:
             try:
                 target_path = self.skills_dir / f"{skill_id}.py"
                 self._download_skill(item["url"], target_path)
+                # Verify before any import or registration.
+                from omni_v2.skills.verifier import SkillVerifier
+                source = target_path.read_text(encoding="utf-8")
+                safe, reason = SkillVerifier.verify(source)
+                if not safe:
+                    target_path.unlink(missing_ok=True)
+                    raise ValueError(f"Skill rejected by verifier: {reason}")
                 # Register
                 installed = InstalledSkill(
                     id=skill_id,
@@ -286,28 +295,17 @@ class SkillMarketplace:
         try:
             req = urllib.request.Request(url, headers={"User-Agent": "OMNI-V3"})
             with urllib.request.urlopen(req, timeout=15) as resp:
-                data = resp.read(50000)  # 50KB cap
-                target.write_bytes(data)
+                data = resp.read(50001)  # hard cap, detect oversized payloads
+                if len(data) > 50000:
+                    raise ValueError("skill download exceeds 50KB limit")
+                tmp = target.with_suffix(target.suffix + ".download")
+                tmp.write_bytes(data)
+                os.replace(tmp, target)
         except Exception as e:
-            # In offline mode, create a stub so the install still "works"
-            target.write_text(
-                f'# Skill downloaded offline (could not fetch {url})\n'
-                f'# Error: {e}\n'
-                f'# This is a stub - real implementation would be downloaded from the URL.\n\n'
-                f'from omni_v2.core.plugin_manager import CommandPlugin, CommandMetadata, CommandResult\n\n'
-                f'class StubSkill(CommandPlugin):\n'
-                f'    metadata = CommandMetadata(\n'
-                f'        name="{target.stem}", category="custom",\n'
-                f'        description="Stub for {target.stem} (offline install)",\n'
-                f'        patterns=[],\n'
-                f'    )\n'
-                f'    async def execute(self, entities, context):\n'
-                f'        return CommandResult.ok("Stub skill {target.stem} - connect to internet to install real version")\n\n'
-                f'# Add to plugin manager\n'
-                f'def get_tool():\n'
-                f'    return StubSkill()\n',
-                encoding="utf-8",
-            )
+            # Never report an unavailable skill as installed. Remove partial files.
+            target.unlink(missing_ok=True)
+            raise RuntimeError(f"Skill download failed: {e}") from e
+
 
     def _try_load_skill(self, path: Path) -> bool:
         """Try to dynamically load a skill as a Python module."""

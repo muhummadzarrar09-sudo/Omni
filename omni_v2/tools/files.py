@@ -80,7 +80,8 @@ class FilesTool(CommandPlugin):
             pass  # guardrails not available, fall through
 
         try:
-            p = Path(path)
+            p = (allowed_root / str(path)).resolve()
+            p.relative_to(allowed_root.resolve())
             p.parent.mkdir(parents=True, exist_ok=True)
             p.write_text(str(content), encoding="utf-8")
             return CommandResult.ok(
@@ -94,11 +95,19 @@ class FilesTool(CommandPlugin):
         if not path:
             return CommandResult.fail("No path given")
         try:
-            p = Path(path)
-            if not p.exists():
+            from omni_v2.core.paths import DATA_DIR
+            from omni_v2.core.guardrails import safe_path
+            allowed_root = (DATA_DIR / "output").resolve()
+            safe, err = safe_path(path, allowed_root=allowed_root)
+            if not safe:
+                return CommandResult.fail(f"Path blocked by guardrail: {err}")
+            p = (allowed_root / str(path)).resolve()
+            p.relative_to(allowed_root)
+            if not p.exists() or not p.is_file():
                 return CommandResult.fail(f"File not found: {path}")
-            content = p.read_text(encoding="utf-8", errors="replace")
-            return CommandResult.ok(content[:2000], data={"path": str(p.resolve())})
+            with p.open("r", encoding="utf-8", errors="replace") as handle:
+                content = handle.read(2000)
+            return CommandResult.ok(content, data={"path": str(p)})
         except Exception as e:
             return CommandResult.fail(f"Read failed: {e}")
 

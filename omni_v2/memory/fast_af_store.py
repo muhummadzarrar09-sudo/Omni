@@ -11,6 +11,7 @@ import sqlite3
 from pathlib import Path
 from typing import List, Dict, Any, Optional, Tuple
 import re
+import threading
 
 try:
     from loguru import logger
@@ -48,6 +49,7 @@ class FastAFStore:
         
         # Tier 1: In-Memory Semantic Cache
         self.semantic_index: Dict[str, Dict[str, Any]] = {}
+        self._lock = threading.RLock()
         self._tokens_index: Dict[str, List[Tuple[str, float]]] = {}
         
         # Tier 2: Analytical & Log Engine (DuckDB or SQLite memory buffer)
@@ -148,6 +150,10 @@ class FastAFStore:
             self.remember_skill(name, category, desc, patterns, examples, persist=False)
 
     def remember_skill(self, name: str, category: str, description: str, patterns: List[str], examples: List[str], persist: bool = True) -> float:
+        with self._lock:
+            return self._remember_skill_unlocked(name, category, description, patterns, examples, persist)
+
+    def _remember_skill_unlocked(self, name: str, category: str, description: str, patterns: List[str], examples: List[str], persist: bool = True) -> float:
         """
         Add a tool/skill to the Tier 1 RAM index (<1ms) and optionally Tier 3 SQLite.
         Returns the operation latency in milliseconds.
@@ -155,8 +161,10 @@ class FastAFStore:
         t0 = time.perf_counter()
         
         # Add to Tier 1 in-memory semantic map
-        self.semantic_index[name] = {
-            "name": name,
+        with self._lock:
+            self.semantic_index[name] = {
+                "name": name,
+            "_updated_at": time.time(),
             "category": category,
             "description": description,
             "patterns": patterns,
@@ -187,6 +195,10 @@ class FastAFStore:
         return latency_ms
 
     def semantic_lookup(self, query: str, threshold: float = 0.45, top_k: int = 5) -> Tuple[List[Dict[str, Any]], float]:
+        with self._lock:
+            return self._semantic_lookup_unlocked(query, threshold, top_k)
+
+    def _semantic_lookup_unlocked(self, query: str, threshold: float = 0.45, top_k: int = 5) -> Tuple[List[Dict[str, Any]], float]:
         """
         Sub-millisecond Tier 1 semantic lookup (<1.5 ms guaranteed).
         Returns (list of matching items sorted by score, lookup_latency_ms).
@@ -198,6 +210,19 @@ class FastAFStore:
         q_tokens = self._tokenize(query)
         if not q_tokens:
             return [], (time.perf_counter() - t0) * 1000.0
+
+        # Exact example matches must win over stale/shorter persisted skills.
+        normalized_query = " ".join(q_tokens)
+        exact = []
+        for item in self.semantic_index.values():
+            examples = [" ".join(self._tokenize(str(e))) for e in item.get("examples", [])]
+            if normalized_query in examples:
+                result = item.copy()
+                result["score"] = 1.0
+                exact.append(result)
+        if exact:
+            exact.sort(key=lambda x: x.get("_updated_at", 0), reverse=True)
+            return exact[:top_k], (time.perf_counter() - t0) * 1000.0
         
         scores: Dict[str, float] = {}
         for token in q_tokens:
@@ -264,6 +289,18 @@ class FastAFStore:
             
         latency_ms = (time.perf_counter() - t0) * 1000.0
         return results, latency_ms
+
+    def close(self) -> None:
+        """Close analytical and persistent database handles."""
+        with self._lock:
+            for conn_name in ("sqlite_conn", "duck_conn"):
+                conn = getattr(self, conn_name, None)
+                if conn is not None:
+                    try:
+                        conn.close()
+                    except Exception as exc:
+                        logger.debug(f"FastAFStore close {conn_name}: {exc}")
+                    setattr(self, conn_name, None)
 
 def get_fast_af_store() -> FastAFStore:
     """Get singleton FastAFStore instance"""

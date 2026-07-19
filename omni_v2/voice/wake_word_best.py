@@ -26,7 +26,7 @@ except ImportError:
 try:
     from omni_v2.core.paths import DATA_DIR
 except Exception:
-    DATA_DIR = Path.cwd() / "data"
+    DATA_DIR = Path(__file__).resolve().parents[2] / "data"
 
 
 # === Backend 1: openWakeWord (best free option) ===

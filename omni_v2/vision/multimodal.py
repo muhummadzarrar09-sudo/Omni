@@ -32,7 +32,7 @@ except ImportError:
 try:
     from omni_v2.core.paths import DATA_DIR
 except Exception:
-    DATA_DIR = Path.cwd() / "data"
+    DATA_DIR = Path(__file__).resolve().parents[2] / "data"
 
 
 @dataclass
@@ -120,7 +120,7 @@ class MultimodalVision:
             VisionResult with description, text, objects, etc.
         """
         t0 = time.time()
-        path = Path(file_path)
+        path = Path(file_path).expanduser().resolve()
         if not path.exists():
             return VisionResult(
                 success=False, file_type="unknown",

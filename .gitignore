@@ -199,3 +199,8 @@ src-tauri/bin/
 # Rust
 **/*.rs.bk
 Cargo.lock
+
+# Runtime state (never commit)
+data/**
+!data/.gitkeep
+.omni_v2/**

@@ -28,7 +28,7 @@ except ImportError:
 try:
     from omni_v2.core.paths import DATA_DIR
 except ImportError:
-    DATA_DIR = Path.cwd() / "data"
+    DATA_DIR = Path(__file__).resolve().parents[2] / "data"
 
 MAX_RECORDINGS_KEEP = 20  # ROBUST-BUG-05 fix: cap recordings to last 20
 

@@ -4,6 +4,7 @@ Run: python -m omni_v2.voice.test_mic_fixed
 Should handle -9999 error
 """
 import time
+import pytest
 from pathlib import Path
 
 try:
@@ -60,13 +61,13 @@ def test_sounddevice():
             print("✅ Mic is LOUD enough for STT")
         else:
             print("⚠️ Mic quiet - boost Windows Sound -> Input 100% +30dB, speak 1 inch")
-        return True
+        return None
         
     except Exception as e:
         print(f"❌ Sounddevice failed: {e}")
         import traceback
         traceback.print_exc()
-        return False
+        pytest.skip(f"Audio hardware unavailable: {e}")
 
 def test_pyaudio_fallback():
     print("\n=== Testing PyAudio fallback with multiple samplerates ===")
@@ -97,19 +98,19 @@ def test_pyaudio_fallback():
                 max_v = float(abs(arr).max())
                 print(f"  ✅ Works @ {sr}Hz RMS={rms:.5f} MAX={max_v:.4f}")
                 pa.terminate()
-                return True
+                return None
             except Exception as e:
                 print(f"  ❌ @ {sr}Hz failed: {e}")
         
         pa.terminate()
         print("❌ All PyAudio samplerates failed - use sounddevice")
-        return False
+        pytest.skip(f"Audio hardware unavailable: {e}")
         
     except Exception as e:
         print(f"❌ PyAudio test failed: {e}")
         import traceback
         traceback.print_exc()
-        return False
+        pytest.skip(f"Audio hardware unavailable: {e}")
 
 if __name__ == "__main__":
     print("OMNI V3.1 Mic Test - Fixes -9999 Unanticipated host error")

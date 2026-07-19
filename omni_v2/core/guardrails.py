@@ -1,4 +1,4 @@
-"""
+r"""
 OMNI V3 - Security Guardrails
 Stress-test defenses against:
   1. Path traversal (writing outside data/)
@@ -54,7 +54,7 @@ MAX_FILE_WRITE_BYTES = 1024 * 1024
 
 
 def safe_path(path_str: str, allowed_root: Optional[Path] = None) -> Tuple[bool, str]:
-    """
+    r"""
     Validate a path. Returns (is_safe, error_message).
     Blocks:
       - Path traversal (..\)
@@ -152,7 +152,7 @@ SAFE_SHELL_COMMANDS = {
     "dir", "ls", "echo", "type", "cat", "cd", "pwd", "set", "echo.",
     "where", "which", "whoami", "hostname", "date", "time", "ver",
     "ipconfig", "ping", "tracert", "nslookup", "systeminfo", "tasklist",
-    "python", "py", "node", "npm", "git", "code", "notepad", "calc",
+    "code", "notepad", "calc",
 }
 
 
@@ -180,7 +180,14 @@ def safe_shell_command(cmd: str) -> Tuple[bool, str]:
     # Extract base command (first word)
     base = cmd.strip().split()[0].lower() if cmd.strip() else ""
     # Strip extensions
-    base = base.rstrip(".exe").rstrip(".bat").rstrip(".cmd")
+    for suffix in (".exe", ".bat", ".cmd"):
+        if base.endswith(suffix):
+            base = base[:-len(suffix)]
+            break
+    # Permit only the harmless version probe for Python; never permit arbitrary
+    # interpreter/package-manager execution through this generic validator.
+    if base == "python" and cmd.strip().lower() in {"python --version", "python -v"}:
+        return True, ""
     if base not in SAFE_SHELL_COMMANDS:
         return False, f"Base command '{base}' not in safe allowlist. Safe: {sorted(SAFE_SHELL_COMMANDS)[:10]}..."
 

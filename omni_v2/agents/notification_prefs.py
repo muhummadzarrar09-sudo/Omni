@@ -185,10 +185,14 @@ class NotificationPrefs:
         return True
 
     def update(self, **kwargs) -> Dict[str, bool]:
-        results = {}
-        for k, v in kwargs.items():
-            results[k] = self.set(k, v)
-        return results
+        """Update preferences in one locked write."""
+        with self._data_lock:
+            results = {k: (k in DEFAULTS or k == "version") for k in kwargs}
+            if not all(results.values()):
+                return results
+            self.prefs.update(kwargs)
+            self._save_prefs()
+            return results
 
     def reset_all(self) -> None:
         with self._data_lock:

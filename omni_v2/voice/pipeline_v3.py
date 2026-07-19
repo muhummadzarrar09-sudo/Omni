@@ -22,7 +22,7 @@ except ImportError:
 try:
     from omni_v2.core.paths import DATA_DIR
 except ImportError:
-    DATA_DIR = Path.cwd() / "data"
+    DATA_DIR = Path(__file__).resolve().parents[2] / "data"
 
 class VoicePipelineV3Fixed:
     """Fixed pipeline - sounddevice primary, pyaudio fallback, auto resample"""

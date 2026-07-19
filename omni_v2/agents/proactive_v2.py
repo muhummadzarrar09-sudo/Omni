@@ -21,6 +21,7 @@ import time
 import threading
 import json
 import os
+import os
 from pathlib import Path
 from typing import Optional, Dict, Any, Callable, List
 from datetime import datetime, timedelta
@@ -71,7 +72,7 @@ class ProactiveEngineV2:
         if self._initialized:
             return
         self.interval_sec = interval_sec
-        self.data_dir = data_dir or (Path.cwd() / "data" / "proactive")
+        self.data_dir = data_dir or (Path(__file__).resolve().parents[2] / "data" / "proactive")
         self.data_dir.mkdir(parents=True, exist_ok=True)
         self.suggestions_file = self.data_dir / "suggestions.json"
 

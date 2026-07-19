@@ -17,16 +17,17 @@ Endpoints:
 - POST /api/ptt/stop        -> stop + transcribe + execute
 - WebSocket /ws             -> live mic level + transcription stream
 """
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, UploadFile, File, Form
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, UploadFile, File, Form, Request, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
-from pydantic import BaseModel, field_validator
+from fastapi.responses import FileResponse, JSONResponse
+from pydantic import BaseModel, Field, field_validator
 from pathlib import Path
 import sys
 import asyncio
 import json
 import time
+import secrets
 from typing import Optional, Any, Dict
 
 # Ensure repo root in path
@@ -49,6 +50,10 @@ app = FastAPI(
     version="3.1.0"
 )
 
+def api_error(message: str, status_code: int = 500):
+    """Consistent error response for mutating API handlers."""
+    return JSONResponse(status_code=status_code, content={"status": "error", "error": message})
+
 # SMOKE-10 fix: cap request body size at 64KB to prevent OOM attacks
 MAX_REQUEST_BYTES = 64 * 1024
 
@@ -69,17 +74,36 @@ async def limit_request_size(request, call_next):
             pass
     return await call_next(request)
 
+# Optional explicit token for LAN/non-loopback use. Local loopback remains usable by the desktop UI.
+import os
+OMNI_API_TOKEN = os.environ.get("OMNI_API_TOKEN")
+
+@app.middleware("http")
+async def require_api_token(request: Request, call_next):
+    # Localhost is trusted only when no explicit token is configured. Once a
+    # token is configured, every mutating HTTP request requires it, regardless
+    # of source address. Pairing bootstrap is the sole exception.
+    bootstrap = request.url.path in {"/api/network/pair", "/api/network/pair/verify"}
+    if OMNI_API_TOKEN and request.method not in {"GET", "HEAD", "OPTIONS"} and not bootstrap:
+        supplied = request.headers.get("X-OMNI-Token", "")
+        valid = secrets.compare_digest(supplied, OMNI_API_TOKEN)
+        if not valid:
+            valid = supplied in _device_tokens and _device_tokens[supplied].get("expires_at", 0) > time.time()
+        if not valid:
+            return JSONResponse(status_code=401, content={"error": "Authentication required"})
+    return await call_next(request)
+
 # CORS for Next.js (3000) and any origin for judges
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # For hackathon, allow all - judges clone anywhere
+    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "DELETE"],
+    allow_headers=["Content-Type", "Authorization", "X-OMNI-Token"],
 )
 
 class ExecuteRequest(BaseModel):
-    command: str
+    command: str = Field(min_length=1, max_length=2000)
     # SMOKE-10 fix: cap command length to prevent abuse
     max_length: int = 2000
 
@@ -121,6 +145,12 @@ async def startup():
         get_proactive_agent().start()
     except Exception:
         pass
+    try:
+        from omni_v2.memory.fast_af_store import get_fast_af_store
+        app.state.fast_af_store = get_fast_af_store()
+    except Exception:
+        logger.exception("FastAFStore startup failed")
+
     # PROACTIVE-02: start the new proactive engine
     try:
         from omni_v2.agents.proactive_v2 import get_proactive_engine
@@ -165,6 +195,7 @@ async def startup():
             on_wake=lambda: asyncio.create_task(on_wake()),
             on_command=lambda text: asyncio.create_task(on_command(text)),
         )
+        app.state.wake_word = wake
         if wake.is_available():
             wake.start()
             logger.info(f"🟢 WakeWord Best started with {wake.get_status()}")
@@ -193,6 +224,7 @@ async def startup():
             except Exception as e:
                 logger.error(f"scheduled task fire: {e}")
         sched = get_scheduler(on_task_due=lambda t: asyncio.create_task(fire_scheduled_task(t)))
+        app.state.scheduler = sched
         logger.info(f"⏰ Scheduler initialized: {len(sched.list_tasks())} existing tasks")
     except Exception as e:
         logger.warning(f"Scheduler init failed: {e}")
@@ -216,6 +248,7 @@ async def startup():
             capabilities=["voice", "vision", "wake_word", "memory", "personality", "marketplace"],
         )
         mdns_broadcaster.start()
+        app.state.mdns_broadcaster = mdns_broadcaster
         info = make_discovery_info(broadcast_name, 8765)
         logger.info(f"📡 mDNS Broadcaster started: {info.http_url}")
         logger.info(f"📱 Mobile companion can discover on WiFi at {info.host}:{info.port}")
@@ -239,6 +272,7 @@ async def startup():
                 logger.debug(f"Notif broadcast: {e}")
 
         notif_center = get_notification_center()
+        app.state.notification_center = notif_center
         notif_center.broadcast = _notification_broadcast
         logger.info(f"🔔 NotificationCenter: VAPID={'enabled' if notif_center.get_vapid_public_key() else 'disabled'}, "
                     f"{notif_center.get_status()['devices_count']} devices")
@@ -249,6 +283,7 @@ async def startup():
     try:
         from omni_v2.agents.screen_watcher import get_screen_watcher
         watcher = get_screen_watcher(interval_sec=30.0, save_screenshots=False)
+        app.state.screen_watcher = watcher
         # Don't start the daemon by default — it requires a real screen.
         # The frontend can start it explicitly via /api/screen/start.
         logger.info(f"👁 ScreenWatcher ready (interval=30s, backend={watcher._cap_backend})")
@@ -263,6 +298,46 @@ async def startup():
     print("="*70)
     brain = get_brain()
     print(f"✅ Brain ready: {brain.ready}")
+
+@app.on_event("shutdown")
+async def shutdown():
+    """Stop background services so reloads/tests do not leak threads or devices."""
+    fast_store = getattr(app.state, "fast_af_store", None)
+    if fast_store is not None:
+        try:
+            fast_store.close()
+        except Exception:
+            logger.exception("FastAFStore shutdown failed")
+    notification_center = getattr(app.state, "notification_center", None)
+    if notification_center is not None:
+        try:
+            notification_center.shutdown()
+        except Exception:
+            logger.exception("Notification center shutdown failed")
+    scheduler = getattr(app.state, "scheduler", None)
+    if scheduler is not None:
+        try:
+            scheduler.shutdown()
+        except Exception:
+            logger.exception("Scheduler shutdown failed")
+    wake = getattr(app.state, "wake_word", None)
+    if wake is not None:
+        try:
+            wake.stop()
+        except Exception:
+            logger.exception("Wake-word shutdown failed")
+    watcher = getattr(app.state, "screen_watcher", None)
+    if watcher is not None:
+        try:
+            watcher.stop()
+        except Exception:
+            logger.exception("Screen watcher shutdown failed")
+    mdns = getattr(app.state, "mdns_broadcaster", None)
+    if mdns is not None:
+        try:
+            mdns.stop()
+        except Exception:
+            logger.exception("mDNS shutdown failed")
 
 @app.get("/")
 async def root():
@@ -324,8 +399,9 @@ async def get_user_profile():
         from omni_v2.agents.user_profile import get_user_profile
         profile = get_user_profile()
         return {"status": "ok", "profile": profile.get_all()}
-    except Exception as e:
-        return {"status": "error", "error": str(e)}
+    except Exception:
+        logger.exception("API operation failed")
+        return api_error("Operation could not be completed", 500)
 
 
 class UserProfileUpdate(BaseModel):
@@ -358,8 +434,9 @@ async def update_user_profile(update: UserProfileUpdate):
         if not all(results.values()):
             return {"status": "error", "error": "Some fields could not be set", "results": results}
         return {"status": "ok", "updated": list(payload.keys())}
-    except Exception as e:
-        return {"status": "error", "error": str(e)}
+    except Exception:
+        logger.exception("API operation failed")
+        return api_error("Operation could not be completed", 500)
 
 
 @app.delete("/api/user/profile/{field}")
@@ -370,8 +447,9 @@ async def forget_user_profile_field(field: str):
         profile = get_user_profile()
         success = profile.forget(field)
         return {"status": "ok" if success else "not_found", "field": field, "forgot": success}
-    except Exception as e:
-        return {"status": "error", "error": str(e)}
+    except Exception:
+        logger.exception("API operation failed")
+        return api_error("Operation could not be completed", 500)
 
 
 @app.get("/api/user/greeting")
@@ -418,8 +496,9 @@ async def get_user_greeting():
             "has_history": bool(yesterday and yesterday.total_commands > 0),
             "last_seen": last_seen.isoformat() if last_seen else None,
         }
-    except Exception as e:
-        return {"status": "error", "error": str(e)}
+    except Exception:
+        logger.exception("API operation failed")
+        return api_error("Operation could not be completed", 500)
 
 
 @app.get("/api/user/stats")
@@ -436,13 +515,14 @@ async def get_user_stats():
             "session_stats": mem.get_session_stats(),
             "weekly_summary": mem.get_weekly_summary(),
         }
-    except Exception as e:
-        return {"status": "error", "error": str(e)}
+    except Exception:
+        logger.exception("API operation failed")
+        return api_error("Operation could not be completed", 500)
 
 
 # PHASE-1B: Session Memory endpoints
 @app.get("/api/memory/sessions")
-async def get_sessions(days: int = 7):
+async def get_sessions(days: int = Query(default=7, ge=1, le=365)):
     """Get sessions from the last N days."""
     try:
         from omni_v2.memory.session_memory import get_session_memory
@@ -473,7 +553,7 @@ async def get_session_details(session_id: str):
 
 
 @app.get("/api/memory/search")
-async def search_memory(q: str, days: int = 30):
+async def search_memory(q: str, days: int = Query(default=30, ge=1, le=365)):
     """Search across all sessions."""
     try:
         from omni_v2.memory.session_memory import get_session_memory
@@ -573,22 +653,22 @@ async def update_proactive_context(ctx: ProactiveContext):
 
 # SCHEDULER-01: APScheduler endpoints
 class ScheduleCronReq(BaseModel):
-    name: str
-    command: str
-    cron: str  # "0 9 * * 1-5" format
+    name: str = Field(min_length=1, max_length=200)
+    command: str = Field(min_length=1, max_length=2000)
+    cron: str = Field(min_length=9, max_length=100)  # "0 9 * * 1-5" format
 
 
 class ScheduleIntervalReq(BaseModel):
-    name: str
-    command: str
+    name: str = Field(min_length=1, max_length=200)
+    command: str = Field(min_length=1, max_length=2000)
     seconds: Optional[int] = None
     minutes: Optional[int] = None
     hours: Optional[int] = None
 
 
 class ScheduleOnceReq(BaseModel):
-    name: str
-    command: str
+    name: str = Field(min_length=1, max_length=200)
+    command: str = Field(min_length=1, max_length=2000)
     run_at: str  # ISO format
 
 
@@ -611,8 +691,11 @@ async def add_cron_task(req: ScheduleCronReq):
         sched = get_scheduler()
         task = sched.add_cron(req.name, req.command, req.cron)
         return {"status": "ok", "task_id": task.id, "name": task.name}
-    except Exception as e:
-        return {"status": "error", "error": str(e)}
+    except ValueError as e:
+        return api_error(str(e), 400)
+    except Exception:
+        logger.exception("Scheduler request failed")
+        return api_error("Request could not be completed", 500)
 
 
 @app.post("/api/scheduler/interval")
@@ -624,8 +707,11 @@ async def add_interval_task(req: ScheduleIntervalReq):
         kwargs = {k: v for k, v in req.dict().items() if k not in ("name", "command") and v is not None}
         task = sched.add_interval(req.name, req.command, **kwargs)
         return {"status": "ok", "task_id": task.id, "name": task.name}
-    except Exception as e:
-        return {"status": "error", "error": str(e)}
+    except ValueError as e:
+        return api_error(str(e), 400)
+    except Exception:
+        logger.exception("Scheduler request failed")
+        return api_error("Request could not be completed", 500)
 
 
 @app.post("/api/scheduler/once")
@@ -638,8 +724,11 @@ async def add_once_task(req: ScheduleOnceReq):
         run_at = datetime.fromisoformat(req.run_at)
         task = sched.add_once(req.name, req.command, run_at)
         return {"status": "ok", "task_id": task.id, "name": task.name}
-    except Exception as e:
-        return {"status": "error", "error": str(e)}
+    except ValueError as e:
+        return api_error(str(e), 400)
+    except Exception:
+        logger.exception("Scheduler request failed")
+        return api_error("Request could not be completed", 500)
 
 
 class RemoveTaskReq(BaseModel):
@@ -972,8 +1061,8 @@ async def get_stats_time_saved():
 
 # PHASE-4A: Vision endpoints
 class VisionReq(BaseModel):
-    file_path: Optional[str] = None
-    query: str = "Describe this"
+    file_path: Optional[str] = Field(default=None, max_length=1000)
+    query: str = Field(default="Describe this", min_length=1, max_length=2000)
     capture_screen: bool = False
 
 
@@ -986,6 +1075,11 @@ async def vision_process(req: VisionReq):
         if req.capture_screen:
             result = v.process_screenshot(req.query)
         elif req.file_path:
+            from omni_v2.core.paths import DATA_DIR
+            from omni_v2.core.guardrails import safe_path
+            safe, reason = safe_path(req.file_path, allowed_root=DATA_DIR / "vision" / "uploads")
+            if not safe:
+                return {"status": "error", "error": f"Path blocked: {reason}"}
             result = v.process_file(req.file_path, req.query)
         else:
             return {"status": "error", "error": "file_path or capture_screen required"}
@@ -1004,7 +1098,7 @@ async def vision_process(req: VisionReq):
             }
         }
     except Exception as e:
-        return {"status": "error", "error": str(e)}
+        return api_error("Request could not be completed", 500)
 
 
 @app.get("/api/vision/status")
@@ -1013,8 +1107,9 @@ async def vision_status():
     try:
         from omni_v2.vision.multimodal import get_vision
         return {"status": "ok", "vision": get_vision().get_status()}
-    except Exception as e:
-        return {"status": "error", "error": str(e)}
+    except Exception:
+        logger.exception("API operation failed")
+        return api_error("Operation could not be completed", 500)
 
 
 # PHASE-4B: Voice cloning endpoints
@@ -1031,7 +1126,7 @@ async def voice_clone_start():
             return {"status": "ok", "recording": True, "message": "Speak for 30+ seconds"}
         return {"status": "error", "error": "Failed to start recording (already recording?)"}
     except Exception as e:
-        return {"status": "error", "error": str(e)}
+        return api_error("Request could not be completed", 500)
 
 
 @app.post("/api/voice/clone/stop")
@@ -1045,12 +1140,12 @@ async def voice_clone_stop():
             return {"status": "ok", "sample_path": str(path)}
         return {"status": "error", "error": "No recording in progress"}
     except Exception as e:
-        return {"status": "error", "error": str(e)}
+        return api_error("Request could not be completed", 500)
 
 
 class VoiceTrainReq(BaseModel):
-    sample_path: str
-    voice_name: Optional[str] = None
+    sample_path: str = Field(min_length=1, max_length=1000)
+    voice_name: Optional[str] = Field(default=None, max_length=100)
 
 
 @app.post("/api/voice/clone/train")
@@ -1062,7 +1157,7 @@ async def voice_clone_train(req: VoiceTrainReq):
         result = vc.train_voice(req.sample_path, req.voice_name)
         return result
     except Exception as e:
-        return {"status": "error", "error": str(e)}
+        return api_error("Request could not be completed", 500)
 
 
 @app.get("/api/voice/clone/samples")
@@ -1071,8 +1166,9 @@ async def voice_clone_samples():
     try:
         from omni_v2.voice.voice_clone import get_voice_cloner
         return {"status": "ok", "samples": get_voice_cloner().list_samples()}
-    except Exception as e:
-        return {"status": "error", "error": str(e)}
+    except Exception:
+        logger.exception("API operation failed")
+        return api_error("Operation could not be completed", 500)
 
 
 @app.get("/api/voice/clone/voices")
@@ -1081,8 +1177,9 @@ async def voice_clone_voices():
     try:
         from omni_v2.voice.voice_clone import get_voice_cloner
         return {"status": "ok", "voices": get_voice_cloner().list_voices()}
-    except Exception as e:
-        return {"status": "error", "error": str(e)}
+    except Exception:
+        logger.exception("API operation failed")
+        return api_error("Operation could not be completed", 500)
 
 
 @app.get("/api/voice/clone/status")
@@ -1091,8 +1188,9 @@ async def voice_clone_status():
     try:
         from omni_v2.voice.voice_clone import get_voice_cloner
         return {"status": "ok", "voice_clone": get_voice_cloner().get_status()}
-    except Exception as e:
-        return {"status": "error", "error": str(e)}
+    except Exception:
+        logger.exception("API operation failed")
+        return api_error("Operation could not be completed", 500)
 
 
 # PHASE-4C: Skill Marketplace endpoints
@@ -1114,7 +1212,7 @@ async def skills_marketplace(category: Optional[str] = None, search: Optional[st
 
 
 class SkillInstallReq(BaseModel):
-    skill_id: str
+    skill_id: str = Field(min_length=1, max_length=100, pattern=r"^[A-Za-z0-9_.-]+$")
 
 
 @app.post("/api/skills/install")
@@ -1125,7 +1223,7 @@ async def skill_install(req: SkillInstallReq):
         m = get_marketplace()
         return m.install(req.skill_id)
     except Exception as e:
-        return {"status": "error", "error": str(e)}
+        return api_error("Request could not be completed", 500)
 
 
 @app.post("/api/skills/uninstall")
@@ -1137,7 +1235,7 @@ async def skill_uninstall(req: SkillInstallReq):
         ok = m.uninstall(req.skill_id)
         return {"status": "ok" if ok else "not_found", "uninstalled": ok}
     except Exception as e:
-        return {"status": "error", "error": str(e)}
+        return api_error("Request could not be completed", 500)
 
 
 @app.get("/api/skills/installed")
@@ -1207,8 +1305,9 @@ async def get_network_info():
             "status": "ok",
             "network": info.to_dict(),
         }
-    except Exception as e:
-        return {"status": "error", "error": str(e)}
+    except Exception:
+        logger.exception("API operation failed")
+        return api_error("Operation could not be completed", 500)
 
 
 @app.post("/api/network/pair")
@@ -1224,8 +1323,9 @@ async def generate_pairing():
             "uri": code.to_uri(),
             "qr_payload": make_qr_payload_for_pair(code, info),
         }
-    except Exception as e:
-        return {"status": "error", "error": str(e)}
+    except Exception:
+        logger.exception("API operation failed")
+        return api_error("Operation could not be completed", 500)
 
 
 @app.get("/api/network/qr")
@@ -1258,8 +1358,9 @@ async def get_qr_code():
             "qr_image_base64": qr_image_b64,
             "note": "Scan with phone or open the URI directly",
         }
-    except Exception as e:
-        return {"status": "error", "error": str(e)}
+    except Exception:
+        logger.exception("API operation failed")
+        return api_error("Operation could not be completed", 500)
 
 
 def make_qr_payload_for_pair(code, info) -> str:
@@ -1280,20 +1381,33 @@ def make_qr_payload_for_pair(code, info) -> str:
 # PHASE-5B: Mobile companion — additional endpoints
 import secrets as _secrets
 _active_pair_codes: Dict[str, Any] = {}  # code -> {created_at, expires_at, host, port}
+_device_tokens: Dict[str, Dict[str, Any]] = {}
+MAX_WS_MESSAGE_BYTES = 256 * 1024
 
+
+class PairingVerifyRequest(BaseModel):
+    code: str = Field(min_length=6, max_length=6, pattern=r"^\d{6}$")
 
 @app.post("/api/network/pair/verify")
-async def verify_pairing_code(req: ExecuteRequest):
+async def verify_pairing_code(req: PairingVerifyRequest):
     """Verify a pairing code entered by a mobile device.
     Currently a soft-verify (any 6-digit number is accepted in this dev build).
     In a hardened build, the laptop would track issued codes and reject others.
     """
-    code = (req.command or "").strip()
+    code = req.code.strip()
     if not code or not code.isdigit() or len(code) != 6:
         return {"valid": False, "reason": "code must be 6 digits"}
-    # For now: accept any 6-digit code (matches current PairingCode generator).
-    # Future: cross-check against _active_pair_codes dict.
-    return {"valid": True, "code": code}
+    now = time.time()
+    for issued, record in list(_active_pair_codes.items()):
+        if record.get("expires_at", 0) <= now or record.get("used"):
+            _active_pair_codes.pop(issued, None)
+            continue
+        if secrets.compare_digest(issued, code):
+            record["used"] = True
+            token = secrets.token_urlsafe(32)
+            _device_tokens[token] = {"created_at": now, "expires_at": now + 60 * 60 * 24 * 30}
+            return {"valid": True, "code": code, "token": token, "expires_at": now + 60 * 60 * 24 * 30}
+    return {"valid": False, "reason": "invalid or expired code"}
 
 
 @app.post("/api/voice/transcribe")
@@ -1302,10 +1416,17 @@ async def transcribe_audio(audio: UploadFile = File(...)):
     Used by the phone's push-to-talk button.
     """
     try:
-        # Read the upload (max ~10MB)
-        data = await audio.read()
-        if len(data) > 10 * 1024 * 1024:
-            return {"status": "error", "error": "audio too large (max 10MB)"}
+        # Read incrementally so chunked uploads cannot bypass the memory limit.
+        max_audio_bytes = 10 * 1024 * 1024
+        chunks = bytearray()
+        while True:
+            chunk = await audio.read(64 * 1024)
+            if not chunk:
+                break
+            chunks.extend(chunk)
+            if len(chunks) > max_audio_bytes:
+                return {"status": "error", "error": "audio too large (max 10MB)"}
+        data = bytes(chunks)
         if len(data) < 100:
             return {"status": "error", "error": "audio too small"}
 
@@ -1345,8 +1466,9 @@ async def transcribe_audio(audio: UploadFile = File(...)):
             return {"status": "ok", "text": "", "message": "no speech detected"}
 
         return {"status": "ok", "text": text, "length_ms": len(data) * 1000 // 16000}
-    except Exception as e:
-        return {"status": "error", "error": str(e)}
+    except Exception:
+        logger.exception("API operation failed")
+        return api_error("Operation could not be completed", 500)
 
 
 @app.get("/api/network/pair/active")
@@ -1362,6 +1484,7 @@ async def get_active_pair_code():
         _active_pair_codes[code.code] = {
             "created_at": code.created_at,
             "expires_at": code.expires_at,
+            "used": False,
             "host": info.host,
             "port": info.port,
         }
@@ -1377,8 +1500,9 @@ async def get_active_pair_code():
             "host": info.host,
             "port": info.port,
         }
-    except Exception as e:
-        return {"status": "error", "error": str(e)}
+    except Exception:
+        logger.exception("API operation failed")
+        return api_error("Operation could not be completed", 500)
 
 
 # Mount the mobile PWA (Phase 5B)
@@ -1427,6 +1551,10 @@ async def websocket_mobile(websocket: WebSocket):
       - location: lat/lon push for geofencing
       - ping: heartbeat
     """
+    ws_token = websocket.query_params.get("token", "")
+    if OMNI_API_TOKEN and not (secrets.compare_digest(ws_token, OMNI_API_TOKEN) or ws_token in _device_tokens):
+        await websocket.close(code=1008, reason="Authentication required")
+        return
     await manager.connect(websocket)
     mobile_meta = {"device": "unknown", "ua": "", "paired": False, "connected_at": time.time()}
     try:
@@ -1443,6 +1571,9 @@ async def websocket_mobile(websocket: WebSocket):
         })
         while True:
             data = await websocket.receive_text()
+            if len(data.encode("utf-8")) > MAX_WS_MESSAGE_BYTES:
+                await websocket.close(code=1009, reason="Message too large")
+                return
             try:
                 import json, base64, tempfile, os
                 msg = json.loads(data)
@@ -1650,7 +1781,7 @@ async def notifications_dashboard():
 
 
 @app.get("/api/notifications")
-async def list_notifications(limit: int = 50, category: Optional[str] = None,
+async def list_notifications(limit: int = Query(default=50, ge=1, le=500), category: Optional[str] = None,
                               unread_only: bool = False):
     try:
         from omni_v2.agents.notifications import get_notification_center
@@ -1957,7 +2088,7 @@ async def geofence_add_place(req: GeofencePlaceReq):
         )
         return {"status": "ok", "place": place.to_dict()}
     except Exception as e:
-        return {"status": "error", "error": str(e)}
+        return api_error("Geofence operation failed", 500)
 
 
 @app.post("/api/geofence/places/{place_id}/update")
@@ -1973,7 +2104,7 @@ async def geofence_update_place(place_id: str, req: GeofencePlaceReq):
             return {"status": "not_found", "place_id": place_id}
         return {"status": "ok", "place": place.to_dict()}
     except Exception as e:
-        return {"status": "error", "error": str(e)}
+        return api_error("Geofence operation failed", 500)
 
 
 @app.delete("/api/geofence/places/{place_id}")
@@ -1983,7 +2114,7 @@ async def geofence_remove_place(place_id: str):
         ok = get_geofence_engine().remove_place(place_id)
         return {"status": "ok" if ok else "not_found", "removed": ok}
     except Exception as e:
-        return {"status": "error", "error": str(e)}
+        return api_error("Geofence operation failed", 500)
 
 
 @app.get("/api/geofence/rules")
@@ -2016,9 +2147,9 @@ async def geofence_add_rule(req: GeofenceRuleReq):
             return {"status": "not_found", "error": f"place {req.place_id} not found"}
         return {"status": "ok", "rule": rule.to_dict()}
     except ValueError as e:
-        return {"status": "error", "error": str(e)}
+        return api_error(str(e), 400)
     except Exception as e:
-        return {"status": "error", "error": str(e)}
+        return api_error("Geofence operation failed", 500)
 
 
 @app.delete("/api/geofence/rules/{rule_id}")
@@ -2028,7 +2159,7 @@ async def geofence_remove_rule(rule_id: str):
         ok = get_geofence_engine().remove_rule(rule_id)
         return {"status": "ok" if ok else "not_found", "removed": ok}
     except Exception as e:
-        return {"status": "error", "error": str(e)}
+        return api_error("Geofence operation failed", 500)
 
 
 @app.post("/api/geofence/location")
@@ -2094,7 +2225,7 @@ async def geofence_update_location(req: GeofenceLocationReq):
             "executed": executed,
         }
     except Exception as e:
-        return {"status": "error", "error": str(e)}
+        return api_error("Geofence operation failed", 500)
 
 
 @app.get("/api/geofence/location")
@@ -2115,7 +2246,7 @@ async def geofence_current_location():
 
 
 @app.get("/api/geofence/location/history")
-async def geofence_location_history(limit: int = 50):
+async def geofence_location_history(limit: int = Query(default=50, ge=1, le=500)):
     try:
         from omni_v2.agents.geofence import get_geofence_engine
         history = get_geofence_engine().get_location_history(limit=limit)
@@ -2125,7 +2256,7 @@ async def geofence_location_history(limit: int = 50):
 
 
 @app.get("/api/geofence/events")
-async def geofence_recent_events(limit: int = 20):
+async def geofence_recent_events(limit: int = Query(default=20, ge=1, le=500)):
     try:
         from omni_v2.agents.geofence import get_geofence_engine
         events = get_geofence_engine().get_recent_events(limit=limit)
@@ -2159,7 +2290,7 @@ async def geofence_seed_samples():
             added.append(p.to_dict())
         return {"status": "ok", "added": added, "count": len(added)}
     except Exception as e:
-        return {"status": "error", "error": str(e)}
+        return api_error("Geofence operation failed", 500)
 
 
 @app.post("/api/geofence/clear-events")
@@ -2169,7 +2300,7 @@ async def geofence_clear_events():
         n = get_geofence_engine().clear_events()
         return {"status": "ok", "cleared": n}
     except Exception as e:
-        return {"status": "error", "error": str(e)}
+        return api_error("Geofence operation failed", 500)
 
 
 @app.post("/api/geofence/reset")
@@ -2180,7 +2311,7 @@ async def geofence_reset_all():
         get_geofence_engine().reset_all()
         return {"status": "ok", "reset": True}
     except Exception as e:
-        return {"status": "error", "error": str(e)}
+        return api_error("Geofence operation failed", 500)
 
 
 
@@ -2216,7 +2347,7 @@ async def screen_dashboard():
 
 
 @app.get("/api/screen/recent")
-async def screen_recent(limit: int = 20):
+async def screen_recent(limit: int = Query(default=20, ge=1, le=500)):
     """List the N most recent scenes."""
     try:
         from omni_v2.agents.screen_watcher import get_screen_watcher
@@ -2282,7 +2413,7 @@ async def devices():
     return brain.get_devices()
 
 @app.post("/api/execute", response_model=ExecuteResponse)
-async def execute(req: ExecuteRequest):
+async def execute(request: Request, req: ExecuteRequest):
     # SMOKE-03 fix: reject empty command with 400
     if not req.command or not req.command.strip():
         from fastapi.responses import JSONResponse
@@ -2297,7 +2428,7 @@ async def execute(req: ExecuteRequest):
             }
         )
     # GUARD-04: rate limit per client
-    client_key = "global"  # Could be per-IP in production
+    client_key = request.client.host if request.client else "unknown"
     rl_ok, rl_err = _rate_limiter.check(client_key)
     if not rl_ok:
         from fastapi.responses import JSONResponse
@@ -2335,7 +2466,7 @@ async def execute(req: ExecuteRequest):
 
 
 @app.post("/api/execute/stream")
-async def execute_stream(req: ExecuteRequest):
+async def execute_stream(request: Request, req: ExecuteRequest):
     """
     Streaming version of /api/execute.
     Returns Server-Sent Events so the UI can show the LLM's actual
@@ -2354,29 +2485,16 @@ async def execute_stream(req: ExecuteRequest):
             content={"error": "Command cannot be empty"}
         )
 
+    rl_ok, rl_err = _rate_limiter.check(request.client.host if request.client else "unknown")
+    if not rl_ok:
+        return JSONResponse(status_code=429, content={"error": rl_err})
+
     async def event_stream():
         import asyncio
         from omni_v2.llm.brain import get_brain as _get_brain
         brain_inst = _get_brain()
-        # Stream LLM tokens
-        try:
-            # We can't easily make the existing brain.think async-streaming,
-            # so we do a regular think + stream the result
-            brain_resp = brain_inst.think(req.command, stream=False)
-            # Stream the raw LLM output token-by-token (simulated)
-            raw = brain_resp.raw or brain_resp.text or ""
-            chunk_size = 4  # characters per event
-            for i in range(0, len(raw), chunk_size):
-                chunk = raw[i:i+chunk_size]
-                yield f"event: thinking\ndata: {json.dumps({'token': chunk, 'tier': brain_resp.tier})}\n\n"
-                await asyncio.sleep(0.02)  # smooth streaming
-            # Send tool calls
-            for tc in brain_resp.tool_calls:
-                yield f"event: tool_call\ndata: {json.dumps({'tool': tc['tool'], 'args': tc.get('args', {})})}\n\n"
-        except Exception as e:
-            yield f"event: error\ndata: {json.dumps({'error': str(e)})}\n\n"
-            return
-
+        # Execute exactly once. The prior implementation called think() and then execute(),
+        # which duplicated side effects. Thought streaming will be added through the brain callback.
         # Now run the actual execution
         brain = get_brain()
         result = await brain.execute(req.command)
@@ -2621,10 +2739,17 @@ manager = ConnectionManager()
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
+    ws_token = websocket.query_params.get("token", "")
+    if OMNI_API_TOKEN and not (secrets.compare_digest(ws_token, OMNI_API_TOKEN) or ws_token in _device_tokens):
+        await websocket.close(code=1008, reason="Authentication required")
+        return
     await manager.connect(websocket)
     try:
         while True:
             data = await websocket.receive_text()
+            if len(data.encode("utf-8")) > MAX_WS_MESSAGE_BYTES:
+                await websocket.close(code=1009, reason="Message too large")
+                return
             try:
                 msg = json.loads(data)
                 # Echo or handle
@@ -2644,4 +2769,4 @@ if __name__ == "__main__":
     print(f"   Docs: http://localhost:8765/docs")
     print(f"   Health: http://localhost:8765/api/health")
     print(f"   REPO_ROOT: {REPO_ROOT} (portable)")
-    uvicorn.run("main:app", host="0.0.0.0", port=8765, reload=True)
+    uvicorn.run("main:app", host=os.environ.get("OMNI_HOST", "127.0.0.1"), port=8765, reload=False)

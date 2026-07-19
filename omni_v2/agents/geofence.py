@@ -284,6 +284,15 @@ class GeofenceEngine:
     def add_place(self, name: str, lat: float, lon: float, radius_m: float = 100.0,
                   icon: str = "📍", address: str = "", notes: str = "") -> Place:
         """Add a named place. Returns the created Place."""
+        if not name or len(name) > 200:
+            raise ValueError("place name is required and must be <= 200 characters")
+        if not (-90 <= float(lat) <= 90) or not (-180 <= float(lon) <= 180):
+            raise ValueError("latitude/longitude out of range")
+        if not (0 < float(radius_m) <= 100000):
+            raise ValueError("radius must be between 0 and 100000 meters")
+        import math
+        if not all(math.isfinite(float(v)) for v in (lat, lon, radius_m)):
+            raise ValueError("coordinates and radius must be finite")
         import secrets
         pid = f"place_{secrets.token_hex(4)}"
         place = Place(
@@ -336,6 +345,10 @@ class GeofenceEngine:
                  label: str = "", cooldown_sec: float = DEFAULT_COOLDOWN_SEC,
                  dwell_sec: float = DEFAULT_DWELL_SEC) -> Optional[GeofenceRule]:
         """Add a rule. event is 'arrive' | 'depart' | 'dwell'."""
+        if not command or len(command) > 2000:
+            raise ValueError("rule command is required and must be <= 2000 characters")
+        if cooldown_sec < 0 or dwell_sec < 0:
+            raise ValueError("cooldown and dwell values cannot be negative")
         if event not in ("arrive", "depart", "dwell"):
             raise ValueError(f"event must be arrive|depart|dwell, got {event!r}")
         if place_id not in self.places:

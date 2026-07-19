@@ -28,7 +28,7 @@ except ImportError:
 try:
     from omni_v2.core.paths import DATA_DIR
 except Exception:
-    DATA_DIR = Path.cwd() / "data"
+    DATA_DIR = Path(__file__).resolve().parents[2] / "data"
 
 
 SCHEMA_VERSION = 2
@@ -173,6 +173,8 @@ class UserProfileStore:
                 try:
                     with os.fdopen(fd, "w", encoding="utf-8") as f:
                         json.dump(asdict(self._profile), f, indent=2, ensure_ascii=False)
+                        f.flush()
+                        os.fsync(f.fileno())
                     # Atomic rename
                     os.replace(tmp_path, self.profile_file)
                 except Exception:
@@ -222,10 +224,26 @@ class UserProfileStore:
             return False
 
     def set_many(self, **kwargs) -> Dict[str, bool]:
-        """Set multiple fields. Returns dict of {field: success}."""
+        """Set multiple fields as one atomic update."""
         results = {}
-        for k, v in kwargs.items():
-            results[k] = self.set(k, v)
+        with self._data_lock:
+            valid = True
+            for k in kwargs:
+                if not hasattr(self._profile, k):
+                    results[k] = False
+                    valid = False
+            if not valid:
+                for k in kwargs:
+                    results.setdefault(k, False)
+                return results
+            try:
+                for k, v in kwargs.items():
+                    setattr(self._profile, k, v)
+                    results[k] = True
+                self._save()
+            except Exception as exc:
+                logger.error(f"set_many failed: {exc}")
+                return {k: False for k in kwargs}
         return results
 
     def forget(self, key: str) -> bool:
