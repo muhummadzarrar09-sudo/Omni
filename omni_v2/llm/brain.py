@@ -113,12 +113,27 @@ class Brain:
         self._conversation: List[Dict[str, str]] = []  # last 5 turns
         self._max_history = 5
         self._tier = "fallback"
+        # Model tiering (Phase 9, Step 2): keep a fast model (1.5B) loaded by
+        # default and optionally swap in a DEEP model (3B) for hard reasoning.
+        # On a 4GB card only one can be in VRAM at once, so we swap.
+        self._current_model_path: Optional[str] = None
+        self._deep_model_path: Optional[str] = None
+        self._deep_llm: Any = None
+        self._deep_enabled = True
 
         # Try to load LLM
         if model_path is None:
             model_path = self._find_model()
         if model_path:
             self._load_model(model_path)
+            self._current_model_path = str(model_path.resolve()) if isinstance(model_path, Path) else model_path
+            # Discover an optional deep (3B) model for hard reasoning
+            try:
+                self._deep_model_path = self._find_deep_model()
+                if self._deep_model_path:
+                    logger.info(f"🧠 Deep tier model available: {self._deep_model_path}")
+            except Exception as e:
+                logger.debug(f"deep model discovery failed: {e}")
         else:
             logger.warning(
                 "Brain: No GGUF model found. Brain running in REGEX-ONLY mode. "
@@ -174,6 +189,105 @@ class Brain:
                     logger.info(f"Brain: Found model {ggufs[0].name} at {ggufs[0]}")
                     return str(ggufs[0].resolve())
         return None
+
+    def _find_deep_model(self) -> Optional[str]:
+        """Find a larger DEEP model (3B+ / deep / big) in data/models/."""
+        try:
+            from omni_v2.core.paths import DATA_DIR, PROJECT_ROOT
+            data_dir = DATA_DIR
+            project_root = PROJECT_ROOT
+        except Exception:
+            project_root = Path.cwd()
+            data_dir = project_root / "data"
+        candidates = [
+            data_dir / "models",
+            project_root / "data" / "models",
+            Path("data/models"),
+            project_root / "omni_v2" / "llm" / "models",
+        ]
+        deep_markers = ["3b", "7b", "8b", "14b", "deep", "big", "reasoning", "large"]
+        for d in candidates:
+            if d.exists():
+                ggufs = sorted(d.glob("*.gguf"), key=lambda p: p.stat().st_size)
+                # prefer the largest marked deep model
+                best = None
+                best_size = 0
+                for g in ggufs:
+                    name = g.name.lower()
+                    if any(m in name for m in deep_markers) and g.stat().st_size > best_size:
+                        best = g
+                        best_size = g.stat().st_size
+                if best is not None:
+                    return str(best.resolve())
+        return None
+
+    # -- Model tiering (Phase 9 Step 2) ----------------------------------
+    # Deep-trigger heuristic: phrases suggesting multi-step reasoning,
+    # planning, debugging, code, or "why/how" analysis.
+    DEEP_KEYWORDS = [
+        "plan", "why", "how should", "design", "architecture", "debug",
+        "refactor", "explain in detail", "reason", "strategy", "build a",
+        "create a program", "write code", "compare", "analyze",
+        "multi-step", "solve", "optimize", "root cause", "complex",
+    ]
+
+    def needs_deep(self, text: str) -> bool:
+        """Return True if this utterance warrants the deep (3B) model."""
+        if not self._deep_enabled:
+            return False
+        t = (text or "").lower()
+        if len(t) > 160:
+            return True  # long, involved request
+        return any(kw in t for kw in self.DEEP_KEYWORDS)
+
+    def _swap_to_deep(self) -> bool:
+        """Unload the fast model and load the deep one. Returns True if loaded."""
+        if not self._deep_model_path or not self.model_loaded:
+            return False
+        if self._current_model_path == self._deep_model_path:
+            return True
+        try:
+            # free the fast model from VRAM
+            self._llm = None
+            self.llm = None
+            # load deep
+            from llama_cpp import Llama
+            self.llm = Llama(
+                model_path=self._deep_model_path,
+                n_ctx=4096,
+                n_threads=8,
+                n_gpu_layers=24,   # put as many layers as fit (3B Q4 ~2.2GB)
+                n_batch=512,
+                use_mmap=True,
+                use_mlock=False,
+                verbose=False,
+            )
+            self.model_loaded = True
+            self._current_model_path = self._deep_model_path
+            self._tier = "llm-deep"
+            logger.info(f"🧠 Swapped to deep model: {self._deep_model_path}")
+            return True
+        except Exception as e:
+            logger.error(f"Deep model load failed: {e} - staying on fast model")
+            # try to restore fast model
+            self.model_loaded = False
+            fast = self._find_model()
+            if fast:
+                self._load_model(fast)
+                self._current_model_path = str(Path(fast).resolve())
+            return False
+
+    def _swap_back_fast(self) -> None:
+        """After a deep pass, restore the fast model for normal use."""
+        try:
+            self.llm = None
+            fast = self._find_model()
+            if fast:
+                self._load_model(fast)
+                self._current_model_path = str(Path(fast).resolve())
+                self._tier = "llm"
+        except Exception as e:
+            logger.error(f"Restore fast model failed: {e}")
 
     def _load_model(self, model_path: str):
         """Load llama.cpp model with GTX 1050 Ti optimized settings"""
@@ -255,8 +369,23 @@ class Brain:
             return self._regex_fallback(user_text, t0)
 
         # PRIMARY PATH: LLM
+        # Model tiering: for hard reasoning, temporarily swap to the deep (3B) model.
+        used_deep = False
+        if self.needs_deep(user_text) and self._deep_model_path:
+            used_deep = self._swap_to_deep()
+            if not self.model_loaded:  # swap failed and left no model -> regex
+                return self._regex_fallback(user_text, t0)
         try:
-            return self._llm_think(user_text, t0, stream=stream)
+            resp = self._llm_think(user_text, t0, stream=stream)
+            if used_deep:
+                resp.tier = "llm-deep"
+                # restore the fast model in the background so latency isn't felt
+                try:
+                    import threading as _th
+                    _th.Thread(target=self._swap_back_fast, daemon=True).start()
+                except Exception:
+                    pass
+            return resp
         except Exception as e:
             logger.error(f"LLM think failed: {e}, regex fallback")
             return self._regex_fallback(user_text, t0)
@@ -554,6 +683,10 @@ class Brain:
             "tier": self._tier,
             "history_length": len(self._conversation),
             "tool_count": len(self._tool_brief.split("\n")),
+            "deep_enabled": self._deep_enabled,
+            "deep_model_path": self._deep_model_path,
+            "deep_available": bool(self._deep_model_path),
+            "current_model_path": self._current_model_path,
         }
 
 

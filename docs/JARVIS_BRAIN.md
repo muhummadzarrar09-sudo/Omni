@@ -187,11 +187,22 @@ plugs into the existing CLI + desktop app + `/api/brain/*` endpoints.
 
 | Step | Deliverable | Status |
 |------|-------------|--------|
-| **1** | **Identity core (B1) + user model (B7)** | ✅ **DONE** — `omni_v2/brain/identity.py`, wired into `Brain.think()`, CLI `omni brain`, `/api/brain/*`, desktop "Identity" tab. 401 tests passing. |
-| **2** | **Model tiering** (1.5B/3B) wired into `Brain.think()` | ⏳ next |
-| **3** | **Goal stack** + decompose + progress + replan | ⏳ |
+| **1** | **Identity core (B1) + user model (B7)** | ✅ **DONE** — `omni_v2/brain/identity.py`, wired into `Brain.think()`, CLI `omni brain`, `/api/brain/*`, desktop "Identity" tab. |
+| **2** | **Model tiering** (1.5B/3B) wired into `Brain.think()` | ✅ **DONE** — deep-model discovery + `needs_deep()` heuristic + safe VRAM swap (load 3B for hard reasoning, restore 1.5B after). `omni model download --deep`. 409 tests passing. |
+| **3** | **Goal stack** + decompose + progress + replan | ⏳ next |
 | **4** | **Evaluator feedback loop** (metacognition) | ⏳ |
 | **5** | **Episodic reflection** + pattern notices | ⏳ |
+
+### Step 2 usage
+```
+omni model download --deep     # fetch Qwen2.5-3B Q4 (~2GB) for hard reasoning
+omni model info                # shows Deep tier: ✅/❌
+```
+The brain keeps the fast 1.5B model loaded for normal use. When a request triggers
+`needs_deep()` (planning, "why/how", debug, code, analyze, or long input), it swaps in
+the 3B for that turn, marks the response tier `llm-deep`, then restores the 1.5B in the
+background. On a 4GB GPU this is the largest model that fits — only one lives in VRAM at
+a time.
 
 **Usage after Step 1:**
 ```

@@ -106,6 +106,7 @@ def cmd_model_info(args):
         print(f"    Model loaded: {'✅' if status['model_loaded'] else '❌'}")
         print(f"    Tier:        {status['tier']}")
         print(f"    Tools:       {status['tool_count']}")
+        print(f"    Deep tier   : {'✅ ' + (status.get('deep_model_path') or '') if status.get('deep_available') else '❌ not present (omni model download --deep)'}")
     except Exception as e:
         print(f"\n  (Brain not loaded: {e})")
     print()
@@ -147,10 +148,47 @@ def cmd_model_download(args):
         return 1
 
 
+def cmd_model_download_deep(args):
+    """Download the deep-tier Qwen2.5-3B GGUF for hard reasoning (Phase 9 Step 2)."""
+    target = REPO_ROOT / "data" / "models" / "qwen2.5-3b-instruct-q4_k_m.gguf"
+    if target.exists():
+        print(f"  ✅ Already present: {target} ({target.stat().st_size // 1024 // 1024} MB)")
+        return 0
+    print("  Downloading Qwen2.5-3B-Instruct Q4_K_M (~2GB) for the deep reasoning tier...")
+    print("  (On a 4GB GPU this is the largest model that fits; it is swapped in only")
+    print("   for hard reasoning and swapped back out to keep the fast 1.5B model.)")
+    target.parent.mkdir(parents=True, exist_ok=True)
+    url = "https://huggingface.co/Qwen/Qwen2.5-3B-Instruct-GGUF/resolve/main/qwen2.5-3b-instruct-q4_k_m.gguf"
+    try:
+        import urllib.request
+        with urllib.request.urlopen(url, timeout=300) as resp:
+            total = int(resp.headers.get("content-length", 0))
+            downloaded = 0
+            with open(target, "wb") as f:
+                chunk_size = 1024 * 64
+                while True:
+                    chunk = resp.read(chunk_size)
+                    if not chunk:
+                        break
+                    f.write(chunk)
+                    downloaded += len(chunk)
+                    if total:
+                        pct = (downloaded / total) * 100
+                        print(f"  \r  {pct:5.1f}%  {downloaded // 1024 // 1024} MB / {total // 1024 // 1024} MB", end="", flush=True)
+            print()
+        print(f"  ✅ Deep model saved to {target}")
+        return 0
+    except Exception as e:
+        print(f"  ❌ Download failed: {e}")
+        if target.exists():
+            target.unlink()
+        return 1
+
+
 def cmd_test(args):
     """Run all 20 test suites."""
     print("\n  " + "=" * 60)
-    print("  OMNI V3 - Full Test Suite (29 suites)")
+    print("  OMNI V3 - Full Test Suite (30 suites)")
     print("  " + "=" * 60 + "\n")
 
     # All 20 test suites
@@ -186,7 +224,8 @@ def cmd_test(args):
         ("[27/28] Camera security (face auth + lockdown + guard)", "omni_v2.tests.test_security", "module"),
         ("[28/28] Desktop controller",               "omni_v2.tests.test_desktop", "module"),
         # Jarvis Brain (Phase 9)
-        ("[29/29] Identity core + user model",        "omni_v2.tests.test_identity", "module"),
+        ("[29/30] Identity core + user model",        "omni_v2.tests.test_identity", "module"),
+        ("[30/30] Model tiering (deep brain)",        "omni_v2.tests.test_model_tiering", "module"),
     ]
 
     all_ok = True
@@ -806,7 +845,9 @@ def main():
     m = sub.add_parser("model", help="Model management")
     m_sub = m.add_subparsers(dest="model_cmd", required=False)
     m_sub.add_parser("info", help="Show loaded model info")
-    m_sub.add_parser("download", help="Download default Qwen2.5-1.5B GGUF")
+    m_sub.add_parser("download", help="Download default Qwen2.5-1.5B GGUF").add_argument(
+        "--deep", action="store_true", help="Download the deep-tier Qwen2.5-3B GGUF instead"
+    )
 
     s = sub.add_parser("start", help="Start FastAPI backend")
     s.add_argument("--no-browser", action="store_true", help="Don't open browser")
@@ -898,6 +939,8 @@ def main():
         if sub_cmd == "info":
             return cmd_model_info(args)
         if sub_cmd == "download":
+            if getattr(args, "deep", False):
+                return cmd_model_download_deep(args)
             return cmd_model_download(args)
     if cmd == "start":
         return cmd_start(args)
