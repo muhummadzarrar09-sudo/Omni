@@ -190,8 +190,18 @@ plugs into the existing CLI + desktop app + `/api/brain/*` endpoints.
 | **1** | **Identity core (B1) + user model (B7)** | ✅ **DONE** — `omni_v2/brain/identity.py`, wired into `Brain.think()`, CLI `omni brain`, `/api/brain/*`, desktop "Identity" tab. |
 | **2** | **Model tiering** (1.5B/3B) wired into `Brain.think()` | ✅ **DONE** — deep-model discovery + `needs_deep()` heuristic + safe VRAM swap (load 3B for hard reasoning, restore 1.5B after). `omni model download --deep`. |
 | **3** | **Goal stack** + decompose + progress + replan | ✅ **DONE** — `omni_v2/brain/goals.py`: persistent goal stack, deterministic or LLM decompose, dependency-aware step execution, progress across sessions, replan-on-failure, follow-up (report/reminder) via messenger. CLI `omni goal`, `/api/goals/*`, exposed on desktop controller. 419 tests passing. |
-| **4** | **Evaluator feedback loop** (metacognition) | ⏳ next |
-| **5** | **Episodic reflection** + pattern notices | ⏳ |
+| **4** | **Evaluator feedback loop** (metacognition) | ✅ **DONE** — `omni_v2/brain/metacog.py`: turns an action's outcome into a structured Verdict (succeeded, confidence, failure cause, recommended action, suggested fix), with a confidence gate ("ask when unsure"). Feeds back into the goal stack: replan / ask-user / retry / escalate-to-deep / change-approach. CLI `omni meta`, `/api/metacog/*`, desktop controller. 431 tests passing. |
+| **5** | **Episodic reflection** + pattern notices | ⏳ next |
+
+### Step 4 usage
+```
+omni meta evaluate "FileNotFoundError no such file" --goal <id>   # verdict + replan
+omni meta history
+omni meta stats
+```
+The Evaluator's verdict now drives the goal stack's replan (a suggested fix becomes
+a new step), asks the user when confidence is low, and escalates to the deep 3B model
+for hard reasoning — closing the "thinking about its own thinking" loop.
 
 ### Step 3 usage
 ```

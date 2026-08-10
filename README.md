@@ -169,6 +169,7 @@ After `pip install -e .[all]`:
 | `omni messenger setup-whatsapp\|whatsapp-set\|test\|status` | WhatsApp/Telegram report setup |
 | `omni brain status\|user\|set-name\|set-mood\|reflect` | Jarvis Identity core + user model |
 | `omni goal new\|list\|status\|advance\|fail\|follow-up` | Jarvis persistent goal stack (decompose → progress → replan) |
+| `omni meta evaluate\|history\|stats` | Jarvis metacognition (evaluate outcome → replan/ask/escalate) |
 
 ---
 
@@ -443,8 +444,9 @@ Omni/
 - **Jarvis Brain (Phase 9):** a persistent **Identity core** (name, persona, mood,
   values) + **user model** (likes, tone, prefs) injected into every prompt, plus a
   **goal stack** that decomposes big intents into steps and tracks progress across
-  sessions, and **model tiering** (auto-swaps to a 3B deep model for hard reasoning).
-  See [docs/JARVIS_BRAIN.md](docs/JARVIS_BRAIN.md).
+  sessions, **model tiering** (auto-swaps to a 3B deep model for hard reasoning), and a
+  **metacognition loop** (the evaluator's verdict feeds back into goals to replan / ask
+  / escalate). See [docs/JARVIS_BRAIN.md](docs/JARVIS_BRAIN.md).
 
 ---
 

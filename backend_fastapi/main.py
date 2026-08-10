@@ -80,6 +80,14 @@ try:
 except Exception as e:  # pragma: no cover - non-fatal if deps missing
     logger.warning(f"Goals router not mounted: {e}")
 
+# Jarvis Brain (Phase 9 Step 4): metacognition (evaluator feedback loop).
+try:
+    from metacog_routes import router as metacog_router
+    app.include_router(metacog_router)
+    logger.info("Metacog router mounted at /api/metacog")
+except Exception as e:  # pragma: no cover - non-fatal if deps missing
+    logger.warning(f"Metacog router not mounted: {e}")
+
 # SMOKE-10 fix: cap request body size at 64KB to prevent OOM attacks
 MAX_REQUEST_BYTES = 64 * 1024
 

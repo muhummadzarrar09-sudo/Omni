@@ -81,6 +81,13 @@ class DesktopController:
                 self.goals = GoalStack()
             except Exception:
                 self.goals = None
+        self.metacog = self.stack.get("metacog")
+        if self.metacog is None:
+            try:
+                from omni_v2.brain.metacog import Metacog
+                self.metacog = Metacog()
+            except Exception:
+                self.metacog = None
         self.on_status_change = on_status_change
 
         # -- security ----------------------------------------------------
@@ -125,6 +132,8 @@ class DesktopController:
             pass
         if self.goals:
             out["goals"] = self.goals.stats()
+        if self.metacog:
+            out["metacog"] = self.metacog.stats()
         return out
 
     def messenger_config(self) -> Dict[str, Any]:
@@ -233,6 +242,25 @@ class DesktopController:
             return {"ok": False}
         g = self.goals.abandon(goal_id)
         return {"ok": True, "goal": g.to_dict()}
+
+    # -- metacognition (Jarvis Brain Step 4) -----------------------------------
+    def metacog_decide(self, succeeded: bool, message: str = "",
+                       error: str = "") -> Dict[str, Any]:
+        if self.metacog is None:
+            return {"ok": False, "detail": "metacog unavailable"}
+        v = self.metacog.decide(succeeded, message=message, error=error)
+        return {"ok": True, "verdict": v.to_dict()}
+
+    def metacog_apply_to_goal(self, goal_id: str, verdict: Dict[str, Any]) -> Dict[str, Any]:
+        from omni_v2.brain.metacog import Verdict
+        if self.metacog is None or self.goals is None:
+            return {"ok": False, "detail": "metacog/goals unavailable"}
+        v = Verdict.from_dict(verdict)
+        g = self.metacog.apply_to_goal(self.goals, goal_id, v)
+        return {"ok": True, "goal": g.to_dict() if g else None}
+
+    def metacog_history(self) -> list:
+        return self.metacog.history(20) if self.metacog else []
 
     # -- security -------------------------------------------------------------
     def enroll_owner(self) -> Dict[str, Any]:

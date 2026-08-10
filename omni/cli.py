@@ -188,7 +188,7 @@ def cmd_model_download_deep(args):
 def cmd_test(args):
     """Run all 20 test suites."""
     print("\n  " + "=" * 60)
-    print("  OMNI V3 - Full Test Suite (31 suites)")
+    print("  OMNI V3 - Full Test Suite (32 suites)")
     print("  " + "=" * 60 + "\n")
 
     # All 20 test suites
@@ -224,9 +224,10 @@ def cmd_test(args):
         ("[27/28] Camera security (face auth + lockdown + guard)", "omni_v2.tests.test_security", "module"),
         ("[28/28] Desktop controller",               "omni_v2.tests.test_desktop", "module"),
         # Jarvis Brain (Phase 9)
-        ("[29/31] Identity core + user model",        "omni_v2.tests.test_identity", "module"),
-        ("[30/31] Model tiering (deep brain)",        "omni_v2.tests.test_model_tiering", "module"),
-        ("[31/31] Goal stack (decompose/progress/replan)", "omni_v2.tests.test_goals", "module"),
+        ("[29/32] Identity core + user model",        "omni_v2.tests.test_identity", "module"),
+        ("[30/32] Model tiering (deep brain)",        "omni_v2.tests.test_model_tiering", "module"),
+        ("[31/32] Goal stack (decompose/progress/replan)", "omni_v2.tests.test_goals", "module"),
+        ("[32/32] Metacognition (evaluator feedback loop)", "omni_v2.tests.test_metacog", "module"),
     ]
 
     all_ok = True
@@ -702,6 +703,63 @@ def cmd_brain(args):
     return 1
 
 
+def cmd_meta(args):
+    """Jarvis Brain metacognition: evaluate an outcome + feed back into a goal."""
+    sys.path.insert(0, str(REPO_ROOT))
+    from omni_v2.brain.metacog import Metacog
+    from omni_v2.brain.goals import GoalStack
+    m = Metacog()
+    action = getattr(args, "meta_action", None) or "history"
+
+    if action == "evaluate":
+        # omni meta evaluate "the message" [--goal <id>] [--ok]
+        # REMAINDER swallows --goal/--ok, so extract them from the token list.
+        rest = list(args.rest)
+        goal_id = args.goal
+        ok = args.ok
+        if "--goal" in rest:
+            i = rest.index("--goal")
+            if i + 1 < len(rest):
+                goal_id = rest[i + 1]
+            del rest[i:i + 2]
+        if "--ok" in rest:
+            ok = True
+            rest.remove("--ok")
+        msg = " ".join(rest)
+        v = m.decide(ok, message=msg, error="", goal_has_plan=bool(goal_id))
+        print(f"\n  🧠 Verdict")
+        print(f"    succeeded : {v.succeeded}")
+        print(f"    confidence: {v.confidence}")
+        print(f"    cause     : {v.cause}")
+        print(f"    action    : {v.action}")
+        if v.suggested_fix:
+            print(f"    fix       : {v.suggested_fix}")
+        if v.ask_user:
+            print(f"    ask user  : {v.ask_user}")
+        if goal_id:
+            gs = GoalStack()
+            m.apply_to_goal(gs, goal_id, v, do_replan=True)
+            g = gs.get_goal(goal_id)
+            print(f"\n  Goal {goal_id}:")
+            if g:
+                print(f"    status={g.status} progress={g.progress:.0%} steps={len(g.steps)}")
+        print()
+        return 0
+
+    if action == "history":
+        for rec in m.history(20):
+            v = rec["verdict"]
+            print(f"  [{rec['ts']:.0f}] {v['action']:16s} cause={v['cause']:18s} ok={v['succeeded']} :: {v['message'][:60]}")
+        print()
+        return 0
+
+    if action == "stats":
+        import json
+        print(json.dumps(m.stats(), indent=2))
+        return 0
+    return 1
+
+
 def cmd_goal(args):
     """Jarvis Brain goals: persistent goal stack (decompose / progress / replan)."""
     sys.path.insert(0, str(REPO_ROOT))
@@ -1003,6 +1061,15 @@ def main():
     brain_sub.add_parser("user").add_argument("rest", nargs=argparse.REMAINDER)
     brain_sub.add_parser("reflect").add_argument("rest", nargs=argparse.REMAINDER)
 
+    meta = sub.add_parser("meta", help="Jarvis Brain: metacognition (evaluate + replan)")
+    meta_sub = meta.add_subparsers(dest="meta_action")
+    meta_eval = meta_sub.add_parser("evaluate", help="Evaluate an outcome, feed into a goal")
+    meta_eval.add_argument("rest", nargs=argparse.REMAINDER)
+    meta_eval.add_argument("--ok", action="store_true", help="Treat as success")
+    meta_eval.add_argument("--goal", default=None, help="Goal id to apply the verdict to")
+    meta_sub.add_parser("history")
+    meta_sub.add_parser("stats")
+
     goal = sub.add_parser("goal", help="Jarvis Brain: persistent goal stack")
     goal_sub = goal.add_subparsers(dest="goal_action")
     goal_sub.add_parser("list")
@@ -1070,6 +1137,8 @@ def main():
         return cmd_brain(args)
     if cmd == "goal":
         return cmd_goal(args)
+    if cmd == "meta":
+        return cmd_meta(args)
 
     parser.print_help()
     return 1
