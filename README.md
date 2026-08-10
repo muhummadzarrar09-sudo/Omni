@@ -164,6 +164,8 @@ After `pip install -e .[all]`:
 | `omni research "topic"` | Run autonomous research → save a report |
 | `omni away start\|status\|add\|run` | Unattended away-mode task queue |
 | `omni report list\|digest` | Browse reports / build a digest |
+| `omni app` | Launch the full Python desktop app (Away Mode + Security) |
+| `omni security enroll\|arm\|disarm\|snapshot\|lock` | Local camera guard & lockdown |
 
 ---
 
@@ -429,6 +431,12 @@ Omni/
   everything in a **hybrid RAG+CAG knowledge base** (long-term semantic recall +
   short-term fast cache), and sends you reports to your phone (WhatsApp /
   Telegram / local file). See [docs/AWAY_MODE.md](docs/AWAY_MODE.md).
+- **Desktop app (Phase 8):** a full Python control panel (`omni app`) with tabs
+  for Dashboard, Knowledge Base, Research, Away Tasks, Reports, Messenger and
+  **Security**.
+- **Camera security (Phase 8):** enroll your face locally, arm a guard that
+  watches the camera, and if someone unrecognized is at the machine it **alerts
+  you first, then locks the laptop**. See [docs/DESKTOP_SECURITY.md](docs/DESKTOP_SECURITY.md).
 
 ---
 

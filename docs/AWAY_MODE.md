@@ -137,5 +137,14 @@ python -m pytest omni_v2/tests/test_hybrid_memory.py \
   omni_v2/tests/test_command_channel.py -q
 ```
 
-These are the last 6 suites in `omni test` (21–26). They run fully offline with
-no model, no network and no external providers.
+These are suites 21–26 in `omni test`. They run fully offline with no model, no
+network and no external providers. The desktop app + camera security have two
+more suites (27–28: `test_security`, `test_desktop`) — see
+[DESKTOP_SECURITY.md](DESKTOP_SECURITY.md).
+
+## Full Python desktop app
+
+`python omni_desktop.py` (or `omni app`) opens a customtkinter control panel for
+all of this — Dashboard, Knowledge Base, Research, Away Tasks, Reports,
+Messenger, and Security. It needs a display; the logic it drives
+(`omni_v2/away/desktop.py`) is headless and unit-tested.

@@ -149,7 +149,7 @@ def cmd_model_download(args):
 def cmd_test(args):
     """Run all 20 test suites."""
     print("\n  " + "=" * 60)
-    print("  OMNI V3 - Full Test Suite (26 suites)")
+    print("  OMNI V3 - Full Test Suite (28 suites)")
     print("  " + "=" * 60 + "\n")
 
     # All 20 test suites
@@ -181,6 +181,9 @@ def cmd_test(args):
         ("[24/26] Away agent (task queue)",          "omni_v2.tests.test_away_agent", "module"),
         ("[25/26] Messenger bridge",                 "omni_v2.tests.test_messenger", "module"),
         ("[26/26] Remote command channel",           "omni_v2.tests.test_command_channel", "module"),
+        # Security + Desktop (Phase 8)
+        ("[27/28] Camera security (face auth + lockdown + guard)", "omni_v2.tests.test_security", "module"),
+        ("[28/28] Desktop controller",               "omni_v2.tests.test_desktop", "module"),
     ]
 
     all_ok = True
@@ -576,6 +579,77 @@ def cmd_report(args):
     return 1
 
 
+def cmd_app(args):
+    """Launch the full Python desktop control panel (Away Mode + Security)."""
+    script = REPO_ROOT / "omni_desktop.py"
+    if not script.exists():
+        print("  ❌ omni_desktop.py not found")
+        return 1
+    print("\n  🖥️  OMNI Desktop (Away Mode + Security) — needs a display\n")
+    subprocess.run([sys.executable, str(script)])
+    return 0
+
+
+def cmd_security(args):
+    """Local camera security: enroll owner, arm/disarm guard, lock."""
+    sys.path.insert(0, str(REPO_ROOT))
+    from omni_v2.security.face_auth import FaceAuth
+    from omni_v2.security.guard_monitor import GuardMonitor
+    from omni_v2.security.lockdown import LockdownController
+    action = getattr(args, "security_action", None) or "status"
+    fa = FaceAuth()
+
+    if action == "status":
+        st = fa.stats()
+        print(f"  Enrolled      : {'✅ yes' if st['enrolled'] else '❌ no (run: omni security enroll)'}")
+        print(f"  Threshold     : {st['threshold']}")
+        print(f"  Owner file    : {st['owner_path']}")
+        print()
+        return 0
+
+    if action == "enroll":
+        print("  📸 Opening camera to enroll your face (look at the camera)...")
+        if not fa.open_camera():
+            print("  ❌ No camera found")
+            return 1
+        import time
+        try:
+            frame = fa.capture_frame()
+            if frame is None:
+                print("  ❌ No frame captured")
+                return 1
+            res = fa.enroll(frame)
+            print(f"  ✅ Enrolled! ({res['faces']} face(s) seen)")
+            return 0
+        except Exception as e:
+            print(f"  ❌ Enroll failed: {e}")
+            return 1
+        finally:
+            fa.close_camera()
+
+    if action in ("arm", "disarm", "snapshot"):
+        gm = GuardMonitor(face_auth=fa)
+        if action == "arm":
+            ok = gm.arm()
+            print(f"  {'✅ Guard armed (intruder -> alert + lock)' if ok else '❌ Cannot arm (enroll owner first / no camera)'}")
+            return 0 if ok else 1
+        if action == "disarm":
+            gm.disarm()
+            print("  Guard disarmed")
+            return 0
+        if action == "snapshot":
+            res = gm.snapshot()
+            print(f"  Verdict: {res.get('verdict')}  (faces={res.get('faces', 0)})")
+            return 0
+
+    if action == "lock":
+        lc = LockdownController()
+        ev = lc.lock_with_countdown(reason="manual lock via omni security", block=False)
+        print(f"  🔒 Locking in {ev['countdown']}s")
+        return 0
+    return 1
+
+
 def main():
     parser = argparse.ArgumentParser(
         prog="omni",
@@ -639,6 +713,17 @@ def main():
     report_sub.add_parser("list")
     report_sub.add_parser("digest")
 
+    sub.add_parser("app", help="Launch full Python desktop app (Away + Security)")
+
+    sec = sub.add_parser("security", help="Local camera security")
+    sec_sub = sec.add_subparsers(dest="security_action")
+    sec_sub.add_parser("status")
+    sec_sub.add_parser("enroll")
+    sec_sub.add_parser("arm")
+    sec_sub.add_parser("disarm")
+    sec_sub.add_parser("snapshot")
+    sec_sub.add_parser("lock")
+
     args = parser.parse_args()
     cmd = args.cmd or "status"
 
@@ -670,6 +755,10 @@ def main():
         return cmd_away(args)
     if cmd == "report":
         return cmd_report(args)
+    if cmd == "app":
+        return cmd_app(args)
+    if cmd == "security":
+        return cmd_security(args)
 
     parser.print_help()
     return 1
