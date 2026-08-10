@@ -447,8 +447,9 @@ Omni/
   **goal stack** that decomposes big intents into steps and tracks progress across
   sessions, **model tiering** (auto-swaps to a 3B deep model for hard reasoning), and a
   **metacognition loop** (the evaluator's verdict feeds back into goals to replan / ask
-  / escalate), and **episodic reflection** (daily recaps + pattern awareness so OMNI
-  notices things on its own). See [docs/JARVIS_BRAIN.md](docs/JARVIS_BRAIN.md).
+  / escalate), **episodic reflection** (daily recaps + pattern awareness so OMNI notices
+  things on its own), **visible plan-before-acting**, and **offline-first TTS** (piper
+  local, edge-tts cloud only if opted in). See [docs/JARVIS_BRAIN.md](docs/JARVIS_BRAIN.md).
 
 ---
 

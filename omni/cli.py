@@ -188,7 +188,7 @@ def cmd_model_download_deep(args):
 def cmd_test(args):
     """Run all 20 test suites."""
     print("\n  " + "=" * 60)
-    print("  OMNI V3 - Full Test Suite (33 suites)")
+    print("  OMNI V3 - Full Test Suite (34 suites)")
     print("  " + "=" * 60 + "\n")
 
     # All 20 test suites
@@ -228,7 +228,8 @@ def cmd_test(args):
         ("[30/32] Model tiering (deep brain)",        "omni_v2.tests.test_model_tiering", "module"),
         ("[31/32] Goal stack (decompose/progress/replan)", "omni_v2.tests.test_goals", "module"),
         ("[32/33] Metacognition (evaluator feedback loop)", "omni_v2.tests.test_metacog", "module"),
-        ("[33/33] Episodic reflection + patterns",     "omni_v2.tests.test_reflect", "module"),
+        ("[33/34] Episodic reflection + patterns",     "omni_v2.tests.test_reflect", "module"),
+        ("[34/34] Brain polish (plan-before-acting + offline TTS)", "omni_v2.tests.test_brain_polish", "module"),
     ]
 
     all_ok = True

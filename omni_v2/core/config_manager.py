@@ -34,6 +34,7 @@ class OMNISettings:
     tts_enabled: bool = True
     tts_voice: str = "af_sarah"
     tts_speed: float = 1.0
+    tts_allow_cloud: bool = False  # OFF by default: fully local TTS (piper). Set True to allow edge-tts cloud voices.
     # LLM
     llm_provider: str = "ollama"
     llm_model: str = "llama3.1:8b"

@@ -68,6 +68,29 @@ class BrainResponse:
     latency_ms: float = 0.0
     raw: str = ""                        # Raw LLM output
     success: bool = True
+    plan: List[str] = field(default_factory=list)  # Visible plan-before-acting (C2)
+
+    def build_plan(self) -> List[str]:
+        """Derive a human-readable plan from the tool calls (Jarvis C2)."""
+        if not self.tool_calls:
+            return []
+        steps = []
+        for i, tc in enumerate(self.tool_calls, 1):
+            tool = tc.get("tool", "?")
+            args = tc.get("args", {}) or {}
+            desc = tool
+            if "url" in args:
+                desc = f"Open {args['url']}"
+            elif "query" in args:
+                desc = f"Search for \"{args['query']}\""
+            elif "path" in args:
+                desc = f"Write/save file {args['path']}"
+            elif "app" in args:
+                desc = f"Launch {args['app']}"
+            elif "message" in args:
+                desc = f"Send message"
+            steps.append(f"{i}. {desc}")
+        return steps
 
 
 class Brain:
@@ -472,7 +495,7 @@ class Brain:
             logger.info(f"🧠 Brain LLM [{latency:.0f}ms] response: {text[:80]}")
         self._last_action = text or str(tool_calls)[:100]
 
-        return BrainResponse(
+        resp = BrainResponse(
             text=text,
             tool_calls=tool_calls,
             thoughts=thoughts,
@@ -481,6 +504,9 @@ class Brain:
             raw=raw,
             success=True,
         )
+        # Visible plan-before-acting (Jarvis C2)
+        resp.plan = resp.build_plan()
+        return resp
 
     def _format_history_compact(self) -> str:
         """Compact conversation history for fast inference."""

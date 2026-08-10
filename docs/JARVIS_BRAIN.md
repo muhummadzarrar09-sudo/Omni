@@ -195,6 +195,24 @@ plugs into the existing CLI + desktop app + `/api/brain/*` endpoints.
 
 **All 5 Jarvis Brain steps are now complete.** 🎉
 
+## Section-C polish (the "feels like Jarvis" layer)
+
+- **C2 — Visible plan-before-acting:** `BrainResponse` now carries a human-readable
+  `plan` (e.g. "1. Open https://github.com · 2. Search for 'qwen'") derived from the
+  tool calls, so the UI can show intent before firing tools.
+- **C3 — Fully local TTS:** the voice engine now prefers **piper (offline)** first;
+  **edge-tts (Microsoft cloud)** is demoted to an *optional* fallback that's only used
+  if you set `tts_allow_cloud: true`. Default = "no data leaves your machine".
+- **C4 — Follow-through:** goal completion already pushes "report when done" via the
+  messenger; wired through the desktop app.
+
+## Web UI (Next.js)
+
+The cinematic web UI now has a **🧠 BRAIN** button (top bar) that opens a Jarvis Brain
+panel with Identity / Goals / Episodes / Patterns tabs, proxying to the FastAPI
+`/api/brain` endpoints via `frontend_next/app/api/brain/*` route wrappers. Verified with
+`npm run build` (all 6 brain API routes compile).
+
 ### Usage
 ```
 omni brain status / user / set-mood / reflect            # identity + user model

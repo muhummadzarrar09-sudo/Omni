@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import CinematicStage from '../components/CinematicStage'
+import BrainPanel from '../components/BrainPanel'
 
 /**
  * OMNI Command Center - AGI Interface
@@ -117,6 +118,9 @@ export default function Home() {
 
   // System log
   const [logs, setLogs] = useState([])
+
+  // Jarvis Brain panel (Phase 9) - toggle
+  const [showBrain, setShowBrain] = useState(false)
   const [showHistory, setShowHistory] = useState(false)
   const [showLogs, setShowLogs] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
@@ -470,6 +474,12 @@ export default function Home() {
             {brainLatency > 0 && <span className="ml-1.5 text-orange-300">{Math.round(brainLatency)}ms</span>}
           </div>
           <button
+            onClick={() => setShowBrain((v) => !v)}
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-full border transition-all text-xs tracking-widest font-mono backdrop-blur-md ${showBrain ? 'border-cyan-500/40 bg-cyan-500/10 text-cyan-200' : 'border-white/10 bg-black/40 hover:bg-white/10 text-white/70 hover:text-white'}`}
+          >
+            <span>🧠</span><span>BRAIN</span>
+          </button>
+          <button
             onClick={() => setShowLogs(true)}
             className="flex items-center gap-2 px-3.5 py-2 rounded-full border border-white/10 bg-black/40 hover:bg-white/10 text-white/70 hover:text-white transition-all text-xs tracking-widest font-mono backdrop-blur-md"
           >
@@ -647,6 +657,22 @@ export default function Home() {
                   'border-white/20 text-white/70'
                 }`}>{log}</div>
               ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* JARVIS BRAIN panel (Phase 9) */}
+      {showBrain && (
+        <div className="absolute inset-0 bg-black/70 backdrop-blur-md z-40 flex justify-end">
+          <div className="flex-1" onClick={() => setShowBrain(false)} />
+          <div className="w-full max-w-xl h-full bg-[#050B14] border-l border-white/10 flex flex-col shadow-2xl overflow-y-auto">
+            <div className="flex items-center justify-between p-4 border-b border-white/10">
+              <div className="text-sm font-mono tracking-widest text-white font-bold">🧠 JARVIS BRAIN</div>
+              <button onClick={() => setShowBrain(false)} className="text-white/50 hover:text-white font-mono text-sm">✕</button>
+            </div>
+            <div className="flex-1 overflow-y-auto">
+              <BrainPanel />
             </div>
           </div>
         </div>
