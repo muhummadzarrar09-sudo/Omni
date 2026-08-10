@@ -19,91 +19,90 @@ except ImportError:
 class WakeWordDetector:
     """Wake Word - Fixed to actually work - salvaged from best JARVIS repos"""
 
-    def __init__(self, keyword: str = "hey omni", sensitivity: float = 0.5):
+    def __init__(self, keyword: str = "hey omni", sensitivity: float = 0.5,
+                 engine: Optional[str] = None):
         self.keyword = keyword.lower()
         self.sensitivity = sensitivity
         self.detector = None
         self.backend = None
         self.model_path = None
+        # engine: "openwakeword" (offline default) | "picovoice" (needs key) | "ptt" | None=auto
+        if engine is None:
+            try:
+                from omni_v2.core.config_manager import ConfigManager
+                engine = getattr(ConfigManager().load(), "wakeword_engine", "openwakeword")
+            except Exception:
+                engine = "openwakeword"
+        self.engine_pref = engine
         self._init_detector()
         logger.info(f"WakeWordDetector V2 Fixed - Keyword: '{keyword}', Backend: {self.backend}")
 
     def _init_detector(self):
-        # Try openwakeword first (free, no key, works offline, from eadmin2 JARVIS research)
-        try:
-            import openwakeword
-            from openwakeword.model import Model
-            import openwakeword.utils
+        pref = self.engine_pref
 
-            # Download models if not exists - openwakeword downloads on first use
-            # Models: hey_jarvis, alexa, hey_mycroft, etc.
-            # For "hey omni", we can use "hey_jarvis" as proxy (closest) or train custom
-
-            # Check if models exist, if not, download
-            model_dir = DATA_DIR / "openwakeword"
-            model_dir.mkdir(parents=True, exist_ok=True)
-
-            # Try to download hey_jarvis model (closest to hey omni)
+        # --- OPENWAKEWORD: default, free, offline, no key. ---
+        # If the user wants picovoice explicitly, skip this block.
+        if pref in ("openwakeword", "auto"):
             try:
-                # openwakeword downloads models automatically via from_pretrained
-                self.detector = Model(
-                    wakeword_models=["hey_jarvis"],
-                    inference_framework="onnx"  # Use onnxruntime, not tflite (tflite warning in your log)
-                )
-                self.backend = "openwakeword"
-                logger.info("Wake word: openwakeword (hey_jarvis as proxy for hey omni) - free, offline, ONNX - WORKS!")
-                return
-            except Exception as e:
-                logger.debug(f"openwakeword hey_jarvis failed: {e}, trying alexa as fallback")
+                import openwakeword
+                from openwakeword.model import Model
 
-                # Fallback to alexa (more common model)
+                model_dir = DATA_DIR / "openwakeword"
+                model_dir.mkdir(parents=True, exist_ok=True)
+
+                # Try hey_jarvis model first (closest to "hey omni")
                 try:
                     self.detector = Model(
-                        wakeword_models=["alexa"],
+                        wakeword_models=["hey_jarvis"],
                         inference_framework="onnx"
                     )
-                    self.backend = "openwakeword_alexa"
-                    logger.info("Wake word: openwakeword (alexa as proxy) - say 'Alexa' to trigger Hey OMNI")
+                    self.backend = "openwakeword"
+                    logger.info("Wake word: openwakeword (hey_jarvis as proxy) - free, offline, ONNX")
                     return
-                except Exception as e2:
-                    logger.debug(f"openwakeword alexa also failed: {e2}")
+                except Exception as e:
+                    logger.debug(f"openwakeword hey_jarvis failed: {e}, trying alexa as fallback")
+                    try:
+                        self.detector = Model(
+                            wakeword_models=["alexa"],
+                            inference_framework="onnx"
+                        )
+                        self.backend = "openwakeword_alexa"
+                        logger.info("Wake word: openwakeword (alexa as proxy) - offline")
+                        return
+                    except Exception as e2:
+                        logger.debug(f"openwakeword alexa also failed: {e2}")
 
-        except ImportError as e:
-            logger.debug(f"openwakeword not installed: {e} - pip install openwakeword")
-        except Exception as e:
-            logger.warning(f"openwakeword init failed: {e}")
+            except ImportError as e:
+                logger.debug(f"openwakeword not installed: {e} - pip install openwakeword")
+            except Exception as e:
+                logger.warning(f"openwakeword init failed: {e}")
 
-        # Try pvporcupine (needs Picovoice access key, but more accurate)
-        # From qartex/jarvis-desktop research - they use pvporcupine
-        try:
-            import pvporcupine
-            # For demo, try without key first (will fail, but we catch)
-            # User needs to get free key from Picovoice console: https://console.picovoice.ai/
-            access_key = os.environ.get("PICOVOICE_KEY") or os.environ.get("PORCUPINE_KEY")
-
-            if access_key:
-                try:
+        # --- PICOVOICE: optional, ONLY if explicitly requested AND has a key. ---
+        # Demoted: never auto-picked; needs PICOVOICE_KEY and wakeword_engine=picovoice.
+        if pref == "picovoice":
+            try:
+                import pvporcupine
+                access_key = os.environ.get("PICOVOICE_KEY") or os.environ.get("PORCUPINE_KEY")
+                if access_key:
                     self.detector = pvporcupine.create(
                         access_key=access_key,
-                        keywords=["jarvis", "hey google"],  # Use jarvis keyword if available
+                        keywords=["jarvis", "hey google"],
                         sensitivities=[self.sensitivity, self.sensitivity]
                     )
                     self.backend = "pvporcupine"
-                    logger.info(f"Wake word: pvporcupine with key, keywords jarvis/hey google as proxy for hey omni")
+                    logger.info("Wake word: pvporcupine (opt-in, needs PICOVOICE_KEY)")
                     return
-                except Exception as e:
-                    logger.debug(f"pvporcupine with key failed: {e}")
-            else:
-                logger.debug("No Picovoice key - set PICOVOICE_KEY env var from https://console.picovoice.ai/ for pvporcupine")
+                else:
+                    logger.debug("picovoice requested but no PICOVOICE_KEY set")
+            except ImportError:
+                logger.debug("pvporcupine not installed")
+            except Exception as e:
+                logger.debug(f"pvporcupine init failed: {e}")
+            logger.info("picovoice not ready - falling back to PTT only")
 
-        except ImportError:
-            logger.debug("pvporcupine not installed - pip install pvporcupine")
-        except Exception as e:
-            logger.debug(f"pvporcupine init failed: {e}")
-
-        # Fallback: No wake word, use PTT only - this is what your log shows, and it's OK!
+        # --- Fallback: PTT only. ---
         self.backend = None
-        logger.info("No wake word engine available - using PTT V toggle only (press V to speak). Install: pip install openwakeword pvporcupine for Hey OMNI")
+        logger.info(f"No wake word engine available (pref={pref}) - using PTT toggle only (press V to speak). Install: pip install openwakeword")
 
     def listen_for_wake_word(self, callback: Callable[[], None], stop_event: threading.Event = None):
         """Continuous listening - calls callback when wake word detected - FIXED"""

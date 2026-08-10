@@ -96,6 +96,14 @@ try:
 except Exception as e:  # pragma: no cover - non-fatal if deps missing
     logger.warning(f"Reflect router not mounted: {e}")
 
+# Jarvis Brain (Phase 8): camera security over HTTP. Fully local.
+try:
+    from security_routes import router as security_router
+    app.include_router(security_router)
+    logger.info("Security router mounted at /api/security")
+except Exception as e:  # pragma: no cover - non-fatal if deps missing
+    logger.warning(f"Security router not mounted: {e}")
+
 # SMOKE-10 fix: cap request body size at 64KB to prevent OOM attacks
 MAX_REQUEST_BYTES = 64 * 1024
 

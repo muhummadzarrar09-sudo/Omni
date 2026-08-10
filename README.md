@@ -167,6 +167,7 @@ After `pip install -e .[all]`:
 | `omni app` | Launch the full Python desktop app (Away Mode + Security) |
 | `omni security enroll\|arm\|disarm\|snapshot\|lock` | Local camera guard & lockdown |
 | `omni messenger setup-whatsapp\|whatsapp-set\|test\|status` | WhatsApp/Telegram report setup |
+| `./scripts/setup_hardware.sh` | One-shot real-hardware setup (models + offline TTS + WhatsApp) |
 | `omni brain status\|user\|set-name\|set-mood\|reflect` | Jarvis Identity core + user model |
 | `omni goal new\|list\|status\|advance\|fail\|follow-up` | Jarvis persistent goal stack (decompose → progress → replan) |
 | `omni meta evaluate\|history\|stats` | Jarvis metacognition (evaluate outcome → replan/ask/escalate) |
@@ -450,6 +451,9 @@ Omni/
   / escalate), **episodic reflection** (daily recaps + pattern awareness so OMNI notices
   things on its own), **visible plan-before-acting**, and **offline-first TTS** (piper
   local, edge-tts cloud only if opted in). See [docs/JARVIS_BRAIN.md](docs/JARVIS_BRAIN.md).
+- **Offline voice (Phase 8.2):** wake word defaults to **openwakeword** (free, offline,
+  no key) — Picovoice is demoted to an explicit opt-in that needs a key. STT is
+  faster-whisper (fully offline).
 - **Full feature rundown:** see [docs/PR_SUMMARY.md](docs/PR_SUMMARY.md) for the
   complete map of Away Mode, Desktop + Security, and the Jarvis Brain.
 

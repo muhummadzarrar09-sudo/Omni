@@ -73,9 +73,21 @@ All 5 steps complete:
 ## 4. Web UI (Next.js)
 
 - Cinematic command center now has a **🧠 BRAIN** button → Identity / Goals / Episodes /
-  Patterns panel.
-- New API route wrappers under `frontend_next/app/api/{brain,goals,reflect}/*` proxy to
-  FastAPI. Verified with `npm run build`.
+  Patterns / Away / Metacog tabs, and a **🔒 SECURITY** button → Camera Security panel
+  (enroll / arm / disarm / lock / history).
+- New API route wrappers under `frontend_next/app/api/{brain,goals,reflect,away,
+  security,metacog}/*` proxy to FastAPI. Verified with `npm run build` (all routes
+  compile) and FastAPI TestClient (all brain-family routers serve 200).
+
+## 4.5 Real-hardware setup + offline voice
+
+- **`scripts/setup_hardware.sh`** — one-shot installer tuned for a 4GB GTX 1050 Ti:
+  installs deps (CUDA 121 llama-cpp for 10-series), downloads fast 1.5B + deep 3B
+  models, configures piper (offline TTS), and prints the WhatsApp setup steps.
+- **Offline voice:** wake word now defaults to **openwakeword** (free, offline, no key);
+  Picovoice demoted to an explicit opt-in requiring `PICOVOICE_KEY`. New
+  `wakeword_engine` config (default `openwakeword`). STT stays on faster-whisper
+  (fully offline).
 
 ## 5. Fixes & hygiene
 

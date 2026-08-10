@@ -14,6 +14,11 @@ const API = {
   patterns: '/api/reflect/patterns',
   reflectToday: '/api/reflect/today',
   episodes: '/api/reflect/episodes',
+  awayTasks: '/api/away/tasks',
+  awayStatus: '/api/away/status',
+  awayRun: '/api/away/tasks/run',
+  metacogEval: '/api/metacog/evaluate',
+  metacogHistory: '/api/metacog/history',
 }
 
 async function jget(path) {
@@ -43,6 +48,9 @@ export default function BrainPanel() {
   const [goals, setGoals] = useState([])
   const [episodes, setEpisodes] = useState([])
   const [patterns, setPatterns] = useState([])
+  const [awayTasks, setAwayTasks] = useState([])
+  const [awayActive, setAwayActive] = useState(false)
+  const [metaHistory, setMetaHistory] = useState([])
   const [busy, setBusy] = useState(false)
   const [msg, setMsg] = useState('')
 
@@ -51,6 +59,9 @@ export default function BrainPanel() {
     setGoals((await jget(API.goals)).goals || [])
     setEpisodes((await jget(API.episodes)).episodes || [])
     setPatterns((await jpost(API.patterns, { days: 7 })).patterns || [])
+    setAwayTasks((await jget(API.awayTasks)).tasks || [])
+    setAwayActive((await jget(API.awayStatus)).active || false)
+    setMetaHistory((await jget(API.metacogHistory)).records || [])
   }
   useEffect(() => { load() }, [])
 
@@ -74,6 +85,29 @@ export default function BrainPanel() {
     setEpisodes((await jget(API.episodes)).episodes || [])
   }
 
+  const addAwayTask = async () => {
+    const brief = prompt('Away task (research/digest/notify):')
+    if (!brief) return
+    const kind = prompt('Kind (research/digest/notify):') || 'research'
+    const res = await jpost(API.awayTasks, { kind, brief })
+    setMsg(res.task ? `Task queued (${res.task.kind})` : 'Queue failed')
+    setAwayTasks((await jget(API.awayTasks)).tasks || [])
+  }
+
+  const runAway = async () => {
+    const res = await jpost(API.awayRun, {})
+    setMsg(res.ran ? `Ran ${res.ran.length} task(s)` : 'Run failed')
+    setAwayTasks((await jget(API.awayTasks)).tasks || [])
+  }
+
+  const evalMeta = async () => {
+    const msg = prompt('Outcome message (e.g. "FileNotFoundError: no such file"):')
+    if (!msg) return
+    const res = await jpost(API.metacogEval, { message: msg, succeeded: false })
+    setMsg(res.verdict ? `Verdict: ${res.verdict.action} (${res.verdict.cause})` : 'Evaluate failed')
+    setMetaHistory((await jget(API.metacogHistory)).records || [])
+  }
+
   const updateName = async () => {
     const name = prompt('Your name:')
     if (!name) return
@@ -95,7 +129,7 @@ export default function BrainPanel() {
       </div>
 
       <div className="flex gap-2 flex-wrap">
-        {['identity', 'goals', 'episodes', 'patterns'].map((t) => (
+        {['identity', 'goals', 'episodes', 'patterns', 'away', 'metacog'].map((t) => (
           <button key={t} onClick={() => setTab(t)} className={tabBtn(t)}>{t.toUpperCase()}</button>
         ))}
       </div>
@@ -161,6 +195,39 @@ export default function BrainPanel() {
             <div key={i} className={card}>
               <div className="font-mono text-sm text-white">{p.severity >= 2 ? '🔴' : p.severity === 1 ? '🟡' : '⚪'} {p.title}</div>
               <div className="font-mono text-[11px] text-white/60 mt-1">{p.body}</div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {tab === 'away' && (
+        <div className="space-y-2">
+          <div className="flex gap-2 flex-wrap">
+            <button onClick={addAwayTask} className="text-xs font-mono px-3 py-1.5 rounded-lg bg-cyan-500/20 text-cyan-200 border border-cyan-500/30 hover:bg-cyan-500/30">＋ Away task</button>
+            <button onClick={runAway} className="text-xs font-mono px-3 py-1.5 rounded-lg bg-white/5 text-white/70 hover:bg-white/10">▶ Run pending</button>
+          </div>
+          <div className="text-[10px] font-mono text-white/40">Away mode: {awayActive ? '🟢 ON' : '⚪ OFF'}</div>
+          {awayTasks.length === 0 && <div className="text-xs font-mono text-white/40">No away tasks.</div>}
+          {awayTasks.map((t, i) => (
+            <div key={i} className={card}>
+              <div className="flex items-center justify-between">
+                <span className="font-mono text-sm text-white">{t.kind}: {t.brief}</span>
+                <span className="text-[10px] font-mono text-cyan-300">[{t.status}]</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {tab === 'metacog' && (
+        <div className="space-y-2">
+          <button onClick={evalMeta} className="text-xs font-mono px-3 py-1.5 rounded-lg bg-white/5 text-white/70 hover:bg-white/10">🧠 Evaluate outcome</button>
+          {metaHistory.length === 0 && <div className="text-xs font-mono text-white/40">No metacognition records.</div>}
+          {metaHistory.map((r, i) => (
+            <div key={i} className={card}>
+              <div className="font-mono text-sm text-white">[{r.verdict?.action || '?'}] {r.verdict?.succeeded ? '✅' : '❌'}</div>
+              <div className="font-mono text-[11px] text-white/60 mt-1">cause: {r.verdict?.cause || '—'} · conf: {r.verdict?.confidence}</div>
+              {r.verdict?.message && <div className="font-mono text-[11px] text-white/50 mt-1">{r.verdict.message}</div>}
             </div>
           ))}
         </div>

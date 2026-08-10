@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import CinematicStage from '../components/CinematicStage'
 import BrainPanel from '../components/BrainPanel'
+import SecurityPanel from '../components/SecurityPanel'
 
 /**
  * OMNI Command Center - AGI Interface
@@ -121,6 +122,8 @@ export default function Home() {
 
   // Jarvis Brain panel (Phase 9) - toggle
   const [showBrain, setShowBrain] = useState(false)
+  // Camera Security panel (Phase 8)
+  const [showSecurity, setShowSecurity] = useState(false)
   const [showHistory, setShowHistory] = useState(false)
   const [showLogs, setShowLogs] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
@@ -480,6 +483,12 @@ export default function Home() {
             <span>🧠</span><span>BRAIN</span>
           </button>
           <button
+            onClick={() => setShowSecurity((v) => !v)}
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-full border transition-all text-xs tracking-widest font-mono backdrop-blur-md ${showSecurity ? 'border-red-500/40 bg-red-500/10 text-red-200' : 'border-white/10 bg-black/40 hover:bg-white/10 text-white/70 hover:text-white'}`}
+          >
+            <span>🔒</span><span>SECURITY</span>
+          </button>
+          <button
             onClick={() => setShowLogs(true)}
             className="flex items-center gap-2 px-3.5 py-2 rounded-full border border-white/10 bg-black/40 hover:bg-white/10 text-white/70 hover:text-white transition-all text-xs tracking-widest font-mono backdrop-blur-md"
           >
@@ -673,6 +682,22 @@ export default function Home() {
             </div>
             <div className="flex-1 overflow-y-auto">
               <BrainPanel />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* SECURITY panel (Phase 8) */}
+      {showSecurity && (
+        <div className="absolute inset-0 bg-black/70 backdrop-blur-md z-40 flex justify-end">
+          <div className="flex-1" onClick={() => setShowSecurity(false)} />
+          <div className="w-full max-w-xl h-full bg-[#050B14] border-l border-white/10 flex flex-col shadow-2xl overflow-y-auto">
+            <div className="flex items-center justify-between p-4 border-b border-white/10">
+              <div className="text-sm font-mono tracking-widest text-white font-bold">🔒 CAMERA SECURITY</div>
+              <button onClick={() => setShowSecurity(false)} className="text-white/50 hover:text-white font-mono text-sm">✕</button>
+            </div>
+            <div className="flex-1 overflow-y-auto">
+              <SecurityPanel />
             </div>
           </div>
         </div>
