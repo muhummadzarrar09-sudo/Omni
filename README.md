@@ -167,6 +167,7 @@ After `pip install -e .[all]`:
 | `omni app` | Launch the full Python desktop app (Away Mode + Security) |
 | `omni security enroll\|arm\|disarm\|snapshot\|lock` | Local camera guard & lockdown |
 | `omni messenger setup-whatsapp\|whatsapp-set\|test\|status` | WhatsApp/Telegram report setup |
+| `omni brain status\|user\|set-name\|set-mood\|reflect` | Jarvis Identity core + user model |
 
 ---
 
@@ -438,6 +439,9 @@ Omni/
 - **Camera security (Phase 8):** enroll your face locally, arm a guard that
   watches the camera, and if someone unrecognized is at the machine it **alerts
   you first, then locks the laptop**. See [docs/DESKTOP_SECURITY.md](docs/DESKTOP_SECURITY.md).
+- **Jarvis Brain (Phase 9):** a persistent **Identity core** (name, persona, mood,
+  values) + **user model** (likes, tone, prefs) injected into every prompt, so OMNI
+  knows who it is and who it's talking to. See [docs/JARVIS_BRAIN.md](docs/JARVIS_BRAIN.md).
 
 ---
 

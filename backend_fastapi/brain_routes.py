@@ -1,0 +1,92 @@
+"""
+OMNI BRAIN - FastAPI router for the Jarvis Identity Core (Phase 9).
+
+Exposes the persistent sense-of-self (B1) + user model (B7) over HTTP so the
+UI / desktop app can read and update it. Fully local.
+"""
+from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel, Field
+from pathlib import Path
+import sys
+from typing import Any, Dict, Optional, List
+
+THIS_FILE = Path(__file__).resolve()
+REPO_ROOT = THIS_FILE.parent.parent
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+from omni_v2.brain.identity import IdentityCore
+
+_identity = IdentityCore()
+router = APIRouter(prefix="/api/brain", tags=["brain"])
+
+
+class IdentityUpdate(BaseModel):
+    name: Optional[str] = None
+    persona: Optional[str] = None
+    values: Optional[List[str]] = None
+    mood: Optional[str] = None
+    goals_today: Optional[List[str]] = None
+
+
+class UserUpdate(BaseModel):
+    name: Optional[str] = None
+    style: Optional[str] = None
+    tone: Optional[str] = None
+    likes: Optional[List[str]] = None
+    dislikes: Optional[List[str]] = None
+    comm_prefs: Optional[Dict[str, Any]] = None
+
+
+class ReflectionAdd(BaseModel):
+    text: str
+    kind: str = "note"
+
+
+@router.get("/identity")
+def get_identity() -> Dict[str, Any]:
+    return _identity.stats()
+
+
+@router.post("/identity")
+def update_identity(u: IdentityUpdate) -> Dict[str, Any]:
+    data = u.model_dump(exclude_none=True)
+    if "name" in data:
+        _identity.set_name(data["name"])
+    if "persona" in data:
+        _identity.set_persona(data["persona"])
+    if "values" in data:
+        _identity.set_values(data["values"])
+    if "mood" in data:
+        _identity.set_mood(data["mood"])
+    if "goals_today" in data:
+        _identity.set_goals_today(data["goals_today"])
+    return _identity.stats()
+
+
+@router.post("/identity/mood")
+def set_mood(mood: str) -> Dict[str, Any]:
+    _identity.set_mood(mood)
+    return {"mood": _identity.mood}
+
+
+@router.get("/identity/user")
+def get_user() -> Dict[str, Any]:
+    return _identity.user.to_dict()
+
+
+@router.post("/identity/user")
+def update_user(u: UserUpdate) -> Dict[str, Any]:
+    data = u.model_dump(exclude_none=True)
+    return _identity.update_user(**data)
+
+
+@router.post("/identity/reflections")
+def add_reflection(r: ReflectionAdd) -> Dict[str, Any]:
+    item = _identity.add_reflection(r.text, kind=r.kind)
+    return {"reflection": item, "count": len(_identity.reflections)}
+
+
+@router.get("/identity/prompt-block")
+def prompt_block() -> Dict[str, Any]:
+    return {"block": _identity.to_prompt_block()}

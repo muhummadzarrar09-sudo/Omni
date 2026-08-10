@@ -67,6 +67,13 @@ class DesktopController:
         self.research = self.stack.get("research_agent")
         self.messenger = self.stack.get("messenger")
         self.memory = self.stack.get("memory")
+        self.identity = self.stack.get("identity")
+        if self.identity is None:
+            try:
+                from omni_v2.brain.identity import IdentityCore
+                self.identity = IdentityCore()
+            except Exception:
+                self.identity = None
         self.on_status_change = on_status_change
 
         # -- security ----------------------------------------------------
@@ -104,6 +111,11 @@ class DesktopController:
                 "gradient descriptor (fallback)")
         if self.guard:
             out["security"]["guard"] = self.guard.stats()
+        from omni_v2.brain.identity import IdentityCore
+        try:
+            out["identity"] = IdentityCore().stats()
+        except Exception:
+            pass
         return out
 
     def messenger_config(self) -> Dict[str, Any]:

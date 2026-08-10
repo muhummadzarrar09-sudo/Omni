@@ -26,6 +26,7 @@ def build_away_stack(knowledge_base=None, reporter=None, messenger=None,
     from omni_v2.away.away_agent import AwayAgent
     from omni_v2.away.messenger import MessengerRouter
     from omni_v2.memory.hybrid_memory import get_hybrid_memory
+    from omni_v2.brain.identity import IdentityCore
 
     kb = knowledge_base or KnowledgeBase()
     rep = reporter or Reporter()
@@ -39,6 +40,7 @@ def build_away_stack(knowledge_base=None, reporter=None, messenger=None,
         digest_fn=digest_fn,
     )
     memory = kb.memory or get_hybrid_memory()
+    identity = IdentityCore()
 
     def context_provider(question: str) -> str:
         """Inject hybrid RAG+CAG context for a user query (used by Brain)."""
@@ -56,4 +58,5 @@ def build_away_stack(knowledge_base=None, reporter=None, messenger=None,
         "messenger": messenger_obj,
         "away_agent": agent,
         "context_provider": context_provider,
+        "identity": identity,
     }

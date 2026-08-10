@@ -237,6 +237,34 @@ def _launch_gui():
     msg_save.configure(command=do_save_cfg)
     msg_test.configure(command=do_test)
 
+    # ================= IDENTITY (Jarvis Brain B1/B7) =================
+    t_id = tabs.add("Identity")
+    id_btn = ctk.CTkButton(t_id, text="Show Identity", width=140)
+    id_btn.pack(anchor="w", padx=8, pady=4)
+    id_out = ctk.CTkTextbox(t_id, height=400, font=("Consolas", 12))
+    id_out.pack(fill="both", expand=True, padx=8, pady=8)
+    id_row = ctk.CTkFrame(t_id)
+    id_row.pack(fill="x", padx=8)
+    id_name = ctk.CTkEntry(id_row, placeholder_text="your name")
+    id_name.pack(side="left", fill="x", expand=True, padx=4)
+    id_save = ctk.CTkButton(id_row, text="Set user name", width=120)
+    id_save.pack(side="left", padx=4)
+    def refresh_identity():
+        def done(st):
+            import json
+            log_box(id_out, json.dumps(st, indent=2, default=str))
+        bg(lambda: controller.identity.stats() if getattr(controller, "identity", None) else {}, done)
+    def do_id_save():
+        n = id_name.get().strip()
+        if n:
+            def done(res):
+                id_name.delete(0, "end")
+                refresh_identity()
+            bg(lambda: controller.identity.update_user(name=n), done)
+    id_btn.configure(command=refresh_identity)
+    id_save.configure(command=do_id_save)
+    refresh_identity()
+
     # ================= SECURITY =================
     t_sec = tabs.add("Security")
     srow = ctk.CTkFrame(t_sec)

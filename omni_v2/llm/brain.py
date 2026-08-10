@@ -94,6 +94,7 @@ class Brain:
         on_thought: Optional[Callable[[str], None]] = None,
         on_tool_call: Optional[Callable[[str, dict], None]] = None,
         context_provider: Optional[Callable[[str], str]] = None,
+        identity=None,
     ):
         if self._initialized:
             return
@@ -104,6 +105,9 @@ class Brain:
         # Hybrid RAG+CAG context injector (Away Mode / Knowledge Base).
         # context_provider(user_text) -> extra context injected into the prompt.
         self.context_provider = context_provider
+        # Jarvis Identity core (B1) + User model (B7): injected every turn.
+        # identity.to_prompt_block() -> identity + user description for the prompt.
+        self.identity = identity
         self.llm = None
         self.model_loaded = False
         self._conversation: List[Dict[str, str]] = []  # last 5 turns
@@ -266,6 +270,15 @@ class Brain:
         now = datetime.now()
         date_ctx = f"TODAY: {now.strftime('%A %B %d, %Y')} | NOW: {now.strftime('%H:%M')}"
         sys_prompt = TOOL_SCHEMA.format(brief=self._tool_brief) + f"\n{date_ctx}"
+        # Inject the Jarvis identity + user model (B1/B7) so the brain knows
+        # who it is and who it's talking to, every turn.
+        if self.identity is not None:
+            try:
+                id_block = self.identity.to_prompt_block()
+                if id_block:
+                    sys_prompt += "\n\n" + id_block
+            except Exception as e:
+                logger.debug(f"identity injection failed: {e}")
         # Inject hybrid RAG+CAG memory context (long-term + short-term)
         if self.context_provider is not None:
             try:
@@ -530,6 +543,10 @@ class Brain:
     def set_context_provider(self, provider: Callable[[str], str]) -> None:
         """Attach a hybrid RAG+CAG context injector after construction."""
         self.context_provider = provider
+
+    def set_identity(self, identity) -> None:
+        """Attach the Jarvis Identity core after construction."""
+        self.identity = identity
 
     def get_status(self) -> dict:
         return {

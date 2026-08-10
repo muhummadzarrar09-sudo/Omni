@@ -64,6 +64,14 @@ try:
 except Exception as e:  # pragma: no cover - non-fatal if deps missing
     logger.warning(f"Away Mode router not mounted: {e}")
 
+# Jarvis Brain (Phase 9): identity core (self) + user model. Fully local.
+try:
+    from brain_routes import router as brain_router
+    app.include_router(brain_router)
+    logger.info("Brain router mounted at /api/brain")
+except Exception as e:  # pragma: no cover - non-fatal if deps missing
+    logger.warning(f"Brain router not mounted: {e}")
+
 # SMOKE-10 fix: cap request body size at 64KB to prevent OOM attacks
 MAX_REQUEST_BYTES = 64 * 1024
 

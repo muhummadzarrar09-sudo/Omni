@@ -18,6 +18,7 @@ import sys
 import subprocess
 import time
 import os
+import json
 from pathlib import Path
 
 
@@ -149,7 +150,7 @@ def cmd_model_download(args):
 def cmd_test(args):
     """Run all 20 test suites."""
     print("\n  " + "=" * 60)
-    print("  OMNI V3 - Full Test Suite (28 suites)")
+    print("  OMNI V3 - Full Test Suite (29 suites)")
     print("  " + "=" * 60 + "\n")
 
     # All 20 test suites
@@ -184,6 +185,8 @@ def cmd_test(args):
         # Security + Desktop (Phase 8)
         ("[27/28] Camera security (face auth + lockdown + guard)", "omni_v2.tests.test_security", "module"),
         ("[28/28] Desktop controller",               "omni_v2.tests.test_desktop", "module"),
+        # Jarvis Brain (Phase 9)
+        ("[29/29] Identity core + user model",        "omni_v2.tests.test_identity", "module"),
     ]
 
     all_ok = True
@@ -590,6 +593,75 @@ def cmd_app(args):
     return 0
 
 
+def cmd_brain(args):
+    """Jarvis Brain: manage identity (self) + user model."""
+    sys.path.insert(0, str(REPO_ROOT))
+    from omni_v2.brain.identity import IdentityCore
+    ic = IdentityCore()
+    action = getattr(args, "brain_action", None) or "status"
+
+    if action == "status":
+        st = ic.stats()
+        print("\n  🧠 Jarvis Identity")
+        print(f"    Name        : {st['name']}")
+        print(f"    Persona     : {st['persona']}")
+        print(f"    Mood        : {st['mood']}")
+        print(f"    Values      : {', '.join(st['values'])}")
+        print(f"    Goals today : {st['goals_today'] or '(none)'}")
+        print(f"    Reflections : {st['reflections']}")
+        print(f"\n  👤 User model")
+        u = st['user']
+        print(f"    Name   : {u.get('name') or '(not set)'}")
+        print(f"    Style  : {u.get('style')}")
+        print(f"    Tone   : {u.get('tone')}")
+        print(f"    Likes  : {', '.join(u.get('likes', [])) or '(none)'}")
+        print(f"    Prefs  : {u.get('comm_prefs')}")
+        print()
+        return 0
+
+    if action == "set-name":
+        ic.set_name(" ".join(args.rest))
+        print(f"  ✅ Identity name -> {' '.join(args.rest)}")
+        return 0
+
+    if action == "set-persona":
+        ic.set_persona(" ".join(args.rest))
+        print("  ✅ Persona updated")
+        return 0
+
+    if action == "set-mood":
+        ic.set_mood(" ".join(args.rest))
+        print(f"  ✅ Mood -> {' '.join(args.rest)}")
+        return 0
+
+    if action == "user":
+        # omni brain user name=X style=Y likes=a,b
+        updates = {}
+        for kv in args.rest:
+            if "=" in kv:
+                k, v = kv.split("=", 1)
+                if k in ("likes", "dislikes"):
+                    v = [x.strip() for x in v.split(",") if x.strip()]
+                updates[k] = v
+        if updates:
+            ic.update_user(**updates)
+            print(f"  ✅ User updated: {updates}")
+        else:
+            u = ic.stats()["user"]
+            print(json.dumps(u, indent=2))
+        return 0
+
+    if action == "reflect":
+        ic.add_reflection(" ".join(args.rest), kind="note")
+        print("  ✅ Reflection saved")
+        return 0
+
+    if action == "show-prompt":
+        print(ic.to_prompt_block())
+        return 0
+    return 1
+
+
 def cmd_messenger(args):
     """Messenger setup & diagnostics (WhatsApp for Pakistan / Telegram / file)."""
     sys.path.insert(0, str(REPO_ROOT))
@@ -792,6 +864,16 @@ def main():
     sec_sub.add_parser("snapshot")
     sec_sub.add_parser("lock")
 
+    brain = sub.add_parser("brain", help="Jarvis Brain: identity (self) + user model")
+    brain_sub = brain.add_subparsers(dest="brain_action")
+    brain_sub.add_parser("status")
+    brain_sub.add_parser("show-prompt")
+    brain_sub.add_parser("set-name").add_argument("rest", nargs=argparse.REMAINDER)
+    brain_sub.add_parser("set-persona").add_argument("rest", nargs=argparse.REMAINDER)
+    brain_sub.add_parser("set-mood").add_argument("rest", nargs=argparse.REMAINDER)
+    brain_sub.add_parser("user").add_argument("rest", nargs=argparse.REMAINDER)
+    brain_sub.add_parser("reflect").add_argument("rest", nargs=argparse.REMAINDER)
+
     msg = sub.add_parser("messenger", help="Messenger setup & diagnostics (WhatsApp/Telegram/file)")
     msg_sub = msg.add_subparsers(dest="messenger_action")
     msg_sub.add_parser("status")
@@ -839,6 +921,8 @@ def main():
         return cmd_security(args)
     if cmd == "messenger":
         return cmd_messenger(args)
+    if cmd == "brain":
+        return cmd_brain(args)
 
     parser.print_help()
     return 1
