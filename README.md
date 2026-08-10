@@ -450,6 +450,8 @@ Omni/
   / escalate), **episodic reflection** (daily recaps + pattern awareness so OMNI notices
   things on its own), **visible plan-before-acting**, and **offline-first TTS** (piper
   local, edge-tts cloud only if opted in). See [docs/JARVIS_BRAIN.md](docs/JARVIS_BRAIN.md).
+- **Full feature rundown:** see [docs/PR_SUMMARY.md](docs/PR_SUMMARY.md) for the
+  complete map of Away Mode, Desktop + Security, and the Jarvis Brain.
 
 ---
 
