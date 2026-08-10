@@ -74,6 +74,13 @@ class DesktopController:
                 self.identity = IdentityCore()
             except Exception:
                 self.identity = None
+        self.goals = self.stack.get("goals")
+        if self.goals is None:
+            try:
+                from omni_v2.brain.goals import GoalStack
+                self.goals = GoalStack()
+            except Exception:
+                self.goals = None
         self.on_status_change = on_status_change
 
         # -- security ----------------------------------------------------
@@ -116,6 +123,8 @@ class DesktopController:
             out["identity"] = IdentityCore().stats()
         except Exception:
             pass
+        if self.goals:
+            out["goals"] = self.goals.stats()
         return out
 
     def messenger_config(self) -> Dict[str, Any]:
@@ -187,6 +196,43 @@ class DesktopController:
         if start:
             return {"ok": True, **self.away.away_start()}
         return {"ok": True, **self.away.away_stop()}
+
+    # -- goals (Jarvis Brain Step 3) -------------------------------------------
+    def goal_create(self, intent: str, title: str = "") -> Dict[str, Any]:
+        if self.goals is None:
+            return {"ok": False, "detail": "goals unavailable"}
+        try:
+            g = self.goals.create_goal(intent, title=title)
+            return {"ok": True, "goal": g.to_dict()}
+        except Exception as e:
+            return {"ok": False, "detail": str(e)}
+
+    def goal_list(self) -> List[Dict[str, Any]]:
+        return [g.to_dict() for g in self.goals.list_goals(20)] if self.goals else []
+
+    def goal_begin(self, goal_id: str) -> Dict[str, Any]:
+        if self.goals is None:
+            return {"ok": False, "detail": "unavailable"}
+        s = self.goals.begin_step(goal_id)
+        return {"ok": s is not None, "step": s.to_dict() if s else None}
+
+    def goal_complete_step(self, goal_id: str, result: Dict[str, Any] = None) -> Dict[str, Any]:
+        if self.goals is None:
+            return {"ok": False}
+        g = self.goals.complete_step(goal_id, result)
+        return {"ok": True, "goal": g.to_dict()}
+
+    def goal_fail(self, goal_id: str, error: str = "", fix: str = "") -> Dict[str, Any]:
+        if self.goals is None:
+            return {"ok": False}
+        g = self.goals.fail_step(goal_id, error=error, suggested_fix=fix)
+        return {"ok": True, "goal": g.to_dict()}
+
+    def goal_abandon(self, goal_id: str) -> Dict[str, Any]:
+        if self.goals is None:
+            return {"ok": False}
+        g = self.goals.abandon(goal_id)
+        return {"ok": True, "goal": g.to_dict()}
 
     # -- security -------------------------------------------------------------
     def enroll_owner(self) -> Dict[str, Any]:

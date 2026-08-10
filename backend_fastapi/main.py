@@ -72,6 +72,14 @@ try:
 except Exception as e:  # pragma: no cover - non-fatal if deps missing
     logger.warning(f"Brain router not mounted: {e}")
 
+# Jarvis Brain (Phase 9 Step 3): persistent goal stack. Fully local.
+try:
+    from goals_routes import router as goals_router
+    app.include_router(goals_router)
+    logger.info("Goals router mounted at /api/goals")
+except Exception as e:  # pragma: no cover - non-fatal if deps missing
+    logger.warning(f"Goals router not mounted: {e}")
+
 # SMOKE-10 fix: cap request body size at 64KB to prevent OOM attacks
 MAX_REQUEST_BYTES = 64 * 1024
 

@@ -168,6 +168,7 @@ After `pip install -e .[all]`:
 | `omni security enroll\|arm\|disarm\|snapshot\|lock` | Local camera guard & lockdown |
 | `omni messenger setup-whatsapp\|whatsapp-set\|test\|status` | WhatsApp/Telegram report setup |
 | `omni brain status\|user\|set-name\|set-mood\|reflect` | Jarvis Identity core + user model |
+| `omni goal new\|list\|status\|advance\|fail\|follow-up` | Jarvis persistent goal stack (decompose → progress → replan) |
 
 ---
 
@@ -440,8 +441,10 @@ Omni/
   watches the camera, and if someone unrecognized is at the machine it **alerts
   you first, then locks the laptop**. See [docs/DESKTOP_SECURITY.md](docs/DESKTOP_SECURITY.md).
 - **Jarvis Brain (Phase 9):** a persistent **Identity core** (name, persona, mood,
-  values) + **user model** (likes, tone, prefs) injected into every prompt, so OMNI
-  knows who it is and who it's talking to. See [docs/JARVIS_BRAIN.md](docs/JARVIS_BRAIN.md).
+  values) + **user model** (likes, tone, prefs) injected into every prompt, plus a
+  **goal stack** that decomposes big intents into steps and tracks progress across
+  sessions, and **model tiering** (auto-swaps to a 3B deep model for hard reasoning).
+  See [docs/JARVIS_BRAIN.md](docs/JARVIS_BRAIN.md).
 
 ---
 

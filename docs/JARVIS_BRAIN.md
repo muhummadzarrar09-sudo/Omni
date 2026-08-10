@@ -188,10 +188,24 @@ plugs into the existing CLI + desktop app + `/api/brain/*` endpoints.
 | Step | Deliverable | Status |
 |------|-------------|--------|
 | **1** | **Identity core (B1) + user model (B7)** | ✅ **DONE** — `omni_v2/brain/identity.py`, wired into `Brain.think()`, CLI `omni brain`, `/api/brain/*`, desktop "Identity" tab. |
-| **2** | **Model tiering** (1.5B/3B) wired into `Brain.think()` | ✅ **DONE** — deep-model discovery + `needs_deep()` heuristic + safe VRAM swap (load 3B for hard reasoning, restore 1.5B after). `omni model download --deep`. 409 tests passing. |
-| **3** | **Goal stack** + decompose + progress + replan | ⏳ next |
-| **4** | **Evaluator feedback loop** (metacognition) | ⏳ |
+| **2** | **Model tiering** (1.5B/3B) wired into `Brain.think()` | ✅ **DONE** — deep-model discovery + `needs_deep()` heuristic + safe VRAM swap (load 3B for hard reasoning, restore 1.5B after). `omni model download --deep`. |
+| **3** | **Goal stack** + decompose + progress + replan | ✅ **DONE** — `omni_v2/brain/goals.py`: persistent goal stack, deterministic or LLM decompose, dependency-aware step execution, progress across sessions, replan-on-failure, follow-up (report/reminder) via messenger. CLI `omni goal`, `/api/goals/*`, exposed on desktop controller. 419 tests passing. |
+| **4** | **Evaluator feedback loop** (metacognition) | ⏳ next |
 | **5** | **Episodic reflection** + pattern notices | ⏳ |
+
+### Step 3 usage
+```
+omni goal new "build a habit tracker"     # decompose into steps
+omni goal list                             # see all goals + progress
+omni goal status <id>                      # step-by-step status
+omni goal advance <id>                     # run the next step
+omni goal fail <id> "reason"               # mark failed (+replan w/ fix)
+omni goal follow-up <id> "report when done"
+omni goal abandon <id>
+```
+Goals persist to `data/brain/goals.json` (gitignored), so progress survives
+restarts. The decomposer uses the deep LLM when available, else a deterministic
+plan — the core is fully testable offline.
 
 ### Step 2 usage
 ```

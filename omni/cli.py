@@ -188,7 +188,7 @@ def cmd_model_download_deep(args):
 def cmd_test(args):
     """Run all 20 test suites."""
     print("\n  " + "=" * 60)
-    print("  OMNI V3 - Full Test Suite (30 suites)")
+    print("  OMNI V3 - Full Test Suite (31 suites)")
     print("  " + "=" * 60 + "\n")
 
     # All 20 test suites
@@ -224,8 +224,9 @@ def cmd_test(args):
         ("[27/28] Camera security (face auth + lockdown + guard)", "omni_v2.tests.test_security", "module"),
         ("[28/28] Desktop controller",               "omni_v2.tests.test_desktop", "module"),
         # Jarvis Brain (Phase 9)
-        ("[29/30] Identity core + user model",        "omni_v2.tests.test_identity", "module"),
-        ("[30/30] Model tiering (deep brain)",        "omni_v2.tests.test_model_tiering", "module"),
+        ("[29/31] Identity core + user model",        "omni_v2.tests.test_identity", "module"),
+        ("[30/31] Model tiering (deep brain)",        "omni_v2.tests.test_model_tiering", "module"),
+        ("[31/31] Goal stack (decompose/progress/replan)", "omni_v2.tests.test_goals", "module"),
     ]
 
     all_ok = True
@@ -701,6 +702,93 @@ def cmd_brain(args):
     return 1
 
 
+def cmd_goal(args):
+    """Jarvis Brain goals: persistent goal stack (decompose / progress / replan)."""
+    sys.path.insert(0, str(REPO_ROOT))
+    from omni_v2.brain.goals import GoalStack
+    gs = GoalStack()
+    action = getattr(args, "goal_action", None) or "list"
+
+    if action == "list":
+        print("\n  🎯 Goals")
+        for g in gs.list_goals(limit=20):
+            print(f"    [{g.status:8s}] {g.title}  (progress {g.progress:.0%}, {len(g.steps)} steps)")
+            for s in g.steps:
+                mark = {"pending": "○", "running": "▶", "done": "✔", "failed": "✘"}.get(s.status, "?")
+                print(f"        {mark} {s.desc}")
+        if not gs.list_goals():
+            print("    (no goals yet — omni goal new \"...\")")
+        print()
+        return 0
+
+    if action == "new":
+        intent = " ".join(args.rest)
+        if not intent:
+            print("  Usage: omni goal new \"build a habit tracker\"")
+            return 1
+        g = gs.create_goal(intent)
+        print(f"  ✅ Created goal {g.id}: {g.title}")
+        print(f"     {len(g.steps)} step(s):")
+        for i, s in enumerate(g.steps, 1):
+            print(f"       {i}. {s.desc}")
+        return 0
+
+    if action == "status":
+        gid = args.id
+        g = gs.get_goal(gid)
+        if not g:
+            print(f"  ❌ No goal {gid}")
+            return 1
+        print(f"\n  🎯 {g.title}  [{g.status}]  progress {g.progress:.0%}")
+        for i, s in enumerate(g.steps, 1):
+            mark = {"pending": "○", "running": "▶", "done": "✔", "failed": "✘"}.get(s.status, "?")
+            line = f"    {i}. {mark} {s.desc}"
+            if s.error:
+                line += f"  ERROR: {s.error}"
+            if s.suggested_fix:
+                line += f"  FIX: {s.suggested_fix}"
+            print(line)
+        if g.follow_up:
+            print(f"    Follow-up: {g.follow_up}")
+        print()
+        return 0
+
+    if action == "advance":
+        # run the next step: begin + complete (stub execution; real exec via brain)
+        gid = args.id
+        s = gs.begin_step(gid)
+        if s is None:
+            print("  No runnable step (check dependencies / goal done)")
+            return 1
+        print(f"  ▶ Running: {s.desc}")
+        gs.complete_step(gid, result={"ok": True})
+        g = gs.get_goal(gid)
+        print(f"  ✔ Done. Progress now {g.progress:.0%}")
+        if g.status == "done":
+            print("  🎉 GOAL COMPLETE")
+        return 0
+
+    if action == "fail":
+        gid = args.id
+        error = " ".join(args.rest)
+        gs.fail_step(gid, error=error or "step failed", suggested_fix="")
+        print(f"  ✘ Marked running step failed: {error}")
+        return 0
+
+    if action == "abandon":
+        gid = args.id
+        gs.abandon(gid)
+        print(f"  Abandoned goal {gid}")
+        return 0
+
+    if action == "follow-up":
+        gid = args.id
+        gs.schedule_follow_up(gid, fu_type="report", message=" ".join(args.rest) or None)
+        print(f"  ✅ Follow-up scheduled on goal {gid}")
+        return 0
+    return 1
+
+
 def cmd_messenger(args):
     """Messenger setup & diagnostics (WhatsApp for Pakistan / Telegram / file)."""
     sys.path.insert(0, str(REPO_ROOT))
@@ -915,6 +1003,20 @@ def main():
     brain_sub.add_parser("user").add_argument("rest", nargs=argparse.REMAINDER)
     brain_sub.add_parser("reflect").add_argument("rest", nargs=argparse.REMAINDER)
 
+    goal = sub.add_parser("goal", help="Jarvis Brain: persistent goal stack")
+    goal_sub = goal.add_subparsers(dest="goal_action")
+    goal_sub.add_parser("list")
+    goal_sub.add_parser("new").add_argument("rest", nargs=argparse.REMAINDER)
+    goal_sub.add_parser("status").add_argument("id")
+    goal_sub.add_parser("advance").add_argument("id")
+    _gf = goal_sub.add_parser("fail")
+    _gf.add_argument("id")
+    _gf.add_argument("rest", nargs=argparse.REMAINDER)
+    goal_sub.add_parser("abandon").add_argument("id")
+    _gfu = goal_sub.add_parser("follow-up")
+    _gfu.add_argument("id")
+    _gfu.add_argument("rest", nargs=argparse.REMAINDER)
+
     msg = sub.add_parser("messenger", help="Messenger setup & diagnostics (WhatsApp/Telegram/file)")
     msg_sub = msg.add_subparsers(dest="messenger_action")
     msg_sub.add_parser("status")
@@ -966,6 +1068,8 @@ def main():
         return cmd_messenger(args)
     if cmd == "brain":
         return cmd_brain(args)
+    if cmd == "goal":
+        return cmd_goal(args)
 
     parser.print_help()
     return 1
