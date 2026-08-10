@@ -93,6 +93,7 @@ class Brain:
         memory: Any = None,
         on_thought: Optional[Callable[[str], None]] = None,
         on_tool_call: Optional[Callable[[str, dict], None]] = None,
+        context_provider: Optional[Callable[[str], str]] = None,
     ):
         if self._initialized:
             return
@@ -100,6 +101,9 @@ class Brain:
         self.memory = memory
         self.on_thought = on_thought        # UI hook: stream LLM thoughts
         self.on_tool_call = on_tool_call    # UI hook: show tool invocation
+        # Hybrid RAG+CAG context injector (Away Mode / Knowledge Base).
+        # context_provider(user_text) -> extra context injected into the prompt.
+        self.context_provider = context_provider
         self.llm = None
         self.model_loaded = False
         self._conversation: List[Dict[str, str]] = []  # last 5 turns
@@ -262,6 +266,14 @@ class Brain:
         now = datetime.now()
         date_ctx = f"TODAY: {now.strftime('%A %B %d, %Y')} | NOW: {now.strftime('%H:%M')}"
         sys_prompt = TOOL_SCHEMA.format(brief=self._tool_brief) + f"\n{date_ctx}"
+        # Inject hybrid RAG+CAG memory context (long-term + short-term)
+        if self.context_provider is not None:
+            try:
+                extra = self.context_provider(user_text)
+                if extra:
+                    sys_prompt += "\n\n" + extra
+            except Exception as e:
+                logger.debug(f"context_provider injection failed: {e}")
         # Append history only if we have it
         if self._conversation:
             sys_prompt += "\nRECENT: " + self._format_history_compact()
@@ -514,6 +526,10 @@ class Brain:
 
     def clear_history(self):
         self._conversation = []
+
+    def set_context_provider(self, provider: Callable[[str], str]) -> None:
+        """Attach a hybrid RAG+CAG context injector after construction."""
+        self.context_provider = provider
 
     def get_status(self) -> dict:
         return {

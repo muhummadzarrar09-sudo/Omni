@@ -54,6 +54,16 @@ def api_error(message: str, status_code: int = 500):
     """Consistent error response for mutating API handlers."""
     return JSONResponse(status_code=status_code, content={"status": "error", "error": message})
 
+
+# Away Mode (Phase 7): RAG+CAG knowledge base, autonomous research, task queue,
+# reports & messenger. Fully local. See away_routes.py.
+try:
+    from away_routes import router as away_router
+    app.include_router(away_router)
+    logger.info("Away Mode router mounted at /api/away")
+except Exception as e:  # pragma: no cover - non-fatal if deps missing
+    logger.warning(f"Away Mode router not mounted: {e}")
+
 # SMOKE-10 fix: cap request body size at 64KB to prevent OOM attacks
 MAX_REQUEST_BYTES = 64 * 1024
 

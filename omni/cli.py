@@ -53,7 +53,8 @@ def cmd_install(args):
     print(f"  Or, the manual way:")
     print(f"     1. Create venv:")
     print(f"        python -m venv .venv")
-    print(f"        {' .venv\\Scripts\\activate' if is_win else 'source .venv/bin/activate'}")
+    activate_cmd = "  .venv\\Scripts\\activate" if is_win else "source .venv/bin/activate"
+    print(f"        {activate_cmd}")
     print()
     print(f"     2. Install llama-cpp-python FIRST (prebuilt wheel, avoids MSVC build):")
     if is_win:
@@ -148,7 +149,7 @@ def cmd_model_download(args):
 def cmd_test(args):
     """Run all 20 test suites."""
     print("\n  " + "=" * 60)
-    print("  OMNI V3 - Full Test Suite (20 suites)")
+    print("  OMNI V3 - Full Test Suite (26 suites)")
     print("  " + "=" * 60 + "\n")
 
     # All 20 test suites
@@ -173,6 +174,13 @@ def cmd_test(args):
         ("[18/20] Notification center (Phase 5D)",    "omni_v2.tests.test_notifications", "module"),
         ("[19/20] Notification prefs (Phase 5E)",     "omni_v2.tests.test_notification_prefs", "module"),
         ("[20/20] Screen watcher (Phase 6A)",         "omni_v2.tests.test_screen_watcher", "module"),
+        # Away Mode (Phase 7)
+        ("[21/26] Hybrid memory (RAG+CAG)",          "omni_v2.tests.test_hybrid_memory", "module"),
+        ("[22/26] Knowledge base (RAG ingest)",      "omni_v2.tests.test_knowledge_base", "module"),
+        ("[23/26] Research agent",                   "omni_v2.tests.test_research", "module"),
+        ("[24/26] Away agent (task queue)",          "omni_v2.tests.test_away_agent", "module"),
+        ("[25/26] Messenger bridge",                 "omni_v2.tests.test_messenger", "module"),
+        ("[26/26] Remote command channel",           "omni_v2.tests.test_command_channel", "module"),
     ]
 
     all_ok = True
@@ -400,6 +408,174 @@ def cmd_shell(args):
         print()
 
 
+# ---------------------------------------------------------------------------
+# Away Mode / Research / Knowledge Base (V3 Away Mode)
+# ---------------------------------------------------------------------------
+def _away_stack():
+    sys.path.insert(0, str(REPO_ROOT))
+    from omni_v2.away.context import build_away_stack
+    return build_away_stack()
+
+
+def cmd_kb(args):
+    """Knowledge base: add files/folders/urls, query, search."""
+    sys.path.insert(0, str(REPO_ROOT))
+    from omni_v2.away.knowledge_base import KnowledgeBase
+    kb = KnowledgeBase()
+    action = getattr(args, "kb_action", None) or "stats"
+
+    if action == "add":
+        for target in args.targets:
+            try:
+                n = kb.add_file(target)
+                print(f"  ✅ Ingested {n} chunk(s) from {target}")
+            except FileNotFoundError:
+                # maybe it's a URL
+                if "://" in target:
+                    try:
+                        n = kb.add_url(target)
+                        print(f"  ✅ Ingested {n} chunk(s) from URL {target}")
+                        continue
+                    except Exception as e:
+                        print(f"  ❌ URL ingest failed: {e}")
+                        continue
+                print(f"  ❌ Not found: {target}")
+            except Exception as e:
+                print(f"  ❌ {e}")
+        return 0
+
+    if action == "query":
+        q = " ".join(args.question) if isinstance(args.question, list) else (args.question or "")
+        if not q:
+            q = " ".join(getattr(args, "targets", []) or [])
+        res = kb.query(q, k=args.k)
+        print(f"\n  Question: {q}\n")
+        print(res["context"] or "  (no context retrieved)")
+        print()
+        return 0
+
+    if action == "search":
+        term = " ".join(args.question) if isinstance(args.question, list) else (args.question or "")
+        if not term:
+            term = " ".join(getattr(args, "targets", []) or [])
+        results = kb.search(term, k=args.k)
+        print(f"\n  Search '{term}': {len(results)} result(s)\n")
+        for r in results:
+            print(f"  • {r['title']}  [{r['source']}]")
+        print()
+        return 0
+
+    if action == "list":
+        for s in kb.list_sources():
+            print(f"  • {s['source']}  ({s['n_chunks']} chunks)")
+        return 0
+
+    if action == "stats":
+        st = kb.stats()
+        print("\n  Knowledge Base stats:")
+        print(f"    Long-term items : {st['memory']['long_term_items']}")
+        print(f"    Hot cache size  : {st['memory']['hot_cache_size']}")
+        print(f"    Pinned context  : {st['memory']['pinned_context_keys']} keys")
+        print(f"    Sources         : {st['sources']}")
+        print()
+        return 0
+    return 1
+
+
+def cmd_research(args):
+    """Run an autonomous research task and print/save the report."""
+    sys.path.insert(0, str(REPO_ROOT))
+    from omni_v2.away.research import ResearchAgent
+    from omni_v2.away.knowledge_base import KnowledgeBase
+    agent = ResearchAgent(knowledge_base=KnowledgeBase())
+    topic = " ".join(args.topic) if isinstance(args.topic, list) else (args.topic or "")
+    if not topic:
+        topic = " ".join(args.rest)
+    print(f"\n  🔬 Researching: {topic}\n")
+    report = agent.research(topic)
+    md = report.to_markdown()
+    print(md)
+    # Save to disk
+    from omni_v2.away.reporter import Reporter
+    rep = Reporter().build_research_report(report)
+    print(f"\n  📄 Saved report: {rep.path}\n")
+    return 0
+
+
+def cmd_away(args):
+    """Away mode: manage the unattended task queue."""
+    sys.path.insert(0, str(REPO_ROOT))
+    stack = _away_stack()
+    agent = stack["away_agent"]
+    action = getattr(args, "away_action", None) or "status"
+
+    if action == "start":
+        st = agent.away_start()
+        print(f"  🛰  Away mode ON. Queued tasks: {st['queued_tasks']}")
+        return 0
+    if action == "stop":
+        st = agent.away_stop()
+        print("  Away mode OFF")
+        return 0
+    if action == "status":
+        st = agent.stats()
+        print("\n  Away mode status:")
+        print(f"    Active          : {'ON' if st['active'] else 'OFF'}")
+        print(f"    Total tasks     : {st['tasks_total']}")
+        print(f"    By status       : {st['tasks_by_status']}")
+        print(f"    Messenger       : {stack['messenger'].channel}")
+        print()
+        return 0
+    if action == "list":
+        print("\n  Away task queue:")
+        for t in agent.list_tasks(limit=20):
+            print(f"    [{t.status}] {t.kind}: {t.brief} (created {t.created_at:.0f})")
+        print()
+        return 0
+    if action == "add":
+        brief = " ".join(args.topic) if isinstance(args.topic, list) else (args.topic or "")
+        if not brief:
+            brief = " ".join(args.rest)
+        kind = args.kind or "research"
+        task = agent.submit(kind, brief)
+        print(f"  ✅ Queued [{task.kind}] {task.id}: {task.brief}")
+        return 0
+    if action == "run":
+        if args.id:
+            t = agent.run_task(args.id)
+            print(f"  Task {t.id} -> {t.status}: {t.error or 'ok'}")
+        else:
+            done = agent.run_pending()
+            print(f"  Ran {len(done)} pending task(s)")
+            for t in done:
+                print(f"    [{t.status}] {t.kind}: {t.brief}")
+        return 0
+    return 1
+
+
+def cmd_report(args):
+    """Reports: list saved reports or build a digest."""
+    sys.path.insert(0, str(REPO_ROOT))
+    from omni_v2.away.reporter import Reporter
+    rep = Reporter()
+    action = getattr(args, "report_action", None) or "list"
+    if action == "list":
+        print("\n  Recent reports:")
+        for r in rep.list_recent(n=15):
+            print(f"    • {r['title']}  ({r['path']})")
+        print()
+        return 0
+    if action == "digest":
+        from omni_v2.away.away_agent import AwayAgent
+        from omni_v2.away.knowledge_base import KnowledgeBase
+        agent = AwayAgent(knowledge_base=KnowledgeBase())
+        t = agent.submit("digest", "manual")
+        agent.run_task(t.id)
+        print(f"  Digest task {t.id}: {t.status}")
+        return 0
+    return 1
+
+
 def main():
     parser = argparse.ArgumentParser(
         prog="omni",
@@ -426,6 +602,43 @@ def main():
     sub.add_parser("dev", help="Start backend + UI (everything)")
     sub.add_parser("shell", help="Interactive brain REPL")
 
+    # --- Away Mode (V3) ---
+    kb = sub.add_parser("kb", help="Knowledge base (RAG+CAG hybrid memory)")
+    kb_sub = kb.add_subparsers(dest="kb_action")
+    kb_add = kb_sub.add_parser("add", help="Ingest a file/folder/url")
+    kb_add.add_argument("targets", nargs="+")
+    kb_add.add_argument("-t", "--title", default="")
+    kb_q = kb_sub.add_parser("query", help="Ask the knowledge base")
+    kb_q.add_argument("question", nargs="*")
+    kb_q.add_argument("-k", type=int, default=5)
+    kb_s = kb_sub.add_parser("search", help="Keyword search")
+    kb_s.add_argument("question", nargs="*")
+    kb_s.add_argument("-k", type=int, default=10)
+    kb_sub.add_parser("list", help="List ingested sources")
+    kb_sub.add_parser("stats", help="KB stats")
+
+    r = sub.add_parser("research", help="Autonomous research task")
+    r.add_argument("topic", nargs="*")
+    r.add_argument("rest", nargs=argparse.REMAINDER, default=[])
+
+    away = sub.add_parser("away", help="Away mode (unattended tasks + reports)")
+    away_sub = away.add_subparsers(dest="away_action")
+    away_sub.add_parser("start")
+    away_sub.add_parser("stop")
+    away_sub.add_parser("status")
+    away_sub.add_parser("list")
+    away_add = away_sub.add_parser("add", help="Queue a task")
+    away_add.add_argument("topic", nargs="*")
+    away_add.add_argument("--kind", choices=["research", "digest", "notify"], default="research")
+    away_add.add_argument("rest", nargs=argparse.REMAINDER, default=[])
+    away_run = away_sub.add_parser("run", help="Run pending tasks now")
+    away_run.add_argument("--id", default=None)
+
+    report = sub.add_parser("report", help="Reports & digests")
+    report_sub = report.add_subparsers(dest="report_action")
+    report_sub.add_parser("list")
+    report_sub.add_parser("digest")
+
     args = parser.parse_args()
     cmd = args.cmd or "status"
 
@@ -449,6 +662,14 @@ def main():
         return cmd_dev(args)
     if cmd == "shell":
         return cmd_shell(args)
+    if cmd == "kb":
+        return cmd_kb(args)
+    if cmd == "research":
+        return cmd_research(args)
+    if cmd == "away":
+        return cmd_away(args)
+    if cmd == "report":
+        return cmd_report(args)
 
     parser.print_help()
     return 1

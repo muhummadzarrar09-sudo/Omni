@@ -159,6 +159,11 @@ After `pip install -e .[all]`:
 | `omni ui` | Start Next.js UI on :3000 |
 | `omni dev` | Start backend + UI + open browser |
 | `omni shell` | Interactive brain REPL |
+| `omni kb add <path\|url>` | Ingest files/folders/URLs into the local knowledge base (RAG+CAG) |
+| `omni kb query "q"` | Ask the knowledge base (long-term RAG + short-term CAG fused) |
+| `omni research "topic"` | Run autonomous research → save a report |
+| `omni away start\|status\|add\|run` | Unattended away-mode task queue |
+| `omni report list\|digest` | Browse reports / build a digest |
 
 ---
 
@@ -420,6 +425,10 @@ Omni/
 - **Voice clone:** Record 30s → OMNI speaks in your voice
 - **Vision:** "What's on my screen?" → describes it
 - **Skills:** `omni skills install morning_briefing` → installs community skill
+- **Away Mode (Phase 7):** runs autonomous research while you're away, stores
+  everything in a **hybrid RAG+CAG knowledge base** (long-term semantic recall +
+  short-term fast cache), and sends you reports to your phone (WhatsApp /
+  Telegram / local file). See [docs/AWAY_MODE.md](docs/AWAY_MODE.md).
 
 ---
 
