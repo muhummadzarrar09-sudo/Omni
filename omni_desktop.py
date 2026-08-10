@@ -265,6 +265,99 @@ def _launch_gui():
     id_save.configure(command=do_id_save)
     refresh_identity()
 
+    # ================= GOALS (Jarvis Brain) =================
+    t_goal = tabs.add("Goals")
+    g_row = ctk.CTkFrame(t_goal)
+    g_row.pack(fill="x", padx=8, pady=4)
+    g_intent = ctk.CTkEntry(g_row, placeholder_text="e.g. build a habit tracker")
+    g_intent.pack(side="left", fill="x", expand=True, padx=4)
+    g_new = ctk.CTkButton(g_row, text="New goal", width=100)
+    g_new.pack(side="left", padx=4)
+    g_adv = ctk.CTkButton(g_row, text="Advance", width=90)
+    g_adv.pack(side="left", padx=4)
+    g_out = ctk.CTkTextbox(t_goal, height=420, font=("Consolas", 12))
+    g_out.pack(fill="both", expand=True, padx=8, pady=8)
+    def refresh_goals():
+        def done(lst):
+            if not lst:
+                log_box(g_out, "(no goals — type one above and click New goal)")
+                return
+            lines = []
+            for g in lst:
+                mark = {"pending": "○", "active": "▶", "done": "✔", "blocked": "✘", "abandoned": "⊘"}.get(g["status"], "?")
+                lines.append(f"{mark} {g['title']}  [{g['status']}]  {g['progress']:.0%}")
+                for s in g["steps"]:
+                    sm = {"pending": "  ·", "running": "  ▶", "done": "  ✔", "failed": "  ✘"}.get(s["status"], "  ·")
+                    lines.append(f"     {sm} {s['desc']}")
+                    if s.get("error"):
+                        lines.append(f"        ERROR: {s['error']}")
+                lines.append("")
+            log_box(g_out, "\n".join(lines))
+        bg(lambda: controller.goal_list(), done)
+    def do_goal_new():
+        i = g_intent.get().strip()
+        if not i:
+            return
+        def done(res):
+            g_intent.delete(0, "end")
+            refresh_goals()
+        bg(lambda: controller.goal_create(i), done)
+    def do_goal_adv():
+        def done(res):
+            refresh_goals()
+        # advance the first active goal for simplicity
+        gs = controller.goal_list()
+        if gs:
+            gid = next((g["id"] for g in gs if g["status"] in ("active", "pending")), gs[0]["id"])
+            bg(lambda: controller.goal_begin(gid) and controller.goal_complete_step(gid, {"ok": True}), done)
+    g_new.configure(command=do_goal_new)
+    g_adv.configure(command=do_goal_adv)
+    refresh_goals()
+
+    # ================= PATTERNS (Jarvis Brain) =================
+    t_pat = tabs.add("Patterns")
+    p_btn = ctk.CTkButton(t_pat, text="Detect patterns", width=150)
+    p_btn.pack(anchor="w", padx=8, pady=4)
+    p_out = ctk.CTkTextbox(t_pat, height=420, font=("Consolas", 12))
+    p_out.pack(fill="both", expand=True, padx=8, pady=8)
+    def refresh_patterns():
+        def done(res):
+            pats = res.get("patterns", []) if isinstance(res, dict) else []
+            if not pats:
+                log_box(p_out, "(no notable patterns)")
+                return
+            lines = []
+            for p in pats:
+                sev = {"0": "⚪", "1": "🟡", "2": "🔴"}.get(str(p["severity"]), "·")
+                lines.append(f"{sev} {p['title']}\n   {p['body']}\n")
+            log_box(p_out, "\n".join(lines))
+        bg(lambda: controller.detect_patterns(days=7), done)
+    p_btn.configure(command=refresh_patterns)
+    refresh_patterns()
+
+    # ================= EPISODES (Jarvis Brain) =================
+    t_ep = tabs.add("Episodes")
+    e_row = ctk.CTkFrame(t_ep)
+    e_row.pack(fill="x", padx=8, pady=4)
+    e_recap = ctk.CTkButton(e_row, text="Reflect today", width=120)
+    e_recap.pack(side="left", padx=4)
+    e_out = ctk.CTkTextbox(t_ep, height=420, font=("Consolas", 12))
+    e_out.pack(fill="both", expand=True, padx=8, pady=8)
+    def refresh_episodes():
+        def done(eps):
+            if not eps:
+                log_box(e_out, "(no episodes yet — click Reflect today)")
+                return
+            lines = [f"[{e['day']}] {e['summary']}" for e in eps]
+            log_box(e_out, "\n".join(lines))
+        bg(lambda: controller.reflector_episodes(), done)
+    def do_reflect_today():
+        def done(res):
+            refresh_episodes()
+        bg(lambda: controller.reflect_today(), done)
+    e_recap.configure(command=do_reflect_today)
+    refresh_episodes()
+
     # ================= SECURITY =================
     t_sec = tabs.add("Security")
     srow = ctk.CTkFrame(t_sec)
