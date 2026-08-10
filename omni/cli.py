@@ -590,6 +590,81 @@ def cmd_app(args):
     return 0
 
 
+def cmd_messenger(args):
+    """Messenger setup & diagnostics (WhatsApp for Pakistan / Telegram / file)."""
+    sys.path.insert(0, str(REPO_ROOT))
+    from omni_v2.away.messenger import (
+        load_away_config, save_away_config, whatsapp_setup_guide,
+        MessengerRouter, normalize_phone, WhatsAppMessenger,
+    )
+    action = getattr(args, "messenger_action", None) or "status"
+
+    if action == "setup-whatsapp":
+        print("\n" + whatsapp_setup_guide())
+        return 0
+
+    if action == "whatsapp-set":
+        num = args.number
+        if not num:
+            print("  Usage: omni messenger whatsapp-set <+92...>")
+            return 1
+        norm = normalize_phone(num)
+        cfg = load_away_config()
+        cfg["messenger"] = {"provider": "whatsapp", "phone_number": norm,
+                            "token": "", "chat_id": ""}
+        save_away_config(cfg)
+        print(f"  ✅ Messenger set to WhatsApp Web -> {norm}")
+        print(f"     (set up WhatsApp Web first: omni messenger setup-whatsapp)")
+        return 0
+
+    if action == "set":
+        kind = args.kind
+        cfg = load_away_config()
+        m = cfg.get("messenger", {})
+        if kind == "whatsapp":
+            m.update({"provider": "whatsapp"})
+        elif kind == "telegram":
+            m.update({"provider": "telegram"})
+        elif kind == "file":
+            m.update({"provider": "file"})
+        else:
+            print(f"  Unknown provider: {kind} (file|whatsapp|telegram)")
+            return 1
+        cfg["messenger"] = m
+        save_away_config(cfg)
+        print(f"  ✅ Messenger provider -> {kind}")
+        return 0
+
+    if action == "status":
+        cfg = load_away_config()
+        m = cfg.get("messenger", {})
+        router = MessengerRouter(config=cfg)
+        active = router.channel
+        print("\n  Messenger status:")
+        print(f"    Configured provider : {m.get('provider', 'file')}")
+        print(f"    Active channel      : {active}")
+        print(f"    Phone (whatsapp)    : {m.get('phone_number') or '(not set)'}")
+        print(f"    Telegram token set  : {'yes' if m.get('token') else 'no'}")
+        print(f"    Telegram chat id    : {m.get('chat_id') or '(not set)'}")
+        if active == "whatsapp":
+            chk = WhatsAppMessenger(phone_number=m.get('phone_number', '')).check_ready()
+            for k, v in chk.items():
+                print(f"      {k}: {v}")
+        print()
+        return 0
+
+    if action == "test":
+        cfg = load_away_config()
+        router = MessengerRouter(config=cfg)
+        print(f"\n  Sending test message via '{router.channel}'...")
+        res = router.send_text("🧪 OMNI messenger test — if you can read this, reports will reach you.")
+        print(f"  ok={res.ok}  channel={res.channel}")
+        print(f"  detail: {res.detail}")
+        print()
+        return 0 if res.ok else 1
+    return 1
+
+
 def cmd_security(args):
     """Local camera security: enroll owner, arm/disarm guard, lock."""
     sys.path.insert(0, str(REPO_ROOT))
@@ -608,18 +683,11 @@ def cmd_security(args):
         return 0
 
     if action == "enroll":
-        print("  📸 Opening camera to enroll your face (look at the camera)...")
-        if not fa.open_camera():
-            print("  ❌ No camera found")
-            return 1
+        print("  📸 Opening camera — look at it for ~2s to enroll your face (multi-sample)...")
         import time
         try:
-            frame = fa.capture_frame()
-            if frame is None:
-                print("  ❌ No frame captured")
-                return 1
-            res = fa.enroll(frame)
-            print(f"  ✅ Enrolled! ({res['faces']} face(s) seen)")
+            res = fa.enroll_from_camera(frames=6, delay=0.25)
+            print(f"  ✅ Enrolled! backend={res['backend']}, samples={res['samples']}")
             return 0
         except Exception as e:
             print(f"  ❌ Enroll failed: {e}")
@@ -724,6 +792,16 @@ def main():
     sec_sub.add_parser("snapshot")
     sec_sub.add_parser("lock")
 
+    msg = sub.add_parser("messenger", help="Messenger setup & diagnostics (WhatsApp/Telegram/file)")
+    msg_sub = msg.add_subparsers(dest="messenger_action")
+    msg_sub.add_parser("status")
+    msg_sub.add_parser("test")
+    msg_sub.add_parser("setup-whatsapp")
+    msg_set_wa = msg_sub.add_parser("whatsapp-set", help="Set your WhatsApp number")
+    msg_set_wa.add_argument("number")
+    msg_set = msg_sub.add_parser("set", help="Set provider (file|whatsapp|telegram)")
+    msg_set.add_argument("kind", choices=["file", "whatsapp", "telegram"])
+
     args = parser.parse_args()
     cmd = args.cmd or "status"
 
@@ -759,6 +837,8 @@ def main():
         return cmd_app(args)
     if cmd == "security":
         return cmd_security(args)
+    if cmd == "messenger":
+        return cmd_messenger(args)
 
     parser.print_help()
     return 1

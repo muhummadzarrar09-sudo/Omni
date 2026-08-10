@@ -64,6 +64,16 @@ summary also reaches your phone depends on the configured messenger
 | `whatsapp` | `pywhatkit` drives your local WhatsApp Web in your browser | ⚙️ local browser, needs WhatsApp Web logged in |
 | `telegram` | `python-telegram-bot` sends + can **receive remote commands** | needs Telegram (a proxy in regions where it's blocked) |
 
+For **Pakistan**, WhatsApp is the recommended channel (WhatsApp isn't blocked,
+unlike Telegram). One-time setup:
+
+```
+pip install pywhatkit
+omni messenger setup-whatsapp              # step-by-step guide
+omni messenger whatsapp-set +923001234567  # set your number (auto +92)
+omni messenger test                        # verify a test message arrives
+```
+
 Example config (`data/config.json`):
 ```json
 {

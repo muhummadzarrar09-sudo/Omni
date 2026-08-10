@@ -285,7 +285,14 @@ def _launch_gui():
     # initial security status
     def refresh_sec():
         def done(res):
-            log_box(sec_out, f"Enrolled: {res.get('enrolled')}   Guard: {res.get('guard', {})}")
+            from omni_v2.away.desktop import DesktopController
+            labels = {"lbph": "OpenCV LBPH (trained, local)", "deep": "dlib deep embeddings",
+                      "gradient": "gradient fallback"}
+            log_box(sec_out, (
+                f"Backend : {labels.get(res.get('backend','?'), res.get('backend','?'))}\n"
+                f"Enrolled : {'✅ yes' if res.get('enrolled') else '❌ no'}\n"
+                f"Threshold: {res.get('threshold')}   Samples: {res.get('samples')}\n"
+                f"Owner file: {res.get('owner_path')}\n"))
         bg(lambda: controller.face_auth.stats() if controller.face_auth else {}, done)
     refresh_sec()
 

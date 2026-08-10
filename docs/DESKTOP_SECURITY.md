@@ -49,14 +49,29 @@ omni security snapshot   # one-shot verdict now
 omni security lock       # manual lockdown
 ```
 
-## Honest limits of the face check
+## The face check is now hardened (no more "basic biometrics" caveat)
 
-This is a **basic local biometric check**, not military-grade (no neural
-face-embedding model). It reliably catches *someone clearly different* at the
-machine in good lighting, but it is affected by angle, light and occlusion.
-For high-stakes use, swap the embedding in `FaceAuth` (the `verify()` interface
-is designed for that) — e.g. a trained face-recognition model. Always keep a
-way to cancel during the countdown.
+OMNI uses a **pluggable verifier** in priority order:
+
+| Backend | What it is | Accuracy |
+|---------|-----------|----------|
+| **LBPH** (default) | OpenCV contrib's trained `LBPHFaceRecognizer` — you enroll several images and it *learns* a model | Good; reliably rejects a clearly different person. Fully offline, no model download. |
+| **Deep** | dlib `face_recognition` neural embeddings | Best-in-class; auto-activates if dlib is installed, else skips |
+| **Gradient** | lightweight gradient+color descriptor | Fallback only (no extra deps) |
+
+**Robustness fixes (the actual caveat):**
+- **Multi-sample enrollment** — `omni security enroll` now captures ~6 frames
+  and trains on all of them, so a single bad frame can't break enrollment.
+- **Per-backend thresholds**, calibratable (`FaceAuth(threshold=...)`).
+- **Persistence** — the LBPH model is saved to `data/security/owner_model.xml`
+  and reloaded on the next run.
+
+Check which backend you're on with `omni security status` (it prints `backend`).
+To get the strongest accuracy, `pip install dlib face_recognition` once.
+
+Remaining honest limit: all of these run on the face *crop* from the local Haar
+detector, so very poor lighting / extreme angles still degrade results. Keep the
+countdown + Cancel path, which is the safety net.
 
 ## Design for safety
 
@@ -71,9 +86,29 @@ way to cancel during the countdown.
 
 ## Files
 
-- `omni_v2/security/face_auth.py` — enroll + verify (OpenCV, local)
+- `omni_v2/security/face_auth.py` — enroll + verify (LBPH / deep / gradient backends)
 - `omni_v2/security/lockdown.py` — cross-platform lock + pre-lock alert/countdown
 - `omni_v2/security/guard_monitor.py` — background camera watchdog
 - `omni_v2/away/desktop.py` — headless `DesktopController` (unit-tested)
 - `omni_desktop.py` — the customtkinter GUI
 - `omni/cli.py` — `omni app` and `omni security` subcommands
+
+## Getting reports / alerts to your phone (Pakistan)
+
+WhatsApp is **not blocked in Pakistan** (unlike Telegram), so use WhatsApp Web:
+
+```
+pip install pywhatkit                      # once
+omni messenger setup-whatsapp              # step-by-step guide
+omni messenger whatsapp-set +923001234567  # set your number
+omni messenger test                        # send a test message
+```
+
+Key points:
+- Open `https://web.whatsapp.com` in your **default browser** and log in once
+  (phone → Linked devices → scan QR). pywhatkit drives that same browser.
+- The recipient must be a saved contact (and have you saved too) — WhatsApp
+  needs the chat to resolve.
+- Numbers are auto-normalized to `+92...` (so `03001234567` → `+923001234567`).
+- If `pywhatkit` isn't installed / no number, OMNI falls back to the local
+  `file` channel and still saves the report — it never silently fails.

@@ -98,32 +98,102 @@ class FileMessenger(BaseMessenger):
 
 
 # ---------------------------------------------------------------------------
-# WhatsApp provider (local WhatsApp Web via pywhatkit)
+# WhatsApp provider (local WhatsApp Web via pywhatkit) — works in Pakistan,
+# WhatsApp is NOT blocked here (unlike Telegram), so no proxy is needed.
 # ---------------------------------------------------------------------------
+# Standardize a Pakistani phone number to international format (+92...).
+def normalize_phone(number: str) -> str:
+    num = (number or "").strip()
+    num = "".join(ch for ch in num if ch.isdigit() or ch == "+")
+    if num.startswith("+"):
+        num = num[1:]
+    if num.startswith("00"):
+        num = num[2:]
+    if num.startswith("0") and len(num) == 11:  # 03xxxxxxxxx
+        num = "92" + num[1:]
+    if not num.startswith("92"):
+        num = "92" + num  # default to Pakistan country code
+    return "+" + num
+
+
+def whatsapp_setup_guide() -> str:
+    """Step-by-step WhatsApp Web setup, tuned for Pakistan (no proxy needed)."""
+    return (
+        "WHATSAPP WEB SETUP FOR OMNI (works in Pakistan — WhatsApp is not blocked)\n"
+        "=====================================================================\n"
+        "1. Install pywhatkit:\n"
+        "      pip install pywhatkit\n"
+        "2. Open WhatsApp Web in your DEFAULT browser and log in ONCE:\n"
+        "      - Go to https://web.whatsapp.com\n"
+        "      - On your phone: WhatsApp -> Settings (⋮) -> Linked devices\n"
+        "        -> Link a device -> scan the QR code on the laptop.\n"
+        "      - Leave this tab OPEN / keep the browser signed in.\n"
+        "   (pywhatkit drives this same signed-in browser, so it must stay logged in.)\n"
+        "3. IMPORTANT: the recipient's number must be saved as a CONTACT on the\n"
+        "   phone number that owns this WhatsApp account, and the recipient must\n"
+        "   also have your number saved (WhatsApp needs the chat to resolve).\n"
+        "4. Configure OMNI with your number (use +92... for Pakistan):\n"
+        "      omni messenger whatsapp-set <+923001234567>\n"
+        "      omni messenger test\n"
+        "5. Optional — make it reliable:\n"
+        "      - Keep your laptop awake while OMNI works (disable sleep/screen-off).\n"
+        "      - pywhatkit opens a fresh WhatsApp Web tab per message; if you see\n"
+        "        an 'unexpected QR' screen, re-link the device once and retry.\n"
+    )
+
+
 class WhatsAppMessenger(BaseMessenger):
     name = "whatsapp"
 
-    def __init__(self, phone_number: str = "", hours: int = 12, minutes: int = 0):
-        self.phone_number = phone_number
+    def __init__(self, phone_number: str = "", hours: int = 12, minutes: int = 0,
+                 close_tab: bool = True):
+        self.phone_number = normalize_phone(phone_number) if phone_number else ""
         self.hours = hours
         self.minutes = minutes
+        self.close_tab = close_tab
+        self._pywhatkit = None
 
     @property
     def available(self) -> bool:
         try:
-            import pywhatkit  # noqa: F401
+            import pywhatkit  # noqa: PLC0415
+            self._pywhatkit = pywhatkit
             return bool(self.phone_number)
         except Exception:
             return False
+
+    def check_ready(self) -> Dict[str, Any]:
+        """Return a readiness checklist for diagnostics / the setup UI."""
+        checks = {
+            "pywhatkit_installed": False,
+            "phone_number_set": bool(self.phone_number),
+            "phone_number": self.phone_number or "(not set)",
+            "message": "",
+        }
+        try:
+            import pywhatkit  # noqa: PLC0415
+            checks["pywhatkit_installed"] = True
+        except Exception:
+            checks["message"] = "pywhatkit is not installed. Run: pip install pywhatkit"
+            return checks
+        if not self.phone_number:
+            checks["message"] = "No phone number set. Configure with +92... (see omni messenger setup-whatsapp)"
+        else:
+            checks["message"] = "Prerequisites met. Run 'omni messenger test' to verify."
+        return checks
 
     def send_text(self, text: str) -> OutboundMessage:
         if not self.available:
             return OutboundMessage(text=text, channel="whatsapp", ok=False,
                                    detail="pywhatkit missing or no phone number configured")
         try:
-            import pywhatkit
-            # pywhatkit opens WhatsApp Web in the local browser and sends.
-            pywhatkit.sendwhatmsg_instantly(self.phone_number, text, tab_close=True)
+            # sendwhatmsg_instantly opens WhatsApp Web in the default browser and sends.
+            self._pywhatkit.sendwhatmsg_instantly(
+                self.phone_number, text,
+                wait_time=20,  # seconds to let WhatsApp Web load before typing
+                tab_close=self.close_tab,
+                close_time=5,
+            )
             return OutboundMessage(text=text, channel="whatsapp", ok=True,
                                    detail=f"queued to WhatsApp Web {self.phone_number}")
         except Exception as e:

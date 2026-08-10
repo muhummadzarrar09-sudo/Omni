@@ -13,7 +13,7 @@ os.environ.setdefault("OMNI_DATA_DIR", str(tempfile.mkdtemp(prefix="omni_kb_")))
 
 from omni_v2.away.messenger import (
     FileMessenger, WhatsAppMessenger, TelegramMessenger, MessengerRouter,
-    load_away_config, save_away_config,
+    load_away_config, save_away_config, normalize_phone, whatsapp_setup_guide,
 )
 
 
@@ -42,6 +42,27 @@ def test_whatsapp_unavailable_degrades():
     assert m.available is False
     res = m.send_text("hi")
     assert res.ok is False
+
+
+def test_normalize_pakistani_phone():
+    assert normalize_phone("03001234567") == "+923001234567"   # local 0-prefixed
+    assert normalize_phone("+923001234567") == "+923001234567"
+    assert normalize_phone("923001234567") == "+923001234567"
+    assert normalize_phone("03001234567") == "+923001234567"
+
+
+def test_whatsapp_check_ready_no_number():
+    m = WhatsAppMessenger(phone_number="")
+    chk = m.check_ready()
+    assert chk["phone_number_set"] is False
+    # message explains either the missing package or the missing number
+    assert chk["message"] != ""
+
+
+def test_whatsapp_setup_guide_mentions_pakistan():
+    guide = whatsapp_setup_guide()
+    assert "Pakistan" in guide
+    assert "web.whatsapp.com" in guide
 
 
 def test_telegram_unavailable_degrades():

@@ -166,6 +166,7 @@ After `pip install -e .[all]`:
 | `omni report list\|digest` | Browse reports / build a digest |
 | `omni app` | Launch the full Python desktop app (Away Mode + Security) |
 | `omni security enroll\|arm\|disarm\|snapshot\|lock` | Local camera guard & lockdown |
+| `omni messenger setup-whatsapp\|whatsapp-set\|test\|status` | WhatsApp/Telegram report setup |
 
 ---
 

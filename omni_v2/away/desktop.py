@@ -97,6 +97,11 @@ class DesktopController:
             out["reports_recent"] = self.reporter.list_recent(n=5)
         if self.face_auth:
             out["security"] = self.face_auth.stats()
+            out["security"]["backend"] = self.face_auth.backend
+            out["security"]["backend_label"] = (
+                "OpenCV LBPH (trained, local)" if self.face_auth.backend == "lbph" else
+                "dlib deep embeddings (if installed)" if self.face_auth.backend == "deep" else
+                "gradient descriptor (fallback)")
         if self.guard:
             out["security"]["guard"] = self.guard.stats()
         return out
@@ -173,21 +178,14 @@ class DesktopController:
 
     # -- security -------------------------------------------------------------
     def enroll_owner(self) -> Dict[str, Any]:
-        """Capture a camera frame and enroll the owner."""
+        """Capture several camera frames (multi-sample) and enroll the owner."""
         if self.face_auth is None:
             return {"ok": False, "detail": "face_auth unavailable"}
-        if not self.face_auth.open_camera():
-            return {"ok": False, "detail": "no camera found"}
         try:
-            frame = self.face_auth.capture_frame()
-            if frame is None:
-                return {"ok": False, "detail": "no camera frame captured"}
-            res = self.face_auth.enroll(frame)
-            return {"ok": True, "detail": f"enrolled ({res['faces']} face(s) seen)"}
+            res = self.face_auth.enroll_from_camera(frames=6, delay=0.25)
+            return {"ok": True, "detail": f"enrolled (backend={res['backend']}, samples={res['samples']})"}
         except Exception as e:
             return {"ok": False, "detail": str(e)}
-        finally:
-            self.face_auth.close_camera()
 
     def guard_arm(self) -> Dict[str, Any]:
         if self.guard is None:
