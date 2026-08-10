@@ -191,17 +191,28 @@ plugs into the existing CLI + desktop app + `/api/brain/*` endpoints.
 | **2** | **Model tiering** (1.5B/3B) wired into `Brain.think()` | ✅ **DONE** — deep-model discovery + `needs_deep()` heuristic + safe VRAM swap (load 3B for hard reasoning, restore 1.5B after). `omni model download --deep`. |
 | **3** | **Goal stack** + decompose + progress + replan | ✅ **DONE** — `omni_v2/brain/goals.py`: persistent goal stack, deterministic or LLM decompose, dependency-aware step execution, progress across sessions, replan-on-failure, follow-up (report/reminder) via messenger. CLI `omni goal`, `/api/goals/*`, exposed on desktop controller. 419 tests passing. |
 | **4** | **Evaluator feedback loop** (metacognition) | ✅ **DONE** — `omni_v2/brain/metacog.py`: turns an action's outcome into a structured Verdict (succeeded, confidence, failure cause, recommended action, suggested fix), with a confidence gate ("ask when unsure"). Feeds back into the goal stack: replan / ask-user / retry / escalate-to-deep / change-approach. CLI `omni meta`, `/api/metacog/*`, desktop controller. 431 tests passing. |
-| **5** | **Episodic reflection** + pattern notices | ⏳ next |
+| **5** | **Episodic reflection** + pattern notices | ✅ **DONE** — `omni_v2/brain/reflect.py`: builds a "today was…" recap from session memory (saved as an episodic memory in RAG+CAG + a reflection in Identity), and detects patterns (repeated commands, tool loops, "stuck on a topic across days", research-heavy blends) surfaced as observations/suggestions. CLI `omni reflect`, `/api/reflect/*`, desktop controller. 441 tests passing. |
 
-### Step 4 usage
+**All 5 Jarvis Brain steps are now complete.** 🎉
+
+### Usage
 ```
-omni meta evaluate "FileNotFoundError no such file" --goal <id>   # verdict + replan
-omni meta history
-omni meta stats
+omni brain status / user / set-mood / reflect            # identity + user model
+omni model download --deep                               # deep 3B tier
+omni goal new "build a habit tracker" ... / advance      # goal stack
+omni meta evaluate "reason" --goal <id>                  # metacognition loop
+omni reflect today / patterns / episodes                 # episodic reflection
 ```
-The Evaluator's verdict now drives the goal stack's replan (a suggested fix becomes
-a new step), asks the user when confidence is low, and escalates to the deep 3B model
-for hard reasoning — closing the "thinking about its own thinking" loop.
+
+### The complete loop
+1. **Identity** — who OMNI is, who you are, injected every turn.
+2. **Model tiering** — 1.5B fast + 3B deep swapped in for hard reasoning.
+3. **Goal stack** — decompose big intents → steps → progress across sessions → replan.
+4. **Metacognition** — the evaluator's verdict drives replan / ask-user / escalate.
+5. **Reflection** — daily recaps + pattern notices so OMNI *notices* things on its own.
+
+Together: **small model, big scaffold** — a competent, self-aware, initiative-taking
+local butler that fits your 4GB GPU.
 
 ### Step 3 usage
 ```

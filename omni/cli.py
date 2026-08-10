@@ -188,7 +188,7 @@ def cmd_model_download_deep(args):
 def cmd_test(args):
     """Run all 20 test suites."""
     print("\n  " + "=" * 60)
-    print("  OMNI V3 - Full Test Suite (32 suites)")
+    print("  OMNI V3 - Full Test Suite (33 suites)")
     print("  " + "=" * 60 + "\n")
 
     # All 20 test suites
@@ -227,7 +227,8 @@ def cmd_test(args):
         ("[29/32] Identity core + user model",        "omni_v2.tests.test_identity", "module"),
         ("[30/32] Model tiering (deep brain)",        "omni_v2.tests.test_model_tiering", "module"),
         ("[31/32] Goal stack (decompose/progress/replan)", "omni_v2.tests.test_goals", "module"),
-        ("[32/32] Metacognition (evaluator feedback loop)", "omni_v2.tests.test_metacog", "module"),
+        ("[32/33] Metacognition (evaluator feedback loop)", "omni_v2.tests.test_metacog", "module"),
+        ("[33/33] Episodic reflection + patterns",     "omni_v2.tests.test_reflect", "module"),
     ]
 
     all_ok = True
@@ -760,6 +761,43 @@ def cmd_meta(args):
     return 1
 
 
+def cmd_reflect(args):
+    """Jarvis Brain episodic reflection + pattern awareness (Step 5)."""
+    sys.path.insert(0, str(REPO_ROOT))
+    from omni_v2.brain.reflect import Reflector
+    from omni_v2.memory.session_memory import SessionMemoryStore
+    from omni_v2.memory.hybrid_memory import get_hybrid_memory
+    from omni_v2.brain.identity import IdentityCore
+    r = Reflector(session_memory=SessionMemoryStore(), hybrid_memory=get_hybrid_memory(),
+                  identity=IdentityCore())
+    action = getattr(args, "reflect_action", None) or "today"
+
+    if action == "today":
+        ep = r.reflect_today()
+        print(f"\n  📓 Episodic recap ({ep.day}):\n    {ep.summary}")
+        print(f"    activity: {ep.activity}")
+        print()
+        return 0
+
+    if action == "patterns":
+        pats = r.detect_patterns(days=args.days)
+        print(f"\n  🧩 Patterns (last {args.days} days):")
+        if not pats:
+            print("    (no notable patterns yet)")
+        for p in pats:
+            sev = "🔴" if p["severity"] >= 2 else ("🟡" if p["severity"] == 1 else "⚪")
+            print(f"    {sev} {p['title']}\n       {p['body']}")
+        print()
+        return 0
+
+    if action == "episodes":
+        for e in r.episodes(15):
+            print(f"  [{e.day}] {e.summary}")
+        print()
+        return 0
+    return 1
+
+
 def cmd_goal(args):
     """Jarvis Brain goals: persistent goal stack (decompose / progress / replan)."""
     sys.path.insert(0, str(REPO_ROOT))
@@ -1061,6 +1099,13 @@ def main():
     brain_sub.add_parser("user").add_argument("rest", nargs=argparse.REMAINDER)
     brain_sub.add_parser("reflect").add_argument("rest", nargs=argparse.REMAINDER)
 
+    reflect = sub.add_parser("reflect", help="Jarvis Brain: episodic reflection + patterns")
+    reflect_sub = reflect.add_subparsers(dest="reflect_action")
+    reflect_sub.add_parser("today")
+    reflect_p = reflect_sub.add_parser("patterns")
+    reflect_p.add_argument("--days", type=int, default=7)
+    reflect_sub.add_parser("episodes")
+
     meta = sub.add_parser("meta", help="Jarvis Brain: metacognition (evaluate + replan)")
     meta_sub = meta.add_subparsers(dest="meta_action")
     meta_eval = meta_sub.add_parser("evaluate", help="Evaluate an outcome, feed into a goal")
@@ -1139,6 +1184,8 @@ def main():
         return cmd_goal(args)
     if cmd == "meta":
         return cmd_meta(args)
+    if cmd == "reflect":
+        return cmd_reflect(args)
 
     parser.print_help()
     return 1

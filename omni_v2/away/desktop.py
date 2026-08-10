@@ -88,6 +88,16 @@ class DesktopController:
                 self.metacog = Metacog()
             except Exception:
                 self.metacog = None
+        self.reflector = self.stack.get("reflector")
+        if self.reflector is None:
+            try:
+                from omni_v2.brain.reflect import Reflector
+                from omni_v2.memory.session_memory import SessionMemoryStore
+                from omni_v2.memory.hybrid_memory import get_hybrid_memory
+                self.reflector = Reflector(session_memory=SessionMemoryStore(),
+                                           hybrid_memory=get_hybrid_memory())
+            except Exception:
+                self.reflector = None
         self.on_status_change = on_status_change
 
         # -- security ----------------------------------------------------
@@ -134,6 +144,8 @@ class DesktopController:
             out["goals"] = self.goals.stats()
         if self.metacog:
             out["metacog"] = self.metacog.stats()
+        if self.reflector:
+            out["reflector"] = self.reflector.stats()
         return out
 
     def messenger_config(self) -> Dict[str, Any]:
@@ -261,6 +273,24 @@ class DesktopController:
 
     def metacog_history(self) -> list:
         return self.metacog.history(20) if self.metacog else []
+
+    # -- episodic reflection & patterns (Jarvis Brain Step 5) -------------------
+    def reflect_today(self) -> Dict[str, Any]:
+        if self.reflector is None:
+            return {"ok": False, "detail": "reflector unavailable"}
+        try:
+            ep = self.reflector.reflect_today()
+            return {"ok": True, "episode": ep.to_dict()}
+        except Exception as e:
+            return {"ok": False, "detail": str(e)}
+
+    def detect_patterns(self, days: int = 7) -> Dict[str, Any]:
+        if self.reflector is None:
+            return {"ok": False, "patterns": []}
+        return {"ok": True, "patterns": self.reflector.detect_patterns(days)}
+
+    def reflector_episodes(self) -> list:
+        return [e.to_dict() for e in self.reflector.episodes(20)] if self.reflector else []
 
     # -- security -------------------------------------------------------------
     def enroll_owner(self) -> Dict[str, Any]:

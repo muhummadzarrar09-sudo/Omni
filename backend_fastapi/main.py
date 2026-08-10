@@ -88,6 +88,14 @@ try:
 except Exception as e:  # pragma: no cover - non-fatal if deps missing
     logger.warning(f"Metacog router not mounted: {e}")
 
+# Jarvis Brain (Phase 9 Step 5): episodic reflection + pattern awareness.
+try:
+    from reflect_routes import router as reflect_router
+    app.include_router(reflect_router)
+    logger.info("Reflect router mounted at /api/reflect")
+except Exception as e:  # pragma: no cover - non-fatal if deps missing
+    logger.warning(f"Reflect router not mounted: {e}")
+
 # SMOKE-10 fix: cap request body size at 64KB to prevent OOM attacks
 MAX_REQUEST_BYTES = 64 * 1024
 

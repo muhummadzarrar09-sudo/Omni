@@ -170,6 +170,7 @@ After `pip install -e .[all]`:
 | `omni brain status\|user\|set-name\|set-mood\|reflect` | Jarvis Identity core + user model |
 | `omni goal new\|list\|status\|advance\|fail\|follow-up` | Jarvis persistent goal stack (decompose → progress → replan) |
 | `omni meta evaluate\|history\|stats` | Jarvis metacognition (evaluate outcome → replan/ask/escalate) |
+| `omni reflect today\|patterns\|episodes` | Jarvis episodic reflection + pattern awareness |
 
 ---
 
@@ -446,7 +447,8 @@ Omni/
   **goal stack** that decomposes big intents into steps and tracks progress across
   sessions, **model tiering** (auto-swaps to a 3B deep model for hard reasoning), and a
   **metacognition loop** (the evaluator's verdict feeds back into goals to replan / ask
-  / escalate). See [docs/JARVIS_BRAIN.md](docs/JARVIS_BRAIN.md).
+  / escalate), and **episodic reflection** (daily recaps + pattern awareness so OMNI
+  notices things on its own). See [docs/JARVIS_BRAIN.md](docs/JARVIS_BRAIN.md).
 
 ---
 

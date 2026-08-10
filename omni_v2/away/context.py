@@ -29,6 +29,8 @@ def build_away_stack(knowledge_base=None, reporter=None, messenger=None,
     from omni_v2.brain.identity import IdentityCore
     from omni_v2.brain.goals import GoalStack
     from omni_v2.brain.metacog import Metacog
+    from omni_v2.brain.reflect import Reflector
+    from omni_v2.memory.session_memory import SessionMemoryStore
 
     kb = knowledge_base or KnowledgeBase()
     rep = reporter or Reporter()
@@ -45,6 +47,12 @@ def build_away_stack(knowledge_base=None, reporter=None, messenger=None,
     identity = IdentityCore()
     goals = GoalStack(notifier=messenger_obj.send_text)
     metacog = Metacog()
+    try:
+        session_store = SessionMemoryStore()
+    except Exception:
+        session_store = None
+    reflector = Reflector(session_memory=session_store, hybrid_memory=memory,
+                          identity=identity)
 
     def context_provider(question: str) -> str:
         """Inject hybrid RAG+CAG context for a user query (used by Brain)."""
@@ -65,4 +73,5 @@ def build_away_stack(knowledge_base=None, reporter=None, messenger=None,
         "identity": identity,
         "goals": goals,
         "metacog": metacog,
+        "reflector": reflector,
     }
