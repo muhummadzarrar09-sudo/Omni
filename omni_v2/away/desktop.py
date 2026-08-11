@@ -141,6 +141,40 @@ class DesktopController:
         self.triggers = None
         # -- LLM router v2 (Phase 13 #6) -------------------------------------
         self.router_v2 = None
+        # -- benchmark (Phase 14 #2) ------------------------------------------
+        self.benchmark = None
+
+    def _get_benchmark(self):
+        if self.benchmark is not None:
+            return self.benchmark
+        try:
+            from omni_v2.benchmark.benchmark import BenchmarkRunner
+            self.benchmark = BenchmarkRunner(harness=self.harness)
+        except Exception as e:
+            logger.warning(f"benchmark build failed: {e}")
+            self.benchmark = None
+        return self.benchmark
+
+    def benchmark_run(self, case: str, briefs: list, iterations: int = 3,
+                      executor=None) -> Dict[str, Any]:
+        from omni_v2.benchmark.benchmark import BenchmarkCase
+        b = self._get_benchmark()
+        if b is None:
+            return {"ok": False, "detail": "benchmark unavailable"}
+        b.iterations = iterations
+        if executor is None:
+            executor = lambda brief, ctx: {"ok": True, "time": 1.0, "tokens": 60, "steps": 3}
+        case_obj = BenchmarkCase(case, briefs, executor)
+        b.run_case(case_obj)
+        return {"ok": True, "report": b.report(case)}
+
+    def benchmark_report(self, case: str = "") -> Dict[str, Any]:
+        b = self._get_benchmark()
+        return {"ok": True, "report": b.report(case) if b else {}}
+
+    def benchmark_stats(self) -> Dict[str, Any]:
+        b = self._get_benchmark()
+        return {"iterations": len(b.all_results()) if b else 0}
 
     def _get_router_v2(self):
         if self.router_v2 is not None:

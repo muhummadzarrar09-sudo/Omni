@@ -104,3 +104,10 @@ def router() -> Dict[str, Any]:
     """LLM router v2 status (Phase 13 #6)."""
     from omni_v2.llm.router_v2 import LLMRouterV2
     return {"ok": True, "status": LLMRouterV2().stats()}
+
+
+@router.get("/benchmark")
+def benchmark() -> Dict[str, Any]:
+    """Self-improvement benchmark (Phase 14 #2)."""
+    from omni_v2.away.desktop import DesktopController
+    return {"ok": True, "report": DesktopController().benchmark_report().get("report", {})}

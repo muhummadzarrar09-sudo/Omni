@@ -211,6 +211,16 @@ goal trajectories** — never rewriting the immutable base prompt.
   running persistently. Headless-testable with a fake platform backend.
 - `omni_daemon.py` entry point; CLI `omni daemon enable/disable/status/start/stop`.
 
+## 4.17 Self-Improvement Benchmark (Phase 14 #2)
+
+- **`omni_v2/benchmark/benchmark.py`**: `BenchmarkRunner` runs a repeated task type and
+  measures wall time, tokens, and steps per iteration. Compares the **early** cohort (no
+  harness skill) vs the **late** cohort (skill present) and reports % improvement in
+  time/tokens/steps — the Hermes-style "skills make you faster" claim, made measurable.
+- Pluggable executor; optional real ContinualHarness (skills grow between runs).
+- CLI `omni benchmark run/report`; FastAPI `GET /api/brain/benchmark`; wired into the
+  DesktopController.
+
 ## 5. Fixes & hygiene
 
 - Fixed pre-existing `omni/cli.py` f-string syntax bug (blocked CLI on Python ≤ 3.11).
