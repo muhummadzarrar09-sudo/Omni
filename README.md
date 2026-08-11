@@ -193,6 +193,7 @@ After `pip install -e .[all]`:
 | `omni backup create\|restore\|list` | Backup & restore the whole OMNI state |
 | `omni file run <cmd>` | NL file manager: safe file operations from natural language |
 | `omni remote info` | LAN remote control (token-authed, from another device) |
+| `omni engine\|metaharness\|mesh\|gui info` | Big subsystems: agentic runtime, self-improving harness, multi-machine sync, vision GUI agent |
 | `omni brain status\|user\|set-name\|set-mood\|reflect` | Jarvis Identity core + user model |
 | `omni goal new\|list\|status\|advance\|fail\|follow-up` | Jarvis persistent goal stack (decompose → progress → replan) |
 | `omni meta evaluate\|history\|stats` | Jarvis metacognition (evaluate outcome → replan/ask/escalate) |
@@ -542,6 +543,14 @@ Omni/
   sandboxed (allowed-root), journal-backed file operations. `omni file run <cmd>`.
 - **LAN Remote Control (Phase 15 #6):** control OMNI from another device on your local
   network via the token-authed API (`/api/remote/status|command|goal`).
+- **QueryEngine (Phase 16 #1):** an OpenHarness-style **agentic tool-calling runtime** —
+  brain + tool registry + permission gate + pre/post hooks + cost metering + compaction.
+- **Meta-Harness (Phase 16 #2):** the **self-improvement outer loop** — mines failure
+  traces, proposes harness edits, validates via regression, keeps only improvements.
+- **OMNI Mesh (Phase 16 #3):** multi-machine state sync (export/import/reconcile brain,
+  harness, KB, goals, identity) between your laptop and the DGX.
+- **GUI Agent (Phase 16 #4):** vision-driven, **sandboxed** screen automation
+  (screenshot → vision → click/type), journaled for undo.
 - **Real MCP servers (Phase 14 #8a):** persistent stdio MCP sessions so real server tools
   can actually be called, not just registered.
   (6,000+ servers/tools). MCP tools register as native OMNI plugins the brain can call

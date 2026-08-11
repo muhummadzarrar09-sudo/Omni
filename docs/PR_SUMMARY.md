@@ -302,6 +302,25 @@ goal trajectories** — never rewriting the immutable base prompt.
   network. CLI `omni remote info`.
 - Tests: test_nlfiles_remote (8) → 632 total passing, offline.
 
+## 4.25 Big Subsystems (Phase 16) — QueryEngine, Meta-Harness, Mesh, GUI Agent
+
+- **QueryEngine** (`omni_v2/engine/query_engine.py`): an OpenHarness-style **agentic
+  tool-calling runtime** — brain + tool registry + permission gate (allow/ask/deny +
+  approve hook) + pre/post lifecycle hooks + cost metering + token tracking + compaction +
+  max-turn loop. Headless-testable with fake brains/tools.
+- **Meta-Harness** (`omni_v2/meta/meta_harness.py`): the **self-improvement OUTER loop** —
+  mine failure patterns → propose harness edits (skills/lessons/memory/guardrails) →
+  validate via a benchmark/regression validator → commit only if it improves, else roll
+  back. Snapshot/rollback per edit.
+- **OMNI Mesh** (`omni_v2/mesh/mesh_sync.py`): multi-machine state sync — export/import/
+  reconcile brain, harness, KB, goals, identity, automations, schedules, journal,
+  leaderboard. Newest-timestamp-wins merge.
+- **GUI Agent** (`omni_v2/gui/gui_agent.py`): vision-driven, **sandboxed** screen automation
+  (screenshot → vision → decide → click/type), SAFE_ACTIONS allow-list + journaled for undo.
+- CLI `omni engine/metaharness/mesh/gui info|run`; FastAPI `GET /api/brain/{engine,mesh}`;
+  wired into the DesktopController.
+- Tests: query_engine (10) + meta_harness (7) + mesh (7) + gui_agent (8) → **664** passing.
+
 ## 5. Fixes & hygiene
 
 - Fixed pre-existing `omni/cli.py` f-string syntax bug (blocked CLI on Python ≤ 3.11).

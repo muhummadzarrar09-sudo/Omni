@@ -188,7 +188,7 @@ def cmd_model_download_deep(args):
 def cmd_test(args):
     """Run all 20 test suites."""
     print("\n  " + "=" * 60)
-    print("  OMNI V3 - Full Test Suite (57 suites)")
+    print("  OMNI V3 - Full Test Suite (61 suites)")
     print("  " + "=" * 60 + "\n")
 
     # All 20 test suites
@@ -253,6 +253,10 @@ def cmd_test(args):
         ("[55/56] Recurring scheduler",               "omni_v2.tests.test_recurring", "module"),
         ("[56/57] History + photos + backup",         "omni_v2.tests.test_history_photos_backup", "module"),
         ("[57/57] NL file manager + LAN remote",      "omni_v2.tests.test_nlfiles_remote", "module"),
+        ("[58/61] QueryEngine (agentic runtime)",     "omni_v2.tests.test_query_engine", "module"),
+        ("[59/61] Meta-Harness (outer loop)",         "omni_v2.tests.test_meta_harness", "module"),
+        ("[60/61] OMNI Mesh (multi-machine sync)",    "omni_v2.tests.test_mesh", "module"),
+        ("[61/61] GUI agent (vision automation)",     "omni_v2.tests.test_gui_agent", "module"),
     ]
 
     all_ok = True
@@ -992,6 +996,78 @@ def cmd_remote(args):
         print("    Endpoints: /api/remote/status · /command · /goal")
         print("    Set the token:  export OMNI_API_TOKEN=<secret>   (before omni start)")
         print("    Get a device token: POST /api/devices/register")
+        print()
+        return 0
+    return 1
+
+
+def cmd_engine(args):
+    """QueryEngine: the agentic tool-calling runtime."""
+    sys.path.insert(0, str(REPO_ROOT))
+    from omni_v2.away.desktop import DesktopController
+    c = DesktopController()
+    action = getattr(args, "engine_action", None) or "info"
+    if action == "info":
+        print("\n  ⚙️  OMNI QueryEngine")
+        print("    OpenHarness-style agentic runtime: brain + tool registry +")
+        print("    permission gate + pre/post hooks + cost metering + compaction.")
+        print("    (Programmatic API — see omni_v2/engine/query_engine.py)")
+        print()
+        return 0
+    return 1
+
+
+def cmd_metaharness(args):
+    """Meta-Harness: self-improvement outer loop."""
+    sys.path.insert(0, str(REPO_ROOT))
+    from omni_v2.away.desktop import DesktopController
+    c = DesktopController()
+    action = getattr(args, "metaharness_action", None) or "info"
+    if action == "info":
+        print("\n  🌀 Meta-Harness (self-improvement outer loop)")
+        print("    mine failures -> propose harness edits -> validate via")
+        print("    regression -> keep only improvements.")
+        print("    (Programmatic API — see omni_v2/meta/meta_harness.py)")
+        print()
+        return 0
+    if action == "run":
+        res = c.meta_improve()
+        print(f"  🌀 improvement run: proposed={res['result']['proposed']} "
+              f"committed={len(res['result']['committed'])}")
+        return 0
+    return 1
+
+
+def cmd_mesh(args):
+    """OMNI Mesh: multi-machine state sync."""
+    sys.path.insert(0, str(REPO_ROOT))
+    from omni_v2.away.desktop import DesktopController
+    c = DesktopController()
+    action = getattr(args, "mesh_action", None) or "export"
+    if action == "export":
+        res = c.mesh_export()
+        print(f"  📡 Exported {len(res['state'].get('collections', {}))} collection(s)")
+        return 0
+    if action == "info":
+        print("\n  📡 OMNI Mesh (multi-machine sync)")
+        print("    Export/import/reconcile OMNI state between laptop and DGX.")
+        print("    Collections: goals, harness, identity, automations, schedules,")
+        print("    journal, leaderboard. Newest-timestamp wins on reconcile.")
+        print()
+        return 0
+    return 1
+
+
+def cmd_gui(args):
+    """GUI agent: vision-driven, sandboxed screen automation."""
+    sys.path.insert(0, str(REPO_ROOT))
+    from omni_v2.away.desktop import DesktopController
+    c = DesktopController()
+    action = getattr(args, "gui_action", None) or "info"
+    if action == "info":
+        print("\n  🖥️  OMNI GUI Agent")
+        print("    screenshot -> vision -> decide -> act (sandboxed + journaled).")
+        print("    Safe actions: " + ", ".join(["screenshot", "click", "type", "scroll", "done"]))
         print()
         return 0
     return 1
@@ -2190,6 +2266,24 @@ def main():
     _flr = fl_sub.add_parser("run")
     _flr.add_argument("text", nargs=argparse.REMAINDER)
 
+    eng = sub.add_parser("engine", help="QueryEngine: agentic tool-calling runtime")
+    eng_sub = eng.add_subparsers(dest="engine_action")
+    eng_sub.add_parser("info")
+
+    mh = sub.add_parser("metaharness", help="Meta-Harness: self-improvement outer loop")
+    mh_sub = mh.add_subparsers(dest="metaharness_action")
+    mh_sub.add_parser("info")
+    mh_sub.add_parser("run")
+
+    ms = sub.add_parser("mesh", help="OMNI Mesh: multi-machine state sync")
+    ms_sub = ms.add_subparsers(dest="mesh_action")
+    ms_sub.add_parser("export")
+    ms_sub.add_parser("info")
+
+    gu = sub.add_parser("gui", help="GUI agent: vision-driven sandboxed screen automation")
+    gu_sub = gu.add_subparsers(dest="gui_action")
+    gu_sub.add_parser("info")
+
     rm = sub.add_parser("remote", help="LAN remote control")
     rm_sub = rm.add_subparsers(dest="remote_action")
     rm_sub.add_parser("info")
@@ -2395,6 +2489,14 @@ def main():
         return cmd_file(args)
     if cmd == "remote":
         return cmd_remote(args)
+    if cmd == "engine":
+        return cmd_engine(args)
+    if cmd == "metaharness":
+        return cmd_metaharness(args)
+    if cmd == "mesh":
+        return cmd_mesh(args)
+    if cmd == "gui":
+        return cmd_gui(args)
     if cmd == "history":
         return cmd_history(args)
     if cmd == "photo":

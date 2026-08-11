@@ -181,3 +181,17 @@ def backups() -> Dict[str, Any]:
     """Backup & restore status (Phase 15 #4)."""
     from omni_v2.away.desktop import DesktopController
     return DesktopController().backup_list()
+
+
+@router.get("/engine")
+def engine() -> Dict[str, Any]:
+    """QueryEngine status (Phase 16 #1)."""
+    from omni_v2.engine.query_engine import QueryEngine
+    return {"ok": True, "status": QueryEngine().stats()}
+
+
+@router.get("/mesh")
+def mesh() -> Dict[str, Any]:
+    """OMNI Mesh status (Phase 16 #3)."""
+    from omni_v2.mesh.mesh_sync import MeshSync
+    return {"ok": True, "status": MeshSync().stats()}

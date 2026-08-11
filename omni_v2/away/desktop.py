@@ -230,6 +230,36 @@ class DesktopController:
         except Exception as e:
             return {"ok": False, "error": str(e)}
 
+    # -- QueryEngine (Phase 16 #1) -------------------------------------------
+    def engine_build(self, brain=None, tools=None, approve=None) -> Dict[str, Any]:
+        from omni_v2.engine.query_engine import QueryEngine
+        return {"ok": True, "engine": QueryEngine(brain=brain, tools=tools, approve=approve)}
+
+    # -- Meta-Harness (Phase 16 #2) -------------------------------------------
+    def meta_improve(self) -> Dict[str, Any]:
+        from omni_v2.meta.meta_harness import MetaHarness
+        mh = MetaHarness(harness=self.harness)
+        return {"ok": True, "result": mh.improve()}
+
+    # -- Mesh sync (Phase 16 #3) -----------------------------------------------
+    def mesh_export(self) -> Dict[str, Any]:
+        from omni_v2.mesh.mesh_sync import MeshSync
+        return {"ok": True, "state": MeshSync().export_state()}
+
+    def mesh_import(self, state: dict) -> Dict[str, Any]:
+        from omni_v2.mesh.mesh_sync import MeshSync
+        return MeshSync().import_state(state)
+
+    # -- GUI agent (Phase 16 #4) ------------------------------------------------
+    def gui_run(self, task: str, actions=None) -> Dict[str, Any]:
+        from omni_v2.gui.gui_agent import GuiAgent, GuiAction
+        acts = [GuiAction(**a) for a in (actions or [])] if actions else []
+        def decide(desc):
+            return acts.pop(0) if acts else GuiAction("done")
+        g = GuiAgent(capture=lambda: "img", vision=lambda i: "screen",
+                     decide=decide, journal=self._get_journal())
+        return {"ok": True, **g.run(task)}
+
     def schedule_add_cron(self, name, cron, action, args=None) -> Dict[str, Any]:
         s = self._get_recurring()
         if s is None:
