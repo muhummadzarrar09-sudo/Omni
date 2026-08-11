@@ -125,6 +125,45 @@ class DesktopController:
         # -- voice loop + guardian (Phase 10) --------------------------------
         self.voice_loop = None
         self.guardian = None
+        # -- MCP bridge (Phase 13) -------------------------------------------
+        self.mcp_bridge = None
+
+    def _get_mcp(self):
+        if self.mcp_bridge is not None:
+            return self.mcp_bridge
+        try:
+            from omni_v2.core.plugin_manager import PluginManager
+            from omni_v2.mcp.bridge import MCPBridge, FakeMCPProvider
+            pm = PluginManager()
+            # register all built-in tools into this manager so MCP can coexist
+            try:
+                from omni_v2.tools import get_all_tools
+                for t in get_all_tools():
+                    try:
+                        pm.register(t)
+                    except Exception:
+                        pass
+            except Exception:
+                pass
+            self.mcp_bridge = MCPBridge(plugin_manager=pm, provider=FakeMCPProvider())
+        except Exception as e:
+            logger.warning(f"mcp bridge build failed: {e}")
+            self.mcp_bridge = None
+        return self.mcp_bridge
+
+    def mcp_add_server(self, name: str, tools: list, handlers: dict = None) -> Dict[str, Any]:
+        m = self._get_mcp()
+        if m is None:
+            return {"ok": False, "detail": "mcp unavailable"}
+        return {"ok": True, **m.add_server(name, tools=tools, handlers=handlers or {})}
+
+    def mcp_list(self) -> Dict[str, Any]:
+        m = self._get_mcp()
+        return {"ok": True, "servers": m.list_servers() if m else []}
+
+    def mcp_stats(self) -> Dict[str, Any]:
+        m = self._get_mcp()
+        return m.stats() if m else {"servers": 0}
 
     def _get_voice_loop(self):
         """Lazily build the VoiceLoop with real components when available."""
@@ -241,6 +280,8 @@ class DesktopController:
             out["reflector"] = self.reflector.stats()
         if self.harness:
             out["harness"] = self.harness.stats()
+        if self.mcp_bridge:
+            out["mcp"] = self.mcp_bridge.stats()
         if self.voice_loop:
             out["voice"] = self.voice_loop.stats()
         if self.guardian:

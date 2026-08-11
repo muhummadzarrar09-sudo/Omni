@@ -138,6 +138,19 @@ goal trajectories** — never rewriting the immutable base prompt.
 - CLI `omni harness status/list/refine/rollback/context`; FastAPI
   `/api/harness/*`; desktop "Harness" tab.
 
+## 4.10 MCP Bridge (Phase 13) — connect to the MCP ecosystem
+
+- **`omni_v2/mcp/bridge.py`**: turns MCP server tools into native OMNI plugins so the
+  brain can call them like any built-in tool. `MCPToolPlugin` adapts one MCP tool into
+  the plugin interface; `MCPBridge` manages servers and registers tools (namespaced as
+  `<server>_<tool>`).
+- **Real path**: uses the `mcp` SDK (`ClientSession` + `stdio_client`) to spawn a server,
+  `list_tools()`, and `call_tool()`. **Fake provider** (`FakeMCPProvider`) lets tests and
+  demo run with no MCP server.
+- CLI `omni mcp status/add-demo/list/add`; FastAPI `/api/mcp/*`; desktop "MCP" tab.
+- On the DGX Station, `pip install mcp` unlocks real stdio servers (filesystem, github,
+  slack, etc.) — the bridge registers all their tools.
+
 ## 5. Fixes & hygiene
 
 - Fixed pre-existing `omni/cli.py` f-string syntax bug (blocked CLI on Python ≤ 3.11).

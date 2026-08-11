@@ -174,6 +174,7 @@ After `pip install -e .[all]`:
 | `omni briefing build\|deliver` | Personal morning briefing (goals + recap + research) |
 | `omni add-skill install\|list` | Install a community skill (verified, auto-wired) |
 | `omni harness status\|list\|refine\|rollback\|context` | Continual harness: self-refining skills/memory/lessons |
+| `omni mcp status\|add-demo\|list\|add` | Connect to the MCP ecosystem (Model Context Protocol) |
 | `omni brain status\|user\|set-name\|set-mood\|reflect` | Jarvis Identity core + user model |
 | `omni goal new\|list\|status\|advance\|fail\|follow-up` | Jarvis persistent goal stack (decompose → progress → replan) |
 | `omni meta evaluate\|history\|stats` | Jarvis metacognition (evaluate outcome → replan/ask/escalate) |
@@ -479,6 +480,9 @@ Omni/
   repeated success, and self-improves them when metacog flags a misfire. Works on
   CPU today; auto-upgrades on the DGX Station. An **auto post-goal flow** fires this
   automatically whenever a goal completes or fails — no manual command needed.
+- **MCP Bridge (Phase 13):** connect OMNI to the **Model Context Protocol** ecosystem
+  (6,000+ servers/tools). MCP tools register as native OMNI plugins the brain can call
+  like built-ins. `omni mcp add-demo`, `/api/mcp/*`, desktop "MCP" tab.
 - **Full feature rundown:** see [docs/PR_SUMMARY.md](docs/PR_SUMMARY.md) for the
   complete map of Away Mode, Desktop + Security, the Jarvis Brain, Voice Loop and
   the Proactive Guardian.

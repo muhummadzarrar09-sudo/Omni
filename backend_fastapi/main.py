@@ -128,6 +128,14 @@ try:
 except Exception as e:  # pragma: no cover - non-fatal if deps missing
     logger.warning(f"Harness router not mounted: {e}")
 
+# MCP Bridge (Phase 13). Fully local.
+try:
+    from mcp_routes import router as mcp_router
+    app.include_router(mcp_router)
+    logger.info("MCP router mounted at /api/mcp")
+except Exception as e:  # pragma: no cover - non-fatal if deps missing
+    logger.warning(f"MCP router not mounted: {e}")
+
 # SMOKE-10 fix: cap request body size at 64KB to prevent OOM attacks
 MAX_REQUEST_BYTES = 64 * 1024
 

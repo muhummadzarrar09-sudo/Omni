@@ -46,11 +46,12 @@ def build_away_stack(knowledge_base=None, reporter=None, messenger=None,
     )
     memory = kb.memory or get_hybrid_memory()
     identity = IdentityCore()
+    metacog = Metacog()
     harness = ContinualHarness()
 
     def _auto_refine_goal(goal, success: bool) -> None:
         """Auto post-goal flow: distill the finished goal into the Continual
-        Harness (skills/memory/lessons) + log a reflection. Runs in a thread."""
+        Harness (skills/memory/lessons). Runs in a thread."""
         try:
             verdicts = []
             try:
@@ -69,14 +70,12 @@ def build_away_stack(knowledge_base=None, reporter=None, messenger=None,
 
     goals = GoalStack(notifier=messenger_obj.send_text,
                       post_goal_hook=_auto_refine_goal)
-    metacog = Metacog()
     try:
         session_store = SessionMemoryStore()
     except Exception:
         session_store = None
     reflector = Reflector(session_memory=session_store, hybrid_memory=memory,
                           identity=identity)
-    harness = ContinualHarness()
 
     def context_provider(question: str) -> str:
         """Inject hybrid RAG+CAG context for a user query (used by Brain)."""
@@ -99,6 +98,7 @@ def build_away_stack(knowledge_base=None, reporter=None, messenger=None,
         "metacog": metacog,
         "reflector": reflector,
         "harness": harness,
+        "mcp_bridge": None,   # lazy-built by consumers that can supply plugin_manager
         "voice_loop": None,   # lazy-built by consumers that can supply components
         "guardian": None,
     }

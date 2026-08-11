@@ -188,7 +188,7 @@ def cmd_model_download_deep(args):
 def cmd_test(args):
     """Run all 20 test suites."""
     print("\n  " + "=" * 60)
-    print("  OMNI V3 - Full Test Suite (42 suites)")
+    print("  OMNI V3 - Full Test Suite (43 suites)")
     print("  " + "=" * 60 + "\n")
 
     # All 20 test suites
@@ -237,7 +237,8 @@ def cmd_test(args):
         ("[39/41] Morning briefing",                 "omni_v2.tests.test_briefing", "module"),
         ("[40/41] Skill installer",                  "omni_v2.tests.test_skill_installer", "module"),
         ("[41/42] Continual harness",                "omni_v2.tests.test_harness", "module"),
-        ("[42/42] Auto post-goal flow",              "omni_v2.tests.test_post_goal_flow", "module"),
+        ("[42/43] Auto post-goal flow",              "omni_v2.tests.test_post_goal_flow", "module"),
+        ("[43/43] MCP bridge",                       "omni_v2.tests.test_mcp", "module"),
     ]
 
     all_ok = True
@@ -793,6 +794,58 @@ def cmd_guardian(args):
         print(f"    Observations: {st.get('observations')}")
         print(f"    Interval    : {st.get('interval')}s")
         print()
+        return 0
+    return 1
+
+
+def cmd_mcp(args):
+    """MCP: connect OMNI to the Model Context Protocol ecosystem."""
+    sys.path.insert(0, str(REPO_ROOT))
+    from omni_v2.away.desktop import DesktopController
+    c = DesktopController()
+    action = getattr(args, "mcp_action", None) or "status"
+
+    if action == "status":
+        st = c.mcp_stats()
+        print("\n  🔌 MCP Bridge")
+        print(f"    Servers    : {st.get('servers', 0)}")
+        print(f"    Provider   : {'fake (demo/test)' if st.get('fake_provider') else 'real mcp SDK'}")
+        for s in st.get("servers_detail", []):
+            print(f"    - {s['name']}: {len(s['tools'])} tool(s)")
+        print()
+        return 0
+
+    if action == "add-demo":
+        # demo server: two fake tools to show the bridge working
+        tools = [
+            {"name": "get_time", "description": "Return the current time", "inputSchema": {}},
+            {"name": "echo", "description": "Echo text back", "inputSchema": {"text": "str"}},
+        ]
+        def now(args=None):
+            import datetime
+            return {"content": [{"type": "text", "text": datetime.datetime.now().isoformat()}]}
+        def echo(args=None):
+            return {"content": [{"type": "text", "text": f"echo: {(args or {}).get('text','')}"}]}
+        handlers = {"get_time": now, "echo": echo}
+        res = c.mcp_add_server("demo", tools, handlers)
+        print(f"  ✅ Demo MCP server added, {res.get('registered_tools', 0)} tool(s) registered")
+        print("     (open the MCP tab in the desktop app, or use omni shell to call them)")
+        return 0
+
+    if action == "list":
+        res = c.mcp_list()
+        for s in res.get("servers", []):
+            print(f"  • {s['name']}: {', '.join(s['tools']) or '(no tools)'}")
+        if not res.get("servers"):
+            print("  (no MCP servers — try: omni mcp add-demo)")
+        return 0
+
+    if action == "add":
+        name = args.name
+        import json
+        tools = json.loads(args.tools or "[]")
+        res = c.mcp_add_server(name, tools)
+        print(f"  ✅ Added server {name}: {res.get('registered_tools', 0)} tool(s)")
         return 0
     return 1
 
@@ -1378,6 +1431,16 @@ def main():
     graph_json.add_argument("--out", default=None)
     graph_sub.add_parser("view")
 
+    mcp = sub.add_parser("mcp", help="MCP: connect to the Model Context Protocol ecosystem")
+    mcp_sub = mcp.add_subparsers(dest="mcp_action")
+    mcp_sub.add_parser("status")
+    mcp_sub.add_parser("add-demo")
+    mcp_sub.add_parser("list")
+    _ma = mcp_sub.add_parser("add")
+    _ma.add_argument("name")
+    _ma.add_argument("--tools", default="[]", help="JSON list of tools")
+    _ma.add_argument("rest", nargs=argparse.REMAINDER)
+
     harness = sub.add_parser("harness", help="Continual harness: self-refining skills/memory")
     harness_sub = harness.add_subparsers(dest="harness_action")
     harness_sub.add_parser("status")
@@ -1492,6 +1555,8 @@ def main():
         return cmd_graph(args)
     if cmd == "harness":
         return cmd_harness(args)
+    if cmd == "mcp":
+        return cmd_mcp(args)
     if cmd == "briefing":
         return cmd_briefing(args)
     if cmd == "add-skill":

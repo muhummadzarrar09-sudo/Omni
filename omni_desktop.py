@@ -461,6 +461,45 @@ def _launch_gui():
     h_refresh.configure(command=refresh_harness)
     refresh_harness()
 
+    # ================= MCP (Phase 13) =================
+    t_mcp = tabs.add("MCP")
+    mrow = ctk.CTkFrame(t_mcp)
+    mrow.pack(fill="x", padx=8, pady=4)
+    m_demo = ctk.CTkButton(mrow, text="🔌 Add demo server", width=140)
+    m_demo.pack(side="left", padx=4)
+    m_refresh = ctk.CTkButton(mrow, text="List servers", width=100)
+    m_refresh.pack(side="left", padx=4)
+    m_out = ctk.CTkTextbox(t_mcp, height=430, font=("Consolas", 12))
+    m_out.pack(fill="both", expand=True, padx=8, pady=8)
+
+    def refresh_mcp():
+        def done(res):
+            servers = res.get("servers", [])
+            if not servers:
+                log_box(m_out, "(no MCP servers — click 'Add demo server' to see the bridge working)")
+                return
+            lines = [f"🔌 MCP servers ({len(servers)}):\n"]
+            for s in servers:
+                lines.append(f"  • {s['name']}: {', '.join(s['tools']) or '(no tools)'}")
+            log_box(m_out, "\n".join(lines))
+        bg(lambda: controller.mcp_list(), done)
+    def do_mcp_demo():
+        def done(res):
+            log_box(m_out, f"✅ Demo server added: {res.get('registered_tools', 0)} tool(s) registered")
+            refresh_mcp()
+        # demo tools via controller
+        tools = [{"name": "get_time", "description": "current time"},
+                 {"name": "echo", "description": "echo text"}]
+        import datetime
+        handlers = {
+            "get_time": lambda a: {"content": [{"type": "text", "text": datetime.datetime.now().isoformat()}]},
+            "echo": lambda a: {"content": [{"type": "text", "text": f"echo: {(a or {}).get('text','')}"}]},
+        }
+        bg(lambda: controller.mcp_add_server("demo", tools, handlers), done)
+    m_demo.configure(command=do_mcp_demo)
+    m_refresh.configure(command=refresh_mcp)
+    refresh_mcp()
+
     # ================= SECURITY =================
     t_sec = tabs.add("Security")
     srow = ctk.CTkFrame(t_sec)
