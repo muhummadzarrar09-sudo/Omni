@@ -1,5 +1,8 @@
 # 🔍 OMNI V2/V3 — FULL DIAGNOSTIC SCAN REPORT
 
+> **Document status (2026-08-11): historical or unqualified reference.** This file records earlier intent, implementation, audit, or setup work. Its completion, test-count, performance, privacy, platform, and production-readiness statements are **not current release claims**. Use the generated [Capability Matrix](../docs/CAPABILITY_MATRIX.md) and [Quality Scorecard](../docs/QUALITY_SCORECARD.md) for current truth.
+
+
 **Date:** 2026-07-15
 **Scope:** Full codebase (`omni.py`, `omni_v2/`, `backend_fastapi/`, `frontend_next/`, `frontend/`)
 **Target:** Hardening for 1st-place hackathon demo, making TTS/STT/Think-Loop EXE reliable on GTX 1050 Ti 4GB.

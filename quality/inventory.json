@@ -1,0 +1,3932 @@
+{
+  "schema_version": 1,
+  "generated_by": "python scripts/quality_baseline.py generate",
+  "inventory_policy": {
+    "production": "Active Python, JavaScript/TypeScript, CSS, and HTML under omni_v2 (excluding tests), omni, backend_fastapi, frontend_next/app, frontend_next/components, and mobile, plus root Python launchers.",
+    "tests": "Python files under omni_v2/tests plus test-prefixed Python modules under omni_v2.",
+    "excluded": [
+      ".git",
+      ".next",
+      ".pytest_cache",
+      ".venv",
+      "__pycache__",
+      "_archive",
+      "build",
+      "dist",
+      "node_modules"
+    ],
+    "line_metric": "Physical split lines; nonblank lines contain at least one non-whitespace character."
+  },
+  "authority_sha256": {
+    "quality/capabilities.json": "a948ea6cbd3b1acbf9670695dfa24bad652423a68b0081e4279ed3df3585e6e8",
+    "quality/scorecard.json": "5b81be7ba023b4a1b89b5d3f1e690434b5911599e0a19f991ba447828a0f9567",
+    "quality/policy.json": "64192fede30fd6b758238ca4602c0aba96ef17d768e72f3ca50b21deeccfaa19",
+    "quality/batches.json": "c5e70f6fe69fdd56507438a9874aad4675317f7efa3008e29eb73a7d215b7476"
+  },
+  "source_digest": "12c045db881c35936ce758e59b160b507c5525db648a948925d526a76261e240",
+  "counts": {
+    "production_files": 225,
+    "production_bytes": 1820104,
+    "production_lines": 45981,
+    "production_nonblank_lines": 40571,
+    "test_files": 62,
+    "test_bytes": 359588,
+    "test_lines": 10464,
+    "test_nonblank_lines": 8753,
+    "capabilities": 52,
+    "core_workflows": 10,
+    "areas": 21,
+    "fastapi_route_decorators": 191,
+    "declared_tool_classes": 17,
+    "declared_tool_actions": 94,
+    "classes": 365,
+    "functions": 2942
+  },
+  "capabilities_by_lifecycle": {
+    "beta": 24,
+    "demo": 1,
+    "experimental": 25,
+    "unavailable": 2
+  },
+  "capabilities_by_implementation": {
+    "demo": 1,
+    "infrastructure": 1,
+    "partial": 39,
+    "placeholder": 1,
+    "real": 9,
+    "stub": 1
+  },
+  "capabilities_by_area": {
+    "api": 1,
+    "automation": 5,
+    "brain": 6,
+    "core": 2,
+    "data": 1,
+    "evaluation": 1,
+    "files": 1,
+    "integrations": 2,
+    "interop": 1,
+    "memory": 3,
+    "mobile": 1,
+    "network": 1,
+    "personal": 4,
+    "security": 3,
+    "skills": 4,
+    "sync": 2,
+    "system": 1,
+    "tools": 6,
+    "ui": 2,
+    "vision": 1,
+    "voice": 4
+  },
+  "coverage": {
+    "capability_count": 52,
+    "workflow_count": 10,
+    "scorecard_category_count": 11,
+    "batch_count": 17,
+    "expansion_count": 10,
+    "covered_active_source_count": 185,
+    "source_pattern_count": 128
+  },
+  "fastapi_routes": [
+    {
+      "method": "GET",
+      "path": "/voice/status",
+      "handler": "voice_status",
+      "owner": "router",
+      "source": "backend_fastapi/assistant_routes.py:33",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "POST",
+      "path": "/voice/start",
+      "handler": "voice_start",
+      "owner": "router",
+      "source": "backend_fastapi/assistant_routes.py:38",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "POST",
+      "path": "/voice/stop",
+      "handler": "voice_stop",
+      "owner": "router",
+      "source": "backend_fastapi/assistant_routes.py:43",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "POST",
+      "path": "/voice/say",
+      "handler": "voice_say",
+      "owner": "router",
+      "source": "backend_fastapi/assistant_routes.py:48",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "GET",
+      "path": "/guardian/status",
+      "handler": "guardian_status",
+      "owner": "router",
+      "source": "backend_fastapi/assistant_routes.py:53",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "POST",
+      "path": "/guardian/start",
+      "handler": "guardian_start",
+      "owner": "router",
+      "source": "backend_fastapi/assistant_routes.py:59",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "POST",
+      "path": "/guardian/stop",
+      "handler": "guardian_stop",
+      "owner": "router",
+      "source": "backend_fastapi/assistant_routes.py:64",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "POST",
+      "path": "/guardian/scan",
+      "handler": "guardian_scan",
+      "owner": "router",
+      "source": "backend_fastapi/assistant_routes.py:69",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "GET",
+      "path": "/guardian/recent",
+      "handler": "guardian_recent",
+      "owner": "router",
+      "source": "backend_fastapi/assistant_routes.py:74",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "GET",
+      "path": "/status",
+      "handler": "status",
+      "owner": "router",
+      "source": "backend_fastapi/automation_routes.py:31",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "GET",
+      "path": "/triggers",
+      "handler": "list_triggers",
+      "owner": "router",
+      "source": "backend_fastapi/automation_routes.py:36",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "POST",
+      "path": "/triggers",
+      "handler": "add_trigger",
+      "owner": "router",
+      "source": "backend_fastapi/automation_routes.py:41",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "POST",
+      "path": "/webhook/{name}",
+      "handler": "webhook",
+      "owner": "router",
+      "source": "backend_fastapi/automation_routes.py:47",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "POST",
+      "path": "/research",
+      "handler": "research",
+      "owner": "router",
+      "source": "backend_fastapi/away_routes.py:101",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "POST",
+      "path": "/reports/digest",
+      "handler": "build_digest",
+      "owner": "router",
+      "source": "backend_fastapi/away_routes.py:108",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "GET",
+      "path": "/status",
+      "handler": "status",
+      "owner": "router",
+      "source": "backend_fastapi/away_routes.py:46",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "GET",
+      "path": "/tasks",
+      "handler": "list_tasks",
+      "owner": "router",
+      "source": "backend_fastapi/away_routes.py:55",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "POST",
+      "path": "/tasks",
+      "handler": "submit_task",
+      "owner": "router",
+      "source": "backend_fastapi/away_routes.py:60",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "POST",
+      "path": "/tasks/run",
+      "handler": "run_pending",
+      "owner": "router",
+      "source": "backend_fastapi/away_routes.py:68",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "GET",
+      "path": "/kb/stats",
+      "handler": "kb_stats",
+      "owner": "router",
+      "source": "backend_fastapi/away_routes.py:77",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "POST",
+      "path": "/kb/add",
+      "handler": "kb_add",
+      "owner": "router",
+      "source": "backend_fastapi/away_routes.py:82",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "POST",
+      "path": "/kb/query",
+      "handler": "kb_query",
+      "owner": "router",
+      "source": "backend_fastapi/away_routes.py:96",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "GET",
+      "path": "/router",
+      "handler": "router",
+      "owner": "router",
+      "source": "backend_fastapi/brain_routes.py:103",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "GET",
+      "path": "/benchmark",
+      "handler": "benchmark",
+      "owner": "router",
+      "source": "backend_fastapi/brain_routes.py:110",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "GET",
+      "path": "/sandbox",
+      "handler": "sandbox",
+      "owner": "router",
+      "source": "backend_fastapi/brain_routes.py:117",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "GET",
+      "path": "/vault",
+      "handler": "vault",
+      "owner": "router",
+      "source": "backend_fastapi/brain_routes.py:124",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "GET",
+      "path": "/personal",
+      "handler": "personal",
+      "owner": "router",
+      "source": "backend_fastapi/brain_routes.py:131",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "GET",
+      "path": "/wake",
+      "handler": "wake",
+      "owner": "router",
+      "source": "backend_fastapi/brain_routes.py:144",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "GET",
+      "path": "/leaderboard",
+      "handler": "leaderboard",
+      "owner": "router",
+      "source": "backend_fastapi/brain_routes.py:151",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "GET",
+      "path": "/schedule",
+      "handler": "schedule",
+      "owner": "router",
+      "source": "backend_fastapi/brain_routes.py:158",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "GET",
+      "path": "/history",
+      "handler": "history",
+      "owner": "router",
+      "source": "backend_fastapi/brain_routes.py:165",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "GET",
+      "path": "/photos",
+      "handler": "photos",
+      "owner": "router",
+      "source": "backend_fastapi/brain_routes.py:172",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "GET",
+      "path": "/backups",
+      "handler": "backups",
+      "owner": "router",
+      "source": "backend_fastapi/brain_routes.py:180",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "GET",
+      "path": "/engine",
+      "handler": "engine",
+      "owner": "router",
+      "source": "backend_fastapi/brain_routes.py:187",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "GET",
+      "path": "/mesh",
+      "handler": "mesh",
+      "owner": "router",
+      "source": "backend_fastapi/brain_routes.py:194",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "GET",
+      "path": "/identity",
+      "handler": "get_identity",
+      "owner": "router",
+      "source": "backend_fastapi/brain_routes.py:47",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "POST",
+      "path": "/identity",
+      "handler": "update_identity",
+      "owner": "router",
+      "source": "backend_fastapi/brain_routes.py:52",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "POST",
+      "path": "/identity/mood",
+      "handler": "set_mood",
+      "owner": "router",
+      "source": "backend_fastapi/brain_routes.py:68",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "GET",
+      "path": "/identity/user",
+      "handler": "get_user",
+      "owner": "router",
+      "source": "backend_fastapi/brain_routes.py:74",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "POST",
+      "path": "/identity/user",
+      "handler": "update_user",
+      "owner": "router",
+      "source": "backend_fastapi/brain_routes.py:79",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "POST",
+      "path": "/identity/reflections",
+      "handler": "add_reflection",
+      "owner": "router",
+      "source": "backend_fastapi/brain_routes.py:85",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "GET",
+      "path": "/identity/prompt-block",
+      "handler": "prompt_block",
+      "owner": "router",
+      "source": "backend_fastapi/brain_routes.py:91",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "GET",
+      "path": "/compaction",
+      "handler": "compaction",
+      "owner": "router",
+      "source": "backend_fastapi/brain_routes.py:96",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "GET",
+      "path": "",
+      "handler": "list_goals",
+      "owner": "router",
+      "source": "backend_fastapi/goals_routes.py:47",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "POST",
+      "path": "",
+      "handler": "create_goal",
+      "owner": "router",
+      "source": "backend_fastapi/goals_routes.py:52",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "GET",
+      "path": "/{goal_id}",
+      "handler": "get_goal",
+      "owner": "router",
+      "source": "backend_fastapi/goals_routes.py:58",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "POST",
+      "path": "/{goal_id}/advance",
+      "handler": "advance",
+      "owner": "router",
+      "source": "backend_fastapi/goals_routes.py:66",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "POST",
+      "path": "/{goal_id}/fail",
+      "handler": "fail",
+      "owner": "router",
+      "source": "backend_fastapi/goals_routes.py:76",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "POST",
+      "path": "/{goal_id}/follow-up",
+      "handler": "follow_up",
+      "owner": "router",
+      "source": "backend_fastapi/goals_routes.py:82",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "POST",
+      "path": "/{goal_id}/abandon",
+      "handler": "abandon",
+      "owner": "router",
+      "source": "backend_fastapi/goals_routes.py:88",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "POST",
+      "path": "/{goal_id}/delegate",
+      "handler": "delegate",
+      "owner": "router",
+      "source": "backend_fastapi/goals_routes.py:94",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "GET",
+      "path": "/status",
+      "handler": "status",
+      "owner": "router",
+      "source": "backend_fastapi/harness_routes.py:38",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "GET",
+      "path": "/list",
+      "handler": "list",
+      "owner": "router",
+      "source": "backend_fastapi/harness_routes.py:43",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "POST",
+      "path": "/refine",
+      "handler": "refine",
+      "owner": "router",
+      "source": "backend_fastapi/harness_routes.py:48",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "POST",
+      "path": "/rollback",
+      "handler": "rollback",
+      "owner": "router",
+      "source": "backend_fastapi/harness_routes.py:54",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "POST",
+      "path": "/context",
+      "handler": "context",
+      "owner": "router",
+      "source": "backend_fastapi/harness_routes.py:59",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "GET",
+      "path": "/knowledge-graph",
+      "handler": "knowledge_graph",
+      "owner": "router",
+      "source": "backend_fastapi/intel_routes.py:47",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "POST",
+      "path": "/briefing",
+      "handler": "briefing",
+      "owner": "router",
+      "source": "backend_fastapi/intel_routes.py:52",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "POST",
+      "path": "/skills/install",
+      "handler": "install_skill",
+      "owner": "router",
+      "source": "backend_fastapi/intel_routes.py:63",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "GET",
+      "path": "/skills/list",
+      "handler": "list_skills",
+      "owner": "router",
+      "source": "backend_fastapi/intel_routes.py:69",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "POST",
+      "path": "/api/onboarding/reset",
+      "handler": "onboarding_reset",
+      "owner": "app",
+      "source": "backend_fastapi/main.py:1006",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "POST",
+      "path": "/api/demo",
+      "handler": "demo_control",
+      "owner": "app",
+      "source": "backend_fastapi/main.py:1028",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "GET",
+      "path": "/api/demo/status",
+      "handler": "demo_status",
+      "owner": "app",
+      "source": "backend_fastapi/main.py:1073",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "GET",
+      "path": "/api/demo/script",
+      "handler": "demo_script",
+      "owner": "app",
+      "source": "backend_fastapi/main.py:1093",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "GET",
+      "path": "/api/stats",
+      "handler": "get_stats",
+      "owner": "app",
+      "source": "backend_fastapi/main.py:1118",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "GET",
+      "path": "/api/stats/today",
+      "handler": "get_stats_today",
+      "owner": "app",
+      "source": "backend_fastapi/main.py:1129",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "GET",
+      "path": "/api/stats/lifetime",
+      "handler": "get_stats_lifetime",
+      "owner": "app",
+      "source": "backend_fastapi/main.py:1140",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "GET",
+      "path": "/api/stats/time-saved",
+      "handler": "get_stats_time_saved",
+      "owner": "app",
+      "source": "backend_fastapi/main.py:1151",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "POST",
+      "path": "/api/vision",
+      "handler": "vision_process",
+      "owner": "app",
+      "source": "backend_fastapi/main.py:1169",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "GET",
+      "path": "/api/vision/status",
+      "handler": "vision_status",
+      "owner": "app",
+      "source": "backend_fastapi/main.py:1204",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "POST",
+      "path": "/api/voice/clone/start",
+      "handler": "voice_clone_start",
+      "owner": "app",
+      "source": "backend_fastapi/main.py:1216",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "POST",
+      "path": "/api/voice/clone/stop",
+      "handler": "voice_clone_stop",
+      "owner": "app",
+      "source": "backend_fastapi/main.py:1232",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "POST",
+      "path": "/api/voice/clone/train",
+      "handler": "voice_clone_train",
+      "owner": "app",
+      "source": "backend_fastapi/main.py:1251",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "GET",
+      "path": "/api/voice/clone/samples",
+      "handler": "voice_clone_samples",
+      "owner": "app",
+      "source": "backend_fastapi/main.py:1263",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "GET",
+      "path": "/api/voice/clone/voices",
+      "handler": "voice_clone_voices",
+      "owner": "app",
+      "source": "backend_fastapi/main.py:1274",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "GET",
+      "path": "/api/voice/clone/status",
+      "handler": "voice_clone_status",
+      "owner": "app",
+      "source": "backend_fastapi/main.py:1285",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "GET",
+      "path": "/api/skills/marketplace",
+      "handler": "skills_marketplace",
+      "owner": "app",
+      "source": "backend_fastapi/main.py:1297",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "POST",
+      "path": "/api/skills/install",
+      "handler": "skill_install",
+      "owner": "app",
+      "source": "backend_fastapi/main.py:1318",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "POST",
+      "path": "/api/skills/uninstall",
+      "handler": "skill_uninstall",
+      "owner": "app",
+      "source": "backend_fastapi/main.py:1329",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "GET",
+      "path": "/api/skills/installed",
+      "handler": "skills_installed",
+      "owner": "app",
+      "source": "backend_fastapi/main.py:1341",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "GET",
+      "path": "/api/skills/updates",
+      "handler": "skills_updates",
+      "owner": "app",
+      "source": "backend_fastapi/main.py:1351",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "GET",
+      "path": "/api/skills/marketplace/status",
+      "handler": "skills_marketplace_status",
+      "owner": "app",
+      "source": "backend_fastapi/main.py:1361",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "GET",
+      "path": "/api/sdk",
+      "handler": "sdk_info",
+      "owner": "app",
+      "source": "backend_fastapi/main.py:1372",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "GET",
+      "path": "/api/network/info",
+      "handler": "get_network_info",
+      "owner": "app",
+      "source": "backend_fastapi/main.py:1389",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "POST",
+      "path": "/api/network/pair",
+      "handler": "generate_pairing",
+      "owner": "app",
+      "source": "backend_fastapi/main.py:1413",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "GET",
+      "path": "/api/network/qr",
+      "handler": "get_qr_code",
+      "owner": "app",
+      "source": "backend_fastapi/main.py:1431",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "POST",
+      "path": "/api/network/pair/verify",
+      "handler": "verify_pairing_code",
+      "owner": "app",
+      "source": "backend_fastapi/main.py:1491",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "POST",
+      "path": "/api/voice/transcribe",
+      "handler": "transcribe_audio",
+      "owner": "app",
+      "source": "backend_fastapi/main.py:1513",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "GET",
+      "path": "/api/network/pair/active",
+      "handler": "get_active_pair_code",
+      "owner": "app",
+      "source": "backend_fastapi/main.py:1574",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "GET",
+      "path": "/api/mobile/qr-page",
+      "handler": "mobile_qr_page_data",
+      "owner": "app",
+      "source": "backend_fastapi/main.py:1619",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "WEBSOCKET",
+      "path": "/ws/mobile",
+      "handler": "websocket_mobile",
+      "owner": "app",
+      "source": "backend_fastapi/main.py:1642",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "GET",
+      "path": "/api/notifications/status",
+      "handler": "notifications_status",
+      "owner": "app",
+      "source": "backend_fastapi/main.py:1865",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "GET",
+      "path": "/api/notifications/dashboard",
+      "handler": "notifications_dashboard",
+      "owner": "app",
+      "source": "backend_fastapi/main.py:1874",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "GET",
+      "path": "/api/notifications",
+      "handler": "list_notifications",
+      "owner": "app",
+      "source": "backend_fastapi/main.py:1883",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "GET",
+      "path": "/api/notifications/vapid",
+      "handler": "get_vapid_public_key",
+      "owner": "app",
+      "source": "backend_fastapi/main.py:1904",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "GET",
+      "path": "/api/notifications/devices",
+      "handler": "list_devices_endpoint",
+      "owner": "app",
+      "source": "backend_fastapi/main.py:1915",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "POST",
+      "path": "/api/notifications/subscribe",
+      "handler": "subscribe_push",
+      "owner": "app",
+      "source": "backend_fastapi/main.py:1925",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/notifications/subscribe/{device_id}",
+      "handler": "unsubscribe_push",
+      "owner": "app",
+      "source": "backend_fastapi/main.py:1941",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "GET",
+      "path": "/api/notifications/prefs",
+      "handler": "get_notification_prefs_endpoint",
+      "owner": "app",
+      "source": "backend_fastapi/main.py:1952",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "POST",
+      "path": "/api/notifications/prefs",
+      "handler": "update_notification_prefs",
+      "owner": "app",
+      "source": "backend_fastapi/main.py:1962",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "POST",
+      "path": "/api/notifications/prefs/reset",
+      "handler": "reset_notification_prefs",
+      "owner": "app",
+      "source": "backend_fastapi/main.py:1974",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "POST",
+      "path": "/api/notifications/snooze",
+      "handler": "snooze_notifications",
+      "owner": "app",
+      "source": "backend_fastapi/main.py:1984",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/notifications/snooze",
+      "handler": "unsnooze_notifications",
+      "owner": "app",
+      "source": "backend_fastapi/main.py:2000",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "GET",
+      "path": "/api/notifications/export",
+      "handler": "export_notifications",
+      "owner": "app",
+      "source": "backend_fastapi/main.py:2010",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "GET",
+      "path": "/api/notifications/{notif_id}",
+      "handler": "get_notification",
+      "owner": "app",
+      "source": "backend_fastapi/main.py:2053",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "POST",
+      "path": "/api/notifications/{notif_id}/read",
+      "handler": "mark_notification_read",
+      "owner": "app",
+      "source": "backend_fastapi/main.py:2065",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "POST",
+      "path": "/api/notifications/read-all",
+      "handler": "mark_all_read",
+      "owner": "app",
+      "source": "backend_fastapi/main.py:2075",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "POST",
+      "path": "/api/notifications",
+      "handler": "create_notification",
+      "owner": "app",
+      "source": "backend_fastapi/main.py:2085",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/notifications",
+      "handler": "clear_notifications",
+      "owner": "app",
+      "source": "backend_fastapi/main.py:2101",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "GET",
+      "path": "/api/geofence/status",
+      "handler": "geofence_status",
+      "owner": "app",
+      "source": "backend_fastapi/main.py:2150",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "GET",
+      "path": "/api/geofence/dashboard",
+      "handler": "geofence_dashboard",
+      "owner": "app",
+      "source": "backend_fastapi/main.py:2160",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "GET",
+      "path": "/api/geofence/places",
+      "handler": "geofence_list_places",
+      "owner": "app",
+      "source": "backend_fastapi/main.py:2170",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "POST",
+      "path": "/api/geofence/places",
+      "handler": "geofence_add_place",
+      "owner": "app",
+      "source": "backend_fastapi/main.py:2180",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "POST",
+      "path": "/api/geofence/places/{place_id}/update",
+      "handler": "geofence_update_place",
+      "owner": "app",
+      "source": "backend_fastapi/main.py:2194",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/geofence/places/{place_id}",
+      "handler": "geofence_remove_place",
+      "owner": "app",
+      "source": "backend_fastapi/main.py:2210",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "GET",
+      "path": "/api/geofence/rules",
+      "handler": "geofence_list_rules",
+      "owner": "app",
+      "source": "backend_fastapi/main.py:2220",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "POST",
+      "path": "/api/geofence/rules",
+      "handler": "geofence_add_rule",
+      "owner": "app",
+      "source": "backend_fastapi/main.py:2238",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/geofence/rules/{rule_id}",
+      "handler": "geofence_remove_rule",
+      "owner": "app",
+      "source": "backend_fastapi/main.py:2255",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "POST",
+      "path": "/api/geofence/location",
+      "handler": "geofence_update_location",
+      "owner": "app",
+      "source": "backend_fastapi/main.py:2265",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "GET",
+      "path": "/api/geofence/location",
+      "handler": "geofence_current_location",
+      "owner": "app",
+      "source": "backend_fastapi/main.py:2331",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "GET",
+      "path": "/api/geofence/location/history",
+      "handler": "geofence_location_history",
+      "owner": "app",
+      "source": "backend_fastapi/main.py:2348",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "GET",
+      "path": "/api/geofence/events",
+      "handler": "geofence_recent_events",
+      "owner": "app",
+      "source": "backend_fastapi/main.py:2358",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "POST",
+      "path": "/api/geofence/seed",
+      "handler": "geofence_seed_samples",
+      "owner": "app",
+      "source": "backend_fastapi/main.py:2368",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "POST",
+      "path": "/api/geofence/clear-events",
+      "handler": "geofence_clear_events",
+      "owner": "app",
+      "source": "backend_fastapi/main.py:2396",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "POST",
+      "path": "/api/geofence/reset",
+      "handler": "geofence_reset_all",
+      "owner": "app",
+      "source": "backend_fastapi/main.py:2406",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "GET",
+      "path": "/api/screen/status",
+      "handler": "screen_status",
+      "owner": "app",
+      "source": "backend_fastapi/main.py:2419",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "GET",
+      "path": "/api/screen/context",
+      "handler": "screen_context",
+      "owner": "app",
+      "source": "backend_fastapi/main.py:2429",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "GET",
+      "path": "/api/screen/dashboard",
+      "handler": "screen_dashboard",
+      "owner": "app",
+      "source": "backend_fastapi/main.py:2439",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "GET",
+      "path": "/api/screen/recent",
+      "handler": "screen_recent",
+      "owner": "app",
+      "source": "backend_fastapi/main.py:2449",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "POST",
+      "path": "/api/screen/start",
+      "handler": "screen_start",
+      "owner": "app",
+      "source": "backend_fastapi/main.py:2460",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "POST",
+      "path": "/api/screen/stop",
+      "handler": "screen_stop",
+      "owner": "app",
+      "source": "backend_fastapi/main.py:2471",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "POST",
+      "path": "/api/screen/capture",
+      "handler": "screen_capture",
+      "owner": "app",
+      "source": "backend_fastapi/main.py:2482",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "POST",
+      "path": "/api/screen/classify",
+      "handler": "screen_classify",
+      "owner": "app",
+      "source": "backend_fastapi/main.py:2500",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "GET",
+      "path": "/api/devices",
+      "handler": "devices",
+      "owner": "app",
+      "source": "backend_fastapi/main.py:2510",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "POST",
+      "path": "/api/execute",
+      "handler": "execute",
+      "owner": "app",
+      "source": "backend_fastapi/main.py:2515",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "POST",
+      "path": "/api/execute/stream",
+      "handler": "execute_stream",
+      "owner": "app",
+      "source": "backend_fastapi/main.py:2568",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "GET",
+      "path": "/api/demo/{demo_type}",
+      "handler": "demo",
+      "owner": "app",
+      "source": "backend_fastapi/main.py:2605",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "POST",
+      "path": "/api/test-mic",
+      "handler": "test_mic",
+      "owner": "app",
+      "source": "backend_fastapi/main.py:2626",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "POST",
+      "path": "/api/ptt/start",
+      "handler": "ptt_start",
+      "owner": "app",
+      "source": "backend_fastapi/main.py:2682",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "POST",
+      "path": "/api/ptt/stop",
+      "handler": "ptt_stop",
+      "owner": "app",
+      "source": "backend_fastapi/main.py:2739",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "WEBSOCKET",
+      "path": "/ws",
+      "handler": "websocket_endpoint",
+      "owner": "app",
+      "source": "backend_fastapi/main.py:2840",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "GET",
+      "path": "/",
+      "handler": "root",
+      "owner": "app",
+      "source": "backend_fastapi/main.py:442",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "GET",
+      "path": "/api/health",
+      "handler": "health",
+      "owner": "app",
+      "source": "backend_fastapi/main.py:456",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "GET",
+      "path": "/api/proactive/suggestions",
+      "handler": "get_proactive_suggestions",
+      "owner": "app",
+      "source": "backend_fastapi/main.py:479",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "GET",
+      "path": "/api/user/profile",
+      "handler": "get_user_profile",
+      "owner": "app",
+      "source": "backend_fastapi/main.py:495",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "POST",
+      "path": "/api/user/profile",
+      "handler": "update_user_profile",
+      "owner": "app",
+      "source": "backend_fastapi/main.py:525",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/user/profile/{field}",
+      "handler": "forget_user_profile_field",
+      "owner": "app",
+      "source": "backend_fastapi/main.py:542",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "GET",
+      "path": "/api/user/greeting",
+      "handler": "get_user_greeting",
+      "owner": "app",
+      "source": "backend_fastapi/main.py:555",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "GET",
+      "path": "/api/user/stats",
+      "handler": "get_user_stats",
+      "owner": "app",
+      "source": "backend_fastapi/main.py:604",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "GET",
+      "path": "/api/memory/sessions",
+      "handler": "get_sessions",
+      "owner": "app",
+      "source": "backend_fastapi/main.py:624",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "GET",
+      "path": "/api/memory/session/{session_id}",
+      "handler": "get_session_details",
+      "owner": "app",
+      "source": "backend_fastapi/main.py:640",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "GET",
+      "path": "/api/memory/search",
+      "handler": "search_memory",
+      "owner": "app",
+      "source": "backend_fastapi/main.py:655",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "GET",
+      "path": "/api/memory/today",
+      "handler": "get_today_memory",
+      "owner": "app",
+      "source": "backend_fastapi/main.py:672",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "GET",
+      "path": "/api/memory/yesterday",
+      "handler": "get_yesterday_memory",
+      "owner": "app",
+      "source": "backend_fastapi/main.py:684",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "GET",
+      "path": "/api/memory/weekly",
+      "handler": "get_weekly_memory",
+      "owner": "app",
+      "source": "backend_fastapi/main.py:698",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "POST",
+      "path": "/api/proactive/action",
+      "handler": "proactive_action",
+      "owner": "app",
+      "source": "backend_fastapi/main.py:715",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "POST",
+      "path": "/api/proactive/context",
+      "handler": "update_proactive_context",
+      "owner": "app",
+      "source": "backend_fastapi/main.py:741",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "GET",
+      "path": "/api/scheduler/tasks",
+      "handler": "list_scheduled_tasks",
+      "owner": "app",
+      "source": "backend_fastapi/main.py:775",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "POST",
+      "path": "/api/scheduler/cron",
+      "handler": "add_cron_task",
+      "owner": "app",
+      "source": "backend_fastapi/main.py:786",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "POST",
+      "path": "/api/scheduler/interval",
+      "handler": "add_interval_task",
+      "owner": "app",
+      "source": "backend_fastapi/main.py:801",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "POST",
+      "path": "/api/scheduler/once",
+      "handler": "add_once_task",
+      "owner": "app",
+      "source": "backend_fastapi/main.py:817",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "POST",
+      "path": "/api/scheduler/remove",
+      "handler": "remove_scheduled_task",
+      "owner": "app",
+      "source": "backend_fastapi/main.py:838",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "POST",
+      "path": "/api/voice/set",
+      "handler": "set_voice_persona",
+      "owner": "app",
+      "source": "backend_fastapi/main.py:855",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "GET",
+      "path": "/api/voice/personas",
+      "handler": "list_voice_personas",
+      "owner": "app",
+      "source": "backend_fastapi/main.py:869",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "GET",
+      "path": "/api/personality",
+      "handler": "get_personality",
+      "owner": "app",
+      "source": "backend_fastapi/main.py:890",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "POST",
+      "path": "/api/personality",
+      "handler": "update_personality",
+      "owner": "app",
+      "source": "backend_fastapi/main.py:901",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "POST",
+      "path": "/api/personality/mood",
+      "handler": "set_mood",
+      "owner": "app",
+      "source": "backend_fastapi/main.py:922",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "POST",
+      "path": "/api/personality/test",
+      "handler": "test_personality_phrase",
+      "owner": "app",
+      "source": "backend_fastapi/main.py:937",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "GET",
+      "path": "/api/onboarding",
+      "handler": "get_onboarding_state",
+      "owner": "app",
+      "source": "backend_fastapi/main.py:956",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "POST",
+      "path": "/api/onboarding/advance",
+      "handler": "onboarding_advance",
+      "owner": "app",
+      "source": "backend_fastapi/main.py:971",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "POST",
+      "path": "/api/onboarding/skip",
+      "handler": "onboarding_skip",
+      "owner": "app",
+      "source": "backend_fastapi/main.py:994",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "GET",
+      "path": "/status",
+      "handler": "status",
+      "owner": "router",
+      "source": "backend_fastapi/mcp_routes.py:35",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "GET",
+      "path": "/servers",
+      "handler": "list_servers",
+      "owner": "router",
+      "source": "backend_fastapi/mcp_routes.py:40",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "POST",
+      "path": "/servers",
+      "handler": "add_server",
+      "owner": "router",
+      "source": "backend_fastapi/mcp_routes.py:45",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "POST",
+      "path": "/evaluate",
+      "handler": "evaluate",
+      "owner": "router",
+      "source": "backend_fastapi/metacog_routes.py:40",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "POST",
+      "path": "/apply",
+      "handler": "apply",
+      "owner": "router",
+      "source": "backend_fastapi/metacog_routes.py:50",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "GET",
+      "path": "/history",
+      "handler": "history",
+      "owner": "router",
+      "source": "backend_fastapi/metacog_routes.py:59",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "GET",
+      "path": "/stats",
+      "handler": "stats",
+      "owner": "router",
+      "source": "backend_fastapi/metacog_routes.py:64",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "POST",
+      "path": "/today",
+      "handler": "reflect_today",
+      "owner": "router",
+      "source": "backend_fastapi/reflect_routes.py:32",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "POST",
+      "path": "/patterns",
+      "handler": "patterns",
+      "owner": "router",
+      "source": "backend_fastapi/reflect_routes.py:38",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "GET",
+      "path": "/episodes",
+      "handler": "episodes",
+      "owner": "router",
+      "source": "backend_fastapi/reflect_routes.py:43",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "GET",
+      "path": "/stats",
+      "handler": "stats",
+      "owner": "router",
+      "source": "backend_fastapi/reflect_routes.py:48",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "GET",
+      "path": "/status",
+      "handler": "status",
+      "owner": "router",
+      "source": "backend_fastapi/remote_routes.py:35",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "POST",
+      "path": "/command",
+      "handler": "command",
+      "owner": "router",
+      "source": "backend_fastapi/remote_routes.py:41",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "POST",
+      "path": "/goal",
+      "handler": "create_goal",
+      "owner": "router",
+      "source": "backend_fastapi/remote_routes.py:54",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "GET",
+      "path": "/status",
+      "handler": "status",
+      "owner": "router",
+      "source": "backend_fastapi/security_routes.py:39",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "POST",
+      "path": "/enroll",
+      "handler": "enroll",
+      "owner": "router",
+      "source": "backend_fastapi/security_routes.py:47",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "POST",
+      "path": "/guard/arm",
+      "handler": "arm",
+      "owner": "router",
+      "source": "backend_fastapi/security_routes.py:56",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "POST",
+      "path": "/guard/disarm",
+      "handler": "disarm",
+      "owner": "router",
+      "source": "backend_fastapi/security_routes.py:62",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "GET",
+      "path": "/guard/snapshot",
+      "handler": "snapshot",
+      "owner": "router",
+      "source": "backend_fastapi/security_routes.py:68",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "POST",
+      "path": "/lock",
+      "handler": "lock",
+      "owner": "router",
+      "source": "backend_fastapi/security_routes.py:73",
+      "implementation_signal": "code_present_effect_unverified"
+    }
+  ],
+  "declared_tool_classes": [
+    {
+      "class": "AccessibilityTool",
+      "source": "omni_v2/tools/accessibility.py:5",
+      "bases": [
+        "CommandPlugin"
+      ],
+      "execute_declared": true,
+      "implementation_signal": "code_present_effect_unverified",
+      "supported_actions": [
+        "alpha_screen_desc",
+        "alpha_show_hints",
+        "accessibility_mode"
+      ],
+      "supported_action_count": 3
+    },
+    {
+      "class": "AITool",
+      "source": "omni_v2/tools/ai.py:12",
+      "bases": [
+        "CommandPlugin"
+      ],
+      "execute_declared": true,
+      "implementation_signal": "code_present_effect_unverified",
+      "supported_actions": [
+        "ai_chat",
+        "ai_summarize",
+        "ai_translate",
+        "ai_code_generate"
+      ],
+      "supported_action_count": 4
+    },
+    {
+      "class": "BrowserTool",
+      "source": "omni_v2/tools/browser.py:6",
+      "bases": [
+        "CommandPlugin"
+      ],
+      "execute_declared": true,
+      "implementation_signal": "code_present_effect_unverified",
+      "supported_actions": [
+        "browser_navigate",
+        "browser_search",
+        "browser_click",
+        "browser_type",
+        "browser_scroll",
+        "browser_new_tab",
+        "browser_close_tab",
+        "browser_back",
+        "browser_forward",
+        "browser_refresh",
+        "browser_screenshot_element",
+        "browser_extract_text",
+        "browser_fill_form",
+        "browser_bookmark"
+      ],
+      "supported_action_count": 14
+    },
+    {
+      "class": "BrowserV4Playwright",
+      "source": "omni_v2/tools/browser_playwright.py:45",
+      "bases": [
+        "CommandPlugin"
+      ],
+      "execute_declared": true,
+      "implementation_signal": "code_present_effect_unverified",
+      "supported_actions": [
+        "browser_navigate",
+        "browser_search",
+        "browser_click",
+        "browser_type",
+        "browser_screenshot",
+        "browser_extract_text",
+        "browser_fill_form",
+        "browser_screenshot_url",
+        "browser_execute_js",
+        "browser_get_cookies",
+        "browser_clear_cookies",
+        "browser_close"
+      ],
+      "supported_action_count": 12
+    },
+    {
+      "class": "BrowserToolV3",
+      "source": "omni_v2/tools/browser_v3.py:31",
+      "bases": [
+        "CommandPlugin"
+      ],
+      "execute_declared": true,
+      "implementation_signal": "code_present_effect_unverified",
+      "supported_actions": [
+        "browser_navigate",
+        "browser_search",
+        "browser_new_tab",
+        "browser_github",
+        "browser_youtube",
+        "browser_google"
+      ],
+      "supported_action_count": 6
+    },
+    {
+      "class": "FilesTool",
+      "source": "omni_v2/tools/files.py:7",
+      "bases": [
+        "CommandPlugin"
+      ],
+      "execute_declared": true,
+      "implementation_signal": "code_present_effect_unverified",
+      "supported_actions": [
+        "files_create_folder",
+        "files_delete",
+        "files_list_dir",
+        "files_search_files",
+        "files_write",
+        "files_read"
+      ],
+      "supported_action_count": 6
+    },
+    {
+      "class": "CalendarTool",
+      "source": "omni_v2/tools/integrations.py:14",
+      "bases": [
+        "CommandPlugin"
+      ],
+      "execute_declared": true,
+      "implementation_signal": "code_present_effect_unverified",
+      "supported_actions": [
+        "integrations_show_calendar"
+      ],
+      "supported_action_count": 1
+    },
+    {
+      "class": "SmartHomeTool",
+      "source": "omni_v2/tools/integrations.py:22",
+      "bases": [
+        "CommandPlugin"
+      ],
+      "execute_declared": true,
+      "implementation_signal": "code_present_effect_unverified",
+      "supported_actions": [
+        "integrations_lights_on",
+        "integrations_lights_off",
+        "integrations_set_temperature"
+      ],
+      "supported_action_count": 3
+    },
+    {
+      "class": "PerformanceTool",
+      "source": "omni_v2/tools/integrations.py:38",
+      "bases": [
+        "CommandPlugin"
+      ],
+      "execute_declared": true,
+      "implementation_signal": "code_present_effect_unverified",
+      "supported_actions": [
+        "integrations_performance",
+        "integrations_weather",
+        "integrations_timer"
+      ],
+      "supported_action_count": 3
+    },
+    {
+      "class": "GmailTool",
+      "source": "omni_v2/tools/integrations.py:5",
+      "bases": [
+        "CommandPlugin"
+      ],
+      "execute_declared": true,
+      "implementation_signal": "code_present_effect_unverified",
+      "supported_actions": [
+        "integrations_send_email"
+      ],
+      "supported_action_count": 1
+    },
+    {
+      "class": "MediaTool",
+      "source": "omni_v2/tools/media.py:5",
+      "bases": [
+        "CommandPlugin"
+      ],
+      "execute_declared": true,
+      "implementation_signal": "code_present_effect_unverified",
+      "supported_actions": [
+        "media_play_music",
+        "media_pause",
+        "media_next",
+        "media_prev",
+        "media_youtube_play",
+        "media_spotify_control"
+      ],
+      "supported_action_count": 6
+    },
+    {
+      "class": "OmniTool",
+      "source": "omni_v2/tools/omni.py:5",
+      "bases": [
+        "CommandPlugin"
+      ],
+      "execute_declared": true,
+      "implementation_signal": "code_present_effect_unverified",
+      "supported_actions": [
+        "omni_help",
+        "omni_settings",
+        "omni_status",
+        "omni_repeat"
+      ],
+      "supported_action_count": 4
+    },
+    {
+      "class": "SendToPhonePlugin",
+      "source": "omni_v2/tools/send_to_phone.py:143",
+      "bases": [],
+      "execute_declared": true,
+      "implementation_signal": "code_present_effect_unverified",
+      "supported_actions": [
+        "send_to_phone",
+        "notify_phone",
+        "ping_phone",
+        "text_me",
+        "alert_phone"
+      ],
+      "supported_action_count": 5
+    },
+    {
+      "class": "SnoozePlugin",
+      "source": "omni_v2/tools/snooze.py:106",
+      "bases": [],
+      "execute_declared": true,
+      "implementation_signal": "code_present_effect_unverified",
+      "supported_actions": [
+        "snooze_notifications",
+        "unsnooze",
+        "dnd",
+        "mute_notifications"
+      ],
+      "supported_action_count": 4
+    },
+    {
+      "class": "SystemTool",
+      "source": "omni_v2/tools/system.py:7",
+      "bases": [
+        "CommandPlugin"
+      ],
+      "execute_declared": true,
+      "implementation_signal": "code_present_effect_unverified",
+      "supported_actions": [
+        "system_screenshot",
+        "system_copy",
+        "system_paste",
+        "system_volume",
+        "system_brightness",
+        "system_clean_temp",
+        "system_battery"
+      ],
+      "supported_action_count": 7
+    },
+    {
+      "class": "VSCodeTool",
+      "source": "omni_v2/tools/vscode.py:20",
+      "bases": [
+        "CommandPlugin"
+      ],
+      "execute_declared": true,
+      "implementation_signal": "code_present_effect_unverified",
+      "supported_actions": [
+        "vscode_open",
+        "vscode_terminal",
+        "vscode_save",
+        "vscode_create"
+      ],
+      "supported_action_count": 4
+    },
+    {
+      "class": "WindowsTool",
+      "source": "omni_v2/tools/windows.py:19",
+      "bases": [
+        "CommandPlugin"
+      ],
+      "execute_declared": true,
+      "implementation_signal": "code_present_effect_unverified",
+      "supported_actions": [
+        "windows_launch",
+        "windows_close",
+        "windows_minimize",
+        "windows_maximize",
+        "windows_move",
+        "windows_resize",
+        "windows_focus",
+        "windows_switch",
+        "windows_kill",
+        "windows_lock",
+        "windows_sleep"
+      ],
+      "supported_action_count": 11
+    }
+  ],
+  "files": {
+    "production": [
+      {
+        "path": "backend_fastapi/assistant_routes.py",
+        "bytes": 1899,
+        "lines": 75,
+        "nonblank_lines": 49,
+        "sha256": "366c1f7ab6b964b4103336d83180211222a92080ac0a135c64ea24283f83fb9b"
+      },
+      {
+        "path": "backend_fastapi/automation_routes.py",
+        "bytes": 1519,
+        "lines": 50,
+        "nonblank_lines": 37,
+        "sha256": "0323e719ea839aca48cae0b472fc7d419944139020964dc73246667108939324"
+      },
+      {
+        "path": "backend_fastapi/away_routes.py",
+        "bytes": 3322,
+        "lines": 111,
+        "nonblank_lines": 82,
+        "sha256": "124866b7f24278811243a0ded2147d53ebfc04c03c140e0cb645259a535839ff"
+      },
+      {
+        "path": "backend_fastapi/brain_routes.py",
+        "bytes": 5916,
+        "lines": 197,
+        "nonblank_lines": 145,
+        "sha256": "28d73ada48bd61f47f5177d45ae98801dc8800482d1e92b29ff049ec47de0ceb"
+      },
+      {
+        "path": "backend_fastapi/core/brain.py",
+        "bytes": 21493,
+        "lines": 499,
+        "nonblank_lines": 457,
+        "sha256": "ffc44a9f2af0e5d8e05d5cd358b5749be0c52249d397ef9ef1106a1e9672712e"
+      },
+      {
+        "path": "backend_fastapi/goals_routes.py",
+        "bytes": 2832,
+        "lines": 98,
+        "nonblank_lines": 70,
+        "sha256": "dbec98c1bb5b4163dde59e7c50a6a442be5fee4d1743c15071d4697c92498c68"
+      },
+      {
+        "path": "backend_fastapi/harness_routes.py",
+        "bytes": 1545,
+        "lines": 60,
+        "nonblank_lines": 41,
+        "sha256": "a2362ec094207b1aa6e3021a80afacf34cf668b90118c4c240212f2b9fca200c"
+      },
+      {
+        "path": "backend_fastapi/intel_routes.py",
+        "bytes": 2100,
+        "lines": 70,
+        "nonblank_lines": 54,
+        "sha256": "4556a4fb627fd2b7aeaf6c0ffae22e3e1ea9a3b6f826925f80933f59f52cba13"
+      },
+      {
+        "path": "backend_fastapi/main.py",
+        "bytes": 110072,
+        "lines": 2871,
+        "nonblank_lines": 2518,
+        "sha256": "5cf9870c32f07e09b863405c6851d26f4f10220696a058f4301e66854d9b01ae"
+      },
+      {
+        "path": "backend_fastapi/mcp_routes.py",
+        "bytes": 1153,
+        "lines": 47,
+        "nonblank_lines": 34,
+        "sha256": "08535e0d966b07b1dd090a84ea8b32136254704089dfbf26fbe637333e4e7aa7"
+      },
+      {
+        "path": "backend_fastapi/metacog_routes.py",
+        "bytes": 1852,
+        "lines": 65,
+        "nonblank_lines": 49,
+        "sha256": "f4eadd0e8bbc2bbdf3476177c67e801c709eee52fb9c0a662228e6d98cc4a88f"
+      },
+      {
+        "path": "backend_fastapi/reflect_routes.py",
+        "bytes": 1385,
+        "lines": 49,
+        "nonblank_lines": 35,
+        "sha256": "c63a0706870634e66499c892c868ff2d44fcdb45085068f3f39a4ae69066f02d"
+      },
+      {
+        "path": "backend_fastapi/remote_routes.py",
+        "bytes": 1793,
+        "lines": 56,
+        "nonblank_lines": 43,
+        "sha256": "8f1b41f75d4edfb8d3a534121e35d20f437091cee2f93b3efe2cc29a39e4e5bc"
+      },
+      {
+        "path": "backend_fastapi/security_routes.py",
+        "bytes": 2227,
+        "lines": 75,
+        "nonblank_lines": 55,
+        "sha256": "54255307486f8f91eec1b2bc2f180de9fc6aece0920592138ecc2ef3ea2df4d4"
+      },
+      {
+        "path": "frontend_next/app/api/away/status/route.js",
+        "bytes": 329,
+        "lines": 10,
+        "nonblank_lines": 10,
+        "sha256": "b0d6f30b470c84c93974a87e7f634af7faebf4ba2549f80a4433055f23071d17"
+      },
+      {
+        "path": "frontend_next/app/api/away/tasks/route.js",
+        "bytes": 771,
+        "lines": 24,
+        "nonblank_lines": 23,
+        "sha256": "6ef6f947d44421fcd6d58547379a090ebc8059117382984bfd9035db6a75ea85"
+      },
+      {
+        "path": "frontend_next/app/api/away/tasks/run/route.js",
+        "bytes": 469,
+        "lines": 14,
+        "nonblank_lines": 14,
+        "sha256": "87441ccf671b34533f21c8b4cc66079379fd163fe0c44af884bff354ef7fbd76"
+      },
+      {
+        "path": "frontend_next/app/api/brain/identity/route.js",
+        "bytes": 920,
+        "lines": 26,
+        "nonblank_lines": 25,
+        "sha256": "db35d488708016e6d597440856fe22d7d58c39a1b8c96115fa68d61182f560e7"
+      },
+      {
+        "path": "frontend_next/app/api/brain/user/route.js",
+        "bytes": 802,
+        "lines": 24,
+        "nonblank_lines": 23,
+        "sha256": "f7a0c737858726f091e28d042986f0decbcb2094415549f3556a96154970e072"
+      },
+      {
+        "path": "frontend_next/app/api/demo/[type]/route.js",
+        "bytes": 1867,
+        "lines": 60,
+        "nonblank_lines": 57,
+        "sha256": "eeeabc94f9cc9b5d68f1575b347282580797852bc41467f9cee64599805eebaf"
+      },
+      {
+        "path": "frontend_next/app/api/devices/route.js",
+        "bytes": 738,
+        "lines": 20,
+        "nonblank_lines": 20,
+        "sha256": "e4c0b1cc1426703145bac4becc6343f4ce6e7e0eff7f66ccf87136e787862d87"
+      },
+      {
+        "path": "frontend_next/app/api/execute/route.js",
+        "bytes": 1124,
+        "lines": 31,
+        "nonblank_lines": 29,
+        "sha256": "2c3a3c343ac733e82869803b8e70fdbb8663695aa8183373a31333f66d51c597"
+      },
+      {
+        "path": "frontend_next/app/api/goals/route.js",
+        "bytes": 758,
+        "lines": 24,
+        "nonblank_lines": 23,
+        "sha256": "427d346c457c95caf48b18c5b11abdff104055d918a35b11b2cdeaa04bca3ef6"
+      },
+      {
+        "path": "frontend_next/app/api/health/route.js",
+        "bytes": 601,
+        "lines": 17,
+        "nonblank_lines": 17,
+        "sha256": "a16b49addb49949bf274d5350954899f77f9808cbceaa674fd99212ffea3e4de"
+      },
+      {
+        "path": "frontend_next/app/api/knowledge-graph/route.js",
+        "bytes": 376,
+        "lines": 10,
+        "nonblank_lines": 10,
+        "sha256": "53353155682de285ba861da5e1e689992bf9015a8e3da1954bdf4f72357d1d22"
+      },
+      {
+        "path": "frontend_next/app/api/metacog/evaluate/route.js",
+        "bytes": 515,
+        "lines": 14,
+        "nonblank_lines": 14,
+        "sha256": "f675cecb29e91ca24fea5f185108e05a074ba6f3f510b64d69b453d7a76f6b1a"
+      },
+      {
+        "path": "frontend_next/app/api/metacog/history/route.js",
+        "bytes": 316,
+        "lines": 10,
+        "nonblank_lines": 10,
+        "sha256": "00f301d320294e584ac662e802ac585d4b969f86c8ffc0572757d98b2d7225a0"
+      },
+      {
+        "path": "frontend_next/app/api/reflect/episodes/route.js",
+        "bytes": 319,
+        "lines": 10,
+        "nonblank_lines": 10,
+        "sha256": "397688b0021f0cbcceaf995dab474b4b8875d6e31acf8ff2023b1a71aab04f95"
+      },
+      {
+        "path": "frontend_next/app/api/reflect/patterns/route.js",
+        "bytes": 530,
+        "lines": 14,
+        "nonblank_lines": 14,
+        "sha256": "1b1e0a71ccfb3e8352aeff88b1f9a32a1673e9a51b667e8a46396087e38ec868"
+      },
+      {
+        "path": "frontend_next/app/api/reflect/today/route.js",
+        "bytes": 410,
+        "lines": 10,
+        "nonblank_lines": 10,
+        "sha256": "269485028a05d75315d3f9f81ad17fbf1d930e3c62291094cba49b2c06370687"
+      },
+      {
+        "path": "frontend_next/app/api/security/enroll/route.js",
+        "bytes": 469,
+        "lines": 13,
+        "nonblank_lines": 13,
+        "sha256": "fe1be23697cade4af9346166469d6b4eb5335264d357bd774c60f54b77fd5eaa"
+      },
+      {
+        "path": "frontend_next/app/api/security/guard/arm/route.js",
+        "bytes": 360,
+        "lines": 10,
+        "nonblank_lines": 10,
+        "sha256": "109665f5ddc5ab7f90ee63a2b4a35dba9674f4c5357e64ab064b395d01fe56a6"
+      },
+      {
+        "path": "frontend_next/app/api/security/guard/disarm/route.js",
+        "bytes": 366,
+        "lines": 10,
+        "nonblank_lines": 10,
+        "sha256": "dfbafd9b75f420db0b28dba0ba57c49882aa4c03a5e8d46459321b2ec326cbcb"
+      },
+      {
+        "path": "frontend_next/app/api/security/lock/route.js",
+        "bytes": 481,
+        "lines": 13,
+        "nonblank_lines": 13,
+        "sha256": "6789a475f77342eaa87d717be0a8b6c742abf69e3e5065552ef2ee5aac6037a9"
+      },
+      {
+        "path": "frontend_next/app/api/security/status/route.js",
+        "bytes": 344,
+        "lines": 10,
+        "nonblank_lines": 10,
+        "sha256": "b4f5cc96140a597774d5929f69a038d7d1d78e498f9cdc2fd30f746ba780172f"
+      },
+      {
+        "path": "frontend_next/app/globals.css",
+        "bytes": 2421,
+        "lines": 98,
+        "nonblank_lines": 87,
+        "sha256": "181e1d5d9e9870cd1407a5c235847b83f526744dfb1ad7f9f28e4f0424c8a2f5"
+      },
+      {
+        "path": "frontend_next/app/knowledge-graph/page.js",
+        "bytes": 4751,
+        "lines": 114,
+        "nonblank_lines": 109,
+        "sha256": "cd433356edc9c5dc73310199404eaea252cf03cea3f4c72a1b4174d681c41913"
+      },
+      {
+        "path": "frontend_next/app/layout.js",
+        "bytes": 634,
+        "lines": 17,
+        "nonblank_lines": 15,
+        "sha256": "be357ed009da5659fc385e74b19016d44a350037b1ac3c5e38989eaf14578c48"
+      },
+      {
+        "path": "frontend_next/app/page.js",
+        "bytes": 32322,
+        "lines": 753,
+        "nonblank_lines": 702,
+        "sha256": "26b3aaae9ed5d05e963236497d735cbb5732e70f21ae5511327cadebf548f876"
+      },
+      {
+        "path": "frontend_next/components/BrainPanel.js",
+        "bytes": 10873,
+        "lines": 237,
+        "nonblank_lines": 215,
+        "sha256": "ae563955d77388f78dc09700d59a3c936a1bcbadbbb6f16a871f70f9c9119dcb"
+      },
+      {
+        "path": "frontend_next/components/ChatHistory.js",
+        "bytes": 2563,
+        "lines": 48,
+        "nonblank_lines": 43,
+        "sha256": "b5f6ee49518b8ef9ae4aaa45dc3330cb95f72937943425660bd5bd7209c7afe3"
+      },
+      {
+        "path": "frontend_next/components/CinematicStage.js",
+        "bytes": 6640,
+        "lines": 196,
+        "nonblank_lines": 166,
+        "sha256": "5d38ea53e728d5c7a9bfd4201b0486043baec01485e9256e7b1cdd2afe6a7112"
+      },
+      {
+        "path": "frontend_next/components/MicBar.js",
+        "bytes": 3206,
+        "lines": 66,
+        "nonblank_lines": 59,
+        "sha256": "bf69609ccd1580e5d06ec7b6388c029e4fc35bec87eb7d2c5ab57a5eee877566"
+      },
+      {
+        "path": "frontend_next/components/Orb.js",
+        "bytes": 3939,
+        "lines": 114,
+        "nonblank_lines": 98,
+        "sha256": "81f7e44c60a4aa8e4f6a9866a82e5899fc33a829d55e9ee21896bfd7feb02869"
+      },
+      {
+        "path": "frontend_next/components/SecurityPanel.js",
+        "bytes": 4148,
+        "lines": 76,
+        "nonblank_lines": 64,
+        "sha256": "92ab9a76a713cbb896ff5e0930946f2295fa8c74452a2884d9b3ffe864209f05"
+      },
+      {
+        "path": "mobile/app.js",
+        "bytes": 64705,
+        "lines": 1836,
+        "nonblank_lines": 1740,
+        "sha256": "eb54a94e23cfcd8f389d29f59f431ddf71db29e08a2d0234577f2791092ece99"
+      },
+      {
+        "path": "mobile/index.html",
+        "bytes": 13055,
+        "lines": 311,
+        "nonblank_lines": 291,
+        "sha256": "598073289924f80b492a83393e147e537e6626b8798f74b2b5060f76ad23e09a"
+      },
+      {
+        "path": "mobile/qr.html",
+        "bytes": 11341,
+        "lines": 292,
+        "nonblank_lines": 266,
+        "sha256": "c787e00a229be7330ab07d34e99fe5aeec0e0504c4b8577a738db39611f3a966"
+      },
+      {
+        "path": "mobile/style.css",
+        "bytes": 25971,
+        "lines": 340,
+        "nonblank_lines": 310,
+        "sha256": "4c05080fd2f416ce189afc7a8012542c006024db806768831eb9728dd7ab9872"
+      },
+      {
+        "path": "mobile/sw.js",
+        "bytes": 1572,
+        "lines": 54,
+        "nonblank_lines": 49,
+        "sha256": "5243ad516406df11538d33cf1c5a537aa973afadb3f6e2c05b75aa60690b5448"
+      },
+      {
+        "path": "omni.py",
+        "bytes": 8637,
+        "lines": 231,
+        "nonblank_lines": 200,
+        "sha256": "cb2aedb0e38ebb73bfdc597da1647615690ba9583391e65f1a45fae084cd3205"
+      },
+      {
+        "path": "omni/__init__.py",
+        "bytes": 3318,
+        "lines": 72,
+        "nonblank_lines": 64,
+        "sha256": "afd5ff1ed3316a06178c05aed6c9d37c5b2531a41ef09cd412760a531f284376"
+      },
+      {
+        "path": "omni/cli.py",
+        "bytes": 100316,
+        "lines": 2518,
+        "nonblank_lines": 2256,
+        "sha256": "a99a1b6d9d630811a67b7aeff326769c601fb1ce1810f5a403716e98dce5f545"
+      },
+      {
+        "path": "omni_daemon.py",
+        "bytes": 3053,
+        "lines": 91,
+        "nonblank_lines": 78,
+        "sha256": "54e9bdd1130874058fdfb2bccb3fdf9d76c9c219d62dc0f59463ddf104e32041"
+      },
+      {
+        "path": "omni_desktop.py",
+        "bytes": 25058,
+        "lines": 574,
+        "nonblank_lines": 533,
+        "sha256": "275dd6f7bcaee56279fb85d0895499a2cb291e4cd784e0d3dc817a57b704128f"
+      },
+      {
+        "path": "omni_v2/__init__.py",
+        "bytes": 332,
+        "lines": 11,
+        "nonblank_lines": 10,
+        "sha256": "94175665fb8d80757de15136d3c445ef8d594a7736137e9368c8100958dd84a5"
+      },
+      {
+        "path": "omni_v2/agents/__init__.py",
+        "bytes": 620,
+        "lines": 21,
+        "nonblank_lines": 20,
+        "sha256": "4720ee548576837e36d81e9fa30402ce95370a1efdede0811a493380a9ed81ff"
+      },
+      {
+        "path": "omni_v2/agents/demo_mode.py",
+        "bytes": 8275,
+        "lines": 248,
+        "nonblank_lines": 226,
+        "sha256": "d7701e0198483fe7e0ec21860e70f6c2b9c165c8d6a725e30da6ec266cc35245"
+      },
+      {
+        "path": "omni_v2/agents/evaluator.py",
+        "bytes": 12470,
+        "lines": 267,
+        "nonblank_lines": 234,
+        "sha256": "fa3f23e1431721fdfdd25e0ea7661da4a097c750250f81154388663c0de6b7b7"
+      },
+      {
+        "path": "omni_v2/agents/executor.py",
+        "bytes": 9638,
+        "lines": 239,
+        "nonblank_lines": 214,
+        "sha256": "023f56cd40ad78a5c80fc64a6d72c0a582449a3944fe0f01b94aeb6d4cb7ddef"
+      },
+      {
+        "path": "omni_v2/agents/geofence.py",
+        "bytes": 23831,
+        "lines": 620,
+        "nonblank_lines": 536,
+        "sha256": "fc3b7d45a44b11717e7783b8901a662205d1ecf0eaf181c0daf2a007e0839587"
+      },
+      {
+        "path": "omni_v2/agents/memory.py",
+        "bytes": 7443,
+        "lines": 187,
+        "nonblank_lines": 157,
+        "sha256": "02a723e04f8ad58b1b75b6f5b9ef1ddc3d67d425a2191fc8cf3b3fc7d32eb1f2"
+      },
+      {
+        "path": "omni_v2/agents/monitor.py",
+        "bytes": 6633,
+        "lines": 169,
+        "nonblank_lines": 147,
+        "sha256": "6873d7228cb1d33c4c1aa2a0c3156568d4b56d0d269b703aadb0f3d161df3298"
+      },
+      {
+        "path": "omni_v2/agents/notification_prefs.py",
+        "bytes": 12307,
+        "lines": 343,
+        "nonblank_lines": 300,
+        "sha256": "85784ded17e3f25339d6f489af327727e996594f7f3b7a5fdd5daf50cecb2508"
+      },
+      {
+        "path": "omni_v2/agents/notifications.py",
+        "bytes": 22032,
+        "lines": 565,
+        "nonblank_lines": 502,
+        "sha256": "e9dd36ac05861dce8da9df536900222cc245d1cdf35f184402457caaef6970b1"
+      },
+      {
+        "path": "omni_v2/agents/onboarding.py",
+        "bytes": 8064,
+        "lines": 243,
+        "nonblank_lines": 218,
+        "sha256": "ac6a92bd9570a786b2dcac5dd2f4dac49e6fe1fba02345d4ca53277c82cc6e0d"
+      },
+      {
+        "path": "omni_v2/agents/opinion.py",
+        "bytes": 10952,
+        "lines": 274,
+        "nonblank_lines": 248,
+        "sha256": "3105976b75ae3e34ce238939f1389b99344ad6ebf9e0804ee494eea5af1286c5"
+      },
+      {
+        "path": "omni_v2/agents/personality.py",
+        "bytes": 16796,
+        "lines": 431,
+        "nonblank_lines": 377,
+        "sha256": "008f62d37f7cb86c2cd9fbb2f5d1ee05d4dff557fff4a57b4cc46873b77945f2"
+      },
+      {
+        "path": "omni_v2/agents/planner.py",
+        "bytes": 4092,
+        "lines": 105,
+        "nonblank_lines": 86,
+        "sha256": "d905fbcb0cfe073824a9d06157d3c28bd38906ce45674307dc4f7a0a4330b6ae"
+      },
+      {
+        "path": "omni_v2/agents/proactive.py",
+        "bytes": 4576,
+        "lines": 125,
+        "nonblank_lines": 105,
+        "sha256": "125e5055b56a12e682e62f56feb57ba4dbafa88218b1c0f3ea88082a55fe52cc"
+      },
+      {
+        "path": "omni_v2/agents/proactive_v2.py",
+        "bytes": 29241,
+        "lines": 706,
+        "nonblank_lines": 654,
+        "sha256": "eab9574f980a7de7e86c2604159c15d9ad273e62d04e4d42ca5756c346bb382d"
+      },
+      {
+        "path": "omni_v2/agents/scheduler.py",
+        "bytes": 12778,
+        "lines": 325,
+        "nonblank_lines": 300,
+        "sha256": "238d178b5f1f00d7f7254dd3638eea586eacd5ccf0e817e52627fd08397b22ab"
+      },
+      {
+        "path": "omni_v2/agents/screen_watcher.py",
+        "bytes": 19653,
+        "lines": 513,
+        "nonblank_lines": 464,
+        "sha256": "f2994d1bd8e74c6089ebc7ff48d9b423c1a5b5ceda981b816561346947508303"
+      },
+      {
+        "path": "omni_v2/agents/stats.py",
+        "bytes": 6733,
+        "lines": 188,
+        "nonblank_lines": 170,
+        "sha256": "ae025aff4aca910ee92e0479bfa843baacfac417d3babf96ea6a174e8981b11b"
+      },
+      {
+        "path": "omni_v2/agents/subagents.py",
+        "bytes": 6147,
+        "lines": 147,
+        "nonblank_lines": 128,
+        "sha256": "49b4ddb04e9caac227829c672e300bf80a34973e5768ffb12052fbb48b8283eb"
+      },
+      {
+        "path": "omni_v2/agents/user_profile.py",
+        "bytes": 12706,
+        "lines": 334,
+        "nonblank_lines": 292,
+        "sha256": "e763fb58a3288abd3f0eb2d90249277407e33025f6fd265df01de0bdbaf1dfaa"
+      },
+      {
+        "path": "omni_v2/app.py",
+        "bytes": 17901,
+        "lines": 445,
+        "nonblank_lines": 385,
+        "sha256": "1cbc1abc7ea8df08ed198cc4f52efbc3115d6e776ad6e44320c75f661c6c834e"
+      },
+      {
+        "path": "omni_v2/automation/__init__.py",
+        "bytes": 558,
+        "lines": 15,
+        "nonblank_lines": 13,
+        "sha256": "329e2b2015a17b17443ddbccfaf41ebdbb5385f2072ca117ce2a45f55f2fef08"
+      },
+      {
+        "path": "omni_v2/automation/triggers.py",
+        "bytes": 9278,
+        "lines": 217,
+        "nonblank_lines": 187,
+        "sha256": "db6f153215be19a2d2faa7e93b3ce4d3b02481e01d1b32ef5b4bf05823682569"
+      },
+      {
+        "path": "omni_v2/away/__init__.py",
+        "bytes": 1130,
+        "lines": 26,
+        "nonblank_lines": 24,
+        "sha256": "e2e76a6e1ac0440ecb4b2c45b6117c3dd5ebfbd3247e8ca7e3d287df1c2f4228"
+      },
+      {
+        "path": "omni_v2/away/away_agent.py",
+        "bytes": 9538,
+        "lines": 263,
+        "nonblank_lines": 227,
+        "sha256": "a5400b87ba7acf8028dc1e8b3d018dd8c3dc5c1734e3d74fc8cab451799a5814"
+      },
+      {
+        "path": "omni_v2/away/command_channel.py",
+        "bytes": 6357,
+        "lines": 169,
+        "nonblank_lines": 146,
+        "sha256": "086ca9ddbbc830e0d862ca8308097129b415af0d25e6e82d280a3f1f44cd5261"
+      },
+      {
+        "path": "omni_v2/away/context.py",
+        "bytes": 4429,
+        "lines": 110,
+        "nonblank_lines": 100,
+        "sha256": "047c13045b3d140f9aba81f27cc9ff0ba2388dc542f04898a1b467da4507e27b"
+      },
+      {
+        "path": "omni_v2/away/desktop.py",
+        "bytes": 42098,
+        "lines": 994,
+        "nonblank_lines": 864,
+        "sha256": "307e41ae8820e0990c563a5109d1db36aba42c1fb36ebe41c95d86a62f6401cc"
+      },
+      {
+        "path": "omni_v2/away/knowledge_base.py",
+        "bytes": 9982,
+        "lines": 252,
+        "nonblank_lines": 226,
+        "sha256": "89218743938f0c8fca42ab336a0df63037b803850de8c290020b19376160a9c4"
+      },
+      {
+        "path": "omni_v2/away/messenger.py",
+        "bytes": 14132,
+        "lines": 353,
+        "nonblank_lines": 304,
+        "sha256": "5ae738ce53c350ec15a1494255d04f2354fc16648a502c6c9bcf92301c2d66d3"
+      },
+      {
+        "path": "omni_v2/away/reporter.py",
+        "bytes": 3832,
+        "lines": 115,
+        "nonblank_lines": 97,
+        "sha256": "47c53426b0e9572a91f95885a2154e2e000a1a8baada52d79a9232df35fd36d2"
+      },
+      {
+        "path": "omni_v2/away/research.py",
+        "bytes": 6804,
+        "lines": 183,
+        "nonblank_lines": 161,
+        "sha256": "b9d6f518fc36f7209320b9ee2fd7645915c440e8a87e1a6ec00d8a30799d9cd4"
+      },
+      {
+        "path": "omni_v2/backup/__init__.py",
+        "bytes": 207,
+        "lines": 7,
+        "nonblank_lines": 6,
+        "sha256": "e3975935a9786ef77fab60a8fa2cb3bd32e0afd4e5835a0f17b177a7948e8e67"
+      },
+      {
+        "path": "omni_v2/backup/backup.py",
+        "bytes": 6388,
+        "lines": 162,
+        "nonblank_lines": 142,
+        "sha256": "f6fd00cc237b10a5984a27b7313a63178e817286c03a1355578852f7eedc587e"
+      },
+      {
+        "path": "omni_v2/benchmark/__init__.py",
+        "bytes": 396,
+        "lines": 11,
+        "nonblank_lines": 9,
+        "sha256": "a88e27d3c4a43a25a5944a0751b52b3c935fa30d7f468738f319df43dc41f568"
+      },
+      {
+        "path": "omni_v2/benchmark/benchmark.py",
+        "bytes": 6145,
+        "lines": 160,
+        "nonblank_lines": 133,
+        "sha256": "514a9b486154b4213318c9ccfe485cce37a99af178357b89fc547409af68d7ab"
+      },
+      {
+        "path": "omni_v2/brain/__init__.py",
+        "bytes": 553,
+        "lines": 12,
+        "nonblank_lines": 10,
+        "sha256": "bc1bfdf0c757570f4480bdcbbde9f9cb8eb6bbb6d7d7041e425c3d87353bab61"
+      },
+      {
+        "path": "omni_v2/brain/goals.py",
+        "bytes": 13892,
+        "lines": 372,
+        "nonblank_lines": 330,
+        "sha256": "8d178a1a9c1dbd9f7d854c005ead2c0c8a77de73369e33d34081a7bdb7f2e423"
+      },
+      {
+        "path": "omni_v2/brain/identity.py",
+        "bytes": 8795,
+        "lines": 233,
+        "nonblank_lines": 199,
+        "sha256": "59f771a608e6893a3fb1abce5f2963fd0a397a975d5d9c7eb19af3b81087312f"
+      },
+      {
+        "path": "omni_v2/brain/metacog.py",
+        "bytes": 9579,
+        "lines": 241,
+        "nonblank_lines": 209,
+        "sha256": "f188145da073e6d248b1cc1039e509ed7c67df39d8e59f7d1ba9ab15facc2a45"
+      },
+      {
+        "path": "omni_v2/brain/reflect.py",
+        "bytes": 11397,
+        "lines": 283,
+        "nonblank_lines": 245,
+        "sha256": "31c7245bdcb1a235ec8c7102699d001634f89c9c05ec9ae8c45774fefaa4bc25"
+      },
+      {
+        "path": "omni_v2/briefing/__init__.py",
+        "bytes": 355,
+        "lines": 9,
+        "nonblank_lines": 7,
+        "sha256": "23701372ea146e59881631f67911a17c9e4cce56890fc0ef14e99f468f1cc104"
+      },
+      {
+        "path": "omni_v2/briefing/briefing.py",
+        "bytes": 6155,
+        "lines": 155,
+        "nonblank_lines": 139,
+        "sha256": "f7136ee6c8934e7f821451bfdaa63ecddd4069d20fe2d5932fa36cde5a49817a"
+      },
+      {
+        "path": "omni_v2/core/__init__.py",
+        "bytes": 556,
+        "lines": 12,
+        "nonblank_lines": 11,
+        "sha256": "0b56a59e7b1144d22733c0cc9e9ba299736eecbbcafd6b2b57f72a80cc67e6eb"
+      },
+      {
+        "path": "omni_v2/core/command_registry.py",
+        "bytes": 14879,
+        "lines": 316,
+        "nonblank_lines": 296,
+        "sha256": "7dbaf0100a0d8bc00fb045736f35d6fc00d7a4ee9fd95be257a9a1bdba693ff8"
+      },
+      {
+        "path": "omni_v2/core/config_manager.py",
+        "bytes": 4105,
+        "lines": 110,
+        "nonblank_lines": 98,
+        "sha256": "aa0858db3353376252aeb238a4300f1a49261fe9196530b5de26076a651eeeb7"
+      },
+      {
+        "path": "omni_v2/core/event_bus.py",
+        "bytes": 3835,
+        "lines": 102,
+        "nonblank_lines": 93,
+        "sha256": "534d6ff9a93165c7444fbd217da8e0e043dd4253c4779db105d88bc5bf8b4ad2"
+      },
+      {
+        "path": "omni_v2/core/guardrails.py",
+        "bytes": 13579,
+        "lines": 390,
+        "nonblank_lines": 318,
+        "sha256": "1ee99defac7fe7a297d3f08098ce65f319f6a6db0ffc57e385f9c23be7e13c2a"
+      },
+      {
+        "path": "omni_v2/core/intent_mapper.py",
+        "bytes": 5147,
+        "lines": 136,
+        "nonblank_lines": 123,
+        "sha256": "e62a0c430c2a950fc60c81597d2aecb532671ab7c71855b3fdca0db07f993092"
+      },
+      {
+        "path": "omni_v2/core/paths.py",
+        "bytes": 5566,
+        "lines": 141,
+        "nonblank_lines": 118,
+        "sha256": "0c00b0292cb45570fe40ff137036d6d24656f4b8b187d47f7522ae2d0317f444"
+      },
+      {
+        "path": "omni_v2/core/plugin_manager.py",
+        "bytes": 9999,
+        "lines": 199,
+        "nonblank_lines": 182,
+        "sha256": "ed64b9043f97aa7ea27362cc8b9cf0a7d3072f557c7d1cd2a3fb4e3882a7555e"
+      },
+      {
+        "path": "omni_v2/core/safe_execute.py",
+        "bytes": 2521,
+        "lines": 71,
+        "nonblank_lines": 62,
+        "sha256": "46614859464f016beca8038aa28cd92da2b5a5293d128ed9a63cd0a741746329"
+      },
+      {
+        "path": "omni_v2/daemon/__init__.py",
+        "bytes": 574,
+        "lines": 16,
+        "nonblank_lines": 14,
+        "sha256": "d7a45acb940b6182272d1504f3b6fb55add2a0b9f971d0ec2ad0ab90949d2105"
+      },
+      {
+        "path": "omni_v2/daemon/daemon.py",
+        "bytes": 7753,
+        "lines": 235,
+        "nonblank_lines": 191,
+        "sha256": "d009c65a989f2be90452491a4d1ca2c3e9dbc1580c84745537f144d562853ad1"
+      },
+      {
+        "path": "omni_v2/engine/__init__.py",
+        "bytes": 371,
+        "lines": 9,
+        "nonblank_lines": 7,
+        "sha256": "98e063172fe515acee574d7cb1fa2b66e7c89d17b13d8e29e0d54e5caaeb08ff"
+      },
+      {
+        "path": "omni_v2/engine/query_engine.py",
+        "bytes": 8157,
+        "lines": 199,
+        "nonblank_lines": 176,
+        "sha256": "ecb8631e552a2626b6e6cafd4f127a956fd0b38eb28ede66915c2ae1d7ef043b"
+      },
+      {
+        "path": "omni_v2/files/__init__.py",
+        "bytes": 255,
+        "lines": 7,
+        "nonblank_lines": 6,
+        "sha256": "5c255b606820d368894d6021afed4e3453d4c4dff51e4ad4a0a3e4e1ab67c76f"
+      },
+      {
+        "path": "omni_v2/files/nl_files.py",
+        "bytes": 8396,
+        "lines": 218,
+        "nonblank_lines": 190,
+        "sha256": "9af5858eb4b9fe788312b17b9f7ec35e665546c1c782de9709e88a9acdaa859c"
+      },
+      {
+        "path": "omni_v2/graph/__init__.py",
+        "bytes": 388,
+        "lines": 9,
+        "nonblank_lines": 7,
+        "sha256": "eef7b36f2dd7a937b0f68733f4630f91aedbcd1d9cb3ad58fbb68988acf83a5b"
+      },
+      {
+        "path": "omni_v2/graph/knowledge_graph.py",
+        "bytes": 7097,
+        "lines": 174,
+        "nonblank_lines": 150,
+        "sha256": "c6317d08d45394d230606cf80a0de4c5caf8f21d85babe12ba0ad0840552a937"
+      },
+      {
+        "path": "omni_v2/guardian/__init__.py",
+        "bytes": 402,
+        "lines": 13,
+        "nonblank_lines": 11,
+        "sha256": "d8e172a9fbfbcf2a55b1e2111f2f4f205e3d0df1fdd25123e3f096b4f374cfa9"
+      },
+      {
+        "path": "omni_v2/guardian/guardian.py",
+        "bytes": 9437,
+        "lines": 260,
+        "nonblank_lines": 232,
+        "sha256": "34c83216cbde423ea02a1a09f8595901153330932220df1fe73e2a67502177eb"
+      },
+      {
+        "path": "omni_v2/gui/__init__.py",
+        "bytes": 267,
+        "lines": 7,
+        "nonblank_lines": 6,
+        "sha256": "6e1b8804c0c2a669cf8f36fda6c70d33c383839cb1e9f04863d0b1eb8a86d4e4"
+      },
+      {
+        "path": "omni_v2/gui/gui_agent.py",
+        "bytes": 4364,
+        "lines": 113,
+        "nonblank_lines": 95,
+        "sha256": "916735b633514b25157308057b56cabe0ef12d927ae68157a488b023935af26a"
+      },
+      {
+        "path": "omni_v2/harness/__init__.py",
+        "bytes": 636,
+        "lines": 15,
+        "nonblank_lines": 13,
+        "sha256": "62e3ebd694c6fcbcda022f7e4b3584c753f70c953406a6b0854a95e4e0b88c5b"
+      },
+      {
+        "path": "omni_v2/harness/harness.py",
+        "bytes": 15565,
+        "lines": 353,
+        "nonblank_lines": 309,
+        "sha256": "39d9505876bb5a4f9e46a4bfc638e1e1af016441daf1f897889649c899a66493"
+      },
+      {
+        "path": "omni_v2/harness/verifier.py",
+        "bytes": 4776,
+        "lines": 116,
+        "nonblank_lines": 97,
+        "sha256": "50970ac54ae3ed42b46ef62337f185110ef0713ee374e5cf48d384c57bd81e0b"
+      },
+      {
+        "path": "omni_v2/history/__init__.py",
+        "bytes": 323,
+        "lines": 9,
+        "nonblank_lines": 7,
+        "sha256": "646cb544d142dce39341edf5d675df33268e014ee4cfb6743d548f5b5b3789ea"
+      },
+      {
+        "path": "omni_v2/history/action_journal.py",
+        "bytes": 10201,
+        "lines": 237,
+        "nonblank_lines": 210,
+        "sha256": "b5341086a2ff85ae65c175b8bea68d09673b02a25ee89ceced54ba839ac456b5"
+      },
+      {
+        "path": "omni_v2/leaderboard/__init__.py",
+        "bytes": 295,
+        "lines": 9,
+        "nonblank_lines": 7,
+        "sha256": "4cb8f37f1b1caa02527a74ef0fc717afe5a5e11fd7e1e7f74a94dd78e423f8dc"
+      },
+      {
+        "path": "omni_v2/leaderboard/leaderboard.py",
+        "bytes": 4343,
+        "lines": 119,
+        "nonblank_lines": 97,
+        "sha256": "951cd64fb9cc1ce17dc79ef64198a7c9f85249ab96574ea1e31d773d455d8ec6"
+      },
+      {
+        "path": "omni_v2/llm/__init__.py",
+        "bytes": 461,
+        "lines": 11,
+        "nonblank_lines": 10,
+        "sha256": "1d69e430ba96474ef6b5879859ea76846e9e323fa7079a5af8ddeb30eeac5092"
+      },
+      {
+        "path": "omni_v2/llm/brain.py",
+        "bytes": 32407,
+        "lines": 754,
+        "nonblank_lines": 691,
+        "sha256": "f9d5159cdc70647ba34ac3f9c7ce222a305122bd4c66b4e123d7ef56e573995a"
+      },
+      {
+        "path": "omni_v2/llm/compaction.py",
+        "bytes": 4193,
+        "lines": 114,
+        "nonblank_lines": 96,
+        "sha256": "3cfb8ceeedc07744020b469b180b5e0b6b93af4510a2e2ab40ffd78a5b97e7e1"
+      },
+      {
+        "path": "omni_v2/llm/hf_downloader.py",
+        "bytes": 10665,
+        "lines": 250,
+        "nonblank_lines": 218,
+        "sha256": "f2a3c25d1e8bd19b9fd4a089e542efe0d9dac700d322da6140353a8581492d0d"
+      },
+      {
+        "path": "omni_v2/llm/llama_cpp.py",
+        "bytes": 8874,
+        "lines": 228,
+        "nonblank_lines": 189,
+        "sha256": "57ccf22e826530c98514b820c7db34919aaa82897b1c1cdc8af6242ba65dc123"
+      },
+      {
+        "path": "omni_v2/llm/router.py",
+        "bytes": 11188,
+        "lines": 279,
+        "nonblank_lines": 253,
+        "sha256": "19c65c8cda851a806a4e8d0d57b975c95c8404dfb9a6b321572bcb39b6d7044b"
+      },
+      {
+        "path": "omni_v2/llm/router_v2.py",
+        "bytes": 8907,
+        "lines": 203,
+        "nonblank_lines": 178,
+        "sha256": "26a2bda2f54fb9f2d4185e1eb62e3ffb5142047796934c3838f1c145febf36ca"
+      },
+      {
+        "path": "omni_v2/mcp/__init__.py",
+        "bytes": 569,
+        "lines": 14,
+        "nonblank_lines": 12,
+        "sha256": "abdf6488aba3ee7dda7ce892c79c4f6429f6eb964e807cdc3ea52de3800fc24c"
+      },
+      {
+        "path": "omni_v2/mcp/bridge.py",
+        "bytes": 12883,
+        "lines": 308,
+        "nonblank_lines": 266,
+        "sha256": "990cae088cc4e4f469130461daa03aedf1c4e0d106f9c5cf62ab45452b741dab"
+      },
+      {
+        "path": "omni_v2/memory/__init__.py",
+        "bytes": 295,
+        "lines": 6,
+        "nonblank_lines": 5,
+        "sha256": "c29e24b779b01c18d54f5cd2be44abd8ca7d0717c51a424796dcb672d9b9b5ec"
+      },
+      {
+        "path": "omni_v2/memory/fast_af_store.py",
+        "bytes": 13178,
+        "lines": 307,
+        "nonblank_lines": 269,
+        "sha256": "75ac06819ec474c943b9c8b4166544639c6e2432cb4f21cec4126faa4a8d74a2"
+      },
+      {
+        "path": "omni_v2/memory/hybrid_memory.py",
+        "bytes": 14570,
+        "lines": 397,
+        "nonblank_lines": 339,
+        "sha256": "4e93830edacc8d36eb4aa626bff1c33967e8eee10690ebbb94fd5852446552a0"
+      },
+      {
+        "path": "omni_v2/memory/session_memory.py",
+        "bytes": 22683,
+        "lines": 585,
+        "nonblank_lines": 528,
+        "sha256": "46d160f67a9d9c90400cd0d950dc4cc546df081369fe666542a30e3a02ccbd25"
+      },
+      {
+        "path": "omni_v2/memory/sqlite_store.py",
+        "bytes": 6277,
+        "lines": 147,
+        "nonblank_lines": 135,
+        "sha256": "ae8161a5de68b577534149f1fd25c8a7ac16fe94dd36a6a9c1a08d6dc562ae87"
+      },
+      {
+        "path": "omni_v2/memory/vector_store.py",
+        "bytes": 6151,
+        "lines": 156,
+        "nonblank_lines": 137,
+        "sha256": "0948c834a9ce9f8dc55d4392ed67746478d821581f6cb92e53467b05aafc790d"
+      },
+      {
+        "path": "omni_v2/mesh/__init__.py",
+        "bytes": 224,
+        "lines": 7,
+        "nonblank_lines": 6,
+        "sha256": "f28fcaee5079c114a7261d61963bcb93635d9168e386e3c77ec9433acfa7633e"
+      },
+      {
+        "path": "omni_v2/mesh/mesh_sync.py",
+        "bytes": 6651,
+        "lines": 166,
+        "nonblank_lines": 148,
+        "sha256": "606003bff0b301c91197339a426c78640eb0fdb01edbd5386b909b665b967fce"
+      },
+      {
+        "path": "omni_v2/meta/__init__.py",
+        "bytes": 409,
+        "lines": 11,
+        "nonblank_lines": 9,
+        "sha256": "bf9de3faba96553a82b18c2c130bdf4ecfeb5a12da791c83e6129ca1c9576111"
+      },
+      {
+        "path": "omni_v2/meta/meta_harness.py",
+        "bytes": 6470,
+        "lines": 165,
+        "nonblank_lines": 142,
+        "sha256": "5fc0692afbf342bc7662201cb8ec6bdcb4db4b69497ae6a18ce20926822f7b10"
+      },
+      {
+        "path": "omni_v2/network/__init__.py",
+        "bytes": 709,
+        "lines": 27,
+        "nonblank_lines": 23,
+        "sha256": "b0f50211f1378873649460dd7278d5242d9b41b1e32bdc736ee771906fb47a81"
+      },
+      {
+        "path": "omni_v2/network/discovery.py",
+        "bytes": 6573,
+        "lines": 214,
+        "nonblank_lines": 185,
+        "sha256": "32cdfd9c41b7e46b2ca1a48b9cb8538513a6a9b486eb654ce5717a5539a89619"
+      },
+      {
+        "path": "omni_v2/network/mdns.py",
+        "bytes": 8974,
+        "lines": 269,
+        "nonblank_lines": 239,
+        "sha256": "ab9be842804668d6ed53026c0788978269af85aabfc72c8a47aa27557799bb40"
+      },
+      {
+        "path": "omni_v2/pda/__init__.py",
+        "bytes": 67,
+        "lines": 1,
+        "nonblank_lines": 1,
+        "sha256": "50dc9a0c86d8b9dcce420c60fba6f080ee2444c9d5ba3f7590e37629750d1384"
+      },
+      {
+        "path": "omni_v2/pda/app.py",
+        "bytes": 20462,
+        "lines": 499,
+        "nonblank_lines": 411,
+        "sha256": "a790c31dacec87d832b8a34cf9823b6dbae086a05a10b75b82ff3e5e66dcca87"
+      },
+      {
+        "path": "omni_v2/personal/__init__.py",
+        "bytes": 338,
+        "lines": 10,
+        "nonblank_lines": 8,
+        "sha256": "8d6eba2bf7b786a9c7dd6ffb1524f86308e119e8bd1bbb602b86937113d5aa46"
+      },
+      {
+        "path": "omni_v2/personal/calendar_contacts.py",
+        "bytes": 7758,
+        "lines": 216,
+        "nonblank_lines": 185,
+        "sha256": "1c427eeb00509fc852b4270287bb2b23cc76aee97236a9b44006ec745cf2da4f"
+      },
+      {
+        "path": "omni_v2/photos/__init__.py",
+        "bytes": 256,
+        "lines": 7,
+        "nonblank_lines": 6,
+        "sha256": "bc2f4ed6fee39399e618c1c53abbc0a7080c0a4036262e838e305dd3e190f47f"
+      },
+      {
+        "path": "omni_v2/photos/photo_memory.py",
+        "bytes": 4916,
+        "lines": 122,
+        "nonblank_lines": 104,
+        "sha256": "69c6e999d46567818fcc45ef7575011392299b9d1cca3cccfac0238b64f03358"
+      },
+      {
+        "path": "omni_v2/schedule/__init__.py",
+        "bytes": 409,
+        "lines": 11,
+        "nonblank_lines": 9,
+        "sha256": "38c19c0f06be8aec8a8f272821fe20bb8f018a33e48c4c412b6f118daf953ea5"
+      },
+      {
+        "path": "omni_v2/schedule/recurring.py",
+        "bytes": 8539,
+        "lines": 203,
+        "nonblank_lines": 174,
+        "sha256": "10949af2a046be5372e3becbe4015a45fc615017a591d62e8e6084ba85eb64f4"
+      },
+      {
+        "path": "omni_v2/sdk/__init__.py",
+        "bytes": 4546,
+        "lines": 170,
+        "nonblank_lines": 138,
+        "sha256": "9b101fb835d424bec669996df3273dd085200a17cc2bfa253f334fa6d350d796"
+      },
+      {
+        "path": "omni_v2/security/__init__.py",
+        "bytes": 838,
+        "lines": 20,
+        "nonblank_lines": 17,
+        "sha256": "f2d397eb39d9e00e75eabca86b5735378a114ff095d8347c620666f4fad4e3a5"
+      },
+      {
+        "path": "omni_v2/security/face_auth.py",
+        "bytes": 20061,
+        "lines": 558,
+        "nonblank_lines": 477,
+        "sha256": "62dd48c34961c9d323154b2d8298f92ef7d0e089fb0d80693ab5f12276d676c2"
+      },
+      {
+        "path": "omni_v2/security/guard_monitor.py",
+        "bytes": 7496,
+        "lines": 188,
+        "nonblank_lines": 165,
+        "sha256": "1e768e81e1b053fdc72aeee27332519f791a3f6246c0f8600fd9f31ba58bbd5d"
+      },
+      {
+        "path": "omni_v2/security/lockdown.py",
+        "bytes": 6415,
+        "lines": 195,
+        "nonblank_lines": 172,
+        "sha256": "7294e8845617f8fe4d7d1a08c5360aace516a0969259019a1606eb5b2fe81177"
+      },
+      {
+        "path": "omni_v2/skills/__init__.py",
+        "bytes": 532,
+        "lines": 11,
+        "nonblank_lines": 10,
+        "sha256": "ca8ffaaa81cc28e89acaab54021256656ddf7e44c5d9a3cbd4ef279b71337aa6"
+      },
+      {
+        "path": "omni_v2/skills/generator.py",
+        "bytes": 7904,
+        "lines": 180,
+        "nonblank_lines": 155,
+        "sha256": "5445b2d4a5930f4da437656001bb980959963cbc0e0535fe078d2846a9230da5"
+      },
+      {
+        "path": "omni_v2/skills/installer.py",
+        "bytes": 5398,
+        "lines": 144,
+        "nonblank_lines": 124,
+        "sha256": "7a84f29e685ead08d573bbc6f606737a6737ddb07bcd6163d8235b7e34faae7a"
+      },
+      {
+        "path": "omni_v2/skills/marketplace.py",
+        "bytes": 14147,
+        "lines": 377,
+        "nonblank_lines": 347,
+        "sha256": "4416f34a2576a1c9221908781aed2d5a4d4ef34ee19952e2aefaece57d1c1ab4"
+      },
+      {
+        "path": "omni_v2/skills/registry.py",
+        "bytes": 4735,
+        "lines": 114,
+        "nonblank_lines": 97,
+        "sha256": "28cc22c986602f7eda55221edd198a169ae328d068ace370641161504f971052"
+      },
+      {
+        "path": "omni_v2/skills/sandbox.py",
+        "bytes": 6847,
+        "lines": 179,
+        "nonblank_lines": 153,
+        "sha256": "29eac4c75315e6a3f7bc276c36848fda143af7353f83098d7d039dc2dffff9e9"
+      },
+      {
+        "path": "omni_v2/skills/verifier.py",
+        "bytes": 3980,
+        "lines": 95,
+        "nonblank_lines": 84,
+        "sha256": "506694353620dc5832efd1ecd799c64f2f59bb5842c4fa454a64ba29a58abc31"
+      },
+      {
+        "path": "omni_v2/sync/__init__.py",
+        "bytes": 3043,
+        "lines": 102,
+        "nonblank_lines": 86,
+        "sha256": "e61a16d40a66baced683d6a6dbc16c024c9eb10a0a735bb4640bb12bf2c1ffb7"
+      },
+      {
+        "path": "omni_v2/tools/__init__.py",
+        "bytes": 2819,
+        "lines": 102,
+        "nonblank_lines": 95,
+        "sha256": "b97e8d694cd49352c2b0767417e6b8813a65c5beef9ece8e4c9f22dba14337ba"
+      },
+      {
+        "path": "omni_v2/tools/accessibility.py",
+        "bytes": 1117,
+        "lines": 22,
+        "nonblank_lines": 21,
+        "sha256": "0ad504a707d618a2d8127a7ad0badd33bbdf8c404cff1d298b7f7294e636639f"
+      },
+      {
+        "path": "omni_v2/tools/ai.py",
+        "bytes": 3844,
+        "lines": 80,
+        "nonblank_lines": 73,
+        "sha256": "6251b5868f84492e8133ce8782c34bf6c5b2558f03fdba6182eb97ed591cf182"
+      },
+      {
+        "path": "omni_v2/tools/browser.py",
+        "bytes": 1719,
+        "lines": 38,
+        "nonblank_lines": 36,
+        "sha256": "84566cc5e3c9677f2cf7981e33e3f83e2cbf7cdda156be6b29f193cabe7d2dc4"
+      },
+      {
+        "path": "omni_v2/tools/browser_playwright.py",
+        "bytes": 11521,
+        "lines": 289,
+        "nonblank_lines": 260,
+        "sha256": "014f7048e79cecc03b354cd3d87f6d8b77eb772c6890a758f1d2a469e4643fb4"
+      },
+      {
+        "path": "omni_v2/tools/browser_v3.py",
+        "bytes": 9077,
+        "lines": 214,
+        "nonblank_lines": 193,
+        "sha256": "bf6e0065532f3c0e87f5fe5d2f535e2ac85cfe40b7cdeb1d42d927fcb9904c77"
+      },
+      {
+        "path": "omni_v2/tools/demo_scenarios.py",
+        "bytes": 5803,
+        "lines": 90,
+        "nonblank_lines": 84,
+        "sha256": "3697f57b42b30ec2c66673da76ac160e77a56569c6d8cced36cadbe9a9d2a073"
+      },
+      {
+        "path": "omni_v2/tools/files.py",
+        "bytes": 4892,
+        "lines": 115,
+        "nonblank_lines": 100,
+        "sha256": "763fd0cf800aac354e34c97c4fd56cad11f5e1a51f4480f5e5085247e4d751b3"
+      },
+      {
+        "path": "omni_v2/tools/integrations.py",
+        "bytes": 2727,
+        "lines": 50,
+        "nonblank_lines": 46,
+        "sha256": "1170686d55a1ee3efadc75790a76d698a5dd89f9db06c54a97d269901ac502d4"
+      },
+      {
+        "path": "omni_v2/tools/media.py",
+        "bytes": 778,
+        "lines": 17,
+        "nonblank_lines": 16,
+        "sha256": "b6a1ecdf0b8b788df80c444cac1876831d9917b2edaff3b3a58e8b1194234900"
+      },
+      {
+        "path": "omni_v2/tools/omni.py",
+        "bytes": 1616,
+        "lines": 34,
+        "nonblank_lines": 33,
+        "sha256": "ebf3eb40ad101e0d80b199c195a0ee10d902b302aea0a50a1a4a96ef266fc2f7"
+      },
+      {
+        "path": "omni_v2/tools/send_to_phone.py",
+        "bytes": 7786,
+        "lines": 197,
+        "nonblank_lines": 178,
+        "sha256": "71a401a3e2ea386b81c026b8bded59fcf7128a0eb48bd32c0e06b6371ebc870f"
+      },
+      {
+        "path": "omni_v2/tools/snooze.py",
+        "bytes": 6426,
+        "lines": 153,
+        "nonblank_lines": 140,
+        "sha256": "41d6df42c2acd29b49e6f28e97e319a9353807751d6cff1ea0ad0a4f8590d612"
+      },
+      {
+        "path": "omni_v2/tools/system.py",
+        "bytes": 2169,
+        "lines": 50,
+        "nonblank_lines": 47,
+        "sha256": "03d0af66b68c67710934f70173f0042319246e32a845498e99e388e171f47721"
+      },
+      {
+        "path": "omni_v2/tools/vscode.py",
+        "bytes": 6689,
+        "lines": 149,
+        "nonblank_lines": 131,
+        "sha256": "0cfe60b5c35f75fdfb43381078e9bba37d088c2b1cacfcbbb22accd9e17b183e"
+      },
+      {
+        "path": "omni_v2/tools/windows.py",
+        "bytes": 8688,
+        "lines": 196,
+        "nonblank_lines": 180,
+        "sha256": "fbf93dd7b065091c373a9637ab5b3141fb243b7e477ceb465e827b00decf864b"
+      },
+      {
+        "path": "omni_v2/ui/__init__.py",
+        "bytes": 341,
+        "lines": 10,
+        "nonblank_lines": 10,
+        "sha256": "365aca05f7b905aedbb6db13642df778b881b4bfd9fbd7daf5ef3d88795f0c8d"
+      },
+      {
+        "path": "omni_v2/ui/dashboard.py",
+        "bytes": 3767,
+        "lines": 108,
+        "nonblank_lines": 90,
+        "sha256": "dc10d6c704d94dbd338c88775664e76f757a3ef90d04ccfbaac29ca97b1be0a9"
+      },
+      {
+        "path": "omni_v2/ui/hud.py",
+        "bytes": 4075,
+        "lines": 105,
+        "nonblank_lines": 84,
+        "sha256": "f822d1caf310384bc750106aab97a8b649b4ba80457f8b55d12d2fd441173183"
+      },
+      {
+        "path": "omni_v2/ui/hud_neomorphism.py",
+        "bytes": 30436,
+        "lines": 670,
+        "nonblank_lines": 578,
+        "sha256": "271140d71615228b83d6087af74580c1fb04862cfd22a77d7c2c4df31a33e037"
+      },
+      {
+        "path": "omni_v2/ui/hud_simple.py",
+        "bytes": 25278,
+        "lines": 509,
+        "nonblank_lines": 446,
+        "sha256": "47b2a905ea60bb6c8b5b9aea66097e7f4d68ee452210367666a82df08fa9d5d7"
+      },
+      {
+        "path": "omni_v2/ui/orb.py",
+        "bytes": 3132,
+        "lines": 76,
+        "nonblank_lines": 68,
+        "sha256": "03da69e57de3e934f86154bed8e7ebfdc9dde2471b611008ee0e92916c41c657"
+      },
+      {
+        "path": "omni_v2/ui/orb_threejs.html",
+        "bytes": 5469,
+        "lines": 151,
+        "nonblank_lines": 127,
+        "sha256": "79d96eea9d080706e9e2a1385cd8a51606800ba388516453894396c640b7021f"
+      },
+      {
+        "path": "omni_v2/ui/tray.py",
+        "bytes": 1711,
+        "lines": 53,
+        "nonblank_lines": 47,
+        "sha256": "4bf2021444714eb8ee8908d22a0c22e2a0b0de9fb9645f4781ddbfa128674ac3"
+      },
+      {
+        "path": "omni_v2/ui/whisper_flow.py",
+        "bytes": 18465,
+        "lines": 465,
+        "nonblank_lines": 383,
+        "sha256": "1632726941ebc466bc29fe355454ba2babf8c04a71b5ad902e56f2bed973917c"
+      },
+      {
+        "path": "omni_v2/utils/__init__.py",
+        "bytes": 75,
+        "lines": 3,
+        "nonblank_lines": 3,
+        "sha256": "e642bfe76232af87d2f2d092bfb51956ca58bee4afcc1072394d19e32018c6b7"
+      },
+      {
+        "path": "omni_v2/utils/logger.py",
+        "bytes": 897,
+        "lines": 22,
+        "nonblank_lines": 20,
+        "sha256": "be7c142a01738d5d627f5ad581f7a764eec5093d86234bed46fa40ec4e2c7bc1"
+      },
+      {
+        "path": "omni_v2/utils/utf8.py",
+        "bytes": 1523,
+        "lines": 40,
+        "nonblank_lines": 36,
+        "sha256": "b4f04e95a9ed2b8d50b416445e46816e709809dc1a20ba87db4ab81f351e5191"
+      },
+      {
+        "path": "omni_v2/vault/__init__.py",
+        "bytes": 336,
+        "lines": 8,
+        "nonblank_lines": 6,
+        "sha256": "793af6ab83101d627f0737a1e4944d336301fd97555f93cb294ddc74388d71c4"
+      },
+      {
+        "path": "omni_v2/vault/vault.py",
+        "bytes": 7551,
+        "lines": 202,
+        "nonblank_lines": 173,
+        "sha256": "43635d76a397be5ef40dfac45a3c40193ce203e08dc540a52b38501835339c77"
+      },
+      {
+        "path": "omni_v2/vision/__init__.py",
+        "bytes": 160,
+        "lines": 5,
+        "nonblank_lines": 4,
+        "sha256": "7f02cb4fc1d102a5260b9573df002a7d2da3554fb72435ccdfed8be908740cf8"
+      },
+      {
+        "path": "omni_v2/vision/llava.py",
+        "bytes": 4394,
+        "lines": 104,
+        "nonblank_lines": 92,
+        "sha256": "9446de1796410b7211f7f3b0bcf4b5be4f616b9cc5bbaa193c013fbbdd58e9ac"
+      },
+      {
+        "path": "omni_v2/vision/multimodal.py",
+        "bytes": 13379,
+        "lines": 342,
+        "nonblank_lines": 318,
+        "sha256": "2ebb3241ef16aacfe3cf9000ca7d34089b887135a16d2b2d42afa520c5e10631"
+      },
+      {
+        "path": "omni_v2/vision/screen.py",
+        "bytes": 3035,
+        "lines": 88,
+        "nonblank_lines": 79,
+        "sha256": "148a28673acacf9911325ad4d96dfefcb0a7a89ef5196a5994e4d340e3b6e914"
+      },
+      {
+        "path": "omni_v2/vision/turbovlm.py",
+        "bytes": 8679,
+        "lines": 183,
+        "nonblank_lines": 158,
+        "sha256": "932e14fbadb0f9c8958e9cb68cd4a955bdf4e7f8fd1043506c14f62143941ded"
+      },
+      {
+        "path": "omni_v2/voice/__init__.py",
+        "bytes": 655,
+        "lines": 20,
+        "nonblank_lines": 19,
+        "sha256": "4a91d594f01162e463abb7757a565723356a6b5f4cce6c118f078af145e92eb5"
+      },
+      {
+        "path": "omni_v2/voice/audio_device.py",
+        "bytes": 9551,
+        "lines": 273,
+        "nonblank_lines": 236,
+        "sha256": "2055fa04e5f82856b2a9d1a45a049ecf1534cc452e2b8df85f5c9aa36196627d"
+      },
+      {
+        "path": "omni_v2/voice/audio_device_v3.py",
+        "bytes": 7645,
+        "lines": 210,
+        "nonblank_lines": 182,
+        "sha256": "3c951faba2eeca2b829424b06473c86dd8c71d2df0421c234bb2ce36b57eaf20"
+      },
+      {
+        "path": "omni_v2/voice/loop.py",
+        "bytes": 14029,
+        "lines": 357,
+        "nonblank_lines": 297,
+        "sha256": "005b837ac6c7c0c7b23d90ed6619dc84ff099e346d295a56ff19cc54f13712f2"
+      },
+      {
+        "path": "omni_v2/voice/pipeline.py",
+        "bytes": 10237,
+        "lines": 250,
+        "nonblank_lines": 218,
+        "sha256": "b0879fd0a3ea40982fb9e19f564ab99399fce5a3781fdd96d5d8037c1f213552"
+      },
+      {
+        "path": "omni_v2/voice/pipeline_v3.py",
+        "bytes": 17821,
+        "lines": 400,
+        "nonblank_lines": 346,
+        "sha256": "0406d792718faadd7003d0a6f1bfe0572902b81ec541a680589f4c653b648db0"
+      },
+      {
+        "path": "omni_v2/voice/pipeline_v3_fixed.py",
+        "bytes": 21416,
+        "lines": 515,
+        "nonblank_lines": 458,
+        "sha256": "bb2aba92188c5e0da970aed922ef3f3dbfb8fc244d04c1de41a71cd05e610198"
+      },
+      {
+        "path": "omni_v2/voice/ptt_manager.py",
+        "bytes": 6370,
+        "lines": 170,
+        "nonblank_lines": 160,
+        "sha256": "fc4bd18254a8988ba53e8536f284309a6557686a5bc154de478cca256e1eccf2"
+      },
+      {
+        "path": "omni_v2/voice/stt_manager.py",
+        "bytes": 16198,
+        "lines": 364,
+        "nonblank_lines": 334,
+        "sha256": "be15472f54242fbeb865805e3bb819bb3b896c43b0c2ba8ea952daea707499c3"
+      },
+      {
+        "path": "omni_v2/voice/stt_simple.py",
+        "bytes": 9376,
+        "lines": 247,
+        "nonblank_lines": 211,
+        "sha256": "5d7e694a7f24480ee74338419c5c39f4be0302f6aa4b2c62b1d72cda4933d0bd"
+      },
+      {
+        "path": "omni_v2/voice/tts_best.py",
+        "bytes": 12662,
+        "lines": 331,
+        "nonblank_lines": 301,
+        "sha256": "25769da8d7a55c724917d02004548a7992589e838430fefcd6743cc3abacbc7a"
+      },
+      {
+        "path": "omni_v2/voice/tts_simple.py",
+        "bytes": 10374,
+        "lines": 278,
+        "nonblank_lines": 244,
+        "sha256": "190618260382b143ff3e7263ec96a412479e2bc621a0596afe5dc4d56e0a592e"
+      },
+      {
+        "path": "omni_v2/voice/voice_clone.py",
+        "bytes": 10477,
+        "lines": 281,
+        "nonblank_lines": 260,
+        "sha256": "03685c975d965b638c9be174dd7b0936cf0c2514889cacc6c65e28fe062ca9f7"
+      },
+      {
+        "path": "omni_v2/voice/voice_loop.py",
+        "bytes": 8452,
+        "lines": 229,
+        "nonblank_lines": 207,
+        "sha256": "54576711203d079cf4bc42b626d0c5ae806e3bba58ca9503cc46e2bb0bbfdaf7"
+      },
+      {
+        "path": "omni_v2/voice/wake_word.py",
+        "bytes": 9078,
+        "lines": 214,
+        "nonblank_lines": 185,
+        "sha256": "e43e9577b2aa5501479f5a388bf2d962cae2be9f7305965ead3254a39dccf550"
+      },
+      {
+        "path": "omni_v2/voice/wake_word_best.py",
+        "bytes": 13127,
+        "lines": 339,
+        "nonblank_lines": 304,
+        "sha256": "7157cadc63667e7c1bb6bc5bd5e90bdbcf3ea638efe93ebcbf6a530301ba474c"
+      },
+      {
+        "path": "omni_v2/voice/wake_word_v3.py",
+        "bytes": 13489,
+        "lines": 334,
+        "nonblank_lines": 299,
+        "sha256": "e0df4c7b01364c4fe660fdfa8f77d60965856fe828ca97c39b941ce2974a3ef5"
+      },
+      {
+        "path": "omni_v2/wake/__init__.py",
+        "bytes": 290,
+        "lines": 9,
+        "nonblank_lines": 7,
+        "sha256": "431c1ff90fdc5cefa03d63b82b7293c5012d04a288ec9c72ae3e19c96226b3e8"
+      },
+      {
+        "path": "omni_v2/wake/wake_routine.py",
+        "bytes": 4757,
+        "lines": 136,
+        "nonblank_lines": 118,
+        "sha256": "b892d2126e1cdf9147e42e8b75a9e8466af4590d62aead7f4092c36a058dcfce"
+      },
+      {
+        "path": "omni_v2/web_ui/index.html",
+        "bytes": 32225,
+        "lines": 886,
+        "nonblank_lines": 773,
+        "sha256": "b1514895627fdaca0a7c7e09011675586cdfea97b522bcdf3cacc8a1695b850c"
+      }
+    ],
+    "tests": [
+      {
+        "path": "omni_v2/tests/test_automation.py",
+        "bytes": 4126,
+        "lines": 132,
+        "nonblank_lines": 106,
+        "sha256": "4ba19b738ea587bb4d7f630f519c8b8a929e30c907d7b01cf3a287c37a0c8680"
+      },
+      {
+        "path": "omni_v2/tests/test_away_agent.py",
+        "bytes": 4046,
+        "lines": 134,
+        "nonblank_lines": 110,
+        "sha256": "3fff97f18f334b56c2cbbf617c06d777f2cad6e4b9ebfee3c01828e44ffecb67"
+      },
+      {
+        "path": "omni_v2/tests/test_benchmark.py",
+        "bytes": 4542,
+        "lines": 115,
+        "nonblank_lines": 95,
+        "sha256": "1e834d7d84c1fec980d72577c29f661b173a0d368335a75b4f04d27c0df04822"
+      },
+      {
+        "path": "omni_v2/tests/test_brain_polish.py",
+        "bytes": 2924,
+        "lines": 85,
+        "nonblank_lines": 69,
+        "sha256": "0ecfefaa187ff69e31179687abb2d8488f47fad2d66fc1953d678db4402ea9cd"
+      },
+      {
+        "path": "omni_v2/tests/test_briefing.py",
+        "bytes": 4218,
+        "lines": 129,
+        "nonblank_lines": 103,
+        "sha256": "c1f826e16ad32fa43acf88af6faa7eb3031955f8999ac7bfe9498fea08f4cd0d"
+      },
+      {
+        "path": "omni_v2/tests/test_command_channel.py",
+        "bytes": 3675,
+        "lines": 115,
+        "nonblank_lines": 93,
+        "sha256": "e3114c12736bba3c8a9ca22a4b357360ce6ab6725357fce16c87c6c811f5312c"
+      },
+      {
+        "path": "omni_v2/tests/test_compaction.py",
+        "bytes": 3749,
+        "lines": 122,
+        "nonblank_lines": 98,
+        "sha256": "7800ede6df8adf28016ccaba61c35870f793ee997ac18dee052e95790aed4956"
+      },
+      {
+        "path": "omni_v2/tests/test_daemon.py",
+        "bytes": 3068,
+        "lines": 109,
+        "nonblank_lines": 91,
+        "sha256": "e8762ecd1417a6de383f3ca85db21948740ccecddcacb2df697d802e30635bec"
+      },
+      {
+        "path": "omni_v2/tests/test_demo_mode.py",
+        "bytes": 5237,
+        "lines": 177,
+        "nonblank_lines": 150,
+        "sha256": "8d8f8f7db4bc2fbe180e110af6bb04b489600f4dcee59ed3fb717de9ca8f9ba8"
+      },
+      {
+        "path": "omni_v2/tests/test_desktop.py",
+        "bytes": 3170,
+        "lines": 96,
+        "nonblank_lines": 78,
+        "sha256": "d9c8ddac9687d13297da5c8c762bdc977596c68157ff4310f5d64f2772c7f568"
+      },
+      {
+        "path": "omni_v2/tests/test_fast_af_db.py",
+        "bytes": 3345,
+        "lines": 79,
+        "nonblank_lines": 66,
+        "sha256": "a2c22659ae669bf19ef1e1b71275540f435ee279452099fb266cbfef48a9851a"
+      },
+      {
+        "path": "omni_v2/tests/test_geofence.py",
+        "bytes": 20523,
+        "lines": 526,
+        "nonblank_lines": 458,
+        "sha256": "108e2a0bd9bbb079b803214564f0b776315def574aa6e2c848acab8368a662b4"
+      },
+      {
+        "path": "omni_v2/tests/test_goals.py",
+        "bytes": 4726,
+        "lines": 141,
+        "nonblank_lines": 115,
+        "sha256": "251311323ec4bbf07a8fdb84424961f9983560eecf9b3bdb48d16ae05b23d77c"
+      },
+      {
+        "path": "omni_v2/tests/test_guardian.py",
+        "bytes": 2095,
+        "lines": 75,
+        "nonblank_lines": 57,
+        "sha256": "2deb8f28158d8f7d6633ee445ab83fe57efbd98bc877f4cb30d81405e230c1e1"
+      },
+      {
+        "path": "omni_v2/tests/test_gui_agent.py",
+        "bytes": 2774,
+        "lines": 91,
+        "nonblank_lines": 69,
+        "sha256": "c9f55a2413585bc794a03799d39962191d64cab8ac686ce047322a39b2ea9ef5"
+      },
+      {
+        "path": "omni_v2/tests/test_harness.py",
+        "bytes": 4787,
+        "lines": 136,
+        "nonblank_lines": 108,
+        "sha256": "3836d5cce440c30b1729b15ec297dec97fb8c1bd5d68bcf966af0dacf0e0575f"
+      },
+      {
+        "path": "omni_v2/tests/test_hermes_refinement.py",
+        "bytes": 4460,
+        "lines": 97,
+        "nonblank_lines": 79,
+        "sha256": "b83a1fe891d0f7884db181ffb0c0641a35cf1bb02be73c57ccee3bfc05b82c64"
+      },
+      {
+        "path": "omni_v2/tests/test_history_photos_backup.py",
+        "bytes": 8070,
+        "lines": 211,
+        "nonblank_lines": 179,
+        "sha256": "4da468d96c716724dc654f74d14914af820af86cb84e590709ecc0db5922246f"
+      },
+      {
+        "path": "omni_v2/tests/test_hybrid_memory.py",
+        "bytes": 3584,
+        "lines": 110,
+        "nonblank_lines": 88,
+        "sha256": "67f30d56bbddd3b62560f54fea98beffbae482a02cdf747d51d100644beda13e"
+      },
+      {
+        "path": "omni_v2/tests/test_identity.py",
+        "bytes": 4330,
+        "lines": 128,
+        "nonblank_lines": 104,
+        "sha256": "b26da6bb90d8d02716e5134785ae6716fdf7015cc0c6593e6528a2ebde5e9b28"
+      },
+      {
+        "path": "omni_v2/tests/test_knowledge_base.py",
+        "bytes": 2807,
+        "lines": 94,
+        "nonblank_lines": 74,
+        "sha256": "3db5084b7b18da695142b47652f05bb7a8c40cdebf49a73196b3210ba8b13a22"
+      },
+      {
+        "path": "omni_v2/tests/test_knowledge_graph.py",
+        "bytes": 3368,
+        "lines": 102,
+        "nonblank_lines": 80,
+        "sha256": "b93ea4d89477da040dbcee83af7ac910be7c08639cb310ce26cc0e94a5eb259d"
+      },
+      {
+        "path": "omni_v2/tests/test_marketplace.py",
+        "bytes": 8160,
+        "lines": 255,
+        "nonblank_lines": 220,
+        "sha256": "1d243a65a035aeaba8a3a4f736a84806c26bded5af2815bb6dc57c28e95fc9fa"
+      },
+      {
+        "path": "omni_v2/tests/test_mcp.py",
+        "bytes": 3590,
+        "lines": 115,
+        "nonblank_lines": 91,
+        "sha256": "808763121ccb60887a7ac253d841e614a13e32d2b0a34d0c0e018bd496579aba"
+      },
+      {
+        "path": "omni_v2/tests/test_mesh.py",
+        "bytes": 3694,
+        "lines": 111,
+        "nonblank_lines": 91,
+        "sha256": "1df8b2f110eeadbe207798ac3c39b37da4b93470a2f90d39c31c085b0c5d0b22"
+      },
+      {
+        "path": "omni_v2/tests/test_messenger.py",
+        "bytes": 4163,
+        "lines": 128,
+        "nonblank_lines": 100,
+        "sha256": "b820546f80f2dd2c3508a2ea28e9f616acb544e12d201b306e12e5b9f908adcc"
+      },
+      {
+        "path": "omni_v2/tests/test_meta_harness.py",
+        "bytes": 4093,
+        "lines": 115,
+        "nonblank_lines": 92,
+        "sha256": "92c6e02c41ffd3f2d12f583df51d7882017e5f29afa910e110323ec561a2bc6f"
+      },
+      {
+        "path": "omni_v2/tests/test_metacog.py",
+        "bytes": 5330,
+        "lines": 150,
+        "nonblank_lines": 120,
+        "sha256": "4dfe67aba88253f62ca31ef87a39b981070c95274b978549115e0ab75baf88a2"
+      },
+      {
+        "path": "omni_v2/tests/test_mobile.py",
+        "bytes": 15167,
+        "lines": 420,
+        "nonblank_lines": 352,
+        "sha256": "34424a607cc5bfac4fb2682aa33d4c51f8f779f9e1577e79612e818a98f018de"
+      },
+      {
+        "path": "omni_v2/tests/test_model_tiering.py",
+        "bytes": 3582,
+        "lines": 112,
+        "nonblank_lines": 88,
+        "sha256": "92a0001669c03baaab12984946d8b14b5a3c757733a343b97e38b0e390bc99c7"
+      },
+      {
+        "path": "omni_v2/tests/test_network.py",
+        "bytes": 8783,
+        "lines": 267,
+        "nonblank_lines": 236,
+        "sha256": "50e0549745000f7a262181372d7391591d340bacd575ea49be73daaafb292b93"
+      },
+      {
+        "path": "omni_v2/tests/test_nlfiles_remote.py",
+        "bytes": 3879,
+        "lines": 116,
+        "nonblank_lines": 94,
+        "sha256": "01c8e92b2ed0b435feb3cdbd77816db9260d0d37d173e35a6561b4457b2ceb5b"
+      },
+      {
+        "path": "omni_v2/tests/test_notification_prefs.py",
+        "bytes": 16149,
+        "lines": 421,
+        "nonblank_lines": 362,
+        "sha256": "15002888666df78031094b4bd2456132c3d4cc334b4942151d9d1a91c4def991"
+      },
+      {
+        "path": "omni_v2/tests/test_notifications.py",
+        "bytes": 21532,
+        "lines": 539,
+        "nonblank_lines": 474,
+        "sha256": "70b4a403860004c4eb2a0ee865021c69c40acfc153ec7454764f21699a30e2ce"
+      },
+      {
+        "path": "omni_v2/tests/test_offline_voice.py",
+        "bytes": 3211,
+        "lines": 84,
+        "nonblank_lines": 70,
+        "sha256": "a68c556a2792326b1f571e686c55be3af9471696823962b91aedd7f9ca6b79ea"
+      },
+      {
+        "path": "omni_v2/tests/test_onboarding.py",
+        "bytes": 4671,
+        "lines": 176,
+        "nonblank_lines": 149,
+        "sha256": "08e770d311f5931ab4c1a0015b95b7afc5a396618f00df76df9b1284ca680ce8"
+      },
+      {
+        "path": "omni_v2/tests/test_opinion.py",
+        "bytes": 8663,
+        "lines": 277,
+        "nonblank_lines": 244,
+        "sha256": "d023730fb7884adfacb007c3d41ccacb7f4d3dad63171832d5d58f7619bc5336"
+      },
+      {
+        "path": "omni_v2/tests/test_personal.py",
+        "bytes": 4240,
+        "lines": 136,
+        "nonblank_lines": 113,
+        "sha256": "ccea4fc79c6f999185fbd8f1e95de072629564037088f939b18847e34749f0e6"
+      },
+      {
+        "path": "omni_v2/tests/test_personality.py",
+        "bytes": 8954,
+        "lines": 285,
+        "nonblank_lines": 245,
+        "sha256": "43b89c84b040e4c35be834c32d78970c2b8ad99e4d57ff92968e5fd03141fbd4"
+      },
+      {
+        "path": "omni_v2/tests/test_post_goal_flow.py",
+        "bytes": 4081,
+        "lines": 108,
+        "nonblank_lines": 92,
+        "sha256": "f9fce32669ca9c9accefa6c65ef771a7cee796686acb507c81fe72d170799bc0"
+      },
+      {
+        "path": "omni_v2/tests/test_query_engine.py",
+        "bytes": 3966,
+        "lines": 133,
+        "nonblank_lines": 105,
+        "sha256": "6ce388853b741dd8fb1ccd09444612126db5658f1195e9b94429319a849fe42c"
+      },
+      {
+        "path": "omni_v2/tests/test_recurring.py",
+        "bytes": 3602,
+        "lines": 114,
+        "nonblank_lines": 90,
+        "sha256": "c11bb848c7aaac4097011d67b1bb996584bff17a791f87a9648c7e40445a7eb3"
+      },
+      {
+        "path": "omni_v2/tests/test_reflect.py",
+        "bytes": 4702,
+        "lines": 131,
+        "nonblank_lines": 101,
+        "sha256": "a89da99773f9962ceb6e823a25dfbcf8cc5a417c8318e4a4e09c2010a34ff84f"
+      },
+      {
+        "path": "omni_v2/tests/test_research.py",
+        "bytes": 2887,
+        "lines": 87,
+        "nonblank_lines": 69,
+        "sha256": "e373c11e5d07e41074639221b56f769953ba2a71a585b8e2a396b89361053046"
+      },
+      {
+        "path": "omni_v2/tests/test_router_v2.py",
+        "bytes": 3533,
+        "lines": 104,
+        "nonblank_lines": 80,
+        "sha256": "1de87881158960a8465397a770dbc685fe9562544113ba25112b0edcc41d3094"
+      },
+      {
+        "path": "omni_v2/tests/test_sandbox.py",
+        "bytes": 3615,
+        "lines": 113,
+        "nonblank_lines": 87,
+        "sha256": "323c981193e9129487800885b33b5eca0076d27bdbefb3b1f81d33220b67fce0"
+      },
+      {
+        "path": "omni_v2/tests/test_screen_watcher.py",
+        "bytes": 14082,
+        "lines": 348,
+        "nonblank_lines": 305,
+        "sha256": "7e62a53ba67ec18414841497586012e5abcaae7e3aa2bb9ad77c0474d55d839d"
+      },
+      {
+        "path": "omni_v2/tests/test_security.py",
+        "bytes": 10453,
+        "lines": 269,
+        "nonblank_lines": 218,
+        "sha256": "68cdd022756c64b562f555cfa18063fc2c1d4f864c6993d9c313e4acbaf54d64"
+      },
+      {
+        "path": "omni_v2/tests/test_security_guardrails.py",
+        "bytes": 11649,
+        "lines": 299,
+        "nonblank_lines": 274,
+        "sha256": "3da7ef518ce1141a370ed6610fbe7f3c1276c76c064ccb21bd3ebbb7dae2ba27"
+      },
+      {
+        "path": "omni_v2/tests/test_session_memory.py",
+        "bytes": 8836,
+        "lines": 285,
+        "nonblank_lines": 248,
+        "sha256": "7e596c3fcffb13954e61302f02697d6a6837a3f97b1e0f6fb927d5e82fa89758"
+      },
+      {
+        "path": "omni_v2/tests/test_skill_installer.py",
+        "bytes": 3415,
+        "lines": 111,
+        "nonblank_lines": 89,
+        "sha256": "9b1ed70ffd1a9ab57c9d9df12acd63ba12511ec09027a146fadb1274adab3a59"
+      },
+      {
+        "path": "omni_v2/tests/test_skill_synthesis.py",
+        "bytes": 4436,
+        "lines": 96,
+        "nonblank_lines": 82,
+        "sha256": "a1920576958156bb095b1ab388611c315ad0fcd88bf1d41cc96ac1a5e67706d0"
+      },
+      {
+        "path": "omni_v2/tests/test_skill_verify.py",
+        "bytes": 4048,
+        "lines": 112,
+        "nonblank_lines": 92,
+        "sha256": "59f4da6d61579e59828fe2cc09c5ede7e70469ad08eae82b08230386473362ca"
+      },
+      {
+        "path": "omni_v2/tests/test_stats.py",
+        "bytes": 6638,
+        "lines": 220,
+        "nonblank_lines": 191,
+        "sha256": "4a88f2d05d9f52cc3577ebd2cc1ad59d6623368aa261f1005758dd78c4599853"
+      },
+      {
+        "path": "omni_v2/tests/test_subagents.py",
+        "bytes": 3193,
+        "lines": 103,
+        "nonblank_lines": 81,
+        "sha256": "dbd17ae93fcb121eaa750aed1e2141ffaaacfe2d17e9957b6c9228da7cc7c0a7"
+      },
+      {
+        "path": "omni_v2/tests/test_user_profile.py",
+        "bytes": 7116,
+        "lines": 235,
+        "nonblank_lines": 204,
+        "sha256": "d4ac6240a7c907def2f5d537ee84898f40dead834e05a7597025bdc8bcf6542b"
+      },
+      {
+        "path": "omni_v2/tests/test_vault.py",
+        "bytes": 4160,
+        "lines": 133,
+        "nonblank_lines": 107,
+        "sha256": "c7b9b2a4f59ce29658f7fd760001877a2e060942a2568ab3a3ea935e2608eef7"
+      },
+      {
+        "path": "omni_v2/tests/test_vision.py",
+        "bytes": 4696,
+        "lines": 154,
+        "nonblank_lines": 133,
+        "sha256": "bb6f6e6440db8e49fbdbbfd514765dd5851f29a80d8fcd03cd1810a0be02fcbc"
+      },
+      {
+        "path": "omni_v2/tests/test_voice_clone.py",
+        "bytes": 5083,
+        "lines": 164,
+        "nonblank_lines": 143,
+        "sha256": "131fc5f8097bed9c6f945555ae00a4b67a60538b81506469bf7ffea62930c3f6"
+      },
+      {
+        "path": "omni_v2/tests/test_voice_loop.py",
+        "bytes": 3549,
+        "lines": 129,
+        "nonblank_lines": 101,
+        "sha256": "aa9b91844ed62e8ca407e18514256970b0b8cdde610879316bd0c14e543213ea"
+      },
+      {
+        "path": "omni_v2/tests/test_wake_leaderboard.py",
+        "bytes": 5007,
+        "lines": 175,
+        "nonblank_lines": 135,
+        "sha256": "dd2bfc4093b055a700aa511e2e6de67661d3a31098711c5e0f9ebf3565c55e06"
+      },
+      {
+        "path": "omni_v2/voice/test_mic_fixed.py",
+        "bytes": 5356,
+        "lines": 130,
+        "nonblank_lines": 115,
+        "sha256": "873c7bf315c894506c9647ace05bd3a0a7d0594426324589bb40a7fa98807752"
+      }
+    ]
+  }
+}

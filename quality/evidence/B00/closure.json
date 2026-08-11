@@ -1,0 +1,173 @@
+{
+  "schema_version": 1,
+  "batch": "B00",
+  "title": "Scope Lock and Truth Reset",
+  "decision": "closed",
+  "closed_on": "2026-08-11",
+  "approval": {
+    "gate": "pass",
+    "basis": "All nine B00 exit criteria have evidence below; B00 status is closed in the machine-readable authorities.",
+    "review_mode": "Arena Agent Mode implementation plus self-audit; no independent reviewer is claimed.",
+    "next_batch": "B01",
+    "next_batch_state": "ready_not_started"
+  },
+  "subject": {
+    "source_digest": "12c045db881c35936ce758e59b160b507c5525db648a948925d526a76261e240",
+    "baseline_captured_at": "2026-08-11T13:50:35.004625+00:00",
+    "host": "Linux-6.1.158+-x86_64-with-glibc2.36",
+    "python_executable": ".venv/bin/python",
+    "authority_sha256": {
+      "quality/capabilities.json": "a948ea6cbd3b1acbf9670695dfa24bad652423a68b0081e4279ed3df3585e6e8",
+      "quality/scorecard.json": "5b81be7ba023b4a1b89b5d3f1e690434b5911599e0a19f991ba447828a0f9567",
+      "quality/policy.json": "64192fede30fd6b758238ca4602c0aba96ef17d768e72f3ca50b21deeccfaa19",
+      "quality/batches.json": "c5e70f6fe69fdd56507438a9874aad4675317f7efa3008e29eb73a7d215b7476"
+    }
+  },
+  "commands": [
+    {
+      "command": ".venv/bin/python scripts/quality_baseline.py capture --publish quality/evidence/B00/baseline-summary.json",
+      "exit_code": 0,
+      "result": "capture_completed_with_required_non_passing_probes_visible",
+      "evidence": "quality/evidence/B00/baseline-summary.json"
+    },
+    {
+      "command": ".venv/bin/python scripts/quality_baseline.py check",
+      "exit_code": 0,
+      "result": "pass_52_capabilities_10_workflows_225_production_files_62_test_files_191_routes"
+    },
+    {
+      "command": ".venv/bin/python scripts/check_markdown_links.py --local-only README.md docs quality/evidence",
+      "exit_code": 0,
+      "result": "pass_26_markdown_files_109_local_targets"
+    },
+    {
+      "command": ".venv/bin/python -m compileall -q scripts",
+      "exit_code": 0,
+      "result": "pass"
+    },
+    {
+      "command": "git diff --check",
+      "exit_code": 0,
+      "result": "pass"
+    },
+    {
+      "command": ".venv/bin/python scripts/quality_baseline_selftest.py",
+      "exit_code": 0,
+      "result": "pass_current_authorities_plus_3_adversarial_mutations"
+    }
+  ],
+  "exit_gate": [
+    {
+      "criterion": "Stable personal core, platforms, non-goals, and ten outcomes are explicitly locked",
+      "status": "pass",
+      "evidence": [
+        "quality/capabilities.json",
+        "docs/CAPABILITY_MATRIX.md",
+        "quality/policy.json"
+      ],
+      "finding": "One-owner promise, Windows 11 x64 target, bounded secondary-platform claims, pre-10 non-goals, and W01-W10 are explicit. Every workflow remains not_qualified."
+    },
+    {
+      "criterion": "Every active capability group and active product source file is represented in the matrix",
+      "status": "pass",
+      "evidence": [
+        "quality/capabilities.json",
+        "quality/inventory.json",
+        "docs/CAPABILITY_MATRIX.md"
+      ],
+      "finding": "52 capability groups cover all 225 inventoried active production files under the declared inventory policy. Each group records owner, entry point, implementation reality, requirements, test types, platform state, data access, network destinations/disclosure, interface-audit state, and known gaps."
+    },
+    {
+      "criterion": "No capability is called stable before release qualification",
+      "status": "pass",
+      "evidence": [
+        "quality/capabilities.json",
+        "scripts/quality_baseline.py"
+      ],
+      "finding": "Stable capability count is zero. Validation rejects stable entries without real implementation, closed gaps, complete requirements, release-qualified required tests, verified platforms, privacy qualification for network behavior, and per-interface evidence for mapped tools/APIs."
+    },
+    {
+      "criterion": "README and docs index contain no known false completion, privacy, test, platform, installer, integration, voice-clone, sync, or tool-count claim",
+      "status": "pass",
+      "evidence": [
+        "README.md",
+        "docs/INDEX.md",
+        "quality/evidence/B00/baseline-summary.json"
+      ],
+      "finding": "The current overview says pre-alpha/not release-ready, distinguishes implementation breadth from qualification, reports the 16-instance duplicate runtime inventory, labels integrations as demo, voice cloning as a placeholder, sync as a stub, installation as unsupported, platforms as unqualified, and local-first as not equal to enforced offline. Test results are tied to the dated baseline instead of generalized."
+    },
+    {
+      "criterion": "Historical/unqualified documents are unmistakably labeled",
+      "status": "pass",
+      "evidence": [
+        "docs/INDEX.md"
+      ],
+      "finding": "All 27 tracked non-authoritative Markdown files outside README and docs/INDEX carry a dated top-of-file banner that disclaims old completion, test-count, performance, privacy, platform, and readiness language. Archived material remains excluded from the active inventory."
+    },
+    {
+      "criterion": "Baseline capture runs from one command and records every required non-passing probe",
+      "status": "pass",
+      "evidence": [
+        "scripts/quality_baseline.py",
+        "quality/evidence/B00/baseline-summary.json",
+        "quality/.local/baseline-results.json"
+      ],
+      "finding": "One capture command records versions, dependency resolution, wheel build/content, compilation, Python tests, backend-live tests, runtime tools, frontend lint/tests/build, and dependency audit. Dependency resolution, Python tests, backend-live completeness, frontend lint, frontend tests, and frontend audit remain explicitly non-passing. Full output is intentionally ignored; the concise summary is tracked."
+    },
+    {
+      "criterion": "Feature freeze, batch order, and post-10 policy are machine-readable",
+      "status": "pass",
+      "evidence": [
+        "quality/policy.json",
+        "quality/batches.json",
+        "docs/EXECUTION_BATCHES.md"
+      ],
+      "finding": "Feature freeze remains enabled, B00-B16 order and dependencies are validated, E01-E10 remain locked until B16, and commercial validation is a separate optional track. B00 is closed; B01 is ready but has not started."
+    },
+    {
+      "criterion": "Generated artifacts and local links pass drift validation",
+      "status": "pass",
+      "evidence": [
+        "scripts/quality_baseline.py",
+        "scripts/check_markdown_links.py",
+        "quality/inventory.json",
+        "docs/CAPABILITY_MATRIX.md",
+        "docs/QUALITY_SCORECARD.md",
+        "docs/EXECUTION_BATCHES.md"
+      ],
+      "finding": "Deterministic generation/check, script compilation, the manifest Markdown check, and git diff whitespace validation all pass."
+    },
+    {
+      "criterion": "B00 audit evidence records commands, results, limitations, and approval",
+      "status": "pass",
+      "evidence": [
+        "quality/evidence/B00/closure.json",
+        "quality/evidence/B00/README.md"
+      ],
+      "finding": "This record contains the command ledger, exact subject hashes, gate-by-gate decision, unclosed baseline failures, limitations, self-audit qualification, and closure transition."
+    }
+  ],
+  "baseline_findings_carried_forward": [
+    "Dependency resolution fails because the declared NumPy constraint cannot resolve in the captured Python 3.11 environment.",
+    "The wheel builds but contains only 11 members and four Python files, omitting most active omni_v2 implementation.",
+    "Python tests report 663 passed, 1 failed, and 35 skipped; the fixed-time calendar test is the failure.",
+    "Backend-live subset reports 49 passed and 6 skipped and is classified partial because the capture does not start the backend.",
+    "Frontend lint is not configured for unattended execution and fails at an interactive Next.js prompt.",
+    "No frontend test script is configured.",
+    "Frontend dependency audit reports 1 critical and 10 high vulnerabilities.",
+    "Frontend production build passes, but Google Fonts download failure shows the build is not proven offline.",
+    "Runtime inventory contains 16 instances, 75 declared action registrations, 68 unique action names, duplicate SystemTool, and seven duplicate system actions.",
+    "Static inventory contains 17 tool classes and 94 action declarations; these are declarations, not 94 qualified tools.",
+    "No capability or platform is release-qualified and all ten workflows remain not_qualified."
+  ],
+  "limitations": [
+    "Closing B00 certifies the truth reset and governance baseline only; it does not certify installation, tests, security, privacy, workflows, platforms, or release readiness.",
+    "The capture used a manually repaired ignored virtual environment; this is diagnostic evidence, not packaging evidence.",
+    "Capability records group related behavior. Per-effect and per-interface release qualification remains required before any stable promotion.",
+    "Mapped test paths prove only relevant test-code presence. They do not prove real effects, passing required suites, E2E coverage, hardware coverage, or release qualification.",
+    "Dependency/model/account/hardware requirements are explicitly a known subset until B01 completes dependency closure.",
+    "Platform lists are empty because no release-qualified platform run exists.",
+    "Network destinations are an inventory, not enforcement. Offline no-egress and privacy qualification remain open.",
+    "No independent code, security, privacy, or release audit is claimed by this self-audit."
+  ]
+}

@@ -1,5 +1,8 @@
 # 🏗️ OMNI V3 — Architecture
 
+> **Document status (2026-08-11): historical or unqualified reference.** This file records earlier intent, implementation, audit, or setup work. Its completion, test-count, performance, privacy, platform, and production-readiness statements are **not current release claims**. Use the generated [Capability Matrix](CAPABILITY_MATRIX.md) and [Quality Scorecard](QUALITY_SCORECARD.md) for current truth.
+
+
 A complete guide to how OMNI works, from the user interface down to the LLM.
 
 ---
@@ -322,7 +325,7 @@ omni_v2/
 - **Format:** Qwen2.5 trained for tool-use JSON out of the box (vs Llama-3.2 needs json_schema mode)
 - **Local:** Runs entirely in llama.cpp, no Ollama, no cloud
 
-See [docs/PERFORMANCE.md](docs/PERFORMANCE.md) for benchmark details.
+See [docs/PERFORMANCE.md](PERFORMANCE.md) for benchmark details.
 
 ### Why multi-agent?
 
@@ -435,4 +438,4 @@ The whole flow takes 1-2 seconds for action commands, <500ms for cached patterns
 
 ---
 
-**See [docs/CHANGELOG.md](docs/CHANGELOG.md) for what's new, and [docs/AIM.md](docs/AIM.md) for the north star.**
+**See [docs/CHANGELOG.md](CHANGELOG.md) for what's new, and [docs/AIM.md](AIM.md) for the north star.**

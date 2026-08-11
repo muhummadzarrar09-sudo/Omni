@@ -1,5 +1,8 @@
 # ✅ PHASE 1: It Remembers You — DONE
 
+> **Document status (2026-08-11): historical or unqualified reference.** This file records earlier intent, implementation, audit, or setup work. Its completion, test-count, performance, privacy, platform, and production-readiness statements are **not current release claims**. Use the generated [Capability Matrix](CAPABILITY_MATRIX.md) and [Quality Scorecard](QUALITY_SCORECARD.md) for current truth.
+
+
 **AIM items achieved:** #2 (Greets by name) + #8 (Remembers across sessions)
 **AIM score:** 5/10 → **7/10** 🎉
 

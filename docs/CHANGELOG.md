@@ -1,5 +1,8 @@
 # 📜 CHANGELOG
 
+> **Document status (2026-08-11): historical or unqualified reference.** This file records earlier intent, implementation, audit, or setup work. Its completion, test-count, performance, privacy, platform, and production-readiness statements are **not current release claims**. Use the generated [Capability Matrix](CAPABILITY_MATRIX.md) and [Quality Scorecard](QUALITY_SCORECARD.md) for current truth.
+
+
 All notable changes to OMNI V3 are documented here.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
@@ -389,9 +392,9 @@ That's it. The data in `data/` is preserved across updates.
 
 ## See Also
 
-- **[docs/AIM.md](docs/AIM.md)** — The AIM
-- **[docs/ROADMAP.md](docs/ROADMAP.md)** — Full Phase 1-4 spec
-- **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** — System architecture
-- **[docs/API.md](docs/API.md)** — API reference
-- **[docs/PERFORMANCE.md](docs/PERFORMANCE.md)** — Benchmarks
-- **[docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md)** — Common issues
+- **[docs/AIM.md](AIM.md)** — The AIM
+- **[docs/ROADMAP.md](ROADMAP.md)** — Full Phase 1-4 spec
+- **[docs/ARCHITECTURE.md](ARCHITECTURE.md)** — System architecture
+- **[docs/API.md](API.md)** — API reference
+- **[docs/PERFORMANCE.md](PERFORMANCE.md)** — Benchmarks
+- **[docs/TROUBLESHOOTING.md](TROUBLESHOOTING.md)** — Common issues
