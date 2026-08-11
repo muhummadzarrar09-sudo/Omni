@@ -135,6 +135,43 @@ class DesktopController:
         self.guardian = None
         # -- MCP bridge (Phase 13) -------------------------------------------
         self.mcp_bridge = None
+        # -- sub-agent delegation (Phase 13 #4) ------------------------------
+        self.delegator = None
+
+    def _get_delegator(self):
+        if self.delegator is not None:
+            return self.delegator
+        try:
+            from omni_v2.agents.subagents import SubAgentDelegator
+            self.delegator = SubAgentDelegator()
+        except Exception as e:
+            logger.warning(f"delegator build failed: {e}")
+            self.delegator = None
+        return self.delegator
+
+    def delegate_goal(self, goal_id: str, step_handler=None) -> Dict[str, Any]:
+        d = self._get_delegator()
+        if d is None or self.goals is None:
+            return {"ok": False, "summary": "delegator/goals unavailable"}
+        g = self.goals.get_goal(goal_id)
+        if g is None:
+            return {"ok": False, "summary": f"no goal {goal_id}"}
+        if step_handler is None:
+            # default: route each step through the away research agent if available
+            step_handler = self._default_step_handler
+        return d.delegate_goal(g, goals_stack=self.goals, step_handler=step_handler)
+
+    def _default_step_handler(self, brief: str):
+        if self.research is not None:
+            try:
+                report = self.research.research(brief)
+                return {"ok": True, "summary": f"{len(report.findings)} finding(s)"}
+            except Exception as e:
+                return {"ok": False, "summary": str(e)}
+        return {"ok": True, "summary": f"handled: {brief[:60]}"}
+
+    def delegator_stats(self) -> Dict[str, Any]:
+        return self._get_delegator().stats() if self.delegator else {"spawned": 0}
 
     def _get_mcp(self):
         if self.mcp_bridge is not None:
@@ -292,6 +329,8 @@ class DesktopController:
             out["skill_verifier"] = self.skill_verifier.stats()
         if self.mcp_bridge:
             out["mcp"] = self.mcp_bridge.stats()
+        if self.delegator:
+            out["delegator"] = self.delegator.stats()
         if self.voice_loop:
             out["voice"] = self.voice_loop.stats()
         if self.guardian:

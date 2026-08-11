@@ -88,3 +88,11 @@ def follow_up(goal_id: str, req: FollowUp) -> Dict[str, Any]:
 def abandon(goal_id: str) -> Dict[str, Any]:
     g = _goals.abandon(goal_id)
     return {"goal": g.to_dict()}
+
+
+@router.post("/{goal_id}/delegate")
+def delegate(goal_id: str) -> Dict[str, Any]:
+    """Sub-agent delegation (Phase 13 #4): run the goal's steps as parallel
+    sub-agents and report back compactly."""
+    from omni_v2.away.desktop import DesktopController
+    return DesktopController().delegate_goal(goal_id)

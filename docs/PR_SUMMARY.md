@@ -171,6 +171,17 @@ goal trajectories** — never rewriting the immutable base prompt.
   `get_status()` reports compactor stats.
 - CLI `omni compaction status`; FastAPI `GET /api/brain/compaction`.
 
+## 4.13 Sub-Agent Delegation (Phase 13 #4)
+
+- **`omni_v2/agents/subagents.py`**: `SubAgentDelegator` runs a batch of sub-agent specs
+  `[{name, brief}]` in **parallel** (thread pool) and aggregates **compact** results —
+  the parent stays small and focused (RLM-style "sub-agents as calls").
+- `delegate_goal(goal, goals_stack)`: runs each pending goal step as a sub-agent,
+  completes the steps, and returns a compact report. Pluggable handlers (default routes
+  steps through the research agent / ack).
+- CLI `omni delegate goal/status`; FastAPI `POST /api/goals/{id}/delegate`; wired into
+  the DesktopController + status.
+
 ## 5. Fixes & hygiene
 
 - Fixed pre-existing `omni/cli.py` f-string syntax bug (blocked CLI on Python ≤ 3.11).

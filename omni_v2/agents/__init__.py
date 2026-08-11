@@ -5,6 +5,7 @@ from .monitor import MonitorAgent
 from .evaluator import EvaluatorAgent
 from .memory import MemoryAgent
 from .proactive import ProactiveAgent, get_proactive_agent
+from .subagents import SubAgentDelegator, SubAgentResult, get_subagent_delegator
 
 __all__ = [
     'PlannerAgent',
@@ -13,5 +14,8 @@ __all__ = [
     'EvaluatorAgent',
     'MemoryAgent',
     'ProactiveAgent',
-    'get_proactive_agent'
+    'get_proactive_agent',
+    'SubAgentDelegator',
+    'SubAgentResult',
+    'get_subagent_delegator',
 ]

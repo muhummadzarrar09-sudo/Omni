@@ -188,7 +188,7 @@ def cmd_model_download_deep(args):
 def cmd_test(args):
     """Run all 20 test suites."""
     print("\n  " + "=" * 60)
-    print("  OMNI V3 - Full Test Suite (45 suites)")
+    print("  OMNI V3 - Full Test Suite (46 suites)")
     print("  " + "=" * 60 + "\n")
 
     # All 20 test suites
@@ -240,7 +240,8 @@ def cmd_test(args):
         ("[42/43] Auto post-goal flow",              "omni_v2.tests.test_post_goal_flow", "module"),
         ("[43/44] MCP bridge",                       "omni_v2.tests.test_mcp", "module"),
         ("[44/45] Auto skill verification",          "omni_v2.tests.test_skill_verify", "module"),
-        ("[45/45] Context compaction",               "omni_v2.tests.test_compaction", "module"),
+        ("[45/46] Context compaction",               "omni_v2.tests.test_compaction", "module"),
+        ("[46/46] Sub-agent delegation",             "omni_v2.tests.test_subagents", "module"),
     ]
 
     all_ok = True
@@ -795,6 +796,33 @@ def cmd_guardian(args):
         print(f"    Checkers    : {st.get('checkers')}")
         print(f"    Observations: {st.get('observations')}")
         print(f"    Interval    : {st.get('interval')}s")
+        print()
+        return 0
+    return 1
+
+
+def cmd_delegate(args):
+    """Sub-agent delegation: run goal steps as parallel sub-agents."""
+    sys.path.insert(0, str(REPO_ROOT))
+    from omni_v2.away.desktop import DesktopController
+    c = DesktopController()
+    action = getattr(args, "delegate_action", None) or "status"
+
+    if action == "goal":
+        gid = args.goal
+        res = c.delegate_goal(gid)
+        print(f"\n  🤖 Sub-agent delegation for goal {gid}:")
+        print(f"    {res.get('summary', res.get('summary'))}")
+        print()
+        return 0
+
+    if action == "status":
+        st = c.delegator_stats()
+        print("\n  🤖 Sub-agent delegator")
+        print(f"    Spawned  : {st.get('spawned', 0)}")
+        print(f"    Succeeded: {st.get('succeeded', 0)}")
+        print(f"    Failed   : {st.get('failed', 0)}")
+        print(f"    Max work : {st.get('max_workers', 3)}")
         print()
         return 0
     return 1
@@ -1500,6 +1528,12 @@ def main():
     comp_sub = comp.add_subparsers(dest="compaction_action")
     comp_sub.add_parser("status")
 
+    deleg = sub.add_parser("delegate", help="Sub-agent delegation (run goal steps in parallel)")
+    deleg_sub = deleg.add_subparsers(dest="delegate_action")
+    _dg = deleg_sub.add_parser("goal")
+    _dg.add_argument("goal")
+    deleg_sub.add_parser("status")
+
     mcp = sub.add_parser("mcp", help="MCP: connect to the Model Context Protocol ecosystem")
     mcp_sub = mcp.add_subparsers(dest="mcp_action")
     mcp_sub.add_parser("status")
@@ -1630,6 +1664,8 @@ def main():
         return cmd_skill_verify(args)
     if cmd == "compaction":
         return cmd_compaction(args)
+    if cmd == "delegate":
+        return cmd_delegate(args)
     if cmd == "briefing":
         return cmd_briefing(args)
     if cmd == "add-skill":
