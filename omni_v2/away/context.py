@@ -74,4 +74,6 @@ def build_away_stack(knowledge_base=None, reporter=None, messenger=None,
         "goals": goals,
         "metacog": metacog,
         "reflector": reflector,
+        "voice_loop": None,   # lazy-built by consumers that can supply components
+        "guardian": None,
     }

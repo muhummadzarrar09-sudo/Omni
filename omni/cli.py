@@ -188,7 +188,7 @@ def cmd_model_download_deep(args):
 def cmd_test(args):
     """Run all 20 test suites."""
     print("\n  " + "=" * 60)
-    print("  OMNI V3 - Full Test Suite (35 suites)")
+    print("  OMNI V3 - Full Test Suite (37 suites)")
     print("  " + "=" * 60 + "\n")
 
     # All 20 test suites
@@ -230,7 +230,9 @@ def cmd_test(args):
         ("[32/33] Metacognition (evaluator feedback loop)", "omni_v2.tests.test_metacog", "module"),
         ("[33/34] Episodic reflection + patterns",     "omni_v2.tests.test_reflect", "module"),
         ("[34/35] Brain polish (plan-before-acting + offline TTS)", "omni_v2.tests.test_brain_polish", "module"),
-        ("[35/35] Offline voice (wake word + STT)", "omni_v2.tests.test_offline_voice", "module"),
+        ("[35/37] Offline voice (wake word + STT)", "omni_v2.tests.test_offline_voice", "module"),
+        ("[36/37] Voice loop (hands-free)",         "omni_v2.tests.test_voice_loop", "module"),
+        ("[37/37] Proactive guardian",               "omni_v2.tests.test_guardian", "module"),
     ]
 
     all_ok = True
@@ -706,6 +708,90 @@ def cmd_brain(args):
     return 1
 
 
+def cmd_voice(args):
+    """Voice loop: hands-free 'Hey OMNI' conversation + voice-driven goals."""
+    sys.path.insert(0, str(REPO_ROOT))
+    action = getattr(args, "voice_action", None) or "status"
+    # build a controller for shared wiring
+    from omni_v2.away.desktop import DesktopController
+    c = DesktopController()
+
+    if action == "respond":
+        text = " ".join(args.rest)
+        res = c.voice_respond(text)
+        print(f"  OMNI says: {res.get('reply', res.get('detail', '?'))}")
+        return 0
+
+    if action == "start":
+        res = c.voice_start()
+        print(f"  Voice loop: {res['detail']}")
+        return 0
+
+    if action == "stop":
+        res = c.voice_stop()
+        print(f"  Voice loop: {res['detail']}")
+        return 0
+
+    if action == "status":
+        st = c.voice_stats()
+        print("\n  🎙️  Voice loop status:")
+        print(f"    Running : {'✅' if st.get('running') else '❌'}")
+        print(f"    Wake    : {'✅' if st.get('has_wake') else '❌'}")
+        print(f"    STT     : {'✅' if st.get('has_stt') else '❌'}")
+        print(f"    Brain   : {'✅' if st.get('has_brain') else '❌'}")
+        print(f"    TTS     : {'✅' if st.get('has_tts') else '❌'}")
+        print(f"    Turns   : {st.get('turns')}")
+        print()
+        return 0
+    return 1
+
+
+def cmd_guardian(args):
+    """Proactive guardian: watch apps/processes/health + notify anomalies."""
+    sys.path.insert(0, str(REPO_ROOT))
+    action = getattr(args, "guardian_action", None) or "status"
+    from omni_v2.away.desktop import DesktopController
+    c = DesktopController()
+
+    if action == "start":
+        res = c.guardian_start()
+        print(f"  Guardian: {res['detail']}")
+        return 0
+
+    if action == "stop":
+        res = c.guardian_stop()
+        print(f"  Guardian: {res['detail']}")
+        return 0
+
+    if action == "scan":
+        res = c.guardian_run_once()
+        obs = res.get("observations", [])
+        print(f"\n  🛡️  Guardian scan: {len(obs)} observation(s)\n")
+        for o in obs:
+            sev = "🔴" if o["severity"] >= 2 else ("🟡" if o["severity"] == 1 else "⚪")
+            print(f"    {sev} {o['title']}: {o['body']}")
+        print()
+        return 0
+
+    if action == "recent":
+        for o in c.guardian_recent():
+            print(f"  [{o.get('severity',0)}] {o.get('title')}: {o.get('body')}")
+        print()
+        return 0
+
+    if action == "status":
+        g = c._get_guardian()
+        st = g.stats() if g else {"running": False}
+        print("\n  🛡️  Guardian status:")
+        print(f"    Running     : {'✅' if st.get('running') else '❌'}")
+        print(f"    Checkers    : {st.get('checkers')}")
+        print(f"    Observations: {st.get('observations')}")
+        print(f"    Interval    : {st.get('interval')}s")
+        print()
+        return 0
+    return 1
+
+
 def cmd_meta(args):
     """Jarvis Brain metacognition: evaluate an outcome + feed back into a goal."""
     sys.path.insert(0, str(REPO_ROOT))
@@ -1108,6 +1194,22 @@ def main():
     reflect_p.add_argument("--days", type=int, default=7)
     reflect_sub.add_parser("episodes")
 
+    voice = sub.add_parser("voice", help="Voice loop: hands-free conversation + voice goals")
+    voice_sub = voice.add_subparsers(dest="voice_action")
+    voice_sub.add_parser("start")
+    voice_sub.add_parser("stop")
+    voice_sub.add_parser("status")
+    _vr = voice_sub.add_parser("respond")
+    _vr.add_argument("rest", nargs=argparse.REMAINDER)
+
+    guardian = sub.add_parser("guardian", help="Proactive guardian: watch apps/health")
+    guardian_sub = guardian.add_subparsers(dest="guardian_action")
+    guardian_sub.add_parser("start")
+    guardian_sub.add_parser("stop")
+    guardian_sub.add_parser("scan")
+    guardian_sub.add_parser("recent")
+    guardian_sub.add_parser("status")
+
     meta = sub.add_parser("meta", help="Jarvis Brain: metacognition (evaluate + replan)")
     meta_sub = meta.add_subparsers(dest="meta_action")
     meta_eval = meta_sub.add_parser("evaluate", help="Evaluate an outcome, feed into a goal")
@@ -1188,6 +1290,10 @@ def main():
         return cmd_meta(args)
     if cmd == "reflect":
         return cmd_reflect(args)
+    if cmd == "voice":
+        return cmd_voice(args)
+    if cmd == "guardian":
+        return cmd_guardian(args)
 
     parser.print_help()
     return 1

@@ -358,6 +358,86 @@ def _launch_gui():
     e_recap.configure(command=do_reflect_today)
     refresh_episodes()
 
+    # ================= VOICE LOOP (Phase 10) =================
+    t_voi = tabs.add("Voice")
+    vrow = ctk.CTkFrame(t_voi)
+    vrow.pack(fill="x", padx=8, pady=4)
+    v_start = ctk.CTkButton(vrow, text="🎙️ Start loop", width=110)
+    v_start.pack(side="left", padx=4)
+    v_stop = ctk.CTkButton(vrow, text="Stop", width=80)
+    v_stop.pack(side="left", padx=4)
+    v_out = ctk.CTkTextbox(t_voi, height=320, font=("Consolas", 12))
+    v_out.pack(fill="both", expand=True, padx=8, pady=8)
+    v_test = ctk.CTkEntry(t_voi, placeholder_text="type a message to 'say' to OMNI")
+    v_test.pack(fill="x", padx=8)
+    v_say = ctk.CTkButton(t_voi, text="Say to OMNI", width=120)
+    v_say.pack(anchor="w", padx=8, pady=4)
+
+    def refresh_voice():
+        def done(st):
+            log_box(v_out, f"Running: {'✅' if st.get('running') else '❌'}\n"
+                           f"Wake: {'✅' if st.get('has_wake') else '❌'}  STT: {'✅' if st.get('has_stt') else '❌'}\n"
+                           f"Brain: {'✅' if st.get('has_brain') else '❌'}  TTS: {'✅' if st.get('has_tts') else '❌'}\n"
+                           f"Turns: {st.get('turns')}")
+        bg(lambda: controller.voice_stats(), done)
+    def do_v_start():
+        def done(res):
+            log_box(v_out, res.get("detail", "started"))
+            refresh_voice()
+        bg(lambda: controller.voice_start(), done)
+    def do_v_stop():
+        def done(res):
+            refresh_voice()
+        bg(lambda: controller.voice_stop(), done)
+    def do_v_say():
+        t = v_test.get().strip()
+        if not t:
+            return
+        def done(res):
+            v_test.delete(0, "end")
+            log_box(v_out, f"YOU: {t}\n\nOMNI: {res.get('reply', res.get('detail',''))}")
+        bg(lambda: controller.voice_respond(t), done)
+    v_start.configure(command=do_v_start)
+    v_stop.configure(command=do_v_stop)
+    v_say.configure(command=do_v_say)
+    refresh_voice()
+
+    # ================= GUARDIAN (Phase 10) =================
+    t_grd = tabs.add("Guardian")
+    grow = ctk.CTkFrame(t_grd)
+    grow.pack(fill="x", padx=8, pady=4)
+    g_start = ctk.CTkButton(grow, text="🛡️ Start", width=90)
+    g_start.pack(side="left", padx=4)
+    g_stop = ctk.CTkButton(grow, text="Stop", width=70)
+    g_stop.pack(side="left", padx=4)
+    g_scan = ctk.CTkButton(grow, text="Scan now", width=90)
+    g_scan.pack(side="left", padx=4)
+    g_out = ctk.CTkTextbox(t_grd, height=430, font=("Consolas", 12))
+    g_out.pack(fill="both", expand=True, padx=8, pady=8)
+
+    def refresh_guardian():
+        def done(res):
+            log_box(g_out, json.dumps(res, indent=2, default=str))
+        bg(lambda: controller.guardian.stats() if controller.guardian else {"running": False}, done)
+    def do_g_start():
+        def done(res):
+            refresh_guardian()
+        bg(lambda: controller.guardian_start(), done)
+    def do_g_stop():
+        def done(res):
+            refresh_guardian()
+        bg(lambda: controller.guardian_stop(), done)
+    def do_g_scan():
+        def done(res):
+            obs = res.get("observations", [])
+            lines = [f"{'🔴' if o['severity']>=2 else '🟡' if o['severity']==1 else '⚪'} {o['title']}: {o['body']}" for o in obs]
+            log_box(g_out, "\n".join(lines) or "(no observations)")
+        bg(lambda: controller.guardian_run_once(), done)
+    g_start.configure(command=do_g_start)
+    g_stop.configure(command=do_g_stop)
+    g_scan.configure(command=do_g_scan)
+    refresh_guardian()
+
     # ================= SECURITY =================
     t_sec = tabs.add("Security")
     srow = ctk.CTkFrame(t_sec)

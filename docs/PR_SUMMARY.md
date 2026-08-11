@@ -89,6 +89,18 @@ All 5 steps complete:
   `wakeword_engine` config (default `openwakeword`). STT stays on faster-whisper
   (fully offline).
 
+## 4.7 Voice Loop + Proactive Guardian (Phase 10)
+
+- **Voice loop** (`omni_v2/voice/voice_loop.py`): always-on wake → listen → think →
+  speak orchestration on top of the offline pieces (openwakeword / faster-whisper /
+  brain / piper). Voice-driven goals ("research X and report back" → away goal).
+  Headless-testable with fakes. CLI `omni voice`, `/api/assistant/voice/*`, desktop
+  "Voice" tab.
+- **Guardian** (`omni_v2/guardian/guardian.py`): background machine watcher
+  (processes, battery/disk/CPU health, new files) that surfaces observations and
+  notifies via messenger on anomalies. Pluggable checkers, headless-testable.
+  CLI `omni guardian`, `/api/assistant/guardian/*`, desktop "Guardian" tab.
+
 ## 5. Fixes & hygiene
 
 - Fixed pre-existing `omni/cli.py` f-string syntax bug (blocked CLI on Python ≤ 3.11).

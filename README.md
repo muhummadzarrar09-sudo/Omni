@@ -168,6 +168,8 @@ After `pip install -e .[all]`:
 | `omni security enroll\|arm\|disarm\|snapshot\|lock` | Local camera guard & lockdown |
 | `omni messenger setup-whatsapp\|whatsapp-set\|test\|status` | WhatsApp/Telegram report setup |
 | `./scripts/setup_hardware.sh` | One-shot real-hardware setup (models + offline TTS + WhatsApp) |
+| `omni voice start\|stop\|status\|respond` | Hands-free "Hey OMNI" voice loop |
+| `omni guardian start\|stop\|scan\|recent\|status` | Proactive machine watcher (apps/health) |
 | `omni brain status\|user\|set-name\|set-mood\|reflect` | Jarvis Identity core + user model |
 | `omni goal new\|list\|status\|advance\|fail\|follow-up` | Jarvis persistent goal stack (decompose → progress → replan) |
 | `omni meta evaluate\|history\|stats` | Jarvis metacognition (evaluate outcome → replan/ask/escalate) |
@@ -454,8 +456,15 @@ Omni/
 - **Offline voice (Phase 8.2):** wake word defaults to **openwakeword** (free, offline,
   no key) — Picovoice is demoted to an explicit opt-in that needs a key. STT is
   faster-whisper (fully offline).
+- **Voice Loop (Phase 10):** a continuous hands-free conversation cycle — always-on
+  "Hey OMNI" → hear you → think → speak back — with voice-driven goals ("research X and
+  report back" becomes an away-mode goal).
+- **Proactive Guardian (Phase 10):** a background watcher that checks processes, system
+  health (battery/disk/CPU) and files, surfacing observations and notifying you (via
+  messenger) about anomalies — "Jarvis watches your back."
 - **Full feature rundown:** see [docs/PR_SUMMARY.md](docs/PR_SUMMARY.md) for the
-  complete map of Away Mode, Desktop + Security, and the Jarvis Brain.
+  complete map of Away Mode, Desktop + Security, the Jarvis Brain, Voice Loop and
+  the Proactive Guardian.
 
 ---
 

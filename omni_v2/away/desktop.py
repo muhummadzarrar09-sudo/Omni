@@ -115,6 +115,92 @@ class DesktopController:
         self._cancel_requested: Dict[str, bool] = {"cancel": False}
         self._intruder_hook: Optional[Callable[[Dict[str, Any]], None]] = None
 
+        # -- voice loop + guardian (Phase 10) --------------------------------
+        self.voice_loop = None
+        self.guardian = None
+
+    def _get_voice_loop(self):
+        """Lazily build the VoiceLoop with real components when available."""
+        if self.voice_loop is not None:
+            return self.voice_loop
+        try:
+            from omni_v2.voice.voice_loop import VoiceLoop
+            from omni_v2.voice.wake_word import WakeWordDetector
+            from omni_v2.voice.stt_simple import SimpleSTT
+            from omni_v2.voice.tts_best import TTSBest
+            from omni_v2.llm.brain import get_brain
+            self.voice_loop = VoiceLoop(
+                wake_detector=WakeWordDetector(),
+                stt=SimpleSTT(),
+                brain=get_brain(),
+                tts=TTSBest(),
+                goals=self.goals,
+                on_transcription=lambda t: logger.info(f"voice heard: {t}"),
+            )
+        except Exception as e:
+            logger.warning(f"voice loop build failed: {e}")
+            self.voice_loop = None
+        return self.voice_loop
+
+    def _get_guardian(self):
+        if self.guardian is not None:
+            return self.guardian
+        try:
+            from omni_v2.guardian.guardian import Guardian, process_checker, health_checker
+            self.guardian = Guardian(
+                interval=30.0,
+                checkers=[process_checker(), health_checker()],
+                notify_fn=lambda t: self._notify(t),
+            )
+        except Exception as e:
+            logger.warning(f"guardian build failed: {e}")
+            self.guardian = None
+        return self.guardian
+
+    def voice_respond(self, text: str) -> Dict[str, Any]:
+        vl = self._get_voice_loop()
+        if vl is None:
+            return {"ok": False, "detail": "voice loop unavailable"}
+        try:
+            reply = vl.respond(text)
+            return {"ok": True, "reply": reply}
+        except Exception as e:
+            return {"ok": False, "detail": str(e)}
+
+    def voice_start(self) -> Dict[str, Any]:
+        vl = self._get_voice_loop()
+        if vl is None:
+            return {"ok": False, "detail": "voice loop unavailable"}
+        return {"ok": vl.start(), "detail": "started" if vl.running else "could not start"}
+
+    def voice_stop(self) -> Dict[str, Any]:
+        if self.voice_loop:
+            self.voice_loop.stop()
+        return {"ok": True, "detail": "stopped"}
+
+    def voice_stats(self) -> Dict[str, Any]:
+        return self.voice_loop.stats() if self.voice_loop else {"running": False}
+
+    def guardian_start(self) -> Dict[str, Any]:
+        g = self._get_guardian()
+        if g is None:
+            return {"ok": False, "detail": "guardian unavailable"}
+        return {"ok": g.start(), "detail": "started" if g.running else "no checkers"}
+
+    def guardian_stop(self) -> Dict[str, Any]:
+        if self.guardian:
+            self.guardian.stop()
+        return {"ok": True, "detail": "stopped"}
+
+    def guardian_run_once(self) -> Dict[str, Any]:
+        g = self._get_guardian()
+        if g is None:
+            return {"ok": False, "observations": []}
+        return {"ok": True, "observations": g.run_once()}
+
+    def guardian_recent(self) -> list:
+        return self.guardian.recent(30) if self.guardian else []
+
     # -- status / config -------------------------------------------------
     def status(self) -> Dict[str, Any]:
         out = {"ts": time.time()}
@@ -146,6 +232,10 @@ class DesktopController:
             out["metacog"] = self.metacog.stats()
         if self.reflector:
             out["reflector"] = self.reflector.stats()
+        if self.voice_loop:
+            out["voice"] = self.voice_loop.stats()
+        if self.guardian:
+            out["guardian"] = self.guardian.stats()
         return out
 
     def messenger_config(self) -> Dict[str, Any]:

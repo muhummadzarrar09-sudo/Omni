@@ -104,6 +104,14 @@ try:
 except Exception as e:  # pragma: no cover - non-fatal if deps missing
     logger.warning(f"Security router not mounted: {e}")
 
+# Voice loop + Guardian (Phase 10). Fully local.
+try:
+    from assistant_routes import router as assistant_router
+    app.include_router(assistant_router)
+    logger.info("Assistant router mounted at /api/assistant")
+except Exception as e:  # pragma: no cover - non-fatal if deps missing
+    logger.warning(f"Assistant router not mounted: {e}")
+
 # SMOKE-10 fix: cap request body size at 64KB to prevent OOM attacks
 MAX_REQUEST_BYTES = 64 * 1024
 
