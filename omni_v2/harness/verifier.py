@@ -41,6 +41,20 @@ class SkillVerificationLoop:
         """Conservative default: pass with a note (upgrade on DGX to a real runner)."""
         return True, "not-executed (deterministic tester); skill kept"
 
+    @staticmethod
+    def sandbox_tester(sandbox=None):
+        """Build a tester that runs the skill in the SkillSandbox (Phase 14 #3).
+        A skill passes only if it executes cleanly in the isolated subprocess."""
+        if sandbox is None:
+            from omni_v2.skills.sandbox import SkillSandbox
+            sandbox = SkillSandbox()
+        def _test(skill) -> Tuple[bool, str]:
+            res = sandbox.run_skill_artifact(skill)
+            if res.ok:
+                return True, f"sandbox-executed ok: {res.output[:80] or 'clean'}"
+            return False, f"sandbox failed: {res.error[:120]}"
+        return _test
+
     # -- main entry ---------------------------------------------------------
     def verify_skill(self, skill: Any) -> Dict[str, Any]:
         """Verify a single skill artifact. Returns a result dict."""

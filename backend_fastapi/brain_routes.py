@@ -111,3 +111,10 @@ def benchmark() -> Dict[str, Any]:
     """Self-improvement benchmark (Phase 14 #2)."""
     from omni_v2.away.desktop import DesktopController
     return {"ok": True, "report": DesktopController().benchmark_report().get("report", {})}
+
+
+@router.get("/sandbox")
+def sandbox() -> Dict[str, Any]:
+    """Skill sandbox status (Phase 14 #3)."""
+    from omni_v2.skills.sandbox import SkillSandbox
+    return {"ok": True, "status": SkillSandbox().stats()}

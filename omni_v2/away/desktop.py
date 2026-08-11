@@ -644,6 +644,26 @@ class DesktopController:
     def skill_verify_history(self) -> list:
         return self.skill_verifier.history(20) if self.skill_verifier else []
 
+    # -- skill sandbox (Phase 14 #3) ----------------------------------------
+    def skill_sandbox_run(self, code: str = "", skill_name: str = "") -> Dict[str, Any]:
+        """Run a skill or code in the isolated sandbox."""
+        from omni_v2.skills.sandbox import SkillSandbox
+        s = SkillSandbox()
+        if skill_name and self.harness is not None:
+            art = self.harness.get("skill", skill_name)
+            if art is None:
+                return {"ok": False, "detail": f"no skill '{skill_name}'"}
+            res = s.run_skill_artifact(art)
+        elif code:
+            res = s.run_skill_code(code)
+        else:
+            return {"ok": False, "detail": "provide code or skill_name"}
+        return {"ok": res.ok, "result": res.to_dict()}
+
+    def skill_sandbox_status(self) -> Dict[str, Any]:
+        from omni_v2.skills.sandbox import SkillSandbox
+        return {"ok": True, "status": SkillSandbox().stats()}
+
     # -- security -------------------------------------------------------------
     def enroll_owner(self) -> Dict[str, Any]:
         """Capture several camera frames (multi-sample) and enroll the owner."""

@@ -188,7 +188,7 @@ def cmd_model_download_deep(args):
 def cmd_test(args):
     """Run all 20 test suites."""
     print("\n  " + "=" * 60)
-    print("  OMNI V3 - Full Test Suite (50 suites)")
+    print("  OMNI V3 - Full Test Suite (51 suites)")
     print("  " + "=" * 60 + "\n")
 
     # All 20 test suites
@@ -245,7 +245,8 @@ def cmd_test(args):
         ("[47/48] Automation triggers",              "omni_v2.tests.test_automation", "module"),
         ("[48/49] LLM router v2 (DGX-ready)",        "omni_v2.tests.test_router_v2", "module"),
         ("[49/50] Daemon + auto-start",              "omni_v2.tests.test_daemon", "module"),
-        ("[50/50] Self-improvement benchmark",       "omni_v2.tests.test_benchmark", "module"),
+        ("[50/51] Self-improvement benchmark",       "omni_v2.tests.test_benchmark", "module"),
+        ("[51/51] Skill sandbox",                    "omni_v2.tests.test_sandbox", "module"),
     ]
 
     all_ok = True
@@ -864,6 +865,40 @@ def cmd_router(args):
         print(f"\n  Task: {text}\n")
         print(f"    → tier {d['tier']} · model {d['model']} (required cap {d['required_cap']})")
         print(f"      {d['reason']} · est {d['estimated_tokens']} tokens")
+        print()
+        return 0
+    return 1
+
+
+def cmd_sandbox(args):
+    """Skill sandbox: run untrusted skill code in an isolated subprocess."""
+    sys.path.insert(0, str(REPO_ROOT))
+    from omni_v2.away.desktop import DesktopController
+    c = DesktopController()
+    action = getattr(args, "sandbox_action", None) or "status"
+
+    if action == "status":
+        st = c.skill_sandbox_status().get("status", {})
+        print("\n  🛡️  Skill Sandbox")
+        print(f"    Timeout    : {st.get('timeout_s')}s")
+        print(f"    Max mem    : {st.get('max_mem_mb')} MB")
+        print(f"    Isolated   : {'✅ subprocess' if st.get('isolated') else '❌'}")
+        print(f"    Network    : {'⛔ blocked' if st.get('network_blocked') else '⚠️ allowed'}")
+        print()
+        return 0
+
+    if action == "run":
+        code = " ".join(args.code) if args.code else ""
+        res = c.skill_sandbox_run(code=code, skill_name=args.skill or "")
+        if not res.get("ok"):
+            print(f"  ❌ {res.get('detail', res.get('result', {}).get('error', '?'))}")
+            return 1
+        r = res["result"]
+        print(f"\n  🛡️  Sandbox run:")
+        print(f"    ok        : {'✅' if r['ok'] else '❌'}")
+        print(f"    output    : {r['output'] or '(none)'}")
+        print(f"    error     : {r['error'] or '(none)'}")
+        print(f"    timed out : {r['timed_out']}  exit: {r['exit_code']}")
         print()
         return 0
     return 1
@@ -1752,6 +1787,13 @@ def main():
     _bmr.add_argument("--briefs", nargs="*", default=[])
     _bmr.add_argument("--iterations", type=int, default=3)
 
+    sb = sub.add_parser("sandbox", help="Skill sandbox: run untrusted skill code isolated")
+    sb_sub = sb.add_subparsers(dest="sandbox_action")
+    sb_sub.add_parser("status")
+    _sbr = sb_sub.add_parser("run")
+    _sbr.add_argument("--skill", default="")
+    _sbr.add_argument("code", nargs=argparse.REMAINDER)
+
     mcp = sub.add_parser("mcp", help="MCP: connect to the Model Context Protocol ecosystem")
     mcp_sub = mcp.add_subparsers(dest="mcp_action")
     mcp_sub.add_parser("status")
@@ -1892,6 +1934,8 @@ def main():
         return cmd_daemon(args)
     if cmd == "benchmark":
         return cmd_benchmark(args)
+    if cmd == "sandbox":
+        return cmd_sandbox(args)
     if cmd == "briefing":
         return cmd_briefing(args)
     if cmd == "add-skill":

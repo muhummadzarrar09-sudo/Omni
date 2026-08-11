@@ -182,6 +182,7 @@ After `pip install -e .[all]`:
 | `omni router status\|route` | LLM router v2: cost-aware model selection (DGX-ready) |
 | `omni daemon enable\|disable\|status\|start\|stop` | Always-on resident agent + auto-start on boot |
 | `omni benchmark run\|report` | Self-improvement benchmark (faster/cheaper over time) |
+| `omni sandbox status\|run` | Skill sandbox: run untrusted skill code isolated |
 | `omni brain status\|user\|set-name\|set-mood\|reflect` | Jarvis Identity core + user model |
 | `omni goal new\|list\|status\|advance\|fail\|follow-up` | Jarvis persistent goal stack (decompose → progress → replan) |
 | `omni meta evaluate\|history\|stats` | Jarvis metacognition (evaluate outcome → replan/ask/escalate) |
@@ -504,7 +505,9 @@ Omni/
 - **Self-Improvement Benchmark (Phase 14 #2):** measures whether OMNI gets **faster /
   cheaper** on repeated task types as the Continual Harness accumulates skills —
   compares the "early" (no skill) vs "late" (skill present) cohort. `omni benchmark`.
-- **MCP Bridge (Phase 13):** connect OMNI to the **Model Context Protocol** ecosystem
+- **Skill Sandbox (Phase 14 #3):** run untrusted / harness-created skills in an **isolated
+  subprocess** with OS-level guardrails — hard timeout, memory limit (RLIMIT_AS), network
+  blocked, clean env. `omni sandbox status/run`.
   (6,000+ servers/tools). MCP tools register as native OMNI plugins the brain can call
   like built-ins. `omni mcp add-demo`, `/api/mcp/*`, desktop "MCP" tab.
 - **Auto Skill Verification (Phase 13 #2):** whenever the Continual Harness creates or

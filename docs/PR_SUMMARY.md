@@ -221,6 +221,17 @@ goal trajectories** — never rewriting the immutable base prompt.
 - CLI `omni benchmark run/report`; FastAPI `GET /api/brain/benchmark`; wired into the
   DesktopController.
 
+## 4.18 Skill Sandbox (Phase 14 #3)
+
+- **`omni_v2/skills/sandbox.py`**: runs untrusted / harness-created skills in an **isolated
+  subprocess** with OS-level guardrails — hard wall-clock timeout, memory limit
+  (RLIMIT_AS), **network blocked** (socket monkeypatched in the child), clean stripped env,
+  bounded JSON-safe result returned to the parent.
+- `run_skill_code` / `run_skill_artifact`; a `sandbox_tester` factory lets the
+  SkillVerificationLoop test skills by actually executing them safely.
+- CLI `omni sandbox status/run`; FastAPI `GET /api/brain/sandbox`; wired into the
+  DesktopController.
+
 ## 5. Fixes & hygiene
 
 - Fixed pre-existing `omni/cli.py` f-string syntax bug (blocked CLI on Python ≤ 3.11).
