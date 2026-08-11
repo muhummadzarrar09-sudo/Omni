@@ -136,6 +136,14 @@ try:
 except Exception as e:  # pragma: no cover - non-fatal if deps missing
     logger.warning(f"MCP router not mounted: {e}")
 
+# Automation triggers (Phase 13 #5): webhook/schedule/file. Fully local.
+try:
+    from automation_routes import router as automation_router
+    app.include_router(automation_router)
+    logger.info("Automation router mounted at /api/automation")
+except Exception as e:  # pragma: no cover - non-fatal if deps missing
+    logger.warning(f"Automation router not mounted: {e}")
+
 # SMOKE-10 fix: cap request body size at 64KB to prevent OOM attacks
 MAX_REQUEST_BYTES = 64 * 1024
 

@@ -137,6 +137,47 @@ class DesktopController:
         self.mcp_bridge = None
         # -- sub-agent delegation (Phase 13 #4) ------------------------------
         self.delegator = None
+        # -- automation triggers (Phase 13 #5) -------------------------------
+        self.triggers = None
+
+    def _get_triggers(self):
+        if self.triggers is not None:
+            return self.triggers
+        try:
+            from omni_v2.automation.triggers import TriggerManager, make_runner
+            self.triggers = TriggerManager(
+                runner=make_runner(goals=self.goals, research=self.research,
+                                   away=self.away, messenger=self.messenger),
+            )
+        except Exception as e:
+            logger.warning(f"triggers build failed: {e}")
+            self.triggers = None
+        return self.triggers
+
+    def trigger_add(self, name: str, trigger: str, action: str, action_args: dict,
+                    secret: str = "") -> Dict[str, Any]:
+        t = self._get_triggers()
+        if t is None:
+            return {"ok": False, "detail": "triggers unavailable"}
+        try:
+            a = t.add(name, trigger, action, action_args, secret=secret)
+            return {"ok": True, "automation": a.to_dict()}
+        except Exception as e:
+            return {"ok": False, "detail": str(e)}
+
+    def trigger_fire(self, name: str, payload: dict = None) -> Dict[str, Any]:
+        t = self._get_triggers()
+        if t is None:
+            return {"ok": False, "detail": "unavailable"}
+        return t.fire(name, payload or {})
+
+    def trigger_list(self) -> Dict[str, Any]:
+        t = self._get_triggers()
+        return {"ok": True, "automations": [a.to_dict() for a in t.list()] if t else []}
+
+    def trigger_stats(self) -> Dict[str, Any]:
+        t = self._get_triggers()
+        return t.stats() if t else {"triggers": 0}
 
     def _get_delegator(self):
         if self.delegator is not None:
@@ -331,6 +372,8 @@ class DesktopController:
             out["mcp"] = self.mcp_bridge.stats()
         if self.delegator:
             out["delegator"] = self.delegator.stats()
+        if self.triggers:
+            out["automation"] = self.triggers.stats()
         if self.voice_loop:
             out["voice"] = self.voice_loop.stats()
         if self.guardian:

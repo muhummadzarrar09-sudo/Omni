@@ -188,7 +188,7 @@ def cmd_model_download_deep(args):
 def cmd_test(args):
     """Run all 20 test suites."""
     print("\n  " + "=" * 60)
-    print("  OMNI V3 - Full Test Suite (46 suites)")
+    print("  OMNI V3 - Full Test Suite (47 suites)")
     print("  " + "=" * 60 + "\n")
 
     # All 20 test suites
@@ -241,7 +241,8 @@ def cmd_test(args):
         ("[43/44] MCP bridge",                       "omni_v2.tests.test_mcp", "module"),
         ("[44/45] Auto skill verification",          "omni_v2.tests.test_skill_verify", "module"),
         ("[45/46] Context compaction",               "omni_v2.tests.test_compaction", "module"),
-        ("[46/46] Sub-agent delegation",             "omni_v2.tests.test_subagents", "module"),
+        ("[46/47] Sub-agent delegation",             "omni_v2.tests.test_subagents", "module"),
+        ("[47/47] Automation triggers",              "omni_v2.tests.test_automation", "module"),
     ]
 
     all_ok = True
@@ -824,6 +825,54 @@ def cmd_delegate(args):
         print(f"    Failed   : {st.get('failed', 0)}")
         print(f"    Max work : {st.get('max_workers', 3)}")
         print()
+        return 0
+    return 1
+
+
+def cmd_automation(args):
+    """Automation triggers: webhook/schedule/file events wake OMNI."""
+    sys.path.insert(0, str(REPO_ROOT))
+    from omni_v2.away.desktop import DesktopController
+    c = DesktopController()
+    action = getattr(args, "automation_action", None) or "status"
+
+    if action == "status":
+        st = c.trigger_stats()
+        by = st.get("by_trigger", {})
+        print("\n  ⚡ Automation Triggers")
+        print(f"    Triggers : {st.get('triggers', 0)}")
+        print(f"    Webhooks : {by.get('webhook', 0)}  Schedules: {by.get('schedule', 0)}  Files: {by.get('file', 0)}")
+        print(f"    Fired    : {st.get('fired', 0)}")
+        print()
+        return 0
+
+    if action == "add":
+        name, trigger, action_kind = args.name, args.trigger, args.action
+        # build action_args from remaining k=v
+        action_args = {}
+        for kv in args.rest:
+            if "=" in kv:
+                k, v = kv.split("=", 1)
+                action_args[k] = v
+        res = c.trigger_add(name, trigger, action_kind, action_args, secret=args.secret or "")
+        if res["ok"]:
+            print(f"  ✅ Added {trigger} trigger '{name}' -> {action_kind}")
+            return 0
+        print(f"  ❌ {res.get('detail','?')}")
+        return 1
+
+    if action == "fire":
+        res = c.trigger_fire(args.name, {})
+        print(f"  ⚡ Fire '{args.name}': ok={res.get('ok')} {res.get('detail', res.get('result',''))}")
+        return 0
+
+    if action == "list":
+        res = c.trigger_list()
+        for a in res.get("automations", []):
+            print(f"  • {a['name']} [{a['trigger']}] -> {a['action']} {a.get('action_args', {})} "
+                  f"(enabled={a['enabled']}, fired={a['fire_count']})")
+        if not res.get("automations"):
+            print("  (no triggers — try: omni automation add deploy webhook goal intent=\"deploy the app\")")
         return 0
     return 1
 
@@ -1534,6 +1583,19 @@ def main():
     _dg.add_argument("goal")
     deleg_sub.add_parser("status")
 
+    auto = sub.add_parser("automation", help="Automation triggers (webhook/schedule/file wake OMNI)")
+    auto_sub = auto.add_subparsers(dest="automation_action")
+    auto_sub.add_parser("status")
+    _aa = auto_sub.add_parser("add")
+    _aa.add_argument("name")
+    _aa.add_argument("trigger", choices=["webhook", "schedule", "file"])
+    _aa.add_argument("action", choices=["goal", "research", "notify", "away"])
+    _aa.add_argument("--secret", default="")
+    _aa.add_argument("rest", nargs=argparse.REMAINDER)
+    _af = auto_sub.add_parser("fire")
+    _af.add_argument("name")
+    auto_sub.add_parser("list")
+
     mcp = sub.add_parser("mcp", help="MCP: connect to the Model Context Protocol ecosystem")
     mcp_sub = mcp.add_subparsers(dest="mcp_action")
     mcp_sub.add_parser("status")
@@ -1666,6 +1728,8 @@ def main():
         return cmd_compaction(args)
     if cmd == "delegate":
         return cmd_delegate(args)
+    if cmd == "automation":
+        return cmd_automation(args)
     if cmd == "briefing":
         return cmd_briefing(args)
     if cmd == "add-skill":

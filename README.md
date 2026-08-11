@@ -178,6 +178,7 @@ After `pip install -e .[all]`:
 | `omni skill-verify status\|run\|history` | Auto skill verification (test skills, roll back failures) |
 | `omni compaction status` | Context auto-compaction (token/memory efficiency) |
 | `omni delegate goal\|status` | Sub-agent delegation (run goal steps in parallel) |
+| `omni automation status\|add\|fire\|list` | Webhook/schedule/file triggers that wake OMNI |
 | `omni brain status\|user\|set-name\|set-mood\|reflect` | Jarvis Identity core + user model |
 | `omni goal new\|list\|status\|advance\|fail\|follow-up` | Jarvis persistent goal stack (decompose → progress → replan) |
 | `omni meta evaluate\|history\|stats` | Jarvis metacognition (evaluate outcome → replan/ask/escalate) |
@@ -486,6 +487,10 @@ Omni/
 - **Sub-Agent Delegation (Phase 13 #4):** the RLM-style "sub-agents as calls" — a goal's
   steps run as **parallel sub-agents** that each report back **compactly** to a parent
   that stays small and focused. `omni delegate goal <id>`, `/api/goals/{id}/delegate`.
+- **Automation Triggers (Phase 13 #5):** external events wake OMNI — **webhook**
+  (`POST /api/automation/webhook/<name>`), **schedule**, or **file** triggers fire
+  automations that start a goal / run research / send a message / queue an away task.
+  `omni automation add/fire/list`.
 - **MCP Bridge (Phase 13):** connect OMNI to the **Model Context Protocol** ecosystem
   (6,000+ servers/tools). MCP tools register as native OMNI plugins the brain can call
   like built-ins. `omni mcp add-demo`, `/api/mcp/*`, desktop "MCP" tab.

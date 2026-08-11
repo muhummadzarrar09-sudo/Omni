@@ -182,6 +182,16 @@ goal trajectories** — never rewriting the immutable base prompt.
 - CLI `omni delegate goal/status`; FastAPI `POST /api/goals/{id}/delegate`; wired into
   the DesktopController + status.
 
+## 4.14 Automation Triggers (Phase 13 #5)
+
+- **`omni_v2/automation/triggers.py`**: `TriggerManager` lets external events wake OMNI.
+  Three trigger types: **webhook** (HTTP endpoint), **schedule** (cron/interval), **file**
+  (new file in a watched dir). Each fires an automation: start a **goal** / run
+  **research** / send a **notify** / queue an **away** task (via `make_runner` wired to
+  goals/research/away/messenger). Optional webhook secret. Persisted + counted.
+- CLI `omni automation status/add/fire/list`; FastAPI `/api/automation/*` incl.
+  `POST /api/automation/webhook/<name>`.
+
 ## 5. Fixes & hygiene
 
 - Fixed pre-existing `omni/cli.py` f-string syntax bug (blocked CLI on Python ≤ 3.11).
