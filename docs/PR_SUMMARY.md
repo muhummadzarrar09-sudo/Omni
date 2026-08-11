@@ -203,6 +203,14 @@ goal trajectories** — never rewriting the immutable base prompt.
 - CLI `omni router status/route`; FastAPI `GET /api/brain/router`; wired into the
   DesktopController + status.
 
+## 4.16 Daemon + Auto-start (Phase 14 #1) — always-on resident agent
+
+- **`omni_v2/daemon/daemon.py`**: `AutoStartManager` registers OMNI to start on boot
+  (systemd user unit / XDG autostart on Linux; Windows/macOS backends pluggable).
+  `DaemonController` keeps resident services (guardian, automation triggers, away agent)
+  running persistently. Headless-testable with a fake platform backend.
+- `omni_daemon.py` entry point; CLI `omni daemon enable/disable/status/start/stop`.
+
 ## 5. Fixes & hygiene
 
 - Fixed pre-existing `omni/cli.py` f-string syntax bug (blocked CLI on Python ≤ 3.11).

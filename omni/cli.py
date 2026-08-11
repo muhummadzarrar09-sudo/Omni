@@ -188,7 +188,7 @@ def cmd_model_download_deep(args):
 def cmd_test(args):
     """Run all 20 test suites."""
     print("\n  " + "=" * 60)
-    print("  OMNI V3 - Full Test Suite (48 suites)")
+    print("  OMNI V3 - Full Test Suite (49 suites)")
     print("  " + "=" * 60 + "\n")
 
     # All 20 test suites
@@ -243,7 +243,8 @@ def cmd_test(args):
         ("[45/46] Context compaction",               "omni_v2.tests.test_compaction", "module"),
         ("[46/47] Sub-agent delegation",             "omni_v2.tests.test_subagents", "module"),
         ("[47/48] Automation triggers",              "omni_v2.tests.test_automation", "module"),
-        ("[48/48] LLM router v2 (DGX-ready)",        "omni_v2.tests.test_router_v2", "module"),
+        ("[48/49] LLM router v2 (DGX-ready)",        "omni_v2.tests.test_router_v2", "module"),
+        ("[49/49] Daemon + auto-start",              "omni_v2.tests.test_daemon", "module"),
     ]
 
     all_ok = True
@@ -863,6 +864,55 @@ def cmd_router(args):
         print(f"    → tier {d['tier']} · model {d['model']} (required cap {d['required_cap']})")
         print(f"      {d['reason']} · est {d['estimated_tokens']} tokens")
         print()
+        return 0
+    return 1
+
+
+def cmd_daemon(args):
+    """OMNI daemon: always-on resident agent + auto-start."""
+    sys.path.insert(0, str(REPO_ROOT))
+    from omni_v2.daemon.daemon import AutoStartManager, DaemonController
+    from omni_v2.away.desktop import DesktopController
+    action = getattr(args, "daemon_action", None) or "status"
+    asm = AutoStartManager()
+
+    if action == "enable":
+        res = asm.enable()
+        print(f"  ✅ Auto-start enabled ({res['backend']}):\n     {res['command']}")
+        return 0
+    if action == "disable":
+        res = asm.disable()
+        print(f"  {'✅ Auto-start disabled' if res['ok'] else '❌ failed'}")
+        return 0
+    if action == "status":
+        st = asm.status()
+        print(f"\n  🖥️  OMNI Daemon")
+        print(f"    Auto-start : {'✅ installed' if st['installed'] else '❌ not installed'} ({st['backend']})")
+        print()
+        return 0
+    if action == "start":
+        # start resident services in background
+        c = DesktopController()
+        svcs = {}
+        svcs["guardian"] = lambda: c.guardian_start()
+        svcs["automation"] = lambda: c._get_triggers()
+        if c.away:
+            svcs["away"] = lambda: c.away.away_start()
+        d = DaemonController(services=svcs)
+        res = d.start()
+        print(f"  ▶ Resident services started: {', '.join(res['started']) or '(none)'}")
+        print("  (this process keeps them alive; run 'omni daemon start' in a terminal)")
+        import time
+        try:
+            while True:
+                time.sleep(60)
+        except KeyboardInterrupt:
+            d.stop()
+        return 0
+    if action == "stop":
+        d = DaemonController()
+        d.stop()
+        print("  ■ Stopped")
         return 0
     return 1
 
@@ -1640,6 +1690,14 @@ def main():
     _rr = rtr_sub.add_parser("route")
     _rr.add_argument("rest", nargs=argparse.REMAINDER)
 
+    dmn = sub.add_parser("daemon", help="OMNI daemon: always-on resident agent + auto-start")
+    dmn_sub = dmn.add_subparsers(dest="daemon_action")
+    dmn_sub.add_parser("enable")
+    dmn_sub.add_parser("disable")
+    dmn_sub.add_parser("status")
+    dmn_sub.add_parser("start")
+    dmn_sub.add_parser("stop")
+
     mcp = sub.add_parser("mcp", help="MCP: connect to the Model Context Protocol ecosystem")
     mcp_sub = mcp.add_subparsers(dest="mcp_action")
     mcp_sub.add_parser("status")
@@ -1776,6 +1834,8 @@ def main():
         return cmd_automation(args)
     if cmd == "router":
         return cmd_router(args)
+    if cmd == "daemon":
+        return cmd_daemon(args)
     if cmd == "briefing":
         return cmd_briefing(args)
     if cmd == "add-skill":

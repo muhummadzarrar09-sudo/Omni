@@ -180,6 +180,7 @@ After `pip install -e .[all]`:
 | `omni delegate goal\|status` | Sub-agent delegation (run goal steps in parallel) |
 | `omni automation status\|add\|fire\|list` | Webhook/schedule/file triggers that wake OMNI |
 | `omni router status\|route` | LLM router v2: cost-aware model selection (DGX-ready) |
+| `omni daemon enable\|disable\|status\|start\|stop` | Always-on resident agent + auto-start on boot |
 | `omni brain status\|user\|set-name\|set-mood\|reflect` | Jarvis Identity core + user model |
 | `omni goal new\|list\|status\|advance\|fail\|follow-up` | Jarvis persistent goal stack (decompose → progress → replan) |
 | `omni meta evaluate\|history\|stats` | Jarvis metacognition (evaluate outcome → replan/ask/escalate) |
@@ -496,6 +497,9 @@ Omni/
   **cheapest capable model per task** (fast/balanced/deep/reasoning/local tiers).
   On the 1050 Ti it uses 1.5B/3B; on the DGX it automatically uses 14B/72B+ reasoning
   tiers. `omni router status/route`.
+- **Daemon + Auto-start (Phase 14 #1):** OMNI becomes an **always-on resident agent** —
+  `omni daemon enable` registers it to start on boot (systemd / XDG autostart), and a
+  DaemonController keeps guardian + automation + away services running persistently.
 - **MCP Bridge (Phase 13):** connect OMNI to the **Model Context Protocol** ecosystem
   (6,000+ servers/tools). MCP tools register as native OMNI plugins the brain can call
   like built-ins. `omni mcp add-demo`, `/api/mcp/*`, desktop "MCP" tab.
