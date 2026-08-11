@@ -173,6 +173,33 @@ class KnowledgeBase:
                 results.append(it.to_dict())
         return results[:k]
 
+    # -- query with citations (Phase 14 #6) ---------------------------------
+    def query_with_citations(self, question: str, k: int = 5) -> Dict[str, Any]:
+        """
+        Ask the KB and get an answer grounded in CITATIONS — each retrieved chunk
+        carries its source, so the answer can link back to where the info came
+        from (file path / URL). Returns hits + a rendered citation list.
+        """
+        hits = self.memory.retrieve(question, k=k)
+        citations = []
+        context_lines = []
+        for i, h in enumerate(hits, 1):
+            source = h.source or "unknown"
+            title = h.title or source
+            cid = f"[{i}]"
+            citations.append({
+                "id": i, "source": source, "title": title,
+                "snippet": h.text[:160], "kind": h.kind,
+            })
+            context_lines.append(f"{cid} {h.text}  (source: {title})")
+        answer_context = "\n".join(context_lines) or "(no relevant knowledge found)"
+        return {
+            "question": question,
+            "context": answer_context,
+            "citations": citations,
+            "hit_count": len(citations),
+        }
+
     # -- sources index -------------------------------------------------------
     def _load_sources(self) -> Dict[str, Dict[str, Any]]:
         try:

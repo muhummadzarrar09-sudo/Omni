@@ -125,3 +125,16 @@ def vault() -> Dict[str, Any]:
     """Credential vault status (Phase 14 #4) - lists names, never values."""
     from omni_v2.away.desktop import DesktopController
     return {"ok": True, **DesktopController().vault_list()}
+
+
+@router.get("/personal")
+def personal() -> Dict[str, Any]:
+    """Personal context (Phase 14 #5): calendar + contacts status."""
+    from omni_v2.away.desktop import DesktopController
+    c = DesktopController()
+    return {
+        "ok": True,
+        "calendar": c.calendar.stats() if c.calendar else {"events_total": 0},
+        "contacts": c.contacts.stats() if c.contacts else {"contacts": 0},
+        "citations": True,
+    }

@@ -188,7 +188,7 @@ def cmd_model_download_deep(args):
 def cmd_test(args):
     """Run all 20 test suites."""
     print("\n  " + "=" * 60)
-    print("  OMNI V3 - Full Test Suite (52 suites)")
+    print("  OMNI V3 - Full Test Suite (53 suites)")
     print("  " + "=" * 60 + "\n")
 
     # All 20 test suites
@@ -247,7 +247,8 @@ def cmd_test(args):
         ("[49/50] Daemon + auto-start",              "omni_v2.tests.test_daemon", "module"),
         ("[50/51] Self-improvement benchmark",       "omni_v2.tests.test_benchmark", "module"),
         ("[51/52] Skill sandbox",                    "omni_v2.tests.test_sandbox", "module"),
-        ("[52/52] Credential vault",                 "omni_v2.tests.test_vault", "module"),
+        ("[52/53] Credential vault",                 "omni_v2.tests.test_vault", "module"),
+        ("[53/53] Personal context (calendar/contacts/citations)", "omni_v2.tests.test_personal", "module"),
     ]
 
     all_ok = True
@@ -866,6 +867,62 @@ def cmd_router(args):
         print(f"\n  Task: {text}\n")
         print(f"    → tier {d['tier']} · model {d['model']} (required cap {d['required_cap']})")
         print(f"      {d['reason']} · est {d['estimated_tokens']} tokens")
+        print()
+        return 0
+    return 1
+
+
+def cmd_personal(args):
+    """Personal context: local calendar + contacts, and KB answers with citations."""
+    sys.path.insert(0, str(REPO_ROOT))
+    from omni_v2.away.desktop import DesktopController
+    c = DesktopController()
+    action = getattr(args, "personal_action", None) or "status"
+
+    if action == "calendar":
+        res = c.calendar_upcoming(hours=args.hours)
+        events = res.get("events", [])
+        print(f"\n  📅 Upcoming events ({args.hours}h):")
+        if not events:
+            print("    (none)")
+        for e in events:
+            print(f"    • {e['summary']}  @ {e['start']}  {e.get('location','')}")
+        print()
+        return 0
+
+    if action == "contacts":
+        res = c.contacts_lookup(args.name) if args.name else None
+        if res and res["ok"]:
+            ct = res["contact"]
+            print(f"\n  👤 {ct['name']}")
+            if ct.get("phone"):
+                print(f"    phone: {ct['phone']}")
+            if ct.get("email"):
+                print(f"    email: {ct['email']}")
+            print()
+            return 0
+        print(f"\n  👤 No contact found for '{args.name or '?'}'")
+        print()
+        return 1
+
+    if action == "cite":
+        q = " ".join(args.question)
+        res = c.kb_query_cited(q)
+        print(f"\n  📄 Question: {q}\n")
+        print(res.get("context", "(no knowledge)"))
+        print("\n  Sources:")
+        for cit in res.get("citations", []):
+            print(f"    [{cit['id']}] {cit['source']}  ({cit['title']})")
+        print()
+        return 0
+
+    if action == "status":
+        cal = c.calendar.stats() if c.calendar else {"events_total": 0}
+        cs = c.contacts.stats() if c.contacts else {"contacts": 0}
+        print("\n  📅 Personal Context")
+        print(f"    Calendar : {cal.get('events_total', 0)} event(s)")
+        print(f"    Contacts : {cs.get('contacts', 0)}")
+        print(f"    Citations: kb query-with-citations enabled")
         print()
         return 0
     return 1
@@ -1870,6 +1927,16 @@ def main():
     _vd.add_argument("name")
     vl_sub.add_parser("stats")
 
+    per = sub.add_parser("personal", help="Personal context: calendar, contacts, KB citations")
+    per_sub = per.add_subparsers(dest="personal_action")
+    _pc = per_sub.add_parser("calendar")
+    _pc.add_argument("--hours", type=int, default=24)
+    _pct = per_sub.add_parser("contacts")
+    _pct.add_argument("name", nargs="?")
+    _pci = per_sub.add_parser("cite")
+    _pci.add_argument("question", nargs=argparse.REMAINDER)
+    per_sub.add_parser("status")
+
     mcp = sub.add_parser("mcp", help="MCP: connect to the Model Context Protocol ecosystem")
     mcp_sub = mcp.add_subparsers(dest="mcp_action")
     mcp_sub.add_parser("status")
@@ -2014,6 +2081,8 @@ def main():
         return cmd_sandbox(args)
     if cmd == "vault":
         return cmd_vault(args)
+    if cmd == "personal":
+        return cmd_personal(args)
     if cmd == "briefing":
         return cmd_briefing(args)
     if cmd == "add-skill":

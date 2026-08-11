@@ -240,6 +240,19 @@ goal trajectories** — never rewriting the immutable base prompt.
 - CLI `omni vault set/get/list/delete/stats`; FastAPI `GET /api/brain/vault`; wired into the
   DesktopController.
 
+## 4.20 Personal Context (Phase 14 #5) + RAG-with-Citations (Phase 14 #6)
+
+- **`omni_v2/personal/calendar_contacts.py`**: parse local `.ics` calendar files +
+  `.vcf`/JSON contacts. `CalendarParser` (dependency-free) lists today/upcoming events;
+  `ContactStore` imports + looks up contacts. Feeds the briefing + guardian with your
+  real schedule/people.
+- **RAG-with-citations**: `KnowledgeBase.query_with_citations(question)` returns retrieved
+  chunks **each attributed to its source** (file/URL) + a rendered citation list — answers
+  grounded in where the info came from.
+- CLI `omni personal calendar/contacts/cite/status`; FastAPI `GET /api/brain/personal`;
+  wired into the DesktopController.
+- Tests: test_personal (8) → 591 total passing, offline.
+
 ## 5. Fixes & hygiene
 
 - Fixed pre-existing `omni/cli.py` f-string syntax bug (blocked CLI on Python ≤ 3.11).

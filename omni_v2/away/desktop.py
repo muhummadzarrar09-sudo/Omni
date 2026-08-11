@@ -145,6 +145,43 @@ class DesktopController:
         self.benchmark = None
         # -- credential vault (Phase 14 #4) -----------------------------------
         self.vault = None
+        # -- personal context (Phase 14 #5) -----------------------------------
+        self._calendar = None
+        self._contacts_store = None
+
+    @property
+    def calendar(self):
+        if self._calendar is None:
+            try:
+                from omni_v2.personal.calendar_contacts import CalendarParser
+                self._calendar = CalendarParser()
+            except Exception as e:
+                logger.warning(f"calendar build failed: {e}")
+                self._calendar = None
+        return self._calendar
+
+    @property
+    def contacts(self):
+        if self._contacts_store is None:
+            try:
+                from omni_v2.personal.calendar_contacts import ContactStore
+                self._contacts_store = ContactStore()
+            except Exception as e:
+                logger.warning(f"contacts build failed: {e}")
+                self._contacts_store = None
+        return self._contacts_store
+
+    def calendar_upcoming(self, hours: int = 24) -> Dict[str, Any]:
+        cal = self.calendar
+        return {"ok": True, "events": cal.upcoming(hours=hours) if cal else []}
+
+    def contacts_lookup(self, name: str) -> Dict[str, Any]:
+        cs = self.contacts
+        c = cs.lookup(name) if cs else None
+        return {"ok": c is not None, "contact": c}
+
+    def kb_query_cited(self, question: str) -> Dict[str, Any]:
+        return self.kb.query_with_citations(question) if self.kb else {"hit_count": 0}
 
     def _get_vault(self):
         if self.vault is not None:
