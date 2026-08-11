@@ -151,6 +151,16 @@ goal trajectories** — never rewriting the immutable base prompt.
 - On the DGX Station, `pip install mcp` unlocks real stdio servers (filesystem, github,
   slack, etc.) — the bridge registers all their tools.
 
+## 4.11 Auto Skill Verification Loop (Phase 13 #2)
+
+- **`omni_v2/harness/verifier.py`**: `SkillVerificationLoop` tests a harness skill after
+  creation/refinement — kept on pass, **rolled back** (to the prior version) or **dropped**
+  (if new) on failure. Pluggable tester (default conservative = never wrongly blocks;
+  upgrade to a real skill-executor on the DGX).
+- Wired automatically: `ContinualHarness.post_skill_hook` → verifier, so every auto-refined
+  skill is verified with no manual step.
+- CLI `omni skill-verify status/run/history`; wired into the desktop controller + status.
+
 ## 5. Fixes & hygiene
 
 - Fixed pre-existing `omni/cli.py` f-string syntax bug (blocked CLI on Python ≤ 3.11).

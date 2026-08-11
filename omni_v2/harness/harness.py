@@ -96,13 +96,17 @@ class ContinualHarness:
 
     def __init__(self, harness_dir: Optional[Path] = None,
                  distiller: Optional[Callable[[str], str]] = None,
-                 verifier=None):
+                 verifier=None,
+                 post_skill_hook: Optional[Callable[[HarnessArtifact], None]] = None):
         self.root = Path(harness_dir) if harness_dir else HARNESS_DIR
         for sub in (self.root / "skills", self.root / "memory",
                     self.root / "lessons", self.root / "snapshots"):
             sub.mkdir(parents=True, exist_ok=True)
         self.distiller = distiller       # optional LLM for richer distillation
         self.verifier = verifier         # SkillVerifier for skills
+        # post_skill_hook(skill): called after a SKILL artifact is created or
+        # refined — used by the SkillVerificationLoop to auto-test + rollback.
+        self.post_skill_hook = post_skill_hook
         self._lock = threading.RLock()
         self._load_verifier()
         self._artifacts: Dict[str, HarnessArtifact] = {}
@@ -159,10 +163,26 @@ class ContinualHarness:
                                   evidence=evidence or [])
             self._artifacts[key] = art
             self._save()
-            return art
+        # fire post-skill hook (auto verification) after releasing the lock
+        if kind == KIND_SKILL and self.post_skill_hook is not None:
+            try:
+                self.post_skill_hook(art)
+            except Exception as e:
+                logger.warning(f"post_skill_hook failed: {e}")
+        return art
 
     def get(self, kind: str, name: str) -> Optional[HarnessArtifact]:
         return self._artifacts.get(self._key(kind, name))
+
+    def remove(self, kind: str, name: str) -> bool:
+        """Remove an artifact. Returns True if it existed."""
+        key = self._key(kind, name)
+        with self._lock:
+            if key in self._artifacts:
+                del self._artifacts[key]
+                self._save()
+                return True
+            return False
 
     def list(self, kind: Optional[str] = None) -> List[HarnessArtifact]:
         arts = self._artifacts.values()

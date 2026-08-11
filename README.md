@@ -175,6 +175,7 @@ After `pip install -e .[all]`:
 | `omni add-skill install\|list` | Install a community skill (verified, auto-wired) |
 | `omni harness status\|list\|refine\|rollback\|context` | Continual harness: self-refining skills/memory/lessons |
 | `omni mcp status\|add-demo\|list\|add` | Connect to the MCP ecosystem (Model Context Protocol) |
+| `omni skill-verify status\|run\|history` | Auto skill verification (test skills, roll back failures) |
 | `omni brain status\|user\|set-name\|set-mood\|reflect` | Jarvis Identity core + user model |
 | `omni goal new\|list\|status\|advance\|fail\|follow-up` | Jarvis persistent goal stack (decompose → progress → replan) |
 | `omni meta evaluate\|history\|stats` | Jarvis metacognition (evaluate outcome → replan/ask/escalate) |
@@ -483,6 +484,10 @@ Omni/
 - **MCP Bridge (Phase 13):** connect OMNI to the **Model Context Protocol** ecosystem
   (6,000+ servers/tools). MCP tools register as native OMNI plugins the brain can call
   like built-ins. `omni mcp add-demo`, `/api/mcp/*`, desktop "MCP" tab.
+- **Auto Skill Verification (Phase 13 #2):** whenever the Continual Harness creates or
+  refines a skill, it's run through a tester — kept if it passes, **rolled back** (or
+  dropped) if it fails. Closes the "is this skill actually good?" loop automatically.
+  `omni skill-verify status/run/history`.
 - **Full feature rundown:** see [docs/PR_SUMMARY.md](docs/PR_SUMMARY.md) for the
   complete map of Away Mode, Desktop + Security, the Jarvis Brain, Voice Loop and
   the Proactive Guardian.

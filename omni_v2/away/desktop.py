@@ -95,6 +95,14 @@ class DesktopController:
                 self.harness = ContinualHarness()
             except Exception:
                 self.harness = None
+        self.skill_verifier = self.stack.get("skill_verifier")
+        if self.skill_verifier is None and self.harness is not None:
+            try:
+                from omni_v2.harness.verifier import SkillVerificationLoop
+                self.skill_verifier = SkillVerificationLoop(harness=self.harness)
+                self.harness.post_skill_hook = self.skill_verifier.hook
+            except Exception:
+                self.skill_verifier = None
         self.reflector = self.stack.get("reflector")
         if self.reflector is None:
             try:
@@ -280,6 +288,8 @@ class DesktopController:
             out["reflector"] = self.reflector.stats()
         if self.harness:
             out["harness"] = self.harness.stats()
+        if self.skill_verifier:
+            out["skill_verifier"] = self.skill_verifier.stats()
         if self.mcp_bridge:
             out["mcp"] = self.mcp_bridge.stats()
         if self.voice_loop:
@@ -468,6 +478,27 @@ class DesktopController:
 
     def harness_stats(self) -> Dict[str, Any]:
         return self.harness.stats() if self.harness else {"artifacts": 0}
+
+    # -- skill verification loop (Phase 13 #2) -------------------------------
+    def skill_verify(self, kind: str = "skill", name: str = "") -> Dict[str, Any]:
+        """Run verification on a harness artifact (or all skills if name empty)."""
+        if self.skill_verifier is None or self.harness is None:
+            return {"ok": False, "detail": "verifier unavailable"}
+        if name:
+            art = self.harness.get(kind, name)
+            if art is None:
+                return {"ok": False, "detail": f"no {kind} '{name}'"}
+            return {"ok": True, "results": [self.skill_verifier.verify_skill(art)]}
+        # verify all skills
+        results = [self.skill_verifier.verify_skill(a)
+                   for a in self.harness.list("skill")]
+        return {"ok": True, "results": results}
+
+    def skill_verify_stats(self) -> Dict[str, Any]:
+        return self.skill_verifier.stats() if self.skill_verifier else {"checks": 0}
+
+    def skill_verify_history(self) -> list:
+        return self.skill_verifier.history(20) if self.skill_verifier else []
 
     # -- security -------------------------------------------------------------
     def enroll_owner(self) -> Dict[str, Any]:

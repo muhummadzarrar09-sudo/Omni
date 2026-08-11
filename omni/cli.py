@@ -188,7 +188,7 @@ def cmd_model_download_deep(args):
 def cmd_test(args):
     """Run all 20 test suites."""
     print("\n  " + "=" * 60)
-    print("  OMNI V3 - Full Test Suite (43 suites)")
+    print("  OMNI V3 - Full Test Suite (44 suites)")
     print("  " + "=" * 60 + "\n")
 
     # All 20 test suites
@@ -238,7 +238,8 @@ def cmd_test(args):
         ("[40/41] Skill installer",                  "omni_v2.tests.test_skill_installer", "module"),
         ("[41/42] Continual harness",                "omni_v2.tests.test_harness", "module"),
         ("[42/43] Auto post-goal flow",              "omni_v2.tests.test_post_goal_flow", "module"),
-        ("[43/43] MCP bridge",                       "omni_v2.tests.test_mcp", "module"),
+        ("[43/44] MCP bridge",                       "omni_v2.tests.test_mcp", "module"),
+        ("[44/44] Auto skill verification",          "omni_v2.tests.test_skill_verify", "module"),
     ]
 
     all_ok = True
@@ -793,6 +794,42 @@ def cmd_guardian(args):
         print(f"    Checkers    : {st.get('checkers')}")
         print(f"    Observations: {st.get('observations')}")
         print(f"    Interval    : {st.get('interval')}s")
+        print()
+        return 0
+    return 1
+
+
+def cmd_skill_verify(args):
+    """Auto skill verification: test harness skills, roll back failures."""
+    sys.path.insert(0, str(REPO_ROOT))
+    from omni_v2.away.desktop import DesktopController
+    c = DesktopController()
+    action = getattr(args, "sv_action", None) or "status"
+
+    if action == "status":
+        st = c.skill_verify_stats()
+        print("\n  ✅ Auto Skill Verification")
+        print(f"    Checks : {st.get('checks', 0)}")
+        print(f"    Passed : {st.get('passed', 0)}")
+        print(f"    Failed : {st.get('failed', 0)}")
+        print()
+        return 0
+
+    if action == "run":
+        # verify all skills (tester may be default=pass; on DGX, real runner)
+        res = c.skill_verify()
+        results = res.get("results", [])
+        print(f"\n  ✅ Verified {len(results)} skill(s):\n")
+        for r in results:
+            mark = "✅" if r["passed"] else "❌"
+            print(f"  {mark} {r['name']} v{r['version']} -> {r['action']}: {r['message']}")
+        print()
+        return 0
+
+    if action == "history":
+        for r in c.skill_verify_history():
+            mark = "✅" if r["passed"] else "❌"
+            print(f"  {mark} {r['name']} v{r['version']} [{r['action']}] {r['message']}")
         print()
         return 0
     return 1
@@ -1431,6 +1468,12 @@ def main():
     graph_json.add_argument("--out", default=None)
     graph_sub.add_parser("view")
 
+    sv = sub.add_parser("skill-verify", help="Auto skill verification (test harness skills)")
+    sv_sub = sv.add_subparsers(dest="sv_action")
+    sv_sub.add_parser("status")
+    sv_sub.add_parser("run")
+    sv_sub.add_parser("history")
+
     mcp = sub.add_parser("mcp", help="MCP: connect to the Model Context Protocol ecosystem")
     mcp_sub = mcp.add_subparsers(dest="mcp_action")
     mcp_sub.add_parser("status")
@@ -1557,6 +1600,8 @@ def main():
         return cmd_harness(args)
     if cmd == "mcp":
         return cmd_mcp(args)
+    if cmd == "skill-verify":
+        return cmd_skill_verify(args)
     if cmd == "briefing":
         return cmd_briefing(args)
     if cmd == "add-skill":

@@ -31,6 +31,7 @@ def build_away_stack(knowledge_base=None, reporter=None, messenger=None,
     from omni_v2.brain.metacog import Metacog
     from omni_v2.brain.reflect import Reflector
     from omni_v2.harness.harness import ContinualHarness
+    from omni_v2.harness.verifier import SkillVerificationLoop
     from omni_v2.memory.session_memory import SessionMemoryStore
 
     kb = knowledge_base or KnowledgeBase()
@@ -48,6 +49,10 @@ def build_away_stack(knowledge_base=None, reporter=None, messenger=None,
     identity = IdentityCore()
     metacog = Metacog()
     harness = ContinualHarness()
+    # Auto skill verification: when the harness creates/refines a skill, run it
+    # through the verification loop (tester) and roll back on failure.
+    skill_verifier = SkillVerificationLoop(harness=harness)
+    harness.post_skill_hook = skill_verifier.hook
 
     def _auto_refine_goal(goal, success: bool) -> None:
         """Auto post-goal flow: distill the finished goal into the Continual
@@ -98,6 +103,7 @@ def build_away_stack(knowledge_base=None, reporter=None, messenger=None,
         "metacog": metacog,
         "reflector": reflector,
         "harness": harness,
+        "skill_verifier": skill_verifier,
         "mcp_bridge": None,   # lazy-built by consumers that can supply plugin_manager
         "voice_loop": None,   # lazy-built by consumers that can supply components
         "guardian": None,
