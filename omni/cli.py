@@ -188,7 +188,7 @@ def cmd_model_download_deep(args):
 def cmd_test(args):
     """Run all 20 test suites."""
     print("\n  " + "=" * 60)
-    print("  OMNI V3 - Full Test Suite (55 suites)")
+    print("  OMNI V3 - Full Test Suite (56 suites)")
     print("  " + "=" * 60 + "\n")
 
     # All 20 test suites
@@ -250,7 +250,8 @@ def cmd_test(args):
         ("[52/53] Credential vault",                 "omni_v2.tests.test_vault", "module"),
         ("[53/54] Personal context (calendar/contacts/citations)", "omni_v2.tests.test_personal", "module"),
         ("[54/55] Wake routine + harness leaderboard", "omni_v2.tests.test_wake_leaderboard", "module"),
-        ("[55/55] Recurring scheduler",               "omni_v2.tests.test_recurring", "module"),
+        ("[55/56] Recurring scheduler",               "omni_v2.tests.test_recurring", "module"),
+        ("[56/56] History + photos + backup",         "omni_v2.tests.test_history_photos_backup", "module"),
     ]
 
     all_ok = True
@@ -869,6 +870,86 @@ def cmd_router(args):
         print(f"\n  Task: {text}\n")
         print(f"    → tier {d['tier']} · model {d['model']} (required cap {d['required_cap']})")
         print(f"      {d['reason']} · est {d['estimated_tokens']} tokens")
+        print()
+        return 0
+    return 1
+
+
+def cmd_history(args):
+    """Action journal: session replay + safe undo."""
+    sys.path.insert(0, str(REPO_ROOT))
+    from omni_v2.away.desktop import DesktopController
+    c = DesktopController()
+    action = getattr(args, "history_action", None) or "list"
+    if action == "list":
+        res = c.history_list(args.n)
+        print("\n  📜 Action History")
+        for r in res.get("records", []):
+            rev = " (reversible)" if r["reversible"] else ""
+            print(f"    [{r['id']}] {r['action']} {r['args']}{rev}")
+        if not res.get("records"):
+            print("    (no actions recorded)")
+        print()
+        return 0
+    if action == "replay":
+        res = c.history_replay(args.id)
+        print(f"  🔁 Replay {args.id}: ok={res.get('ok')} {res.get('detail', res.get('result',''))}")
+        return 0
+    if action == "undo":
+        res = c.history_undo(args.id)
+        print(f"  ↩️  Undo {args.id}: ok={res.get('ok')} {res.get('detail','')}")
+        return 0
+    return 1
+
+
+def cmd_photo(args):
+    """Photo memory: caption images into the knowledge base."""
+    sys.path.insert(0, str(REPO_ROOT))
+    from omni_v2.away.desktop import DesktopController
+    c = DesktopController()
+    action = getattr(args, "photo_action", None) or "status"
+    if action == "caption":
+        res = c.photo_caption(" ".join(args.path))
+        print(f"  🖼️  {res.get('ok', False) and res.get('entry', {}).get('caption', '') or res.get('detail','?')}")
+        return 0
+    if action == "dir":
+        res = c.photo_caption_dir(" ".join(args.path))
+        print(f"  🖼️  Captioned {res.get('captioned', 0)}/{res.get('total', 0)} images")
+        return 0
+    if action == "search":
+        term = " ".join(args.path)
+        res = c.photo_search(term)
+        print(f"\n  🖼️  Images matching '{term}':\n")
+        for e in res.get("results", []):
+            print(f"    • {e['name']}: {e['caption'][:80]}")
+        if not res.get("results"):
+            print("    (none)")
+        print()
+        return 0
+    return 1
+
+
+def cmd_backup(args):
+    """Backup & restore the whole OMNI state."""
+    sys.path.insert(0, str(REPO_ROOT))
+    from omni_v2.away.desktop import DesktopController
+    c = DesktopController()
+    action = getattr(args, "backup_action", None) or "list"
+    if action == "create":
+        res = c.backup_create(out=args.out or "", as_zip=args.zip)
+        print(f"  📦 Backup created: {res.get('path')} ({res.get('items', 0)} items)")
+        return 0
+    if action == "restore":
+        res = c.backup_restore(" ".join(args.src))
+        print(f"  ♻️  Restored {res.get('restored_items', 0)} items from {res.get('from', '?')}")
+        return 0
+    if action == "list":
+        res = c.backup_list()
+        print("\n  📦 OMNI Backups:")
+        for b in res.get("backups", []):
+            print(f"    • {b['name']} ({b['size_bytes']} bytes)")
+        if not res.get("backups"):
+            print("    (none yet)")
         print()
         return 0
     return 1
@@ -2062,6 +2143,27 @@ def main():
     _scf = sc_sub.add_parser("fire")
     _scf.add_argument("name")
 
+    hist = sub.add_parser("history", help="Action journal: replay + safe undo")
+    hist_sub = hist.add_subparsers(dest="history_action")
+    _hl2 = hist_sub.add_parser("list")
+    _hl2.add_argument("-n", type=int, default=50)
+    hist_sub.add_parser("replay").add_argument("id")
+    hist_sub.add_parser("undo").add_argument("id")
+
+    ph = sub.add_parser("photo", help="Photo memory: caption images into KB")
+    ph_sub = ph.add_subparsers(dest="photo_action")
+    ph_sub.add_parser("caption").add_argument("path", nargs=argparse.REMAINDER)
+    ph_sub.add_parser("dir").add_argument("path", nargs=argparse.REMAINDER)
+    ph_sub.add_parser("search").add_argument("path", nargs=argparse.REMAINDER)
+
+    bk = sub.add_parser("backup", help="Backup & restore OMNI state")
+    bk_sub = bk.add_subparsers(dest="backup_action")
+    _bkc = bk_sub.add_parser("create")
+    _bkc.add_argument("--out", default="")
+    _bkc.add_argument("--zip", action="store_true")
+    bk_sub.add_parser("restore").add_argument("src", nargs=argparse.REMAINDER)
+    bk_sub.add_parser("list")
+
     wk = sub.add_parser("wake", help="Wake routine: 'Good morning' scripted flow")
     wk_sub = wk.add_subparsers(dest="wake_action")
     _wkr = wk_sub.add_parser("run")
@@ -2238,6 +2340,12 @@ def main():
         return cmd_wake(args)
     if cmd == "schedule":
         return cmd_schedule(args)
+    if cmd == "history":
+        return cmd_history(args)
+    if cmd == "photo":
+        return cmd_photo(args)
+    if cmd == "backup":
+        return cmd_backup(args)
     if cmd == "leaderboard":
         return cmd_leaderboard(args)
     if cmd == "briefing":

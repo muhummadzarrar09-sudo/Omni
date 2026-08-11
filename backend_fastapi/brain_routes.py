@@ -159,3 +159,25 @@ def schedule() -> Dict[str, Any]:
     """Recurring scheduler status (Phase 15 #1)."""
     from omni_v2.away.desktop import DesktopController
     return DesktopController().schedule_list()
+
+
+@router.get("/history")
+def history(n: int = 50) -> Dict[str, Any]:
+    """Action journal (Phase 15 #2)."""
+    from omni_v2.away.desktop import DesktopController
+    return DesktopController().history_list(n)
+
+
+@router.get("/photos")
+def photos() -> Dict[str, Any]:
+    """Photo memory status (Phase 15 #3)."""
+    from omni_v2.away.desktop import DesktopController
+    pm = DesktopController()._get_photo_memory()
+    return {"ok": True, "status": pm.stats() if pm else {"images_indexed": 0}}
+
+
+@router.get("/backups")
+def backups() -> Dict[str, Any]:
+    """Backup & restore status (Phase 15 #4)."""
+    from omni_v2.away.desktop import DesktopController
+    return DesktopController().backup_list()

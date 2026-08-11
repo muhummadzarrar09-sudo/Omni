@@ -277,6 +277,20 @@ goal trajectories** — never rewriting the immutable base prompt.
   the DesktopController.
 - Tests: test_recurring (9) → 610 total passing, offline.
 
+## 4.23 Action Journal, Photo Memory + Backup/Restore (Phase 15 #2/#3/#4)
+
+- **Action journal** (`omni_v2/history/action_journal.py`): persistent action history with
+  **replay** (re-run an action/session) + **safe undo** (snapshot-based file undo — delete /
+  move / rename / overwrite). CLI `omni history list/replay/undo`.
+- **Photo memory** (`omni_v2/photos/photo_memory.py`): captions local images (pluggable
+  captioner / vision module) into RAG memory + an index for "what did I photograph?"
+  CLI `omni photo caption/dir/search`.
+- **Backup & restore** (`omni_v2/backup/backup.py`): export/import the whole OMNI state
+  (brain, harness, KB, goals, config, calendar, contacts, etc.) to a folder or zip, excluding
+  models. CLI `omni backup create/restore/list`.
+- FastAPI `GET /api/brain/{history,photos,backups}`; wired into the DesktopController.
+- Tests: test_history_photos_backup (14) → 624 total passing, offline.
+
 ## 5. Fixes & hygiene
 
 - Fixed pre-existing `omni/cli.py` f-string syntax bug (blocked CLI on Python ≤ 3.11).

@@ -188,6 +188,9 @@ After `pip install -e .[all]`:
 | `omni wake run\|status` | Wake routine: "Good morning Zarrar" scripted flow |
 | `omni leaderboard report\|record` | Harness leaderboard: prioritize what to improve |
 | `omni schedule list\|add\|remove\|fire` | Recurring scheduler: OMNI actions on cron/interval |
+| `omni history list\|replay\|undo` | Action journal: session replay + safe undo |
+| `omni photo caption\|dir\|search` | Photo memory: caption images into the KB |
+| `omni backup create\|restore\|list` | Backup & restore the whole OMNI state |
 | `omni brain status\|user\|set-name\|set-mood\|reflect` | Jarvis Identity core + user model |
 | `omni goal new\|list\|status\|advance\|fail\|follow-up` | Jarvis persistent goal stack (decompose → progress → replan) |
 | `omni meta evaluate\|history\|stats` | Jarvis metacognition (evaluate outcome → replan/ask/escalate) |
@@ -527,6 +530,12 @@ Omni/
 - **Recurring Scheduler (Phase 15 #1):** run OMNI actions (briefing, guardian, digests,
   notify, research, away) on **cron/interval** schedules so it acts automatically.
   `omni schedule add --cron "0 8 * * *" briefing`.
+- **Action Journal (Phase 15 #2):** a persistent record of every OMNI action you can
+  **replay** and **safely undo** (snapshot-based file undo). `omni history list/replay/undo`.
+- **Photo Memory (Phase 15 #3):** captions local images with the vision module and stores
+  them in RAG memory — "what did I take pictures of?" `omni photo caption/dir/search`.
+- **Backup & Restore (Phase 15 #4):** export/import the whole OMNI state (brain, harness,
+  KB, goals, config, calendar, etc.) to a folder or zip. `omni backup create/restore/list`.
 - **Real MCP servers (Phase 14 #8a):** persistent stdio MCP sessions so real server tools
   can actually be called, not just registered.
   (6,000+ servers/tools). MCP tools register as native OMNI plugins the brain can call

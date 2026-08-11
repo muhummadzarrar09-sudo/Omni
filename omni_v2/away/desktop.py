@@ -162,6 +162,61 @@ class DesktopController:
             self._recurring = None
         return self._recurring
 
+    # -- action journal (Phase 15 #2) ----------------------------------------
+    def _get_journal(self):
+        try:
+            from omni_v2.history.action_journal import ActionJournal
+            return ActionJournal()
+        except Exception as e:
+            logger.warning(f"journal build failed: {e}")
+            return None
+
+    def history_list(self, n: int = 50) -> Dict[str, Any]:
+        j = self._get_journal()
+        return {"ok": True, "records": j.list(n) if j else []}
+
+    def history_replay(self, aid: str) -> Dict[str, Any]:
+        j = self._get_journal()
+        return j.replay(aid) if j else {"ok": False, "detail": "unavailable"}
+
+    def history_undo(self, aid: str) -> Dict[str, Any]:
+        j = self._get_journal()
+        return j.undo(aid) if j else {"ok": False, "detail": "unavailable"}
+
+    # -- photo memory (Phase 15 #3) -------------------------------------------
+    def _get_photo_memory(self):
+        try:
+            from omni_v2.photos.photo_memory import PhotoMemory
+            return PhotoMemory(memory=self.memory)
+        except Exception as e:
+            logger.warning(f"photo memory build failed: {e}")
+            return None
+
+    def photo_caption(self, path: str) -> Dict[str, Any]:
+        pm = self._get_photo_memory()
+        return pm.caption_image(path) if pm else {"ok": False, "detail": "unavailable"}
+
+    def photo_caption_dir(self, folder: str) -> Dict[str, Any]:
+        pm = self._get_photo_memory()
+        return pm.caption_directory(folder) if pm else {"ok": False, "detail": "unavailable"}
+
+    def photo_search(self, term: str) -> Dict[str, Any]:
+        pm = self._get_photo_memory()
+        return {"ok": True, "results": pm.search(term) if pm else []}
+
+    # -- backup & restore (Phase 15 #4) ----------------------------------------
+    def backup_create(self, out: str = "", as_zip: bool = False) -> Dict[str, Any]:
+        from omni_v2.backup.backup import BackupManager
+        return BackupManager().create(out or None, as_zip=as_zip)
+
+    def backup_restore(self, src: str) -> Dict[str, Any]:
+        from omni_v2.backup.backup import BackupManager
+        return BackupManager().restore(src)
+
+    def backup_list(self) -> Dict[str, Any]:
+        from omni_v2.backup.backup import BackupManager
+        return {"ok": True, "backups": BackupManager().list_backups()}
+
     def schedule_add_cron(self, name, cron, action, args=None) -> Dict[str, Any]:
         s = self._get_recurring()
         if s is None:
