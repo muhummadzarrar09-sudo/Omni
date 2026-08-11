@@ -188,7 +188,7 @@ def cmd_model_download_deep(args):
 def cmd_test(args):
     """Run all 20 test suites."""
     print("\n  " + "=" * 60)
-    print("  OMNI V3 - Full Test Suite (56 suites)")
+    print("  OMNI V3 - Full Test Suite (57 suites)")
     print("  " + "=" * 60 + "\n")
 
     # All 20 test suites
@@ -251,7 +251,8 @@ def cmd_test(args):
         ("[53/54] Personal context (calendar/contacts/citations)", "omni_v2.tests.test_personal", "module"),
         ("[54/55] Wake routine + harness leaderboard", "omni_v2.tests.test_wake_leaderboard", "module"),
         ("[55/56] Recurring scheduler",               "omni_v2.tests.test_recurring", "module"),
-        ("[56/56] History + photos + backup",         "omni_v2.tests.test_history_photos_backup", "module"),
+        ("[56/57] History + photos + backup",         "omni_v2.tests.test_history_photos_backup", "module"),
+        ("[57/57] NL file manager + LAN remote",      "omni_v2.tests.test_nlfiles_remote", "module"),
     ]
 
     all_ok = True
@@ -950,6 +951,47 @@ def cmd_backup(args):
             print(f"    • {b['name']} ({b['size_bytes']} bytes)")
         if not res.get("backups"):
             print("    (none yet)")
+        print()
+        return 0
+    return 1
+
+
+def cmd_file(args):
+    """NL file manager: safe file operations from natural language."""
+    sys.path.insert(0, str(REPO_ROOT))
+    from omni_v2.away.desktop import DesktopController
+    c = DesktopController()
+    action = getattr(args, "file_action", None) or "run"
+    if action == "run":
+        text = " ".join(args.text)
+        res = c.file_command(text)
+        print(f"\n  📁 {text}")
+        print(f"    op={res.get('op')} ok={res.get('ok')} matched={res.get('matched',0)} succeeded={res.get('succeeded',0)}")
+        for r in res.get("results", [])[:10]:
+            status = "✅" if r.get("ok") else "❌"
+            print(f"    {status} {r.get('file')} {r.get('dest','')} {r.get('error','')}")
+        if not res.get("ok"):
+            print(f"    error: {res.get('error', res.get('detail',''))}")
+        print()
+        return 0
+    return 1
+
+
+def cmd_remote(args):
+    """LAN remote control: control OMNI from another device (via API)."""
+    sys.path.insert(0, str(REPO_ROOT))
+    from omni_v2.away.desktop import DesktopController
+    c = DesktopController()
+    action = getattr(args, "remote_action", None) or "info"
+    if action == "info":
+        print("\n  📡 LAN Remote Control")
+        print("    Start the backend with a token, then from another device on the LAN:")
+        print("      curl -X POST http://<omni-ip>:8765/api/remote/command \\")
+        print("        -H 'X-Omni-Token: <token>' -H 'Content-Type: application/json' \\")
+        print("        -d '{\"command\":\"open the browser\"}'")
+        print("    Endpoints: /api/remote/status · /command · /goal")
+        print("    Set the token:  export OMNI_API_TOKEN=<secret>   (before omni start)")
+        print("    Get a device token: POST /api/devices/register")
         print()
         return 0
     return 1
@@ -2143,6 +2185,15 @@ def main():
     _scf = sc_sub.add_parser("fire")
     _scf.add_argument("name")
 
+    fl = sub.add_parser("file", help="NL file manager: safe file operations")
+    fl_sub = fl.add_subparsers(dest="file_action")
+    _flr = fl_sub.add_parser("run")
+    _flr.add_argument("text", nargs=argparse.REMAINDER)
+
+    rm = sub.add_parser("remote", help="LAN remote control")
+    rm_sub = rm.add_subparsers(dest="remote_action")
+    rm_sub.add_parser("info")
+
     hist = sub.add_parser("history", help="Action journal: replay + safe undo")
     hist_sub = hist.add_subparsers(dest="history_action")
     _hl2 = hist_sub.add_parser("list")
@@ -2340,6 +2391,10 @@ def main():
         return cmd_wake(args)
     if cmd == "schedule":
         return cmd_schedule(args)
+    if cmd == "file":
+        return cmd_file(args)
+    if cmd == "remote":
+        return cmd_remote(args)
     if cmd == "history":
         return cmd_history(args)
     if cmd == "photo":

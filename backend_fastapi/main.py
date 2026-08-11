@@ -144,6 +144,15 @@ try:
 except Exception as e:  # pragma: no cover - non-fatal if deps missing
     logger.warning(f"Automation router not mounted: {e}")
 
+# Remote control (Phase 15 #6): LAN-only command surface. Token-authed via
+# the app-level OMNI_API_TOKEN / device-token middleware.
+try:
+    from remote_routes import router as remote_router
+    app.include_router(remote_router)
+    logger.info("Remote router mounted at /api/remote")
+except Exception as e:  # pragma: no cover - non-fatal if deps missing
+    logger.warning(f"Remote router not mounted: {e}")
+
 # SMOKE-10 fix: cap request body size at 64KB to prevent OOM attacks
 MAX_REQUEST_BYTES = 64 * 1024
 

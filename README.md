@@ -191,6 +191,8 @@ After `pip install -e .[all]`:
 | `omni history list\|replay\|undo` | Action journal: session replay + safe undo |
 | `omni photo caption\|dir\|search` | Photo memory: caption images into the KB |
 | `omni backup create\|restore\|list` | Backup & restore the whole OMNI state |
+| `omni file run <cmd>` | NL file manager: safe file operations from natural language |
+| `omni remote info` | LAN remote control (token-authed, from another device) |
 | `omni brain status\|user\|set-name\|set-mood\|reflect` | Jarvis Identity core + user model |
 | `omni goal new\|list\|status\|advance\|fail\|follow-up` | Jarvis persistent goal stack (decompose → progress → replan) |
 | `omni meta evaluate\|history\|stats` | Jarvis metacognition (evaluate outcome → replan/ask/escalate) |
@@ -536,6 +538,10 @@ Omni/
   them in RAG memory — "what did I take pictures of?" `omni photo caption/dir/search`.
 - **Backup & Restore (Phase 15 #4):** export/import the whole OMNI state (brain, harness,
   KB, goals, config, calendar, etc.) to a folder or zip. `omni backup create/restore/list`.
+- **NL File Manager (Phase 15 #5):** "move all PDFs from Downloads to Documents" — safe,
+  sandboxed (allowed-root), journal-backed file operations. `omni file run <cmd>`.
+- **LAN Remote Control (Phase 15 #6):** control OMNI from another device on your local
+  network via the token-authed API (`/api/remote/status|command|goal`).
 - **Real MCP servers (Phase 14 #8a):** persistent stdio MCP sessions so real server tools
   can actually be called, not just registered.
   (6,000+ servers/tools). MCP tools register as native OMNI plugins the brain can call

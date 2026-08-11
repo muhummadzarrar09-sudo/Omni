@@ -291,6 +291,17 @@ goal trajectories** — never rewriting the immutable base prompt.
 - FastAPI `GET /api/brain/{history,photos,backups}`; wired into the DesktopController.
 - Tests: test_history_photos_backup (14) → 624 total passing, offline.
 
+## 4.24 NL File Manager + LAN Remote Control (Phase 15 #5/#6)
+
+- **NL file manager** (`omni_v2/files/nl_files.py`): parses "move all PDFs from Downloads to
+  Documents" into safe, sandboxed (allowed-root, case-insensitive) file ops
+  (copy/move/delete/rename/list), recorded in the Action Journal for undo. Pluggable,
+  headless-testable. CLI `omni file run`.
+- **LAN remote control** (`backend_fastapi/remote_routes.py`): token-authed API surface
+  (`/api/remote/status|command|goal`) to control OMNI from another device on the local
+  network. CLI `omni remote info`.
+- Tests: test_nlfiles_remote (8) → 632 total passing, offline.
+
 ## 5. Fixes & hygiene
 
 - Fixed pre-existing `omni/cli.py` f-string syntax bug (blocked CLI on Python ≤ 3.11).

@@ -18,6 +18,7 @@ not a pure 'file' provider, so a suspected intruder triggers a phone alert.
 from __future__ import annotations
 import time
 import threading
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Callable
 
 try:
@@ -216,6 +217,18 @@ class DesktopController:
     def backup_list(self) -> Dict[str, Any]:
         from omni_v2.backup.backup import BackupManager
         return {"ok": True, "backups": BackupManager().list_backups()}
+
+    # -- NL file manager (Phase 15 #5) -----------------------------------------
+    def _get_nl_files(self):
+        from omni_v2.files.nl_files import NLFileManager
+        return NLFileManager(allowed_root=Path.home(), journal=self._get_journal())
+
+    def file_command(self, text: str) -> Dict[str, Any]:
+        try:
+            m = self._get_nl_files()
+            return m.execute(text)
+        except Exception as e:
+            return {"ok": False, "error": str(e)}
 
     def schedule_add_cron(self, name, cron, action, args=None) -> Dict[str, Any]:
         s = self._get_recurring()
