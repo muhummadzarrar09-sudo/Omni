@@ -267,6 +267,16 @@ goal trajectories** — never rewriting the immutable base prompt.
 - FastAPI `GET /api/brain/{wake,leaderboard}`; wired into the DesktopController.
 - Tests: test_wake_leaderboard (10) → 601 total passing, offline.
 
+## 4.22 Recurring Scheduler (Phase 15 #1)
+
+- **`omni_v2/schedule/recurring.py`**: `RecurringScheduler` runs OMNI actions (briefing,
+  guardian, digests, notify, research, away) on **cron** or **interval** schedules,
+  wrapping the underlying OmniScheduler. `make_scheduler_runner` wires actions to the
+  DesktopController. Persisted jobs.
+- CLI `omni schedule list/add/remove/fire`; FastAPI `GET /api/brain/schedule`; wired into
+  the DesktopController.
+- Tests: test_recurring (9) → 610 total passing, offline.
+
 ## 5. Fixes & hygiene
 
 - Fixed pre-existing `omni/cli.py` f-string syntax bug (blocked CLI on Python ≤ 3.11).

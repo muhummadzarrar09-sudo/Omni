@@ -152,3 +152,10 @@ def leaderboard() -> Dict[str, Any]:
     """Harness leaderboard (Phase 14 #8b)."""
     from omni_v2.away.desktop import DesktopController
     return DesktopController().leaderboard_report()
+
+
+@router.get("/schedule")
+def schedule() -> Dict[str, Any]:
+    """Recurring scheduler status (Phase 15 #1)."""
+    from omni_v2.away.desktop import DesktopController
+    return DesktopController().schedule_list()

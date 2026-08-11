@@ -188,7 +188,7 @@ def cmd_model_download_deep(args):
 def cmd_test(args):
     """Run all 20 test suites."""
     print("\n  " + "=" * 60)
-    print("  OMNI V3 - Full Test Suite (54 suites)")
+    print("  OMNI V3 - Full Test Suite (55 suites)")
     print("  " + "=" * 60 + "\n")
 
     # All 20 test suites
@@ -249,7 +249,8 @@ def cmd_test(args):
         ("[51/52] Skill sandbox",                    "omni_v2.tests.test_sandbox", "module"),
         ("[52/53] Credential vault",                 "omni_v2.tests.test_vault", "module"),
         ("[53/54] Personal context (calendar/contacts/citations)", "omni_v2.tests.test_personal", "module"),
-        ("[54/54] Wake routine + harness leaderboard", "omni_v2.tests.test_wake_leaderboard", "module"),
+        ("[54/55] Wake routine + harness leaderboard", "omni_v2.tests.test_wake_leaderboard", "module"),
+        ("[55/55] Recurring scheduler",               "omni_v2.tests.test_recurring", "module"),
     ]
 
     all_ok = True
@@ -869,6 +870,68 @@ def cmd_router(args):
         print(f"    → tier {d['tier']} · model {d['model']} (required cap {d['required_cap']})")
         print(f"      {d['reason']} · est {d['estimated_tokens']} tokens")
         print()
+        return 0
+    return 1
+
+
+def cmd_schedule(args):
+    """Recurring scheduler: run OMNI actions on cron/interval schedules."""
+    sys.path.insert(0, str(REPO_ROOT))
+    from omni_v2.away.desktop import DesktopController
+    c = DesktopController()
+    action = getattr(args, "schedule_action", None) or "list"
+
+    if action == "list":
+        res = c.schedule_list()
+        print("\n  ⏰ Recurring Scheduler")
+        if not res.get("jobs"):
+            print("    (no schedules — try: omni schedule add briefing --cron '0 8 * * *')")
+        for j in res.get("jobs", []):
+            print(f"    • {j['name']}  [{j['schedule_type']} {j['schedule_value']}] -> {j['action']} "
+                  f"(enabled={j['enabled']}, runs={j['run_count']})")
+        print()
+        return 0
+
+    if action == "add":
+        name, action_kind = args.name, args.action
+        # REMAINDER swallows --cron/--interval and their values, so extract them
+        # from the token list when the named args are None.
+        cron = args.cron
+        interval = args.interval
+        tokens = list(getattr(args, "rest", []) or [])
+        action_args = {}
+        i = 0
+        while i < len(tokens):
+            t = tokens[i]
+            if t == "--cron" and i + 1 < len(tokens):
+                cron = tokens[i + 1]; i += 2; continue
+            if t == "--interval" and i + 1 < len(tokens):
+                interval = tokens[i + 1]; i += 2; continue
+            if "=" in t:
+                k, v = t.split("=", 1)
+                action_args[k] = v
+            i += 1
+        if cron:
+            res = c.schedule_add_cron(name, cron, action_kind, action_args)
+        elif interval:
+            res = c.schedule_add_interval(name, int(interval), action_kind, action_args)
+        else:
+            print("  ❌ Provide --cron or --interval")
+            return 1
+        if res.get("ok"):
+            print(f"  ✅ Scheduled '{name}' -> {action_kind}")
+            return 0
+        print(f"  ❌ {res.get('detail','?')}")
+        return 1
+
+    if action == "remove":
+        res = c.schedule_remove(args.name)
+        print(f"  {'✅ Removed' if res['ok'] else '❌ not found'}")
+        return 0
+
+    if action == "fire":
+        res = c.schedule_fire(args.name)
+        print(f"  ⏰ Fire '{args.name}': ok={res.get('ok')} {res.get('result','')}")
         return 0
     return 1
 
@@ -1985,6 +2048,20 @@ def main():
     _vd.add_argument("name")
     vl_sub.add_parser("stats")
 
+    sc = sub.add_parser("schedule", help="Recurring scheduler: OMNI actions on cron/interval")
+    sc_sub = sc.add_subparsers(dest="schedule_action")
+    sc_sub.add_parser("list")
+    _sca = sc_sub.add_parser("add")
+    _sca.add_argument("name")
+    _sca.add_argument("action", choices=["briefing", "guardian", "digest", "notify", "research", "away"])
+    _sca.add_argument("--cron", default=None)
+    _sca.add_argument("--interval", default=None)
+    _sca.add_argument("rest", nargs=argparse.REMAINDER)
+    _scr = sc_sub.add_parser("remove")
+    _scr.add_argument("name")
+    _scf = sc_sub.add_parser("fire")
+    _scf.add_argument("name")
+
     wk = sub.add_parser("wake", help="Wake routine: 'Good morning' scripted flow")
     wk_sub = wk.add_subparsers(dest="wake_action")
     _wkr = wk_sub.add_parser("run")
@@ -2159,6 +2236,8 @@ def main():
         return cmd_personal(args)
     if cmd == "wake":
         return cmd_wake(args)
+    if cmd == "schedule":
+        return cmd_schedule(args)
     if cmd == "leaderboard":
         return cmd_leaderboard(args)
     if cmd == "briefing":

@@ -187,6 +187,7 @@ After `pip install -e .[all]`:
 | `omni personal calendar\|contacts\|cite\|status` | Local calendar/contacts + KB answers with citations |
 | `omni wake run\|status` | Wake routine: "Good morning Zarrar" scripted flow |
 | `omni leaderboard report\|record` | Harness leaderboard: prioritize what to improve |
+| `omni schedule list\|add\|remove\|fire` | Recurring scheduler: OMNI actions on cron/interval |
 | `omni brain status\|user\|set-name\|set-mood\|reflect` | Jarvis Identity core + user model |
 | `omni goal new\|list\|status\|advance\|fail\|follow-up` | Jarvis persistent goal stack (decompose → progress → replan) |
 | `omni meta evaluate\|history\|stats` | Jarvis metacognition (evaluate outcome → replan/ask/escalate) |
@@ -523,6 +524,9 @@ Omni/
   by name, reports today's events + open goals, and can speak/push it. `omni wake`.
 - **Harness Leaderboard (Phase 14 #8b):** tracks which skills/automations work best so OMNI
   **prioritizes** what to refine or retire. `omni leaderboard`.
+- **Recurring Scheduler (Phase 15 #1):** run OMNI actions (briefing, guardian, digests,
+  notify, research, away) on **cron/interval** schedules so it acts automatically.
+  `omni schedule add --cron "0 8 * * *" briefing`.
 - **Real MCP servers (Phase 14 #8a):** persistent stdio MCP sessions so real server tools
   can actually be called, not just registered.
   (6,000+ servers/tools). MCP tools register as native OMNI plugins the brain can call

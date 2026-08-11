@@ -148,6 +148,55 @@ class DesktopController:
         # -- personal context (Phase 14 #5) -----------------------------------
         self._calendar = None
         self._contacts_store = None
+        # -- recurring scheduler (Phase 15 #1) --------------------------------
+        self._recurring = None
+
+    def _get_recurring(self):
+        if self._recurring is not None:
+            return self._recurring
+        try:
+            from omni_v2.schedule.recurring import RecurringScheduler, make_scheduler_runner
+            self._recurring = RecurringScheduler(runner=make_scheduler_runner(self))
+        except Exception as e:
+            logger.warning(f"recurring build failed: {e}")
+            self._recurring = None
+        return self._recurring
+
+    def schedule_add_cron(self, name, cron, action, args=None) -> Dict[str, Any]:
+        s = self._get_recurring()
+        if s is None:
+            return {"ok": False, "detail": "scheduler unavailable"}
+        try:
+            j = s.add_cron(name, cron, action, args or {})
+            return {"ok": True, "job": j.to_dict()}
+        except Exception as e:
+            return {"ok": False, "detail": str(e)}
+
+    def schedule_add_interval(self, name, seconds, action, args=None) -> Dict[str, Any]:
+        s = self._get_recurring()
+        if s is None:
+            return {"ok": False, "detail": "scheduler unavailable"}
+        try:
+            j = s.add_interval(name, int(seconds), action, args or {})
+            return {"ok": True, "job": j.to_dict()}
+        except Exception as e:
+            return {"ok": False, "detail": str(e)}
+
+    def schedule_list(self) -> Dict[str, Any]:
+        s = self._get_recurring()
+        return {"ok": True, "jobs": [j.to_dict() for j in s.list()] if s else []}
+
+    def schedule_remove(self, name: str) -> Dict[str, Any]:
+        s = self._get_recurring()
+        return {"ok": bool(s and s.remove(name))}
+
+    def schedule_fire(self, name: str) -> Dict[str, Any]:
+        s = self._get_recurring()
+        return s.fire(name) if s else {"ok": False, "detail": "unavailable"}
+
+    def schedule_stats(self) -> Dict[str, Any]:
+        s = self._get_recurring()
+        return s.stats() if s else {"jobs": 0}
 
     @property
     def calendar(self):
