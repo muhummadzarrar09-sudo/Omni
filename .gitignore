@@ -208,3 +208,6 @@ data/**
 # Next.js build artifacts
 .next/
 frontend_next/.next/
+
+# Runtime DB (binary)
+data/memory.db

@@ -112,6 +112,14 @@ try:
 except Exception as e:  # pragma: no cover - non-fatal if deps missing
     logger.warning(f"Assistant router not mounted: {e}")
 
+# Knowledge Graph, Morning Briefing, Skill Installer (Phase 11). Fully local.
+try:
+    from intel_routes import router as intel_router
+    app.include_router(intel_router)
+    logger.info("Intel router mounted at /api (knowledge-graph/briefing/skills)")
+except Exception as e:  # pragma: no cover - non-fatal if deps missing
+    logger.warning(f"Intel router not mounted: {e}")
+
 # SMOKE-10 fix: cap request body size at 64KB to prevent OOM attacks
 MAX_REQUEST_BYTES = 64 * 1024
 

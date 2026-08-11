@@ -101,6 +101,20 @@ All 5 steps complete:
   notifies via messenger on anomalies. Pluggable checkers, headless-testable.
   CLI `omni guardian`, `/api/assistant/guardian/*`, desktop "Guardian" tab.
 
+## 4.8 Knowledge Graph + Morning Briefing + Skill Installer (Phase 11)
+
+- **Knowledge graph** (`omni_v2/graph/knowledge_graph.py`): builds an interactive
+  node/edge graph from RAG+CAG memory + sessions (topics, files, tools, commands,
+  co-occurrence/sequence edges). CLI `omni graph`, `/api/knowledge-graph`, and a web
+  viewer at `/knowledge-graph` (canvas force layout, no heavy deps).
+- **Morning briefing** (`omni_v2/briefing/briefing.py`): gathers open goals + yesterday
+  recap + fresh research into a structured digest, delivered via messenger + saved
+  report. CLI `omni briefing build|deliver`, `/api/briefing`. Ready to schedule.
+- **Skill installer** (`omni_v2/skills/installer.py`): `omni add-skill <url>` fetches,
+  AST-verifies (blocks destructive/network), writes to data/skills/custom, and wires it
+  into the brain via the SkillRegistry. CLI `omni add-skill install|list`,
+  `/api/skills/install|list`.
+
 ## 5. Fixes & hygiene
 
 - Fixed pre-existing `omni/cli.py` f-string syntax bug (blocked CLI on Python ≤ 3.11).

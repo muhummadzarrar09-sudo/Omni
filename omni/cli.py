@@ -188,7 +188,7 @@ def cmd_model_download_deep(args):
 def cmd_test(args):
     """Run all 20 test suites."""
     print("\n  " + "=" * 60)
-    print("  OMNI V3 - Full Test Suite (37 suites)")
+    print("  OMNI V3 - Full Test Suite (40 suites)")
     print("  " + "=" * 60 + "\n")
 
     # All 20 test suites
@@ -232,7 +232,10 @@ def cmd_test(args):
         ("[34/35] Brain polish (plan-before-acting + offline TTS)", "omni_v2.tests.test_brain_polish", "module"),
         ("[35/37] Offline voice (wake word + STT)", "omni_v2.tests.test_offline_voice", "module"),
         ("[36/37] Voice loop (hands-free)",         "omni_v2.tests.test_voice_loop", "module"),
-        ("[37/37] Proactive guardian",               "omni_v2.tests.test_guardian", "module"),
+        ("[37/40] Proactive guardian",               "omni_v2.tests.test_guardian", "module"),
+        ("[38/40] Knowledge graph",                  "omni_v2.tests.test_knowledge_graph", "module"),
+        ("[39/40] Morning briefing",                 "omni_v2.tests.test_briefing", "module"),
+        ("[40/40] Skill installer",                  "omni_v2.tests.test_skill_installer", "module"),
     ]
 
     all_ok = True
@@ -792,6 +795,108 @@ def cmd_guardian(args):
     return 1
 
 
+def cmd_graph(args):
+    """Knowledge graph: build/visualize memory as a graph."""
+    sys.path.insert(0, str(REPO_ROOT))
+    from omni_v2.graph.knowledge_graph import KnowledgeGraphBuilder
+    from omni_v2.memory.hybrid_memory import get_hybrid_memory
+    from omni_v2.memory.session_memory import SessionMemoryStore
+    try:
+        session = SessionMemoryStore()
+    except Exception:
+        session = None
+    g = KnowledgeGraphBuilder(memory=get_hybrid_memory(), session_memory=session)
+    action = getattr(args, "graph_action", None) or "build"
+
+    if action == "build":
+        data = g.build()
+        st = data["stats"]
+        print(f"\n  🧠 Knowledge Graph: {st['nodes']} nodes, {st['edges']} edges")
+        print(f"     (from {st['memory_items']} memory items, {st['sessions']} sessions)")
+        print("\n  Top nodes:")
+        for n in data["nodes"][:15]:
+            print(f"    {n['weight']:3d} [{n['kind']:8s}] {n['name'][:50]}")
+        print()
+        return 0
+
+    if action == "json":
+        out = args.out or (REPO_ROOT / "data" / "knowledge_graph.json")
+        path = g.to_json(out)
+        print(f"  ✅ Graph saved to {path}")
+        return 0
+
+    if action == "view":
+        # print a hint to open the web viewer
+        print("\n  Open the web viewer:")
+        print("    omni start         # FastAPI backend")
+        print("    cd frontend_next && npm run dev")
+        print("    → http://localhost:3000/knowledge-graph\n")
+        return 0
+    return 1
+
+
+def cmd_briefing(args):
+    """Morning briefing: build + deliver today's intel."""
+    sys.path.insert(0, str(REPO_ROOT))
+    from omni_v2.briefing.briefing import MorningBriefing
+    from omni_v2.brain.goals import GoalStack
+    from omni_v2.brain.identity import IdentityCore
+    from omni_v2.brain.reflect import Reflector
+    from omni_v2.away.reporter import Reporter
+    from omni_v2.away.messenger import MessengerRouter
+    from omni_v2.memory.session_memory import SessionMemoryStore
+    try:
+        session = SessionMemoryStore()
+    except Exception:
+        session = None
+    b = MorningBriefing(
+        goals=GoalStack(),
+        reflector=Reflector(session_memory=session),
+        research=None,
+        reporter=Reporter(),
+        messenger=MessengerRouter(),
+        identity=IdentityCore(),
+    )
+    action = getattr(args, "briefing_action", None) or "build"
+    if action == "build":
+        data = b.build(research_topic=args.topic or "")
+        print("\n" + data["markdown"] + "\n")
+        return 0
+    if action == "deliver":
+        res = b.deliver(research_topic=args.topic or "", save_report=True, push=True)
+        print("\n" + res["markdown"] + "\n")
+        print(f"  saved: {res['saved_path'] or '(not saved)'}  pushed: {res['pushed']}")
+        return 0
+    return 1
+
+
+def cmd_add_skill(args):
+    """Skill installer: omni add-skill <url> pulls + verifies + wires a skill."""
+    sys.path.insert(0, str(REPO_ROOT))
+    from omni_v2.skills.installer import SkillInstaller
+    inst = SkillInstaller()
+    action = getattr(args, "skill_action", None) or "install"
+    if action == "install":
+        source = " ".join(args.source)
+        if not source:
+            print("  Usage: omni add-skill <url-or-file> [--allow-network]")
+            return 1
+        res = inst.install(source, allow_network=getattr(args, "allow_network", False))
+        if res["ok"]:
+            print(f"  ✅ Skill installed: {res['detail']}")
+            return 0
+        print(f"  ❌ {res['step']}: {res['detail']}")
+        return 1
+    if action == "list":
+        listing = inst.list_installed()
+        print(f"\n  🧩 Installed skills ({listing['count']}):")
+        for s in listing["skills"]:
+            print(f"    - {s}")
+        print()
+        return 0
+    return 1
+
+
 def cmd_meta(args):
     """Jarvis Brain metacognition: evaluate an outcome + feed back into a goal."""
     sys.path.insert(0, str(REPO_ROOT))
@@ -1210,6 +1315,25 @@ def main():
     guardian_sub.add_parser("recent")
     guardian_sub.add_parser("status")
 
+    graph = sub.add_parser("graph", help="Knowledge graph: visualize memory")
+    graph_sub = graph.add_subparsers(dest="graph_action")
+    graph_sub.add_parser("build")
+    graph_json = graph_sub.add_parser("json")
+    graph_json.add_argument("--out", default=None)
+    graph_sub.add_parser("view")
+
+    briefing = sub.add_parser("briefing", help="Morning briefing: today's intel")
+    briefing_sub = briefing.add_subparsers(dest="briefing_action")
+    briefing_sub.add_parser("build").add_argument("--topic", default="")
+    briefing_sub.add_parser("deliver").add_argument("--topic", default="")
+
+    skill = sub.add_parser("add-skill", help="Install a community skill")
+    skill_sub = skill.add_subparsers(dest="skill_action")
+    skill_inst = skill_sub.add_parser("install", help="Install from url/file")
+    skill_inst.add_argument("source", nargs=argparse.REMAINDER)
+    skill_inst.add_argument("--allow-network", action="store_true")
+    skill_sub.add_parser("list")
+
     meta = sub.add_parser("meta", help="Jarvis Brain: metacognition (evaluate + replan)")
     meta_sub = meta.add_subparsers(dest="meta_action")
     meta_eval = meta_sub.add_parser("evaluate", help="Evaluate an outcome, feed into a goal")
@@ -1294,6 +1418,12 @@ def main():
         return cmd_voice(args)
     if cmd == "guardian":
         return cmd_guardian(args)
+    if cmd == "graph":
+        return cmd_graph(args)
+    if cmd == "briefing":
+        return cmd_briefing(args)
+    if cmd == "add-skill":
+        return cmd_add_skill(args)
 
     parser.print_help()
     return 1

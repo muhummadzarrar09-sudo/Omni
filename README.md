@@ -170,6 +170,9 @@ After `pip install -e .[all]`:
 | `./scripts/setup_hardware.sh` | One-shot real-hardware setup (models + offline TTS + WhatsApp) |
 | `omni voice start\|stop\|status\|respond` | Hands-free "Hey OMNI" voice loop |
 | `omni guardian start\|stop\|scan\|recent\|status` | Proactive machine watcher (apps/health) |
+| `omni graph build\|json\|view` | Visualize your RAG+CAG memory as a knowledge graph |
+| `omni briefing build\|deliver` | Personal morning briefing (goals + recap + research) |
+| `omni add-skill install\|list` | Install a community skill (verified, auto-wired) |
 | `omni brain status\|user\|set-name\|set-mood\|reflect` | Jarvis Identity core + user model |
 | `omni goal new\|list\|status\|advance\|fail\|follow-up` | Jarvis persistent goal stack (decompose → progress → replan) |
 | `omni meta evaluate\|history\|stats` | Jarvis metacognition (evaluate outcome → replan/ask/escalate) |
@@ -462,6 +465,13 @@ Omni/
 - **Proactive Guardian (Phase 10):** a background watcher that checks processes, system
   health (battery/disk/CPU) and files, surfacing observations and notifying you (via
   messenger) about anomalies — "Jarvis watches your back."
+- **Knowledge Graph (Phase 11):** visualize your RAG+CAG memory as an interactive
+  node/edge graph (`omni graph`, web viewer at `/knowledge-graph`) — topics, files,
+  tools, commands and how they connect.
+- **Morning Briefing (Phase 11):** a scheduled digest of your open goals + yesterday's
+  recap + fresh research, delivered to WhatsApp/Telegram/file (`omni briefing deliver`).
+- **Skill Installer (Phase 11):** `omni add-skill <url>` pulls a community skill,
+  verifies it with the AST safety checker, and auto-wires it into the brain's tools.
 - **Full feature rundown:** see [docs/PR_SUMMARY.md](docs/PR_SUMMARY.md) for the
   complete map of Away Mode, Desktop + Security, the Jarvis Brain, Voice Loop and
   the Proactive Guardian.
