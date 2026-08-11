@@ -188,7 +188,7 @@ def cmd_model_download_deep(args):
 def cmd_test(args):
     """Run all 20 test suites."""
     print("\n  " + "=" * 60)
-    print("  OMNI V3 - Full Test Suite (44 suites)")
+    print("  OMNI V3 - Full Test Suite (45 suites)")
     print("  " + "=" * 60 + "\n")
 
     # All 20 test suites
@@ -239,7 +239,8 @@ def cmd_test(args):
         ("[41/42] Continual harness",                "omni_v2.tests.test_harness", "module"),
         ("[42/43] Auto post-goal flow",              "omni_v2.tests.test_post_goal_flow", "module"),
         ("[43/44] MCP bridge",                       "omni_v2.tests.test_mcp", "module"),
-        ("[44/44] Auto skill verification",          "omni_v2.tests.test_skill_verify", "module"),
+        ("[44/45] Auto skill verification",          "omni_v2.tests.test_skill_verify", "module"),
+        ("[45/45] Context compaction",               "omni_v2.tests.test_compaction", "module"),
     ]
 
     all_ok = True
@@ -794,6 +795,27 @@ def cmd_guardian(args):
         print(f"    Checkers    : {st.get('checkers')}")
         print(f"    Observations: {st.get('observations')}")
         print(f"    Interval    : {st.get('interval')}s")
+        print()
+        return 0
+    return 1
+
+
+def cmd_compaction(args):
+    """Context auto-compaction: summarize old turns to save tokens."""
+    sys.path.insert(0, str(REPO_ROOT))
+    from omni_v2.llm.compaction import Compactor
+    c = Compactor()
+    action = getattr(args, "compaction_action", None) or "status"
+
+    if action == "status":
+        st = c.stats()
+        print("\n  🧹 Context Auto-Compaction")
+        print(f"    Enabled   : {'✅' if st['enabled'] else '❌'}")
+        print(f"    Max tokens: {st['max_tokens']}")
+        print(f"    Keep last : {st['keep_last']} turns")
+        print(f"    Compactions: {st['compactions']}")
+        print(f"    Summarizer: {st['summarizer']}")
+        print("\n  (Wired into Brain.think() — long conversations are auto-summarized\n   to stay within budget while preserving the task + recent turns.)")
         print()
         return 0
     return 1
@@ -1474,6 +1496,10 @@ def main():
     sv_sub.add_parser("run")
     sv_sub.add_parser("history")
 
+    comp = sub.add_parser("compaction", help="Context auto-compaction (token efficiency)")
+    comp_sub = comp.add_subparsers(dest="compaction_action")
+    comp_sub.add_parser("status")
+
     mcp = sub.add_parser("mcp", help="MCP: connect to the Model Context Protocol ecosystem")
     mcp_sub = mcp.add_subparsers(dest="mcp_action")
     mcp_sub.add_parser("status")
@@ -1602,6 +1628,8 @@ def main():
         return cmd_mcp(args)
     if cmd == "skill-verify":
         return cmd_skill_verify(args)
+    if cmd == "compaction":
+        return cmd_compaction(args)
     if cmd == "briefing":
         return cmd_briefing(args)
     if cmd == "add-skill":

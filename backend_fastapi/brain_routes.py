@@ -90,3 +90,10 @@ def add_reflection(r: ReflectionAdd) -> Dict[str, Any]:
 @router.get("/identity/prompt-block")
 def prompt_block() -> Dict[str, Any]:
     return {"block": _identity.to_prompt_block()}
+
+
+@router.get("/compaction")
+def compaction() -> Dict[str, Any]:
+    """Context auto-compaction status (Phase 13 #3)."""
+    from omni_v2.llm.compaction import Compactor
+    return {"ok": True, "status": Compactor().stats()}

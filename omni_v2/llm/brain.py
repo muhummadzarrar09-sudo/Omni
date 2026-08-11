@@ -117,6 +117,7 @@ class Brain:
         on_thought: Optional[Callable[[str], None]] = None,
         on_tool_call: Optional[Callable[[str, dict], None]] = None,
         context_provider: Optional[Callable[[str], str]] = None,
+        compactor=None,
         identity=None,
     ):
         if self._initialized:
@@ -128,6 +129,15 @@ class Brain:
         # Hybrid RAG+CAG context injector (Away Mode / Knowledge Base).
         # context_provider(user_text) -> extra context injected into the prompt.
         self.context_provider = context_provider
+        # Context auto-compaction (Phase 13 #3): summarize older turns to stay
+        # within a token budget. None -> lazy-build a default Compactor.
+        self.compactor = compactor
+        if self.compactor is None:
+            try:
+                from omni_v2.llm.compaction import Compactor
+                self.compactor = Compactor()
+            except Exception:
+                self.compactor = None
         # Jarvis Identity core (B1) + User model (B7): injected every turn.
         # identity.to_prompt_block() -> identity + user description for the prompt.
         self.identity = identity
@@ -447,6 +457,13 @@ class Brain:
         # Only send last 4 user messages (8 turns) for speed
         messages.extend(self._conversation[-8:])
 
+        # Context auto-compaction (Phase 13 #3): keep within the token budget.
+        if self.compactor is not None:
+            try:
+                messages = self.compactor.maybe_compact(messages)
+            except Exception as e:
+                logger.debug(f"compaction failed: {e}")
+
         # Build prompt
         if stream and self.on_thought:
             raw_parts = []
@@ -703,8 +720,12 @@ class Brain:
         """Attach the Jarvis Identity core after construction."""
         self.identity = identity
 
+    def set_compactor(self, compactor) -> None:
+        """Attach a context compactor after construction."""
+        self.compactor = compactor
+
     def get_status(self) -> dict:
-        return {
+        status = {
             "model_loaded": self.model_loaded,
             "tier": self._tier,
             "history_length": len(self._conversation),
@@ -714,6 +735,12 @@ class Brain:
             "deep_available": bool(self._deep_model_path),
             "current_model_path": self._current_model_path,
         }
+        if getattr(self, "compactor", None) is not None:
+            try:
+                status["compactor"] = self.compactor.stats()
+            except Exception:
+                pass
+        return status
 
 
 def get_brain(plugin_manager=None, memory=None) -> Brain:

@@ -161,6 +161,16 @@ goal trajectories** — never rewriting the immutable base prompt.
   skill is verified with no manual step.
 - CLI `omni skill-verify status/run/history`; wired into the desktop controller + status.
 
+## 4.12 Context Auto-Compaction (Phase 13 #3)
+
+- **`omni_v2/llm/compaction.py`**: `Compactor.maybe_compact(messages)` summarizes the
+  older middle of a transcript into a compact system note when it exceeds a token
+  budget, preserving the first (task) message + the last N turns. Deterministic
+  summarizer by default (works offline); pluggable LLM summarizer for the DGX.
+- Wired into `Brain.think()` — long conversations auto-compact automatically.
+  `get_status()` reports compactor stats.
+- CLI `omni compaction status`; FastAPI `GET /api/brain/compaction`.
+
 ## 5. Fixes & hygiene
 
 - Fixed pre-existing `omni/cli.py` f-string syntax bug (blocked CLI on Python ≤ 3.11).

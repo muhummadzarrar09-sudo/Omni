@@ -176,6 +176,7 @@ After `pip install -e .[all]`:
 | `omni harness status\|list\|refine\|rollback\|context` | Continual harness: self-refining skills/memory/lessons |
 | `omni mcp status\|add-demo\|list\|add` | Connect to the MCP ecosystem (Model Context Protocol) |
 | `omni skill-verify status\|run\|history` | Auto skill verification (test skills, roll back failures) |
+| `omni compaction status` | Context auto-compaction (token/memory efficiency) |
 | `omni brain status\|user\|set-name\|set-mood\|reflect` | Jarvis Identity core + user model |
 | `omni goal new\|list\|status\|advance\|fail\|follow-up` | Jarvis persistent goal stack (decompose → progress → replan) |
 | `omni meta evaluate\|history\|stats` | Jarvis metacognition (evaluate outcome → replan/ask/escalate) |
@@ -488,6 +489,10 @@ Omni/
   refines a skill, it's run through a tester — kept if it passes, **rolled back** (or
   dropped) if it fails. Closes the "is this skill actually good?" loop automatically.
   `omni skill-verify status/run/history`.
+- **Context Auto-Compaction (Phase 13 #3):** when a conversation outgrows the token
+  budget, the Brain summarizes the older middle into a compact note while preserving the
+  task + recent turns — the token/memory efficiency win for the small brain.
+  `omni compaction status`.
 - **Full feature rundown:** see [docs/PR_SUMMARY.md](docs/PR_SUMMARY.md) for the
   complete map of Away Mode, Desktop + Security, the Jarvis Brain, Voice Loop and
   the Proactive Guardian.
