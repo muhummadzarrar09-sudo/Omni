@@ -183,6 +183,7 @@ After `pip install -e .[all]`:
 | `omni daemon enable\|disable\|status\|start\|stop` | Always-on resident agent + auto-start on boot |
 | `omni benchmark run\|report` | Self-improvement benchmark (faster/cheaper over time) |
 | `omni sandbox status\|run` | Skill sandbox: run untrusted skill code isolated |
+| `omni vault list\|set\|get\|delete\|stats` | Credential vault: encrypted local secrets |
 | `omni brain status\|user\|set-name\|set-mood\|reflect` | Jarvis Identity core + user model |
 | `omni goal new\|list\|status\|advance\|fail\|follow-up` | Jarvis persistent goal stack (decompose → progress → replan) |
 | `omni meta evaluate\|history\|stats` | Jarvis metacognition (evaluate outcome → replan/ask/escalate) |
@@ -508,6 +509,9 @@ Omni/
 - **Skill Sandbox (Phase 14 #3):** run untrusted / harness-created skills in an **isolated
   subprocess** with OS-level guardrails — hard timeout, memory limit (RLIMIT_AS), network
   blocked, clean env. `omni sandbox status/run`.
+- **Credential Vault (Phase 14 #4):** local, **Fernet-encrypted** store for secrets with a
+  **permission gate** (allow-list + optional human-approval hook) before tools use them.
+  `omni vault set/get/list`.
   (6,000+ servers/tools). MCP tools register as native OMNI plugins the brain can call
   like built-ins. `omni mcp add-demo`, `/api/mcp/*`, desktop "MCP" tab.
 - **Auto Skill Verification (Phase 13 #2):** whenever the Continual Harness creates or

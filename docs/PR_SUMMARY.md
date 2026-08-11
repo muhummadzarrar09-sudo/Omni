@@ -232,6 +232,14 @@ goal trajectories** — never rewriting the immutable base prompt.
 - CLI `omni sandbox status/run`; FastAPI `GET /api/brain/sandbox`; wired into the
   DesktopController.
 
+## 4.19 Credential Vault (Phase 14 #4)
+
+- **`omni_v2/vault/vault.py`**: `CredentialVault` stores secrets locally, **Fernet-encrypted
+  at rest** (keyfile or `OMNI_VAULT_KEY` passphrase). Reads are **permission-gated** by an
+  allow-list per secret + an optional human-approval hook (HITL). `list` masks values.
+- CLI `omni vault set/get/list/delete/stats`; FastAPI `GET /api/brain/vault`; wired into the
+  DesktopController.
+
 ## 5. Fixes & hygiene
 
 - Fixed pre-existing `omni/cli.py` f-string syntax bug (blocked CLI on Python ≤ 3.11).

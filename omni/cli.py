@@ -188,7 +188,7 @@ def cmd_model_download_deep(args):
 def cmd_test(args):
     """Run all 20 test suites."""
     print("\n  " + "=" * 60)
-    print("  OMNI V3 - Full Test Suite (51 suites)")
+    print("  OMNI V3 - Full Test Suite (52 suites)")
     print("  " + "=" * 60 + "\n")
 
     # All 20 test suites
@@ -246,7 +246,8 @@ def cmd_test(args):
         ("[48/49] LLM router v2 (DGX-ready)",        "omni_v2.tests.test_router_v2", "module"),
         ("[49/50] Daemon + auto-start",              "omni_v2.tests.test_daemon", "module"),
         ("[50/51] Self-improvement benchmark",       "omni_v2.tests.test_benchmark", "module"),
-        ("[51/51] Skill sandbox",                    "omni_v2.tests.test_sandbox", "module"),
+        ("[51/52] Skill sandbox",                    "omni_v2.tests.test_sandbox", "module"),
+        ("[52/52] Credential vault",                 "omni_v2.tests.test_vault", "module"),
     ]
 
     all_ok = True
@@ -865,6 +866,66 @@ def cmd_router(args):
         print(f"\n  Task: {text}\n")
         print(f"    → tier {d['tier']} · model {d['model']} (required cap {d['required_cap']})")
         print(f"      {d['reason']} · est {d['estimated_tokens']} tokens")
+        print()
+        return 0
+    return 1
+
+
+def cmd_vault(args):
+    """Credential vault: encrypted local secrets with a permission gate."""
+    sys.path.insert(0, str(REPO_ROOT))
+    from omni_v2.away.desktop import DesktopController
+    c = DesktopController()
+    action = getattr(args, "vault_action", None) or "list"
+
+    if action == "list":
+        res = c.vault_list()
+        secrets = res.get("secrets", [])
+        print("\n  🔐 Credential Vault")
+        if not secrets:
+            print("    (no secrets stored)")
+        for s in secrets:
+            print(f"    • {s['name']}  allowed={s.get('allowed')}  {s.get('metadata','')}")
+        print()
+        return 0
+
+    if action == "set":
+        name, value = args.name, args.value
+        callers = args.callers.split(",") if args.callers else None
+        res = c.vault_set(name, value, callers=callers, metadata=args.metadata or "")
+        if res.get("ok"):
+            print(f"  ✅ Stored '{name}' (callers: {res.get('callers', callers)})")
+            return 0
+        print(f"  ❌ {res.get('detail','?')}")
+        return 1
+
+    if action == "get":
+        name = args.name
+        res = c.vault_get(name, caller=args.caller or "omni")
+        if res.get("ok"):
+            print(f"  🔑 {name} = {res['value']}")
+            return 0
+        print(f"  ❌ {res.get('detail','?')}")
+        return 1
+
+    if action == "delete":
+        res = c.vault_delete(args.name) if hasattr(c, "vault_delete") else None
+        if res is None:
+            from omni_v2.away.desktop import DesktopController as DC
+            c2 = DC()
+            v = c2._get_vault()
+            ok = v.delete_secret(args.name) if v else False
+        else:
+            ok = res.get("ok", False)
+        print(f"  {'✅ Deleted' if ok else '❌ not found'}")
+        return 0
+
+    if action == "stats":
+        st = c.vault_stats()
+        print("\n  🔐 Vault")
+        print(f"    Secrets   : {st.get('secrets', 0)}")
+        print(f"    Key source: {st.get('key_source', '?')}")
+        print(f"    File      : {st.get('vault_file', '?')}")
         print()
         return 0
     return 1
@@ -1794,6 +1855,21 @@ def main():
     _sbr.add_argument("--skill", default="")
     _sbr.add_argument("code", nargs=argparse.REMAINDER)
 
+    vl = sub.add_parser("vault", help="Credential vault: encrypted local secrets")
+    vl_sub = vl.add_subparsers(dest="vault_action")
+    vl_sub.add_parser("list")
+    _vs = vl_sub.add_parser("set")
+    _vs.add_argument("name")
+    _vs.add_argument("value")
+    _vs.add_argument("--callers", default=None)
+    _vs.add_argument("--metadata", default="")
+    _vg = vl_sub.add_parser("get")
+    _vg.add_argument("name")
+    _vg.add_argument("--caller", default="omni")
+    _vd = vl_sub.add_parser("delete")
+    _vd.add_argument("name")
+    vl_sub.add_parser("stats")
+
     mcp = sub.add_parser("mcp", help="MCP: connect to the Model Context Protocol ecosystem")
     mcp_sub = mcp.add_subparsers(dest="mcp_action")
     mcp_sub.add_parser("status")
@@ -1936,6 +2012,8 @@ def main():
         return cmd_benchmark(args)
     if cmd == "sandbox":
         return cmd_sandbox(args)
+    if cmd == "vault":
+        return cmd_vault(args)
     if cmd == "briefing":
         return cmd_briefing(args)
     if cmd == "add-skill":

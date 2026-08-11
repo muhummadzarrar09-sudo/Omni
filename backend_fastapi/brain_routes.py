@@ -118,3 +118,10 @@ def sandbox() -> Dict[str, Any]:
     """Skill sandbox status (Phase 14 #3)."""
     from omni_v2.skills.sandbox import SkillSandbox
     return {"ok": True, "status": SkillSandbox().stats()}
+
+
+@router.get("/vault")
+def vault() -> Dict[str, Any]:
+    """Credential vault status (Phase 14 #4) - lists names, never values."""
+    from omni_v2.away.desktop import DesktopController
+    return {"ok": True, **DesktopController().vault_list()}

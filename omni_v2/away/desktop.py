@@ -143,6 +143,46 @@ class DesktopController:
         self.router_v2 = None
         # -- benchmark (Phase 14 #2) ------------------------------------------
         self.benchmark = None
+        # -- credential vault (Phase 14 #4) -----------------------------------
+        self.vault = None
+
+    def _get_vault(self):
+        if self.vault is not None:
+            return self.vault
+        try:
+            from omni_v2.vault.vault import CredentialVault
+            self.vault = CredentialVault()
+        except Exception as e:
+            logger.warning(f"vault build failed: {e}")
+            self.vault = None
+        return self.vault
+
+    def vault_set(self, name: str, value: str, callers: list = None,
+                  metadata: str = "") -> Dict[str, Any]:
+        v = self._get_vault()
+        if v is None:
+            return {"ok": False, "detail": "vault unavailable"}
+        try:
+            return v.set_secret(name, value, callers=callers, metadata=metadata)
+        except Exception as e:
+            return {"ok": False, "detail": str(e)}
+
+    def vault_get(self, name: str, caller: str = "omni") -> Dict[str, Any]:
+        v = self._get_vault()
+        if v is None:
+            return {"ok": False, "detail": "vault unavailable"}
+        try:
+            return {"ok": True, "name": name, "value": v.get_secret(name, caller)}
+        except Exception as e:
+            return {"ok": False, "detail": str(e)}
+
+    def vault_list(self) -> Dict[str, Any]:
+        v = self._get_vault()
+        return {"ok": True, "secrets": v.list_secrets() if v else []}
+
+    def vault_stats(self) -> Dict[str, Any]:
+        v = self._get_vault()
+        return v.stats() if v else {"secrets": 0}
 
     def _get_benchmark(self):
         if self.benchmark is not None:
