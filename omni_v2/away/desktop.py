@@ -88,6 +88,13 @@ class DesktopController:
                 self.metacog = Metacog()
             except Exception:
                 self.metacog = None
+        self.harness = self.stack.get("harness")
+        if self.harness is None:
+            try:
+                from omni_v2.harness.harness import ContinualHarness
+                self.harness = ContinualHarness()
+            except Exception:
+                self.harness = None
         self.reflector = self.stack.get("reflector")
         if self.reflector is None:
             try:
@@ -232,6 +239,8 @@ class DesktopController:
             out["metacog"] = self.metacog.stats()
         if self.reflector:
             out["reflector"] = self.reflector.stats()
+        if self.harness:
+            out["harness"] = self.harness.stats()
         if self.voice_loop:
             out["voice"] = self.voice_loop.stats()
         if self.guardian:
@@ -381,6 +390,43 @@ class DesktopController:
 
     def reflector_episodes(self) -> list:
         return [e.to_dict() for e in self.reflector.episodes(20)] if self.reflector else []
+
+    # -- continual harness (Phase 12) ------------------------------------------
+    def harness_refine_goal(self, goal_id: str, success: bool = None,
+                            repeated: bool = False) -> Dict[str, Any]:
+        if self.harness is None or self.goals is None:
+            return {"ok": False, "detail": "harness/goals unavailable"}
+        g = self.goals.get_goal(goal_id)
+        if g is None:
+            return {"ok": False, "detail": f"no goal {goal_id}"}
+        # gather metacog verdicts if available
+        verdicts = []
+        if self.metacog is not None:
+            for rec in self.metacog.history(20):
+                v = rec.get("verdict", {})
+                if v.get("suggested_fix"):
+                    verdicts.append(v)
+        committed = self.harness.refine_from_trajectory(g, verdicts=verdicts,
+                                                        success=success, repeated=repeated)
+        return {"ok": True, "committed": committed}
+
+    def harness_list(self, kind: str = "") -> Dict[str, Any]:
+        if self.harness is None:
+            return {"ok": False, "artifacts": []}
+        arts = self.harness.list(kind or None)
+        return {"ok": True, "artifacts": [a.to_dict() for a in arts]}
+
+    def harness_rollback(self, kind: str, name: str) -> Dict[str, Any]:
+        if self.harness is None:
+            return {"ok": False, "detail": "harness unavailable"}
+        ok = self.harness.rollback(kind, name)
+        return {"ok": ok, "detail": "rolled back" if ok else "no snapshot"}
+
+    def harness_context(self, topic: str = "") -> str:
+        return self.harness.build_context(topic) if self.harness else ""
+
+    def harness_stats(self) -> Dict[str, Any]:
+        return self.harness.stats() if self.harness else {"artifacts": 0}
 
     # -- security -------------------------------------------------------------
     def enroll_owner(self) -> Dict[str, Any]:

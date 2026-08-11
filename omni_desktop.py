@@ -438,6 +438,29 @@ def _launch_gui():
     g_scan.configure(command=do_g_scan)
     refresh_guardian()
 
+    # ================= HARNESS (Phase 12) =================
+    t_har = tabs.add("Harness")
+    hrow = ctk.CTkFrame(t_har)
+    hrow.pack(fill="x", padx=8, pady=4)
+    h_refresh = ctk.CTkButton(hrow, text="🧬 List", width=90)
+    h_refresh.pack(side="left", padx=4)
+    h_out = ctk.CTkTextbox(t_har, height=430, font=("Consolas", 12))
+    h_out.pack(fill="both", expand=True, padx=8, pady=8)
+
+    def refresh_harness():
+        def done(res):
+            arts = res.get("artifacts", [])
+            if not arts:
+                log_box(h_out, "(harness empty — complete goals to refine skills/memory/lessons)")
+                return
+            lines = []
+            for a in arts:
+                lines.append(f"[{a['kind']}] {a['name']} v{a['version']}\n   {a['content'][:120]}\n")
+            log_box(h_out, "\n".join(lines))
+        bg(lambda: controller.harness_list(""), done)
+    h_refresh.configure(command=refresh_harness)
+    refresh_harness()
+
     # ================= SECURITY =================
     t_sec = tabs.add("Security")
     srow = ctk.CTkFrame(t_sec)

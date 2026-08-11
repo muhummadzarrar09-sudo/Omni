@@ -115,6 +115,25 @@ All 5 steps complete:
   into the brain via the SkillRegistry. CLI `omni add-skill install|list`,
   `/api/skills/install|list`.
 
+## 4.9 Continual Harness (Phase 12) — the self-refining "grows with you" loop
+
+Inspired by Prime Agent's Continual Harness: a durable, versioned store of
+supplemental agent state (`data/brain/harness/`) that OMNI **refines from its own
+goal trajectories** — never rewriting the immutable base prompt.
+
+- **Artifacts:** skills / memory / lessons, each versioned + snapshot on change
+  (rollback-able via `omni harness rollback`).
+- **Refine-from-trajectory:** given a finished goal (+ metacog verdicts), distill
+  reusable knowledge; auto-create a **skill** on repeated success; add **memory**
+  facts and **lessons**; self-**improve** an existing skill when metacog flags a
+  misfire with a suggested fix.
+- **Context on demand:** `harness.build_context(topic)` injects only relevant
+  artifacts — the retrieve-on-demand token/memory efficiency win.
+- **DGX-ready:** the plumbing is headless-testable with no model (deterministic
+  distiller); on the DGX Station a real LLM distiller drops in for richer skills.
+- CLI `omni harness status/list/refine/rollback/context`; FastAPI
+  `/api/harness/*`; desktop "Harness" tab.
+
 ## 5. Fixes & hygiene
 
 - Fixed pre-existing `omni/cli.py` f-string syntax bug (blocked CLI on Python ≤ 3.11).

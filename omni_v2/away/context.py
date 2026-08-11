@@ -30,6 +30,7 @@ def build_away_stack(knowledge_base=None, reporter=None, messenger=None,
     from omni_v2.brain.goals import GoalStack
     from omni_v2.brain.metacog import Metacog
     from omni_v2.brain.reflect import Reflector
+    from omni_v2.harness.harness import ContinualHarness
     from omni_v2.memory.session_memory import SessionMemoryStore
 
     kb = knowledge_base or KnowledgeBase()
@@ -53,6 +54,7 @@ def build_away_stack(knowledge_base=None, reporter=None, messenger=None,
         session_store = None
     reflector = Reflector(session_memory=session_store, hybrid_memory=memory,
                           identity=identity)
+    harness = ContinualHarness()
 
     def context_provider(question: str) -> str:
         """Inject hybrid RAG+CAG context for a user query (used by Brain)."""
@@ -74,6 +76,7 @@ def build_away_stack(knowledge_base=None, reporter=None, messenger=None,
         "goals": goals,
         "metacog": metacog,
         "reflector": reflector,
+        "harness": harness,
         "voice_loop": None,   # lazy-built by consumers that can supply components
         "guardian": None,
     }

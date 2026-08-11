@@ -173,6 +173,7 @@ After `pip install -e .[all]`:
 | `omni graph build\|json\|view` | Visualize your RAG+CAG memory as a knowledge graph |
 | `omni briefing build\|deliver` | Personal morning briefing (goals + recap + research) |
 | `omni add-skill install\|list` | Install a community skill (verified, auto-wired) |
+| `omni harness status\|list\|refine\|rollback\|context` | Continual harness: self-refining skills/memory/lessons |
 | `omni brain status\|user\|set-name\|set-mood\|reflect` | Jarvis Identity core + user model |
 | `omni goal new\|list\|status\|advance\|fail\|follow-up` | Jarvis persistent goal stack (decompose → progress → replan) |
 | `omni meta evaluate\|history\|stats` | Jarvis metacognition (evaluate outcome → replan/ask/escalate) |
@@ -472,6 +473,11 @@ Omni/
   recap + fresh research, delivered to WhatsApp/Telegram/file (`omni briefing deliver`).
 - **Skill Installer (Phase 11):** `omni add-skill <url>` pulls a community skill,
   verifies it with the AST safety checker, and auto-wires it into the brain's tools.
+- **Continual Harness (Phase 12):** a Prime-Agent-style self-refining loop — OMNI
+  distills finished goal trajectories into versioned **skills / memory / lessons**
+  (snapshot + rollback, never touches the base prompt), auto-creates skills on
+  repeated success, and self-improves them when metacog flags a misfire. Works on
+  CPU today; auto-upgrades on the DGX Station.
 - **Full feature rundown:** see [docs/PR_SUMMARY.md](docs/PR_SUMMARY.md) for the
   complete map of Away Mode, Desktop + Security, the Jarvis Brain, Voice Loop and
   the Proactive Guardian.

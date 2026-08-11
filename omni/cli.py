@@ -188,7 +188,7 @@ def cmd_model_download_deep(args):
 def cmd_test(args):
     """Run all 20 test suites."""
     print("\n  " + "=" * 60)
-    print("  OMNI V3 - Full Test Suite (40 suites)")
+    print("  OMNI V3 - Full Test Suite (41 suites)")
     print("  " + "=" * 60 + "\n")
 
     # All 20 test suites
@@ -233,9 +233,10 @@ def cmd_test(args):
         ("[35/37] Offline voice (wake word + STT)", "omni_v2.tests.test_offline_voice", "module"),
         ("[36/37] Voice loop (hands-free)",         "omni_v2.tests.test_voice_loop", "module"),
         ("[37/40] Proactive guardian",               "omni_v2.tests.test_guardian", "module"),
-        ("[38/40] Knowledge graph",                  "omni_v2.tests.test_knowledge_graph", "module"),
-        ("[39/40] Morning briefing",                 "omni_v2.tests.test_briefing", "module"),
-        ("[40/40] Skill installer",                  "omni_v2.tests.test_skill_installer", "module"),
+        ("[38/41] Knowledge graph",                  "omni_v2.tests.test_knowledge_graph", "module"),
+        ("[39/41] Morning briefing",                 "omni_v2.tests.test_briefing", "module"),
+        ("[40/41] Skill installer",                  "omni_v2.tests.test_skill_installer", "module"),
+        ("[41/41] Continual harness",                "omni_v2.tests.test_harness", "module"),
     ]
 
     all_ok = True
@@ -795,6 +796,60 @@ def cmd_guardian(args):
     return 1
 
 
+def cmd_harness(args):
+    """Continual harness: self-refining skills/memory/lessons from trajectories."""
+    sys.path.insert(0, str(REPO_ROOT))
+    from omni_v2.away.desktop import DesktopController
+    c = DesktopController()
+    action = getattr(args, "harness_action", None) or "status"
+
+    if action == "status":
+        st = c.harness_stats()
+        by = st.get("by_kind", {})
+        print("\n  🧬 Continual Harness")
+        print(f"    Artifacts : {st.get('artifacts', 0)}")
+        print(f"    Skills    : {by.get('skill', 0)}")
+        print(f"    Memory    : {by.get('memory', 0)}")
+        print(f"    Lessons   : {by.get('lesson', 0)}")
+        print(f"    Distiller : {'✅ (deep LLM)' if st.get('has_distiller') else '○ (deterministic)'}")
+        print()
+        return 0
+
+    if action == "list":
+        kind = args.kind or ""
+        res = c.harness_list(kind)
+        print(f"\n  🧬 Harness artifacts ({len(res['artifacts'])}):\n")
+        for a in res["artifacts"]:
+            print(f"  [{a['kind']}] {a['name']} v{a['version']}: {a['content'][:70]}")
+        print()
+        return 0
+
+    if action == "refine":
+        gid = args.goal
+        res = c.harness_refine_goal(gid, repeated=args.repeated)
+        if not res.get("ok"):
+            print(f"  ❌ {res.get('detail','?')}")
+            return 1
+        comm = res["committed"]
+        print(f"\n  🧬 Refined from goal {gid}:")
+        print(f"    skills : {comm.get('skills', []) or '(none)'}")
+        print(f"    memory : {comm.get('memory', []) or '(none)'}")
+        print(f"    lessons: {comm.get('lessons', []) or '(none)'}")
+        print()
+        return 0
+
+    if action == "rollback":
+        ok = c.harness_rollback(args.kind, args.name)
+        print(f"  {'✅ Rolled back' if ok.get('ok') else '❌ ' + ok.get('detail','no snapshot')}")
+        return 0
+
+    if action == "context":
+        topic = " ".join(args.rest)
+        print("\n" + (c.harness_context(topic) or "(no harness context)") + "\n")
+        return 0
+    return 1
+
+
 def cmd_graph(args):
     """Knowledge graph: build/visualize memory as a graph."""
     sys.path.insert(0, str(REPO_ROOT))
@@ -1322,6 +1377,20 @@ def main():
     graph_json.add_argument("--out", default=None)
     graph_sub.add_parser("view")
 
+    harness = sub.add_parser("harness", help="Continual harness: self-refining skills/memory")
+    harness_sub = harness.add_subparsers(dest="harness_action")
+    harness_sub.add_parser("status")
+    _hl = harness_sub.add_parser("list")
+    _hl.add_argument("kind", nargs="?", default="")
+    _hr = harness_sub.add_parser("refine")
+    _hr.add_argument("goal")
+    _hr.add_argument("--repeated", action="store_true")
+    _hrb = harness_sub.add_parser("rollback")
+    _hrb.add_argument("kind")
+    _hrb.add_argument("name")
+    _hc = harness_sub.add_parser("context")
+    _hc.add_argument("rest", nargs=argparse.REMAINDER)
+
     briefing = sub.add_parser("briefing", help="Morning briefing: today's intel")
     briefing_sub = briefing.add_subparsers(dest="briefing_action")
     briefing_sub.add_parser("build").add_argument("--topic", default="")
@@ -1420,6 +1489,8 @@ def main():
         return cmd_guardian(args)
     if cmd == "graph":
         return cmd_graph(args)
+    if cmd == "harness":
+        return cmd_harness(args)
     if cmd == "briefing":
         return cmd_briefing(args)
     if cmd == "add-skill":
