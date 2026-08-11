@@ -10,7 +10,6 @@ FIXES (from diagnostic/01_DIAGNOSTIC_REPORT.md):
 - TTS-BUG-04 [MED] : stop_speaking() interrupt
 - TTS-BUG-05 [LOW] : Safe no-op when engine is None
 """
-from pathlib import Path
 from typing import Optional
 import threading
 import re
@@ -21,10 +20,7 @@ except ImportError:
     import logging
     logger = logging.getLogger("TTSSimpleV3")
 
-try:
-    from omni_v2.core.paths import DATA_DIR
-except ImportError:
-    DATA_DIR = Path.cwd() / "data"
+from omni_v2.core.paths import DATA_DIR
 
 
 class SimpleTTS:
@@ -57,13 +53,10 @@ class SimpleTTS:
             model_paths = [
                 DATA_DIR / "models" / "kokoro-v0_19.onnx",
                 DATA_DIR / "models" / "kokoro-v1.0.onnx",
-                Path("data/models/kokoro-v0_19.onnx"),
-                Path.cwd() / "data" / "models" / "kokoro-v0_19.onnx",
             ]
             voices_paths = [
                 DATA_DIR / "models" / "voices.json",
                 DATA_DIR / "models" / "voices-v1.0.bin",
-                Path("data/models/voices.json"),
             ]
 
             model_file = None

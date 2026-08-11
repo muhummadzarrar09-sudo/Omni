@@ -1,21 +1,7 @@
-"""
-OMNI V3 - FastAPI Backend - CORRECT Architecture
-Next.js (beautiful UI) <-> FastAPI (pretty damn good backend) <-> OMNI Brain (Planner->Executor->Monitor->Evaluator + browser_v3 isolated + sounddevice fixes -9999)
+"""FastAPI application package for OMNI's experimental backend.
 
-Portable: No D:/Omni hardcode, uses Path(__file__).resolve().parent...
-Run: uvicorn main:app --reload --port 8765
-Or: python main.py
-
-Endpoints:
-- GET /                     -> health
-- GET /api/health           -> brain status
-- GET /api/devices          -> mic devices
-- POST /api/execute         -> execute command via multi-agent
-- GET /api/demo/{type}      -> accessibility, chain, business
-- POST /api/test-mic        -> test mic RMS
-- POST /api/ptt/start       -> start PTT recording (sounddevice)
-- POST /api/ptt/stop        -> stop + transcribe + execute
-- WebSocket /ws             -> live mic level + transcription stream
+Capability availability and qualification are tracked separately in the source
+repository's machine-readable capability matrix.
 """
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, UploadFile, File, Form, Request, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
@@ -23,18 +9,16 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel, Field, field_validator
 from pathlib import Path
-import sys
 import asyncio
 import json
 import time
 import secrets
 from typing import Optional, Any, Dict
 
-# Ensure repo root in path
+# Source-checkout resource root. In an installed wheel this is the environment's
+# site-packages directory; it is never used as a writable data location.
 THIS_FILE = Path(__file__).resolve()
 REPO_ROOT = THIS_FILE.parent.parent
-if str(REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(REPO_ROOT))
 
 try:
     from loguru import logger
@@ -42,12 +26,14 @@ except ImportError:
     import logging
     logger = logging.getLogger("FastAPI")
 
-from core.brain import get_brain
+from omni import __version__
+from omni_v2.core.paths import get_data_dir
+from .core.brain import get_brain
 
 app = FastAPI(
-    title="OMNI V3 FastAPI - Neomorphism Backend",
-    description="Pretty damn good backend processing for Next.js beautiful UI. Multi-agent, profile isolation, sounddevice fixes -9999, portable no D:/Omni hardcode.",
-    version="3.1.0"
+    title="OMNI experimental backend",
+    description="Local API surface for the experimental OMNI personal assistant.",
+    version=__version__,
 )
 
 def api_error(message: str, status_code: int = 500):
@@ -58,7 +44,7 @@ def api_error(message: str, status_code: int = 500):
 # Away Mode (Phase 7): RAG+CAG knowledge base, autonomous research, task queue,
 # reports & messenger. Fully local. See away_routes.py.
 try:
-    from away_routes import router as away_router
+    from .away_routes import router as away_router
     app.include_router(away_router)
     logger.info("Away Mode router mounted at /api/away")
 except Exception as e:  # pragma: no cover - non-fatal if deps missing
@@ -66,7 +52,7 @@ except Exception as e:  # pragma: no cover - non-fatal if deps missing
 
 # Jarvis Brain (Phase 9): identity core (self) + user model. Fully local.
 try:
-    from brain_routes import router as brain_router
+    from .brain_routes import router as brain_router
     app.include_router(brain_router)
     logger.info("Brain router mounted at /api/brain")
 except Exception as e:  # pragma: no cover - non-fatal if deps missing
@@ -74,7 +60,7 @@ except Exception as e:  # pragma: no cover - non-fatal if deps missing
 
 # Jarvis Brain (Phase 9 Step 3): persistent goal stack. Fully local.
 try:
-    from goals_routes import router as goals_router
+    from .goals_routes import router as goals_router
     app.include_router(goals_router)
     logger.info("Goals router mounted at /api/goals")
 except Exception as e:  # pragma: no cover - non-fatal if deps missing
@@ -82,7 +68,7 @@ except Exception as e:  # pragma: no cover - non-fatal if deps missing
 
 # Jarvis Brain (Phase 9 Step 4): metacognition (evaluator feedback loop).
 try:
-    from metacog_routes import router as metacog_router
+    from .metacog_routes import router as metacog_router
     app.include_router(metacog_router)
     logger.info("Metacog router mounted at /api/metacog")
 except Exception as e:  # pragma: no cover - non-fatal if deps missing
@@ -90,7 +76,7 @@ except Exception as e:  # pragma: no cover - non-fatal if deps missing
 
 # Jarvis Brain (Phase 9 Step 5): episodic reflection + pattern awareness.
 try:
-    from reflect_routes import router as reflect_router
+    from .reflect_routes import router as reflect_router
     app.include_router(reflect_router)
     logger.info("Reflect router mounted at /api/reflect")
 except Exception as e:  # pragma: no cover - non-fatal if deps missing
@@ -98,7 +84,7 @@ except Exception as e:  # pragma: no cover - non-fatal if deps missing
 
 # Jarvis Brain (Phase 8): camera security over HTTP. Fully local.
 try:
-    from security_routes import router as security_router
+    from .security_routes import router as security_router
     app.include_router(security_router)
     logger.info("Security router mounted at /api/security")
 except Exception as e:  # pragma: no cover - non-fatal if deps missing
@@ -106,7 +92,7 @@ except Exception as e:  # pragma: no cover - non-fatal if deps missing
 
 # Voice loop + Guardian (Phase 10). Fully local.
 try:
-    from assistant_routes import router as assistant_router
+    from .assistant_routes import router as assistant_router
     app.include_router(assistant_router)
     logger.info("Assistant router mounted at /api/assistant")
 except Exception as e:  # pragma: no cover - non-fatal if deps missing
@@ -114,7 +100,7 @@ except Exception as e:  # pragma: no cover - non-fatal if deps missing
 
 # Knowledge Graph, Morning Briefing, Skill Installer (Phase 11). Fully local.
 try:
-    from intel_routes import router as intel_router
+    from .intel_routes import router as intel_router
     app.include_router(intel_router)
     logger.info("Intel router mounted at /api (knowledge-graph/briefing/skills)")
 except Exception as e:  # pragma: no cover - non-fatal if deps missing
@@ -122,7 +108,7 @@ except Exception as e:  # pragma: no cover - non-fatal if deps missing
 
 # Continual Harness (Phase 12): self-refining skills/memory/lessons. Fully local.
 try:
-    from harness_routes import router as harness_router
+    from .harness_routes import router as harness_router
     app.include_router(harness_router)
     logger.info("Harness router mounted at /api/harness")
 except Exception as e:  # pragma: no cover - non-fatal if deps missing
@@ -130,7 +116,7 @@ except Exception as e:  # pragma: no cover - non-fatal if deps missing
 
 # MCP Bridge (Phase 13). Fully local.
 try:
-    from mcp_routes import router as mcp_router
+    from .mcp_routes import router as mcp_router
     app.include_router(mcp_router)
     logger.info("MCP router mounted at /api/mcp")
 except Exception as e:  # pragma: no cover - non-fatal if deps missing
@@ -138,7 +124,7 @@ except Exception as e:  # pragma: no cover - non-fatal if deps missing
 
 # Automation triggers (Phase 13 #5): webhook/schedule/file. Fully local.
 try:
-    from automation_routes import router as automation_router
+    from .automation_routes import router as automation_router
     app.include_router(automation_router)
     logger.info("Automation router mounted at /api/automation")
 except Exception as e:  # pragma: no cover - non-fatal if deps missing
@@ -147,7 +133,7 @@ except Exception as e:  # pragma: no cover - non-fatal if deps missing
 # Remote control (Phase 15 #6): LAN-only command surface. Token-authed via
 # the app-level OMNI_API_TOKEN / device-token middleware.
 try:
-    from remote_routes import router as remote_router
+    from .remote_routes import router as remote_router
     app.include_router(remote_router)
     logger.info("Remote router mounted at /api/remote")
 except Exception as e:  # pragma: no cover - non-fatal if deps missing
@@ -388,13 +374,11 @@ async def startup():
         logger.info(f"👁 ScreenWatcher ready (interval=30s, backend={watcher._cap_backend})")
     except Exception as e:
         logger.warning(f"ScreenWatcher init failed: {e}")
-    print("="*70)
-    print("  OMNI V3 FastAPI - Pretty Damn Good Backend")
-    print(f"  REPO_ROOT: {REPO_ROOT} (portable, not D:/Omni)")
-    print("  Sounddevice primary - fixes PyAudio -9999")
-    print("  Profile isolated Chrome - no email leak")
-    print("  Multi-agent: Planner->Executor->Monitor->Evaluator")
-    print("="*70)
+    print("=" * 70)
+    print("  OMNI experimental FastAPI backend")
+    print(f"  Package root: {REPO_ROOT}")
+    print(f"  Writable data root: {get_data_dir(create=False)}")
+    print("=" * 70)
     brain = get_brain()
     print(f"✅ Brain ready: {brain.ready}")
 
@@ -441,15 +425,13 @@ async def shutdown():
 @app.get("/")
 async def root():
     return {
-        "name": "OMNI V3 FastAPI",
-        "version": "3.1.0",
-        "description": "Pretty damn good backend for Next.js beautiful neomorphism UI",
-        "repo_root": str(REPO_ROOT),
-        "portable": True,
-        "no_hardcode": "No D:/Omni, uses Path(__file__).resolve()",
-        "endpoints": ["/api/health", "/api/devices", "/api/execute", "/api/demo/{type}", "/api/test-mic", "/ws"],
-        "frontend": "Next.js at http://localhost:3000 (npm run dev)",
-        "fix": "sounddevice fixes -9999, RMS 0.014 = LOUD"
+        "name": "OMNI experimental backend",
+        "version": __version__,
+        "description": "Local API surface for the OMNI personal assistant",
+        "package_root": str(REPO_ROOT),
+        "data_root": str(get_data_dir(create=False)),
+        "qualification": "experimental_not_release_qualified",
+        "endpoints": ["/api/health", "/api/devices", "/api/execute", "/api/demo/{type}", "/api/test-mic", "/ws"]
     }
 
 @app.get("/api/health")
@@ -463,14 +445,15 @@ async def health():
         pass
     return {
         "status": "ok",
+        "version": __version__,
         "brain_ready": brain.ready,
         "proactive_active": proactive_active,
-        "repo_root": str(REPO_ROOT),
-        "portable": True,
+        "package_root": str(REPO_ROOT),
+        "data_root": str(get_data_dir(create=False)),
+        "qualification": "experimental_not_release_qualified",
         "audio": brain.audio_mgr.get_best_name() if brain.audio_mgr else "No audio",
         "stt": brain.stt.get_status() if brain.stt else "No STT",
-        "tts": brain.tts.get_status() if brain.tts else "No TTS",
-        "fix": "sounddevice only, no PyAudio, no 404, no D:/Omni hardcode"
+        "tts": brain.tts.get_status() if brain.tts else "No TTS"
     }
 
 

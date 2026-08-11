@@ -71,7 +71,7 @@ function ToolCallCard({ tc, result, isActive }) {
           {Object.entries(tc.args).map(([k, v]) => (
             <span key={k} className="mr-2">
               <span className="text-white/30">{k}=</span>
-              <span className="text-sky-400/70">"{String(v).slice(0, 40)}"</span>
+              <span className="text-sky-400/70">&quot;{String(v).slice(0, 40)}&quot;</span>
             </span>
           ))}
         </div>
@@ -145,7 +145,7 @@ export default function Home() {
 
   // Boot - check brain
   useEffect(() => {
-    fetch('http://localhost:8765/api/health')
+    fetch('/api/python/health')
       .then(r => r.json())
       .then(d => {
         setBrainTier(d.brain_ready ? '🧠 LLM Brain Ready' : '⚠️ Brain Mock Mode')
@@ -178,7 +178,8 @@ export default function Home() {
     let reconnectTimer = null
     const connect = () => {
       try {
-        ws = new WebSocket('ws://localhost:8765/ws')
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+        ws = new WebSocket(`${protocol}//${window.location.host}/ws`)
         ws.onmessage = (event) => {
           try {
             const msg = JSON.parse(event.data)
@@ -229,7 +230,7 @@ export default function Home() {
     let mounted = true
     const pollProactive = async () => {
       try {
-        const res = await fetch('http://localhost:8765/api/proactive/suggestions')
+        const res = await fetch('/api/python/proactive/suggestions')
         const data = await res.json()
         if (!mounted) return
         const suggestions = data.suggestions || []
@@ -253,12 +254,12 @@ export default function Home() {
     let mounted = true
     const fetchGreeting = async () => {
       try {
-        const res = await fetch('http://localhost:8765/api/user/greeting')
+        const res = await fetch('/api/python/user/greeting')
         const data = await res.json()
         if (!mounted || data.status !== 'ok') return
-        // Show greeting as proactive banner if user has a name
-        if (data.has_name && !proactiveBanner) {
-          setProactiveBanner({
+        // Show the greeting only if no suggestion has already claimed the banner.
+        if (data.has_name) {
+          setProactiveBanner((current) => current || {
             id: 'greeting_today',
             title: data.greeting,
             body: data.body,
@@ -281,11 +282,12 @@ export default function Home() {
       }
     }
     fetchGreeting()
+    return () => { mounted = false }
   }, [])
 
   async function fetchDevices() {
     try {
-      const res = await fetch('http://localhost:8765/api/devices')
+      const res = await fetch('/api/python/devices')
       const data = await res.json()
       if (data.devices) setDevices(data.devices)
     } catch (e) { /* silent */ }
@@ -294,7 +296,7 @@ export default function Home() {
   // PROACTIVE-UI: dismiss a suggestion
   async function dismissProactive(suggestionId) {
     try {
-      await fetch('http://localhost:8765/api/proactive/action', {
+      await fetch('/api/python/proactive/action', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ suggestion_id: suggestionId, action: 'dismiss' }),
@@ -320,7 +322,7 @@ export default function Home() {
     }
     // Mark as acted on
     try {
-      await fetch('http://localhost:8765/api/proactive/action', {
+      await fetch('/api/python/proactive/action', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ suggestion_id: suggestion.id, action: 'act' }),
@@ -351,7 +353,7 @@ export default function Home() {
     setState('thinking')
 
     try {
-      const res = await fetch('http://localhost:8765/api/execute', {
+      const res = await fetch('/api/python/execute', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ command: text }),
@@ -422,7 +424,7 @@ export default function Home() {
       addLog('[Mic] Unmuted - waiting for input')
       // Start push-to-talk recording on backend
       try {
-        await fetch('http://localhost:8765/api/ptt/start', { method: 'POST' })
+        await fetch('/api/python/ptt/start', { method: 'POST' })
         addLog('[Mic] PTT recording started - speak now')
       } catch (e) {
         addLog(`[Mic] PTT start failed: ${e.message}`)
@@ -433,7 +435,7 @@ export default function Home() {
       addLog('[Mic] Muted - stopping recording')
       // Stop recording, transcribe, and execute
       try {
-        const res = await fetch('http://localhost:8765/api/ptt/stop', { method: 'POST' })
+        const res = await fetch('/api/python/ptt/stop', { method: 'POST' })
         const data = await res.json()
         if (data.text && data.text.trim()) {
           addLog(`[STT] Heard: "${data.text}"`)

@@ -19,11 +19,7 @@ except ImportError:
     import logging
     logger = logging.getLogger("FastAFStore")
 
-try:
-    from omni_v2.core.paths import DATA_DIR, MEMORY_DB_PATH
-except ImportError:
-    DATA_DIR = Path.cwd() / "data"
-    MEMORY_DB_PATH = DATA_DIR / "memory.db"
+from omni_v2.core.paths import DATA_DIR, MEMORY_DB_PATH
 
 class FastAFStore:
     """

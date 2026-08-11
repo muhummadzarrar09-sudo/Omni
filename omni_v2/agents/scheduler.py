@@ -11,10 +11,10 @@ Features:
 """
 from __future__ import annotations
 import json
+import os
 import time
 import uuid
 import threading
-from pathlib import Path
 from typing import Optional, Callable, Dict, Any, List
 from dataclasses import dataclass, field, asdict
 from datetime import datetime, timezone
@@ -59,11 +59,9 @@ class OmniScheduler:
         self.on_task_due = on_task_due
         self.tasks: Dict[str, ScheduledTask] = {}
         self._lock = threading.RLock()
-        try:
-            from omni_v2.core.paths import DATA_DIR
-            self.data_dir = DATA_DIR / "scheduler"
-        except Exception:
-            self.data_dir = Path.home() / ".omni_v2" / "scheduler"
+        from omni_v2.core.paths import get_data_dir
+
+        self.data_dir = get_data_dir() / "scheduler"
         self.data_dir.mkdir(parents=True, exist_ok=True)
         self.tasks_file = self.data_dir / "tasks.json"
         self._scheduler = None

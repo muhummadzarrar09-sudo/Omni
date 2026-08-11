@@ -22,10 +22,7 @@ except ImportError:
     import logging
     logger = logging.getLogger("PhotoMemory")
 
-try:
-    from omni_v2.core.paths import DATA_DIR
-except Exception:
-    DATA_DIR = Path.cwd() / "data"
+from omni_v2.core.paths import DATA_DIR
 
 PHOTO_INDEX = DATA_DIR / "brain" / "photo_memory.json"
 IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp"}

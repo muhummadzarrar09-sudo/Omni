@@ -2,9 +2,9 @@
 
 > **Generated file.** Edit `quality/batches.json` or `quality/policy.json`, then run `python scripts/quality_baseline.py generate`.
 
-**Current batch:** `none`  
-**Next batch:** `B01`  
-**Feature freeze:** `enabled`  
+**Current batch:** `none`<br>
+**Next batch:** `B02`<br>
+**Feature freeze:** `enabled`<br>
 **Execution rule:** one batch at a time; implementation, tests, audit, documentation, evidence, and the complete exit gate must pass before the next batch starts.
 
 ## Sequence
@@ -12,8 +12,8 @@
 | Batch | Title | Status | Dependency | Solo estimate |
 |---|---|---|---|---|
 | `B00` | Scope Lock and Truth Reset | `closed` | None | 2-4 focused days |
-| `B01` | Dependency and Package Rescue | `ready` | B00 | 4-8 focused days |
-| `B02` | Install, Configuration, and Startup Qualification | `locked` | B01 | 5-10 focused days plus Windows hardware access |
+| `B01` | Dependency and Package Rescue | `closed` | B00 | 4-8 focused days |
+| `B02` | Install, Configuration, and Startup Qualification | `ready` | B01 | 5-10 focused days plus Windows hardware access |
 | `B03` | Continuous Verification and Flake Elimination | `locked` | B02 | 6-12 focused days |
 | `B04` | Truthful Result Contract and Degraded Recovery | `locked` | B03 | 6-12 focused days |
 | `B05` | Canonical Capability and Tool Registry | `locked` | B04 | 8-15 focused days |
@@ -33,9 +33,9 @@
 
 ### B00 — Scope Lock and Truth Reset
 
-**Status:** `closed`  
-**Depends on:** `none`  
-**Solo estimate:** 2-4 focused days  
+**Status:** `closed`<br>
+**Depends on:** `none`<br>
+**Solo estimate:** 2-4 focused days<br>
 **Evidence:** `quality/evidence/B00/`
 
 **Objective:** Create one enforceable source of truth for what OMNI is, what exists, what is excluded, how it is scored, and how later work is allowed to proceed.
@@ -82,52 +82,69 @@
 
 **Exit gate**
 
-- [ ] Stable personal core, platforms, non-goals, and ten outcomes are explicitly locked
-- [ ] Every active capability group and active product source file is represented in the matrix
-- [ ] No capability is called stable before release qualification
-- [ ] README and docs index contain no known false completion, privacy, test, platform, installer, integration, voice-clone, sync, or tool-count claim
-- [ ] Historical/unqualified documents are unmistakably labeled
-- [ ] Baseline capture runs from one command and records every required non-passing probe
-- [ ] Feature freeze, batch order, and post-10 policy are machine-readable
-- [ ] Generated artifacts and local links pass drift validation
-- [ ] B00 audit evidence records commands, results, limitations, and approval
+- [x] Stable personal core, platforms, non-goals, and ten outcomes are explicitly locked
+- [x] Every active capability group and active product source file is represented in the matrix
+- [x] No capability is called stable before release qualification
+- [x] README and docs index contain no known false completion, privacy, test, platform, installer, integration, voice-clone, sync, or tool-count claim
+- [x] Historical/unqualified documents are unmistakably labeled
+- [x] Baseline capture runs from one command and records every required non-passing probe
+- [x] Feature freeze, batch order, and post-10 policy are machine-readable
+- [x] Generated artifacts and local links pass drift validation
+- [x] B00 audit evidence records commands, results, limitations, and approval
 
 ### B01 — Dependency and Package Rescue
 
-**Status:** `ready`  
-**Depends on:** `B00`  
-**Solo estimate:** 4-8 focused days  
+**Status:** `closed`<br>
+**Depends on:** `B00`<br>
+**Solo estimate:** 4-8 focused days<br>
 **Evidence:** `quality/evidence/B01/`
 
 **Objective:** Make supported Python installation profiles resolve reproducibly and produce complete wheel/sdist artifacts.
 
 **In scope**
 
-- Set and enforce supported Python range
+- Set and enforce the supported Python range and one canonical distribution version
 - Separate minimal/core, voice, vision, desktop, development, and full dependency profiles
-- Correct impossible and undeclared requirements, including NumPy, OpenCV Contrib, and cryptography
-- Replace manual package lists with complete package discovery
-- Build wheel and sdist and inspect exact contents
-- Run import and CLI smoke tests from installed artifacts outside the checkout
+- Map every locked-scope production import to declared profiles and correct impossible or undeclared requirements
+- Generate exact hash-locked CPython 3.11 Linux x86_64 profile resolutions and audit the development lock
+- Replace manual package lists with complete package discovery and explicit package data
+- Keep runtime state out of the source and installed package trees through one writable-data authority
+- Build wheel and sdist, inspect exact contents, and validate metadata
+- Install the exact artifact outside the checkout and smoke imports, resources, CLI dispatch, backend health, clean-CWD behavior, and installed-tree immutability
+- Repair and qualify the exact frontend lock, install-script policy, dependency tree, audit, lint, and production build
+- Document the qualified path and every interpreter, platform, native dependency, artifact, and release limitation
 
 **Target paths**
 
 - `pyproject.toml`
+- `requirements.txt`
 - `backend_fastapi/requirements.txt`
+- `requirements/locks/cpython-3.11-linux-x86_64/`
+- `quality/dependency-profiles.json`
 - `frontend_next/package.json`
 - `frontend_next/package-lock.json`
+- `scripts/resolve_profiles.py`
 - `scripts/check_package_contents.py`
+- `scripts/smoke_installed_artifact.py`
+- `scripts/audit_python_licenses.py`
 - `tests/package/`
+- `omni_v2/core/paths.py`
 - `docs/TROUBLESHOOTING.md`
+- `quality/evidence/B01/`
 
 **Verification commands**
 
-- `python -m pip install --dry-run '.[core]'`
-- `python -m pip install --dry-run '.[all]'`
+- `python scripts/resolve_profiles.py`
+- `python -m pip install --require-hashes -r requirements/locks/cpython-3.11-linux-x86_64/dev.txt`
+- `python -m pip check`
 - `python -m build`
-- `python scripts/check_package_contents.py dist/*.whl dist/*.tar.gz`
+- `python scripts/check_package_contents.py --json dist/*.whl dist/*.tar.gz`
+- `python -m twine check dist/*`
 - `python -m pytest -q tests/package`
-- `pip-audit`
+- `python scripts/smoke_installed_artifact.py dist/omni_agi-3.2.0-py3-none-any.whl`
+- `python -m pip_audit --require-hashes -r requirements/locks/cpython-3.11-linux-x86_64/dev.txt`
+- `python scripts/audit_python_licenses.py requirements/locks/cpython-3.11-linux-x86_64/dev.txt`
+- `cd frontend_next && npx --yes npm@12.0.2 ci && npx --yes npm@12.0.2 install-scripts ls && npx --yes npm@12.0.2 ls --all && npx --yes npm@12.0.2 audit --audit-level=low && npx --yes npm@12.0.2 run lint && npx --yes npm@12.0.2 run build`
 
 **Principal risks**
 
@@ -137,17 +154,17 @@
 
 **Exit gate**
 
-- [ ] Every declared profile resolves on every declared Python version
-- [ ] Wheel and sdist contain every intended runtime package and no runtime data leakage
-- [ ] Clean isolated artifact install starts CLI and backend smoke paths
-- [ ] Dependency declarations match imports for locked scope
-- [ ] B01 evidence reproduces without the repaired B00 environment
+- [x] Every declared profile resolves on every declared Python version
+- [x] Wheel and sdist contain every intended runtime package and no runtime data leakage
+- [x] Clean isolated artifact install starts CLI and backend smoke paths
+- [x] Dependency declarations match imports for locked scope
+- [x] B01 evidence reproduces without the repaired B00 environment
 
 ### B02 — Install, Configuration, and Startup Qualification
 
-**Status:** `locked`  
-**Depends on:** `B01`  
-**Solo estimate:** 5-10 focused days plus Windows hardware access  
+**Status:** `ready`<br>
+**Depends on:** `B01`<br>
+**Solo estimate:** 5-10 focused days plus Windows hardware access<br>
 **Evidence:** `quality/evidence/B02/`
 
 **Objective:** Provide one documented, idempotent primary-platform installation and startup path with centralized configuration and truthful diagnostics.
@@ -198,9 +215,9 @@
 
 ### B03 — Continuous Verification and Flake Elimination
 
-**Status:** `locked`  
-**Depends on:** `B02`  
-**Solo estimate:** 6-12 focused days  
+**Status:** `locked`<br>
+**Depends on:** `B02`<br>
+**Solo estimate:** 6-12 focused days<br>
 **Evidence:** `quality/evidence/B03/`
 
 **Objective:** Turn existing tests into deterministic release-relevant CI, remove hidden skips, and establish required quality jobs.
@@ -248,9 +265,9 @@
 
 ### B04 — Truthful Result Contract and Degraded Recovery
 
-**Status:** `locked`  
-**Depends on:** `B03`  
-**Solo estimate:** 6-12 focused days  
+**Status:** `locked`<br>
+**Depends on:** `B03`<br>
+**Solo estimate:** 6-12 focused days<br>
 **Evidence:** `quality/evidence/B04/`
 
 **Objective:** Make every user-visible operation report success, partial, unavailable, denied, failed, or demo consistently and prohibit false successful fallback.
@@ -297,9 +314,9 @@
 
 ### B05 — Canonical Capability and Tool Registry
 
-**Status:** `locked`  
-**Depends on:** `B04`  
-**Solo estimate:** 8-15 focused days  
+**Status:** `locked`<br>
+**Depends on:** `B04`<br>
+**Solo estimate:** 8-15 focused days<br>
 **Evidence:** `quality/evidence/B05/`
 
 **Objective:** Replace inflated aliases and overlapping dispatch with one registry for a small, excellent, measurable canonical tool set.
@@ -346,9 +363,9 @@
 
 ### B06 — API and Transport Contract Hardening
 
-**Status:** `locked`  
-**Depends on:** `B05`  
-**Solo estimate:** 8-15 focused days  
+**Status:** `locked`<br>
+**Depends on:** `B05`<br>
+**Solo estimate:** 8-15 focused days<br>
 **Evidence:** `quality/evidence/B06/`
 
 **Objective:** Reduce the broad HTTP/WebSocket surface to explicit owned contracts with secure defaults and generated drift checks.
@@ -396,9 +413,9 @@
 
 ### B07 — Data Ownership, Migration, and Recovery
 
-**Status:** `locked`  
-**Depends on:** `B06`  
-**Solo estimate:** 8-15 focused days  
+**Status:** `locked`<br>
+**Depends on:** `B06`<br>
+**Solo estimate:** 8-15 focused days<br>
 **Evidence:** `quality/evidence/B07/`
 
 **Objective:** Make all personal state inspectable, migratable, concurrency-safe, exportable, deletable, backed up, and restorable.
@@ -444,9 +461,9 @@
 
 ### B08 — Architecture Consolidation and Maintainability
 
-**Status:** `locked`  
-**Depends on:** `B07`  
-**Solo estimate:** 10-20 focused days  
+**Status:** `locked`<br>
+**Depends on:** `B07`<br>
+**Solo estimate:** 10-20 focused days<br>
 **Evidence:** `quality/evidence/B08/`
 
 **Objective:** Consolidate duplicate runtimes and oversized modules behind clear boundaries without changing qualified contracts.
@@ -494,9 +511,9 @@
 
 ### B09 — Desktop, File, Browser, Reminder, and Focus Workflows
 
-**Status:** `locked`  
-**Depends on:** `B08`  
-**Solo estimate:** 15-30 focused days plus Windows hardware access  
+**Status:** `locked`<br>
+**Depends on:** `B08`<br>
+**Solo estimate:** 15-30 focused days plus Windows hardware access<br>
 **Evidence:** `quality/evidence/B09/`
 
 **Objective:** Make W02-W07 excellent on the primary Windows platform with consent, verification, rollback, and recovery.
@@ -543,9 +560,9 @@
 
 ### B10 — Personal Memory and Briefing Workflows
 
-**Status:** `locked`  
-**Depends on:** `B09`  
-**Solo estimate:** 10-20 focused days plus owner evaluation  
+**Status:** `locked`<br>
+**Depends on:** `B09`<br>
+**Solo estimate:** 10-20 focused days plus owner evaluation<br>
 **Evidence:** `quality/evidence/B10/`
 
 **Objective:** Qualify W01 and W08 against real owner-controlled data with provenance, uncertainty, privacy controls, and deletion.
@@ -592,9 +609,9 @@
 
 ### B11 — Local Voice Workflow and Authenticity Closure
 
-**Status:** `locked`  
-**Depends on:** `B10`  
-**Solo estimate:** 12-25 focused days plus microphone/hardware access  
+**Status:** `locked`<br>
+**Depends on:** `B10`<br>
+**Solo estimate:** 12-25 focused days plus microphone/hardware access<br>
 **Evidence:** `quality/evidence/B11/`
 
 **Objective:** Qualify one push-to-talk STT and local TTS path for W09 and remove or isolate every misleading mock, placeholder, and demo claim in the assessed core.
@@ -641,9 +658,9 @@
 
 ### B12 — Security, Privacy, and Safe Autonomy
 
-**Status:** `locked`  
-**Depends on:** `B11`  
-**Solo estimate:** 12-25 focused days plus independent review  
+**Status:** `locked`<br>
+**Depends on:** `B11`<br>
+**Solo estimate:** 12-25 focused days plus independent review<br>
 **Evidence:** `quality/evidence/B12/`
 
 **Objective:** Threat-model and harden the exact stable attack surface, enforce privacy modes, and independently review high-risk behavior.
@@ -695,9 +712,9 @@
 
 ### B13 — User Experience, Accessibility, and Performance
 
-**Status:** `locked`  
-**Depends on:** `B12`  
-**Solo estimate:** 10-20 focused days plus owner usability sessions  
+**Status:** `locked`<br>
+**Depends on:** `B12`<br>
+**Solo estimate:** 10-20 focused days plus owner usability sessions<br>
 **Evidence:** `quality/evidence/B13/`
 
 **Objective:** Make the qualified personal core understandable, accessible, responsive, cancellable, recoverable, and genuinely faster than manual work.
@@ -743,9 +760,9 @@
 
 ### B14 — Documentation, Release, and Claim Integrity
 
-**Status:** `locked`  
-**Depends on:** `B13`  
-**Solo estimate:** 6-12 focused days  
+**Status:** `locked`<br>
+**Depends on:** `B13`<br>
+**Solo estimate:** 6-12 focused days<br>
 **Evidence:** `quality/evidence/B14/`
 
 **Objective:** Make every public command and claim derive from current contracts and prepare a reproducible signed release candidate.
@@ -794,9 +811,9 @@
 
 ### B15 — Thirty-Day Personal Dogfood Qualification
 
-**Status:** `locked`  
-**Depends on:** `B14`  
-**Solo estimate:** 30 consecutive calendar days plus repair time  
+**Status:** `locked`<br>
+**Depends on:** `B14`<br>
+**Solo estimate:** 30 consecutive calendar days plus repair time<br>
 **Evidence:** `quality/evidence/B15/`
 
 **Objective:** Prove OMNI Personal Core earns daily use for thirty consecutive days without changing the qualified scope underneath the evidence.
@@ -843,9 +860,9 @@
 
 ### B16 — Exact-Artifact Final Audit and 10/10 Freeze
 
-**Status:** `locked`  
-**Depends on:** `B15`  
-**Solo estimate:** 5-10 focused days after B15 plus independent review  
+**Status:** `locked`<br>
+**Depends on:** `B15`<br>
+**Solo estimate:** 5-10 focused days after B15 plus independent review<br>
 **Evidence:** `quality/evidence/B16/`
 
 **Objective:** Audit, install, attack, recover, and score the exact distributable artifacts, then freeze the personal-core 10/10 evidence before any expansion begins.

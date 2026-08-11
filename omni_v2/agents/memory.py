@@ -1,4 +1,4 @@
-"""Memory Agent V2 - Phase 2 Hardened - Data Inside Project Root (Unanimous)"""
+"""Memory agent using OMNI's canonical writable data directory."""
 import time
 from pathlib import Path
 from typing import List, Dict, Any, Optional
@@ -10,10 +10,7 @@ except ImportError:
     import logging
     logger = logging.getLogger("MemoryV2")
 
-try:
-    from omni_v2.core.paths import DATA_DIR
-except ImportError:
-    DATA_DIR = Path.home() / ".omni_v2"
+from omni_v2.core.paths import DATA_DIR
 
 try:
     from omni_v2.memory.sqlite_store import SQLiteMemoryStore
@@ -26,7 +23,7 @@ except ImportError as e:
     VectorMemoryStore = None
 
 class MemoryAgent:
-    """Memory V2 Phase 2 Hardened: SQLite + ChromaDB inside project/data/ for unanimous portability"""
+    """Memory agent backed by SQLite, ChromaDB, or a local JSON fallback."""
 
     def __init__(self, memory_dir: Optional[Path] = None):
         self.memory_dir = memory_dir or DATA_DIR
@@ -43,7 +40,7 @@ class MemoryAgent:
                 self.sqlite_store = SQLiteMemoryStore(self.memory_dir / "memory.db")
                 self.vector_store = VectorMemoryStore(self.memory_dir / "chroma")
                 self.use_new_stores = True
-                logger.info(f"MemoryAgent V2 Phase 2 Hardened: SQLite + ChromaDB in {self.memory_dir} (project data/)")
+                logger.info(f"MemoryAgent V2 Phase 2 Hardened: SQLite + ChromaDB in {self.memory_dir}")
             except Exception as e:
                 logger.warning(f"Failed to init new stores: {e} - using fallback")
                 self.use_new_stores = False
@@ -64,7 +61,7 @@ class MemoryAgent:
             try:
                 with open(self.long_term_file, 'r') as f:
                     self.long_term_memory = json.load(f)
-                logger.info(f"Loaded {len(self.long_term_memory)} fallback memories from project data/")
+                logger.info(f"Loaded {len(self.long_term_memory)} fallback memories from {self.long_term_file}")
             except Exception as e:
                 logger.warning(f"Failed to load fallback memory: {e}")
                 self.long_term_memory = {}
@@ -99,7 +96,7 @@ class MemoryAgent:
             }
             self._save_fallback()
 
-        logger.debug(f"Memory V2 remembered: '{key}' in project data/")
+        logger.debug(f"Memory V2 remembered: '{key}' in {self.memory_dir}")
 
     def recall(self, query: str) -> List[str]:
         results = []
@@ -130,7 +127,7 @@ class MemoryAgent:
                     else:
                         results.append(f"{k}: {v}")
 
-        logger.debug(f"Memory V2 recall '{query}' -> {len(results)} results from project data/")
+        logger.debug(f"Memory V2 recall '{query}' -> {len(results)} results from {self.memory_dir}")
         return results[:5]
 
     def get_context(self) -> List[Dict[str, Any]]:

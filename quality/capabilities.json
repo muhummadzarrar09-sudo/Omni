@@ -132,7 +132,7 @@
       "summary": "Core application composition, workspace paths, configuration, event bus, intent mapping, guardrails, and utility setup exist.",
       "known_gaps": [
         "Configuration is fragmented across modules and environment variables",
-        "Clean installed-package startup is not qualified",
+        "Installed artifact import, CLI, resource, and backend-health smoke passes, but whole-product startup is not qualified",
         "Several broad fallbacks obscure component availability"
       ],
       "paths": [
@@ -143,7 +143,7 @@
       ],
       "owner": "personal_repository_owner",
       "requirements": {
-        "audit_status": "known_subset_dependency_closure_in_B01",
+        "audit_status": "production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified",
         "packages": [],
         "models": [],
         "accounts_or_keys": [],
@@ -166,7 +166,7 @@
         ]
       },
       "verified_platforms": [],
-      "platform_note": "No release-qualified platform evidence exists at B00; target-platform qualification is scheduled in B13.",
+      "platform_note": "No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.",
       "data_access": [
         "configuration",
         "process state",
@@ -197,11 +197,11 @@
       "lifecycle": "experimental",
       "implementation": "partial",
       "target_scope": "personal_core",
-      "summary": "A large CLI and platform launch scripts exist, but documented one-click installation and distribution are broken.",
+      "summary": "Package discovery, artifacts, profile locks, and selected installed CLI paths are repaired; one-click product startup remains unqualified.",
       "known_gaps": [
-        "start.sh calls a missing root install.sh",
-        "Built wheel omits most application packages",
-        "Installer profiles and dependency constraints are not reproducible"
+        "Windows and Unix launchers have not passed target-platform install/start/stop/restart gates",
+        "CLI paths that depend on checkout-only frontend or root scripts are not installed-artifact qualified",
+        "Centralized configuration and process lifecycle remain B02 work"
       ],
       "paths": [
         "omni/*.py",
@@ -216,7 +216,7 @@
       ],
       "owner": "personal_repository_owner",
       "requirements": {
-        "audit_status": "known_subset_dependency_closure_in_B01",
+        "audit_status": "production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified",
         "packages": [],
         "models": [],
         "accounts_or_keys": [],
@@ -236,7 +236,7 @@
         ]
       },
       "verified_platforms": [],
-      "platform_note": "No release-qualified platform evidence exists at B00; target-platform qualification is scheduled in B13.",
+      "platform_note": "No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.",
       "data_access": [
         "configuration",
         "process state",
@@ -280,7 +280,7 @@
       ],
       "owner": "personal_repository_owner",
       "requirements": {
-        "audit_status": "known_subset_dependency_closure_in_B01",
+        "audit_status": "production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified",
         "packages": [
           "llama-cpp-python",
           "huggingface-hub"
@@ -310,7 +310,7 @@
         ]
       },
       "verified_platforms": [],
-      "platform_note": "No release-qualified platform evidence exists at B00; target-platform qualification is scheduled in B13.",
+      "platform_note": "No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.",
       "data_access": [
         "owner requests",
         "prompts",
@@ -358,7 +358,7 @@
       ],
       "owner": "personal_repository_owner",
       "requirements": {
-        "audit_status": "known_subset_dependency_closure_in_B01",
+        "audit_status": "production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified",
         "packages": [],
         "models": [],
         "accounts_or_keys": [],
@@ -382,7 +382,7 @@
         ]
       },
       "verified_platforms": [],
-      "platform_note": "No release-qualified platform evidence exists at B00; target-platform qualification is scheduled in B13.",
+      "platform_note": "No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.",
       "data_access": [
         "owner requests",
         "prompts",
@@ -427,7 +427,7 @@
       ],
       "owner": "personal_repository_owner",
       "requirements": {
-        "audit_status": "known_subset_dependency_closure_in_B01",
+        "audit_status": "production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified",
         "packages": [],
         "models": [],
         "accounts_or_keys": [],
@@ -451,7 +451,7 @@
         ]
       },
       "verified_platforms": [],
-      "platform_note": "No release-qualified platform evidence exists at B00; target-platform qualification is scheduled in B13.",
+      "platform_note": "No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.",
       "data_access": [
         "owner requests",
         "prompts",
@@ -492,7 +492,7 @@
       ],
       "owner": "personal_repository_owner",
       "requirements": {
-        "audit_status": "known_subset_dependency_closure_in_B01",
+        "audit_status": "production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified",
         "packages": [],
         "models": [],
         "accounts_or_keys": [],
@@ -515,7 +515,7 @@
         ]
       },
       "verified_platforms": [],
-      "platform_note": "No release-qualified platform evidence exists at B00; target-platform qualification is scheduled in B13.",
+      "platform_note": "No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.",
       "data_access": [
         "owner requests",
         "prompts",
@@ -557,7 +557,7 @@
       ],
       "owner": "personal_repository_owner",
       "requirements": {
-        "audit_status": "known_subset_dependency_closure_in_B01",
+        "audit_status": "production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified",
         "packages": [],
         "models": [],
         "accounts_or_keys": [],
@@ -580,7 +580,7 @@
         ]
       },
       "verified_platforms": [],
-      "platform_note": "No release-qualified platform evidence exists at B00; target-platform qualification is scheduled in B13.",
+      "platform_note": "No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.",
       "data_access": [
         "owner requests",
         "prompts",
@@ -623,7 +623,7 @@
       ],
       "owner": "personal_repository_owner",
       "requirements": {
-        "audit_status": "known_subset_dependency_closure_in_B01",
+        "audit_status": "production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified",
         "packages": [],
         "models": [],
         "accounts_or_keys": [],
@@ -647,7 +647,7 @@
         ]
       },
       "verified_platforms": [],
-      "platform_note": "No release-qualified platform evidence exists at B00; target-platform qualification is scheduled in B13.",
+      "platform_note": "No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.",
       "data_access": [
         "owner requests",
         "prompts",
@@ -691,7 +691,7 @@
       ],
       "owner": "personal_repository_owner",
       "requirements": {
-        "audit_status": "known_subset_dependency_closure_in_B01",
+        "audit_status": "production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified",
         "packages": [],
         "models": [],
         "accounts_or_keys": [],
@@ -714,7 +714,7 @@
         ]
       },
       "verified_platforms": [],
-      "platform_note": "No release-qualified platform evidence exists at B00; target-platform qualification is scheduled in B13.",
+      "platform_note": "No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.",
       "data_access": [
         "owner profile",
         "sessions",
@@ -759,7 +759,7 @@
       ],
       "owner": "personal_repository_owner",
       "requirements": {
-        "audit_status": "known_subset_dependency_closure_in_B01",
+        "audit_status": "production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified",
         "packages": [
           "numpy",
           "configured vector/embedding backend"
@@ -789,7 +789,7 @@
         ]
       },
       "verified_platforms": [],
-      "platform_note": "No release-qualified platform evidence exists at B00; target-platform qualification is scheduled in B13.",
+      "platform_note": "No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.",
       "data_access": [
         "owner profile",
         "sessions",
@@ -834,7 +834,7 @@
       ],
       "owner": "personal_repository_owner",
       "requirements": {
-        "audit_status": "known_subset_dependency_closure_in_B01",
+        "audit_status": "production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified",
         "packages": [],
         "models": [],
         "accounts_or_keys": [],
@@ -857,7 +857,7 @@
         ]
       },
       "verified_platforms": [],
-      "platform_note": "No release-qualified platform evidence exists at B00; target-platform qualification is scheduled in B13.",
+      "platform_note": "No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.",
       "data_access": [
         "owner profile",
         "sessions",
@@ -900,7 +900,7 @@
       ],
       "owner": "personal_repository_owner",
       "requirements": {
-        "audit_status": "known_subset_dependency_closure_in_B01",
+        "audit_status": "production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified",
         "packages": [],
         "models": [],
         "accounts_or_keys": [],
@@ -922,7 +922,7 @@
         ]
       },
       "verified_platforms": [],
-      "platform_note": "No release-qualified platform evidence exists at B00; target-platform qualification is scheduled in B13.",
+      "platform_note": "No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.",
       "data_access": [
         "owner commands",
         "calendar",
@@ -965,7 +965,7 @@
       ],
       "owner": "personal_repository_owner",
       "requirements": {
-        "audit_status": "known_subset_dependency_closure_in_B01",
+        "audit_status": "production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified",
         "packages": [],
         "models": [],
         "accounts_or_keys": [],
@@ -988,7 +988,7 @@
         ]
       },
       "verified_platforms": [],
-      "platform_note": "No release-qualified platform evidence exists at B00; target-platform qualification is scheduled in B13.",
+      "platform_note": "No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.",
       "data_access": [
         "owner commands",
         "calendar",
@@ -1037,7 +1037,7 @@
       ],
       "owner": "personal_repository_owner",
       "requirements": {
-        "audit_status": "known_subset_dependency_closure_in_B01",
+        "audit_status": "production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified",
         "packages": [],
         "models": [],
         "accounts_or_keys": [],
@@ -1061,7 +1061,7 @@
         ]
       },
       "verified_platforms": [],
-      "platform_note": "No release-qualified platform evidence exists at B00; target-platform qualification is scheduled in B13.",
+      "platform_note": "No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.",
       "data_access": [
         "owner commands",
         "calendar",
@@ -1103,7 +1103,7 @@
       ],
       "owner": "personal_repository_owner",
       "requirements": {
-        "audit_status": "known_subset_dependency_closure_in_B01",
+        "audit_status": "production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified",
         "packages": [],
         "models": [],
         "accounts_or_keys": [],
@@ -1125,7 +1125,7 @@
         ]
       },
       "verified_platforms": [],
-      "platform_note": "No release-qualified platform evidence exists at B00; target-platform qualification is scheduled in B13.",
+      "platform_note": "No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.",
       "data_access": [
         "task definitions",
         "triggers",
@@ -1165,7 +1165,7 @@
       ],
       "owner": "personal_repository_owner",
       "requirements": {
-        "audit_status": "known_subset_dependency_closure_in_B01",
+        "audit_status": "production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified",
         "packages": [],
         "models": [],
         "accounts_or_keys": [],
@@ -1187,7 +1187,7 @@
         ]
       },
       "verified_platforms": [],
-      "platform_note": "No release-qualified platform evidence exists at B00; target-platform qualification is scheduled in B13.",
+      "platform_note": "No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.",
       "data_access": [
         "task definitions",
         "triggers",
@@ -1229,7 +1229,7 @@
       ],
       "owner": "personal_repository_owner",
       "requirements": {
-        "audit_status": "known_subset_dependency_closure_in_B01",
+        "audit_status": "production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified",
         "packages": [],
         "models": [],
         "accounts_or_keys": [],
@@ -1254,7 +1254,7 @@
         ]
       },
       "verified_platforms": [],
-      "platform_note": "No release-qualified platform evidence exists at B00; target-platform qualification is scheduled in B13.",
+      "platform_note": "No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.",
       "data_access": [
         "task definitions",
         "triggers",
@@ -1298,7 +1298,7 @@
       ],
       "owner": "personal_repository_owner",
       "requirements": {
-        "audit_status": "known_subset_dependency_closure_in_B01",
+        "audit_status": "production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified",
         "packages": [],
         "models": [],
         "accounts_or_keys": [],
@@ -1320,7 +1320,7 @@
         ]
       },
       "verified_platforms": [],
-      "platform_note": "No release-qualified platform evidence exists at B00; target-platform qualification is scheduled in B13.",
+      "platform_note": "No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.",
       "data_access": [
         "task definitions",
         "triggers",
@@ -1362,7 +1362,7 @@
       ],
       "owner": "personal_repository_owner",
       "requirements": {
-        "audit_status": "known_subset_dependency_closure_in_B01",
+        "audit_status": "production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified",
         "packages": [],
         "models": [],
         "accounts_or_keys": [],
@@ -1384,7 +1384,7 @@
         ]
       },
       "verified_platforms": [],
-      "platform_note": "No release-qualified platform evidence exists at B00; target-platform qualification is scheduled in B13.",
+      "platform_note": "No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.",
       "data_access": [
         "task definitions",
         "triggers",
@@ -1425,7 +1425,7 @@
       ],
       "owner": "personal_repository_owner",
       "requirements": {
-        "audit_status": "known_subset_dependency_closure_in_B01",
+        "audit_status": "production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified",
         "packages": [],
         "models": [],
         "accounts_or_keys": [],
@@ -1448,7 +1448,7 @@
         ]
       },
       "verified_platforms": [],
-      "platform_note": "No release-qualified platform evidence exists at B00; target-platform qualification is scheduled in B13.",
+      "platform_note": "No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.",
       "data_access": [
         "process health",
         "file observations",
@@ -1490,7 +1490,7 @@
       ],
       "owner": "personal_repository_owner",
       "requirements": {
-        "audit_status": "known_subset_dependency_closure_in_B01",
+        "audit_status": "production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified",
         "packages": [],
         "models": [],
         "accounts_or_keys": [],
@@ -1512,7 +1512,7 @@
         ]
       },
       "verified_platforms": [],
-      "platform_note": "No release-qualified platform evidence exists at B00; target-platform qualification is scheduled in B13.",
+      "platform_note": "No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.",
       "data_access": [
         "owner commands",
         "tool arguments/results",
@@ -1551,7 +1551,7 @@
       ],
       "owner": "personal_repository_owner",
       "requirements": {
-        "audit_status": "known_subset_dependency_closure_in_B01",
+        "audit_status": "production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified",
         "packages": [],
         "models": [],
         "accounts_or_keys": [],
@@ -1571,7 +1571,7 @@
         ]
       },
       "verified_platforms": [],
-      "platform_note": "No release-qualified platform evidence exists at B00; target-platform qualification is scheduled in B13.",
+      "platform_note": "No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.",
       "data_access": [
         "owner commands",
         "tool arguments/results",
@@ -1611,7 +1611,7 @@
       ],
       "owner": "personal_repository_owner",
       "requirements": {
-        "audit_status": "known_subset_dependency_closure_in_B01",
+        "audit_status": "production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified",
         "packages": [
           "pyautogui",
           "Windows platform APIs"
@@ -1637,7 +1637,7 @@
         ]
       },
       "verified_platforms": [],
-      "platform_note": "No release-qualified platform evidence exists at B00; target-platform qualification is scheduled in B13.",
+      "platform_note": "No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.",
       "data_access": [
         "owner commands",
         "tool arguments/results",
@@ -1668,7 +1668,7 @@
       "summary": "Legacy browser, isolated-profile browser, and Playwright browser implementations exist.",
       "known_gaps": [
         "Multiple overlapping implementations need consolidation",
-        "Browser dependencies and binaries are not clean-install qualified",
+        "The desktop profile resolves on B01 Linux, but browser binaries and end-to-end startup are not clean-install qualified",
         "Action verification and robust page-state contracts are incomplete"
       ],
       "paths": [
@@ -1678,7 +1678,7 @@
       ],
       "owner": "personal_repository_owner",
       "requirements": {
-        "audit_status": "known_subset_dependency_closure_in_B01",
+        "audit_status": "production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified",
         "packages": [
           "Playwright and/or Selenium",
           "compatible browser"
@@ -1704,7 +1704,7 @@
         ]
       },
       "verified_platforms": [],
-      "platform_note": "No release-qualified platform evidence exists at B00; target-platform qualification is scheduled in B13.",
+      "platform_note": "No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.",
       "data_access": [
         "owner commands",
         "tool arguments/results",
@@ -1748,7 +1748,7 @@
       ],
       "owner": "personal_repository_owner",
       "requirements": {
-        "audit_status": "known_subset_dependency_closure_in_B01",
+        "audit_status": "production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified",
         "packages": [
           "pyautogui",
           "application-specific desktop interfaces"
@@ -1774,7 +1774,7 @@
         ]
       },
       "verified_platforms": [],
-      "platform_note": "No release-qualified platform evidence exists at B00; target-platform qualification is scheduled in B13.",
+      "platform_note": "No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.",
       "data_access": [
         "owner commands",
         "tool arguments/results",
@@ -1813,7 +1813,7 @@
       ],
       "owner": "personal_repository_owner",
       "requirements": {
-        "audit_status": "known_subset_dependency_closure_in_B01",
+        "audit_status": "production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified",
         "packages": [],
         "models": [
           "configured local language model"
@@ -1835,7 +1835,7 @@
         ]
       },
       "verified_platforms": [],
-      "platform_note": "No release-qualified platform evidence exists at B00; target-platform qualification is scheduled in B13.",
+      "platform_note": "No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.",
       "data_access": [
         "owner commands",
         "tool arguments/results",
@@ -1876,7 +1876,7 @@
       ],
       "owner": "personal_repository_owner",
       "requirements": {
-        "audit_status": "known_subset_dependency_closure_in_B01",
+        "audit_status": "production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified",
         "packages": [],
         "models": [],
         "accounts_or_keys": [
@@ -1898,7 +1898,7 @@
         ]
       },
       "verified_platforms": [],
-      "platform_note": "No release-qualified platform evidence exists at B00; target-platform qualification is scheduled in B13.",
+      "platform_note": "No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.",
       "data_access": [
         "canned/demo connector inputs and outputs"
       ],
@@ -1938,7 +1938,7 @@
       ],
       "owner": "personal_repository_owner",
       "requirements": {
-        "audit_status": "known_subset_dependency_closure_in_B01",
+        "audit_status": "production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified",
         "packages": [
           "optional WebSocket/push transport"
         ],
@@ -1968,7 +1968,7 @@
         ]
       },
       "verified_platforms": [],
-      "platform_note": "No release-qualified platform evidence exists at B00; target-platform qualification is scheduled in B13.",
+      "platform_note": "No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.",
       "data_access": [
         "notification content",
         "preferences",
@@ -2020,7 +2020,7 @@
       ],
       "owner": "personal_repository_owner",
       "requirements": {
-        "audit_status": "known_subset_dependency_closure_in_B01",
+        "audit_status": "production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified",
         "packages": [
           "sounddevice",
           "numpy",
@@ -2052,7 +2052,7 @@
         ]
       },
       "verified_platforms": [],
-      "platform_note": "No release-qualified platform evidence exists at B00; target-platform qualification is scheduled in B13.",
+      "platform_note": "No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.",
       "data_access": [
         "microphone audio",
         "transcripts",
@@ -2095,7 +2095,7 @@
       ],
       "owner": "personal_repository_owner",
       "requirements": {
-        "audit_status": "known_subset_dependency_closure_in_B01",
+        "audit_status": "production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified",
         "packages": [
           "pyttsx3 or selected local TTS adapter",
           "edge-tts only in online mode"
@@ -2126,7 +2126,7 @@
         ]
       },
       "verified_platforms": [],
-      "platform_note": "No release-qualified platform evidence exists at B00; target-platform qualification is scheduled in B13.",
+      "platform_note": "No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.",
       "data_access": [
         "microphone audio",
         "transcripts",
@@ -2170,7 +2170,7 @@
       ],
       "owner": "personal_repository_owner",
       "requirements": {
-        "audit_status": "known_subset_dependency_closure_in_B01",
+        "audit_status": "production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified",
         "packages": [
           "openwakeword or pvporcupine"
         ],
@@ -2202,7 +2202,7 @@
         ]
       },
       "verified_platforms": [],
-      "platform_note": "No release-qualified platform evidence exists at B00; target-platform qualification is scheduled in B13.",
+      "platform_note": "No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.",
       "data_access": [
         "microphone audio",
         "transcripts",
@@ -2245,7 +2245,7 @@
       ],
       "owner": "personal_repository_owner",
       "requirements": {
-        "audit_status": "known_subset_dependency_closure_in_B01",
+        "audit_status": "production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified",
         "packages": [
           "audio capture dependencies; training stack is absent"
         ],
@@ -2274,7 +2274,7 @@
         ]
       },
       "verified_platforms": [],
-      "platform_note": "No release-qualified platform evidence exists at B00; target-platform qualification is scheduled in B13.",
+      "platform_note": "No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.",
       "data_access": [
         "microphone audio",
         "transcripts",
@@ -2314,7 +2314,7 @@
       ],
       "owner": "personal_repository_owner",
       "requirements": {
-        "audit_status": "known_subset_dependency_closure_in_B01",
+        "audit_status": "production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified",
         "packages": [
           "Pillow",
           "pytesseract",
@@ -2346,7 +2346,7 @@
         ]
       },
       "verified_platforms": [],
-      "platform_note": "No release-qualified platform evidence exists at B00; target-platform qualification is scheduled in B13.",
+      "platform_note": "No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.",
       "data_access": [
         "screenshots/images",
         "OCR text",
@@ -2388,7 +2388,7 @@
       ],
       "owner": "personal_repository_owner",
       "requirements": {
-        "audit_status": "known_subset_dependency_closure_in_B01",
+        "audit_status": "production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified",
         "packages": [],
         "models": [],
         "accounts_or_keys": [],
@@ -2410,7 +2410,7 @@
         ]
       },
       "verified_platforms": [],
-      "platform_note": "No release-qualified platform evidence exists at B00; target-platform qualification is scheduled in B13.",
+      "platform_note": "No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.",
       "data_access": [
         "commands",
         "paths",
@@ -2442,7 +2442,7 @@
       "target_scope": "personal_core",
       "summary": "Fernet-backed credential storage with permissions and tests exists.",
       "known_gaps": [
-        "Cryptography is not correctly declared in the root package",
+        "Cryptography is declared and resolved in the B01 core profile, but vault behavior is not release-qualified",
         "OS credential-store integration and key lifecycle need qualification",
         "Backup/recovery and multi-profile behavior require release tests"
       ],
@@ -2451,7 +2451,7 @@
       ],
       "owner": "personal_repository_owner",
       "requirements": {
-        "audit_status": "known_subset_dependency_closure_in_B01",
+        "audit_status": "production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified",
         "packages": [
           "cryptography"
         ],
@@ -2478,7 +2478,7 @@
         ]
       },
       "verified_platforms": [],
-      "platform_note": "No release-qualified platform evidence exists at B00; target-platform qualification is scheduled in B13.",
+      "platform_note": "No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.",
       "data_access": [
         "commands",
         "paths",
@@ -2510,7 +2510,7 @@
       "target_scope": "post_10_candidate",
       "summary": "LBPH/gradient/deep verifier selection, guard monitor, machine lock, and lockdown controller code exists.",
       "known_gaps": [
-        "OpenCV contrib dependency is misdeclared",
+        "OpenCV Contrib is declared in the B01 vision profile, but no native vision installation or hardware gate has run",
         "Biometric accuracy, spoof resistance, and hardware behavior are not qualified",
         "Security-sensitive fallbacks require explicit policy"
       ],
@@ -2519,7 +2519,7 @@
       ],
       "owner": "personal_repository_owner",
       "requirements": {
-        "audit_status": "known_subset_dependency_closure_in_B01",
+        "audit_status": "production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified",
         "packages": [
           "opencv-contrib-python or selected verifier"
         ],
@@ -2549,7 +2549,7 @@
         ]
       },
       "verified_platforms": [],
-      "platform_note": "No release-qualified platform evidence exists at B00; target-platform qualification is scheduled in B13.",
+      "platform_note": "No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.",
       "data_access": [
         "commands",
         "paths",
@@ -2592,7 +2592,7 @@
       ],
       "owner": "personal_repository_owner",
       "requirements": {
-        "audit_status": "known_subset_dependency_closure_in_B01",
+        "audit_status": "production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified",
         "packages": [],
         "models": [],
         "accounts_or_keys": [],
@@ -2614,7 +2614,7 @@
         ]
       },
       "verified_platforms": [],
-      "platform_note": "No release-qualified platform evidence exists at B00; target-platform qualification is scheduled in B13.",
+      "platform_note": "No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.",
       "data_access": [
         "skill source",
         "package metadata",
@@ -2655,7 +2655,7 @@
       ],
       "owner": "personal_repository_owner",
       "requirements": {
-        "audit_status": "known_subset_dependency_closure_in_B01",
+        "audit_status": "production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified",
         "packages": [
           "HTTP/archive/install tooling"
         ],
@@ -2682,7 +2682,7 @@
         ]
       },
       "verified_platforms": [],
-      "platform_note": "No release-qualified platform evidence exists at B00; target-platform qualification is scheduled in B13.",
+      "platform_note": "No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.",
       "data_access": [
         "skill source",
         "package metadata",
@@ -2724,7 +2724,7 @@
       ],
       "owner": "personal_repository_owner",
       "requirements": {
-        "audit_status": "known_subset_dependency_closure_in_B01",
+        "audit_status": "production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified",
         "packages": [],
         "models": [
           "configured language model"
@@ -2748,7 +2748,7 @@
         ]
       },
       "verified_platforms": [],
-      "platform_note": "No release-qualified platform evidence exists at B00; target-platform qualification is scheduled in B13.",
+      "platform_note": "No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.",
       "data_access": [
         "skill source",
         "package metadata",
@@ -2791,7 +2791,7 @@
       ],
       "owner": "personal_repository_owner",
       "requirements": {
-        "audit_status": "known_subset_dependency_closure_in_B01",
+        "audit_status": "production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified",
         "packages": [],
         "models": [],
         "accounts_or_keys": [],
@@ -2814,7 +2814,7 @@
         ]
       },
       "verified_platforms": [],
-      "platform_note": "No release-qualified platform evidence exists at B00; target-platform qualification is scheduled in B13.",
+      "platform_note": "No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.",
       "data_access": [
         "skill source",
         "package metadata",
@@ -2856,7 +2856,7 @@
       ],
       "owner": "personal_repository_owner",
       "requirements": {
-        "audit_status": "known_subset_dependency_closure_in_B01",
+        "audit_status": "production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified",
         "packages": [
           "fastapi",
           "uvicorn",
@@ -2883,7 +2883,7 @@
         ]
       },
       "verified_platforms": [],
-      "platform_note": "No release-qualified platform evidence exists at B00; target-platform qualification is scheduled in B13.",
+      "platform_note": "No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.",
       "data_access": [
         "requests",
         "responses",
@@ -2917,10 +2917,8 @@
       "summary": "A cinematic Next.js interface and API proxy routes build successfully.",
       "known_gaps": [
         "Large monolithic client page",
-        "Hard-coded localhost backend/WebSocket assumptions",
         "Successful mock execute fallback",
-        "Lint is unconfigured",
-        "Dependency audit has critical/high findings"
+        "Frontend clean install, dependency audit, lint, and build pass on B01 Linux; product startup and browser E2E remain unqualified"
       ],
       "paths": [
         "frontend_next/app/*.js",
@@ -2931,7 +2929,7 @@
       ],
       "owner": "personal_repository_owner",
       "requirements": {
-        "audit_status": "known_subset_dependency_closure_in_B01",
+        "audit_status": "production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified",
         "packages": [
           "packages locked by frontend_next/package-lock.json"
         ],
@@ -2956,7 +2954,7 @@
         ]
       },
       "verified_platforms": [],
-      "platform_note": "No release-qualified platform evidence exists at B00; target-platform qualification is scheduled in B13.",
+      "platform_note": "No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.",
       "data_access": [
         "commands",
         "responses",
@@ -3002,7 +3000,7 @@
       ],
       "owner": "personal_repository_owner",
       "requirements": {
-        "audit_status": "known_subset_dependency_closure_in_B01",
+        "audit_status": "production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified",
         "packages": [
           "selected Tkinter/PySide/desktop GUI stack"
         ],
@@ -3030,7 +3028,7 @@
         ]
       },
       "verified_platforms": [],
-      "platform_note": "No release-qualified platform evidence exists at B00; target-platform qualification is scheduled in B13.",
+      "platform_note": "No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.",
       "data_access": [
         "commands",
         "responses",
@@ -3073,7 +3071,7 @@
       ],
       "owner": "personal_repository_owner",
       "requirements": {
-        "audit_status": "known_subset_dependency_closure_in_B01",
+        "audit_status": "production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified",
         "packages": [
           "modern mobile browser"
         ],
@@ -3100,7 +3098,7 @@
         ]
       },
       "verified_platforms": [],
-      "platform_note": "No release-qualified platform evidence exists at B00; target-platform qualification is scheduled in B13.",
+      "platform_note": "No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.",
       "data_access": [
         "pairing data",
         "commands",
@@ -3142,7 +3140,7 @@
       ],
       "owner": "personal_repository_owner",
       "requirements": {
-        "audit_status": "known_subset_dependency_closure_in_B01",
+        "audit_status": "production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified",
         "packages": [
           "optional mDNS/network adapters"
         ],
@@ -3170,7 +3168,7 @@
         ]
       },
       "verified_platforms": [],
-      "platform_note": "No release-qualified platform evidence exists at B00; target-platform qualification is scheduled in B13.",
+      "platform_note": "No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.",
       "data_access": [
         "device identity",
         "LAN addresses",
@@ -3213,7 +3211,7 @@
       ],
       "owner": "personal_repository_owner",
       "requirements": {
-        "audit_status": "known_subset_dependency_closure_in_B01",
+        "audit_status": "production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified",
         "packages": [],
         "models": [],
         "accounts_or_keys": [],
@@ -3233,7 +3231,7 @@
         ]
       },
       "verified_platforms": [],
-      "platform_note": "No release-qualified platform evidence exists at B00; target-platform qualification is scheduled in B13.",
+      "platform_note": "No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.",
       "data_access": [
         "owner state selected for synchronization",
         "node/transport metadata"
@@ -3270,7 +3268,7 @@
       ],
       "owner": "personal_repository_owner",
       "requirements": {
-        "audit_status": "known_subset_dependency_closure_in_B01",
+        "audit_status": "production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified",
         "packages": [],
         "models": [],
         "accounts_or_keys": [],
@@ -3292,7 +3290,7 @@
         ]
       },
       "verified_platforms": [],
-      "platform_note": "No release-qualified platform evidence exists at B00; target-platform qualification is scheduled in B13.",
+      "platform_note": "No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.",
       "data_access": [
         "owner state selected for synchronization",
         "node/transport metadata"
@@ -3332,7 +3330,7 @@
       ],
       "owner": "personal_repository_owner",
       "requirements": {
-        "audit_status": "known_subset_dependency_closure_in_B01",
+        "audit_status": "production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified",
         "packages": [
           "real MCP adapter dependency not selected"
         ],
@@ -3358,7 +3356,7 @@
         ]
       },
       "verified_platforms": [],
-      "platform_note": "No release-qualified platform evidence exists at B00; target-platform qualification is scheduled in B13.",
+      "platform_note": "No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.",
       "data_access": [
         "tool schemas",
         "tool arguments/results",
@@ -3399,7 +3397,7 @@
       ],
       "owner": "personal_repository_owner",
       "requirements": {
-        "audit_status": "known_subset_dependency_closure_in_B01",
+        "audit_status": "production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified",
         "packages": [],
         "models": [],
         "accounts_or_keys": [],
@@ -3421,7 +3419,7 @@
         ]
       },
       "verified_platforms": [],
-      "platform_note": "No release-qualified platform evidence exists at B00; target-platform qualification is scheduled in B13.",
+      "platform_note": "No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.",
       "data_access": [
         "local application state",
         "backup manifests",
@@ -3460,7 +3458,7 @@
       ],
       "owner": "personal_repository_owner",
       "requirements": {
-        "audit_status": "known_subset_dependency_closure_in_B01",
+        "audit_status": "production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified",
         "packages": [],
         "models": [],
         "accounts_or_keys": [],
@@ -3482,7 +3480,7 @@
         ]
       },
       "verified_platforms": [],
-      "platform_note": "No release-qualified platform evidence exists at B00; target-platform qualification is scheduled in B13.",
+      "platform_note": "No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.",
       "data_access": [
         "owner command",
         "approved paths",
@@ -3522,7 +3520,7 @@
       ],
       "owner": "personal_repository_owner",
       "requirements": {
-        "audit_status": "known_subset_dependency_closure_in_B01",
+        "audit_status": "production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified",
         "packages": [],
         "models": [],
         "accounts_or_keys": [],
@@ -3545,7 +3543,7 @@
         ]
       },
       "verified_platforms": [],
-      "platform_note": "No release-qualified platform evidence exists at B00; target-platform qualification is scheduled in B13.",
+      "platform_note": "No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.",
       "data_access": [
         "benchmark cases",
         "timings",
@@ -3585,7 +3583,7 @@
       ],
       "owner": "personal_repository_owner",
       "requirements": {
-        "audit_status": "known_subset_dependency_closure_in_B01",
+        "audit_status": "production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified",
         "packages": [],
         "models": [
           "configured language model"
@@ -3607,7 +3605,7 @@
         ]
       },
       "verified_platforms": [],
-      "platform_note": "No release-qualified platform evidence exists at B00; target-platform qualification is scheduled in B13.",
+      "platform_note": "No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.",
       "data_access": [
         "owner commands",
         "calendar",

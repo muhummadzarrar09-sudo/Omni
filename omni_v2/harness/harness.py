@@ -40,10 +40,7 @@ except ImportError:
     import logging
     logger = logging.getLogger("Harness")
 
-try:
-    from omni_v2.core.paths import DATA_DIR
-except Exception:
-    DATA_DIR = Path.cwd() / "data"
+from omni_v2.core.paths import DATA_DIR
 
 HARNESS_DIR = DATA_DIR / "brain" / "harness"
 SKILLS_DIR = HARNESS_DIR / "skills"

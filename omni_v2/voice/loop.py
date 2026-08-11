@@ -15,7 +15,6 @@ Bagillion Percent = 4 STT tiers * 4 attempts each = 16 tries STT + 3 TTS tiers *
 
 import time
 import threading
-from pathlib import Path
 from typing import Callable, Optional
 import numpy as np
 
@@ -25,10 +24,7 @@ except ImportError:
     import logging
     logger = logging.getLogger("BagillionLoop")
 
-try:
-    from omni_v2.core.paths import DATA_DIR
-except ImportError:
-    DATA_DIR = Path.home() / ".omni_v2"
+from omni_v2.core.paths import DATA_DIR
 
 class BagillionLoop:
     """Bagillion Percent Loop - STT + Thinking + TTS - Never Fails"""

@@ -33,11 +33,7 @@ except ImportError:
     import logging
     logger = logging.getLogger("Daemon")
 
-try:
-    from omni_v2.core.paths import DATA_DIR, PROJECT_ROOT
-except Exception:
-    DATA_DIR = Path.cwd() / "data"
-    PROJECT_ROOT = Path.cwd()
+from omni_v2.core.paths import DATA_DIR, PROJECT_ROOT
 
 AUTOSTART_DIR = DATA_DIR / "brain" / "daemon"
 

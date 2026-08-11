@@ -19,10 +19,6 @@ except ImportError:
     import logging
     logger = logging.getLogger("WhisperFlow")
 
-try:
-    from omni_v2.core.paths import DATA_DIR
-except ImportError:
-    DATA_DIR = Path.home() / ".omni_v2"
 
 class TranscriptionWorker(QThread):
     progress = pyqtSignal(int)

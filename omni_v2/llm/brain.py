@@ -45,13 +45,13 @@ CRITICAL RULES:
 4. For "create a [thing] and open in [app]": FIRST call files_write to save it, THEN call windows_launch for the app.
 5. Browser: `browser_navigate` with `{{"url":"https://..."}}`. Search: `browser_search` with `{{"query":"..."}}`.
 6. Launch apps: `windows_launch` with `{{"app":"notepad"}}` (or "chrome","code","explorer","calc","msedge","powershell","cmd","idle").
-7. Create files: `files_write` with `{{"path":"D:/Omni/data/output/filename.py","content":"<file contents>"}}`.
+7. Create files: `files_write` with a path relative to OMNI's output directory, for example `{{"path":"filename.py","content":"<file contents>"}}`.
 8. NEVER put code in your text response when the user wants it written to disk.
 9. NEVER ask "do you want me to..." - just DO IT. The user gave you a command. Execute it.
 
 EXAMPLES:
 - "open github" -> {{"tool":"browser_navigate","args":{{"url":"https://github.com"}}}}
-- "create calculator with tkinter and open in IDLE" -> [{{"tool":"files_write","args":{{"path":"D:/Omni/data/output/calculator.py","content":"<python code>"}}}}, {{"tool":"windows_launch","args":{{"app":"idle"}}}}]
+- "create calculator with tkinter and open in IDLE" -> [{{"tool":"files_write","args":{{"path":"calculator.py","content":"<python code>"}}}}, {{"tool":"windows_launch","args":{{"app":"idle"}}}}]
 - "what can you do" -> natural text response
 - "play music" -> {{"tool":"media_play_music","args":{{}}}}
 - "turn on lights" -> {{"tool":"integrations_lights_on","args":{{}}}}
@@ -191,25 +191,10 @@ class Brain:
         )
 
     def _find_model(self) -> Optional[str]:
-        """Find a GGUF model in data/models/ - search multiple locations"""
-        # Get project root for absolute path resolution
-        try:
-            from omni_v2.core.paths import DATA_DIR, PROJECT_ROOT
-            data_dir = DATA_DIR
-            project_root = PROJECT_ROOT
-        except Exception:
-            project_root = Path.cwd()
-            data_dir = project_root / "data"
+        """Find a GGUF model under OMNI's canonical writable data root."""
+        from omni_v2.core.paths import DATA_DIR
 
-        # Search a wide range of candidate locations
-        candidates = [
-            data_dir / "models",                # PRIMARY: project data dir
-            project_root / "data" / "models",   # also via project root
-            Path("data/models"),                # relative to cwd
-            project_root / "omni_v2" / "llm" / "models",
-            Path("omni_v2/llm/models"),
-            Path.home() / ".omni_v2" / "models",
-        ]
+        candidates = [DATA_DIR / "models"]
         for d in candidates:
             if d.exists():
                 ggufs = sorted(d.glob("*.gguf"), key=lambda p: p.stat().st_size)
@@ -224,20 +209,10 @@ class Brain:
         return None
 
     def _find_deep_model(self) -> Optional[str]:
-        """Find a larger DEEP model (3B+ / deep / big) in data/models/."""
-        try:
-            from omni_v2.core.paths import DATA_DIR, PROJECT_ROOT
-            data_dir = DATA_DIR
-            project_root = PROJECT_ROOT
-        except Exception:
-            project_root = Path.cwd()
-            data_dir = project_root / "data"
-        candidates = [
-            data_dir / "models",
-            project_root / "data" / "models",
-            Path("data/models"),
-            project_root / "omni_v2" / "llm" / "models",
-        ]
+        """Find a larger deep/reasoning GGUF model in writable runtime data."""
+        from omni_v2.core.paths import DATA_DIR
+
+        candidates = [DATA_DIR / "models"]
         deep_markers = ["3b", "7b", "8b", "14b", "deep", "big", "reasoning", "large"]
         for d in candidates:
             if d.exists():

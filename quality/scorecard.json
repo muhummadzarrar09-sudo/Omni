@@ -5,11 +5,11 @@
   "scoring_policy": "Scores are evidence-backed current estimates. A category reaches 10 only when every listed exit criterion is verified against the exact release artifact. Commercial defensibility is not scored for the personal build.",
   "batch_state": {
     "current_batch": null,
-    "last_closed_batch": "B00",
+    "last_closed_batch": "B01",
     "feature_freeze": true,
     "expansion_allowed": false,
     "expansion_unlock_batch": "B16",
-    "next_batch": "B01"
+    "next_batch": "B02"
   },
   "categories": [
     {
@@ -53,14 +53,15 @@
     {
       "id": "automated_quality",
       "name": "Automated testing and continuous verification",
-      "current_score": 6.0,
+      "current_score": 6.5,
       "target_score": 10.0,
       "status": "blocked",
       "closure_batch": "B03",
       "evidence": [
-        "Latest manually repaired environment produced 663 passed, 1 failed, and 35 skipped",
-        "Python compilation and Next.js production build passed",
-        "No CI workflow currently exists"
+        "B01 package suite passes: 14 package metadata, runtime-path, content, and isolated artifact-install tests",
+        "Latest broad Python run: 668 passed, 33 skipped, 10 failed; one calendar timing failure and nine optional-vision/security failures remain B03 blockers",
+        "Frontend clean install, dependency tree, audit, zero-warning lint, and production build pass on Node 22/npm 12",
+        "No CI workflow currently exists and the required broad suite is not green"
       ],
       "exit_criteria": [
         "Required unit, integration, API, E2E, package, platform, offline, and security jobs are green",
@@ -134,15 +135,16 @@
     {
       "id": "installation",
       "name": "Installation, packaging, and startup",
-      "current_score": 1.5,
+      "current_score": 6.0,
       "target_score": 10.0,
       "status": "blocked",
       "closure_batch": "B02",
       "evidence": [
-        "Declared full dependencies do not resolve on Python 3.11",
-        "Built wheel omits most omni_v2 packages",
-        "start.sh references the wrong installer location",
-        "Browser-facing frontend URLs are hard-coded"
+        "B01 declares CPython >=3.11,<3.12 and resolves core, voice, vision, desktop, dev, and all profiles on CPython 3.11 Linux x86_64 with exact hashed locks",
+        "Validated 3.2.0 wheel and sdist contain all 190 required runtime files; package-content and Twine metadata gates pass",
+        "Exact core-lock wheel smoke passes outside the checkout for imports, CLI dispatch, package resources, backend health, clean CWD, and installed-tree immutability",
+        "There is no qualified PyPI release, Windows/macOS resolver run, one-click product install, or target-platform startup qualification",
+        "B02 still owns idempotent installation, centralized configuration/origins, and start/stop/restart qualification"
       ],
       "exit_criteria": [
         "Every declared install profile resolves",
@@ -155,15 +157,15 @@
     {
       "id": "security_privacy",
       "name": "Security, privacy, and safe autonomy",
-      "current_score": 2.5,
+      "current_score": 3.5,
       "target_score": 10.0,
       "status": "blocked",
       "closure_batch": "B12",
       "evidence": [
-        "Focused guardrail and face-auth tests pass after manual dependency repair",
-        "API authentication is optional by default",
-        "Frontend audit reports 1 critical and 10 high vulnerabilities",
-        "Offline behavior is a claim rather than an enforced no-egress mode"
+        "B01 exact Python dev-lock audit reports 87 dependencies and zero known vulnerabilities at audit time",
+        "B01 npm 12 audit reports zero known vulnerabilities in the exact frontend lock",
+        "Python license inventory covers 91 expected distributions; docutils and qrcode remain review-required",
+        "API authentication is optional by default and offline behavior remains a claim rather than an enforced no-egress mode"
       ],
       "exit_criteria": [
         "Threat model covers every stable capability",
@@ -177,13 +179,14 @@
     {
       "id": "documentation",
       "name": "Documentation and claim accuracy",
-      "current_score": 5.0,
+      "current_score": 5.5,
       "target_score": 10.0,
-      "status": "in_progress",
+      "status": "blocked",
       "closure_batch": "B14",
       "evidence": [
-        "README and docs index are reset during B00",
-        "Capability and quality status are generated from machine-readable authorities",
+        "README and docs index were reset during B00",
+        "B01 adds a current install/profile/lock/artifact/runtime-data troubleshooting authority and closes stale top-level packaging claims",
+        "Capability and quality status remain generated from machine-readable authorities and local Markdown links pass",
         "Historical phase/API/architecture documents remain non-authoritative until later drift and command checks are implemented"
       ],
       "exit_criteria": [

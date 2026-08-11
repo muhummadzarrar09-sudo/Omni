@@ -55,15 +55,46 @@ export default function BrainPanel() {
   const [msg, setMsg] = useState('')
 
   const load = async () => {
-    setIdentity(await jget(API.identity))
-    setGoals((await jget(API.goals)).goals || [])
-    setEpisodes((await jget(API.episodes)).episodes || [])
-    setPatterns((await jpost(API.patterns, { days: 7 })).patterns || [])
-    setAwayTasks((await jget(API.awayTasks)).tasks || [])
-    setAwayActive((await jget(API.awayStatus)).active || false)
-    setMetaHistory((await jget(API.metacogHistory)).records || [])
+    const [nextIdentity, nextGoals, nextEpisodes, nextPatterns, nextAwayTasks, nextAwayStatus, nextMetaHistory] = await Promise.all([
+      jget(API.identity),
+      jget(API.goals),
+      jget(API.episodes),
+      jpost(API.patterns, { days: 7 }),
+      jget(API.awayTasks),
+      jget(API.awayStatus),
+      jget(API.metacogHistory),
+    ])
+    setIdentity(nextIdentity)
+    setGoals(nextGoals.goals || [])
+    setEpisodes(nextEpisodes.episodes || [])
+    setPatterns(nextPatterns.patterns || [])
+    setAwayTasks(nextAwayTasks.tasks || [])
+    setAwayActive(nextAwayStatus.active || false)
+    setMetaHistory(nextMetaHistory.records || [])
   }
-  useEffect(() => { load() }, [])
+
+  useEffect(() => {
+    let cancelled = false
+    Promise.all([
+      jget(API.identity),
+      jget(API.goals),
+      jget(API.episodes),
+      jpost(API.patterns, { days: 7 }),
+      jget(API.awayTasks),
+      jget(API.awayStatus),
+      jget(API.metacogHistory),
+    ]).then(([nextIdentity, nextGoals, nextEpisodes, nextPatterns, nextAwayTasks, nextAwayStatus, nextMetaHistory]) => {
+      if (cancelled) return
+      setIdentity(nextIdentity)
+      setGoals(nextGoals.goals || [])
+      setEpisodes(nextEpisodes.episodes || [])
+      setPatterns(nextPatterns.patterns || [])
+      setAwayTasks(nextAwayTasks.tasks || [])
+      setAwayActive(nextAwayStatus.active || false)
+      setMetaHistory(nextMetaHistory.records || [])
+    })
+    return () => { cancelled = true }
+  }, [])
 
   const refresh = async () => {
     setBusy(true)

@@ -15,7 +15,6 @@ from __future__ import annotations
 import threading
 import time
 import queue
-from pathlib import Path
 from typing import Callable, Optional
 
 try:
@@ -24,10 +23,6 @@ except ImportError:
     import logging
     logger = logging.getLogger("WakeWordV3")
 
-try:
-    from omni_v2.core.paths import DATA_DIR
-except Exception:
-    DATA_DIR = Path.cwd() / "data"
 
 
 # === Backend 1: openwakeword (if installed) ===

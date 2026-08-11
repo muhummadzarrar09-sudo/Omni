@@ -43,8 +43,9 @@ omni report list                  # saved reports
 omni report digest                # build a digest
 ```
 
-> Note: if the `omni` command is installed via `pip install -e .`, run these as
-> `omni ...`. Without install, use `python -m omni.cli ...`.
+> Install the local wheel and a declared dependency profile using the current
+> workflow in [TROUBLESHOOTING.md](TROUBLESHOOTING.md), then run these as
+> `omni ...`. From a checkout environment, `python -m omni.cli ...` is equivalent.
 
 ### API (FastAPI :8765)
 Mounted at `/api/away` — see `backend_fastapi/away_routes.py`:

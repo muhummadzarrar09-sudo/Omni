@@ -1,5 +1,4 @@
 """System Tool V2 - 10 tools"""
-from pathlib import Path
 from datetime import datetime
 from typing import Dict, Any
 from omni_v2.core.plugin_manager import CommandPlugin, CommandMetadata, CommandResult
@@ -18,11 +17,9 @@ class SystemTool(CommandPlugin):
     ]
     def __init__(self):
         super().__init__()
-        try:
-            from omni_v2.core.paths import SCREENSHOTS_DIR
-            self.screenshot_dir = SCREENSHOTS_DIR
-        except ImportError:
-            self.screenshot_dir = Path.home() / ".omni_v2" / "screenshots"
+        from omni_v2.core.paths import SCREENSHOTS_DIR
+
+        self.screenshot_dir = SCREENSHOTS_DIR
         self.screenshot_dir.mkdir(parents=True, exist_ok=True)
 
     async def execute(self, entities: Dict[str, Any], context: Dict[str, Any]) -> CommandResult:

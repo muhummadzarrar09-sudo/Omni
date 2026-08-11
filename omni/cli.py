@@ -1,17 +1,7 @@
-"""
-OMNI CLI - single entry point for everything.
-After `pip install -e .`, run `omni ...` from anywhere.
+"""Command-line entry point for the experimental OMNI personal assistant.
 
-Subcommands:
-  omni install         - print install instructions for this platform
-  omni model info      - show which GGUF model is loaded, sizes, speed
-  omni model download  - fetch the default Qwen2.5-1.5B GGUF (~1.1GB)
-  omni test            - run all 20 test suites (10/10 multi-agent + 18 phase tests)
-  omni start           - start FastAPI backend (judges can curl it)
-  omni ui              - start Next.js dev server
-  omni dev             - start both (backend + UI) and open browser
-  omni status          - health check
-  omni shell           - interactive shell (REPL) into the brain
+The lightweight commands and package inspection paths work from an installed
+wheel. Source-development commands explicitly check for checkout-only assets.
 """
 import argparse
 import sys
@@ -23,6 +13,21 @@ from pathlib import Path
 
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
+
+
+def _data_root() -> Path:
+    """Return a writable per-user data root without requiring another package."""
+    configured = os.environ.get("OMNI_DATA_DIR")
+    if configured:
+        return Path(configured).expanduser().resolve()
+    if os.name == "nt":
+        base = Path(os.environ.get("LOCALAPPDATA", Path.home() / "AppData" / "Local"))
+        return base / "OMNI"
+    base = Path(os.environ.get("XDG_DATA_HOME", Path.home() / ".local" / "share"))
+    return base / "omni"
+
+
+DATA_ROOT = _data_root()
 
 # Fix Windows cp1252 console encoding FIRST (before any module prints emoji)
 try:
@@ -38,53 +43,37 @@ def _run(cmd, **kwargs):
 
 
 def cmd_install(args):
-    """Print install instructions for current platform."""
+    """Print the canonical profile-based installation instructions."""
     import platform
-    is_win = platform.system() == "Windows"
-    script = "install.ps1" if is_win else "install.sh"
-    print(f"\n  OMNI V3 install ({platform.system()})\n")
-    print(f"  EASIEST: one-shot install script (handles llama-cpp prebuilt wheel):")
-    print(f"     ./{script}")
-    if is_win:
-        print(f"     # or: .\\{script} -Cuda cu121   # for NVIDIA GPU")
-    else:
-        print(f"     # or: ./{script} --cuda cu121   # for NVIDIA GPU")
-        print(f"     # or: ./{script} --minimal      # just the brain")
-    print()
-    print(f"  Or, the manual way:")
-    print(f"     1. Create venv:")
-    print(f"        python -m venv .venv")
-    activate_cmd = "  .venv\\Scripts\\activate" if is_win else "source .venv/bin/activate"
-    print(f"        {activate_cmd}")
-    print()
-    print(f"     2. Install llama-cpp-python FIRST (prebuilt wheel, avoids MSVC build):")
-    if is_win:
-        print(f"        pip install llama-cpp-python --extra-index-url https://abetlen.github.io/llama-cpp-python/whl/cpu")
-    else:
-        print(f"        pip install llama-cpp-python --extra-index-url https://abetlen.github.io/llama-cpp-python/whl/cpu")
-    print()
-    print(f"     3. Install OMNI + everything:")
-    print(f"        pip install -e .[all]")
-    print()
-    print(f"     4. Download the LLM (one-time, 1.1GB):")
-    print(f"        omni model download")
-    print()
-    print(f"     5. Test:")
-    print(f"        omni test")
-    print()
-    print(f"     6. Run:")
-    print(f"        omni start          # FastAPI on :8765")
-    print(f"        omni dev            # backend + UI + browser")
-    print()
-    print(f"  Or, the OLD way (no install needed):")
-    print(f"     python omni.py --test    # multi-agent tests")
-    print(f"     python run_dev_all.py    # full stack (LEGACY, no longer used)")
+
+    activate_cmd = (
+        ".venv\\Scripts\\activate"
+        if platform.system() == "Windows"
+        else "source .venv/bin/activate"
+    )
+    print(f"\n  OMNI installation ({platform.system()}, CPython 3.11 required)\n")
+    print("  1. Create and activate an isolated environment:")
+    print("     python3.11 -m venv .venv")
+    print(f"     {activate_cmd}")
+    print("\n  2. Profile syntax for an explicitly configured package source:")
+    print("     python -m pip install 'omni-agi[core]'     # API + orchestration")
+    print("     python -m pip install 'omni-agi[voice]'    # audio and speech")
+    print("     python -m pip install 'omni-agi[vision]'   # capture and OCR")
+    print("     python -m pip install 'omni-agi[desktop]'  # desktop automation")
+    print("     python -m pip install 'omni-agi[all]'      # complete runtime")
+    print("\n  No public index release is qualified. For this checkout, install the")
+    print("  exact platform lock and local wheel documented in")
+    print("  docs/TROUBLESHOOTING.md. The base distribution is dependency-free.")
+    print("  Committed locks are CPython 3.11/Linux x86_64 specific; other")
+    print("  platforms are not qualified by B01.")
+    print(f"\n  User data directory: {DATA_ROOT}\n")
+    return 0
 
 
 def cmd_model_info(args):
     """Show which model is loaded, size, speed, etc."""
     print(f"\n  OMNI Model Status\n")
-    model_path = REPO_ROOT / "data" / "models"
+    model_path = DATA_ROOT / "models"
     if not model_path.exists():
         print("  ❌ No models/ dir. Run: omni model download")
         return 1
@@ -98,7 +87,6 @@ def cmd_model_info(args):
         print(f"    {g.name:<50s} {size_mb:>7.0f} MB")
     # Try to load the brain and see what it picked
     try:
-        sys.path.insert(0, str(REPO_ROOT))
         from omni_v2.llm.brain import get_brain
         brain = get_brain()
         status = brain.get_status()
@@ -115,7 +103,7 @@ def cmd_model_info(args):
 
 def cmd_model_download(args):
     """Download the default Qwen2.5-1.5B GGUF."""
-    target = REPO_ROOT / "data" / "models" / "qwen2.5-1.5b-instruct-q4_k_m.gguf"
+    target = DATA_ROOT / "models" / "qwen2.5-1.5b-instruct-q4_k_m.gguf"
     if target.exists():
         print(f"  ✅ Already present: {target} ({target.stat().st_size // 1024 // 1024} MB)")
         return 0
@@ -150,7 +138,7 @@ def cmd_model_download(args):
 
 def cmd_model_download_deep(args):
     """Download the deep-tier Qwen2.5-3B GGUF for hard reasoning (Phase 9 Step 2)."""
-    target = REPO_ROOT / "data" / "models" / "qwen2.5-3b-instruct-q4_k_m.gguf"
+    target = DATA_ROOT / "models" / "qwen2.5-3b-instruct-q4_k_m.gguf"
     if target.exists():
         print(f"  ✅ Already present: {target} ({target.stat().st_size // 1024 // 1024} MB)")
         return 0
@@ -304,14 +292,12 @@ def cmd_start(args):
     if not args.no_browser:
         # Try to open in isolated Chrome
         try:
-            sys.path.insert(0, str(REPO_ROOT))
             from omni_v2.tools.browser_v3 import BrowserToolV3
             browser = BrowserToolV3()
             browser._launch_chrome_isolated("http://localhost:8765")
         except Exception:
             webbrowser.open("http://localhost:8765", new=2)
-    os.chdir(REPO_ROOT / "backend_fastapi")
-    cmd = [sys.executable, "-m", "uvicorn", "main:app",
+    cmd = [sys.executable, "-m", "uvicorn", "backend_fastapi.main:app",
            "--host", "0.0.0.0", "--port", "8765"]
     if args.reload:
         cmd.append("--reload")
@@ -384,8 +370,7 @@ def cmd_dev(args):
 
     # 1) Backend FIRST (foreground, but we'll background it via thread)
     def run_backend():
-        os.chdir(REPO_ROOT / "backend_fastapi")
-        subprocess.run([sys.executable, "-m", "uvicorn", "main:app",
+        subprocess.run([sys.executable, "-m", "uvicorn", "backend_fastapi.main:app",
                         "--port", "8765", "--host", "0.0.0.0"])
     bt = threading.Thread(target=run_backend, daemon=True)
     bt.start()
@@ -440,7 +425,7 @@ def cmd_status(args):
         print(f"  Backend:  ❌ Not running (start with: omni start)")
 
     # Check model
-    model = REPO_ROOT / "data" / "models" / "qwen2.5-1.5b-instruct-q4_k_m.gguf"
+    model = DATA_ROOT / "models" / "qwen2.5-1.5b-instruct-q4_k_m.gguf"
     if model.exists():
         print(f"  LLM:      ✅ {model.name} ({model.stat().st_size // 1024 // 1024} MB)")
     else:
@@ -451,7 +436,6 @@ def cmd_status(args):
 def cmd_shell(args):
     """Interactive REPL into the brain."""
     print(f"\n  OMNI Brain REPL (type 'exit' to quit)\n")
-    sys.path.insert(0, str(REPO_ROOT))
     from omni_v2.llm.brain import get_brain
     from omni_v2.core import PluginManager
     from omni_v2.tools import get_all_tools
@@ -488,14 +472,12 @@ def cmd_shell(args):
 # Away Mode / Research / Knowledge Base (V3 Away Mode)
 # ---------------------------------------------------------------------------
 def _away_stack():
-    sys.path.insert(0, str(REPO_ROOT))
     from omni_v2.away.context import build_away_stack
     return build_away_stack()
 
 
 def cmd_kb(args):
     """Knowledge base: add files/folders/urls, query, search."""
-    sys.path.insert(0, str(REPO_ROOT))
     from omni_v2.away.knowledge_base import KnowledgeBase
     kb = KnowledgeBase()
     action = getattr(args, "kb_action", None) or "stats"
@@ -560,7 +542,6 @@ def cmd_kb(args):
 
 def cmd_research(args):
     """Run an autonomous research task and print/save the report."""
-    sys.path.insert(0, str(REPO_ROOT))
     from omni_v2.away.research import ResearchAgent
     from omni_v2.away.knowledge_base import KnowledgeBase
     agent = ResearchAgent(knowledge_base=KnowledgeBase())
@@ -580,7 +561,6 @@ def cmd_research(args):
 
 def cmd_away(args):
     """Away mode: manage the unattended task queue."""
-    sys.path.insert(0, str(REPO_ROOT))
     stack = _away_stack()
     agent = stack["away_agent"]
     action = getattr(args, "away_action", None) or "status"
@@ -631,7 +611,6 @@ def cmd_away(args):
 
 def cmd_report(args):
     """Reports: list saved reports or build a digest."""
-    sys.path.insert(0, str(REPO_ROOT))
     from omni_v2.away.reporter import Reporter
     rep = Reporter()
     action = getattr(args, "report_action", None) or "list"
@@ -665,7 +644,6 @@ def cmd_app(args):
 
 def cmd_brain(args):
     """Jarvis Brain: manage identity (self) + user model."""
-    sys.path.insert(0, str(REPO_ROOT))
     from omni_v2.brain.identity import IdentityCore
     ic = IdentityCore()
     action = getattr(args, "brain_action", None) or "status"
@@ -734,7 +712,6 @@ def cmd_brain(args):
 
 def cmd_voice(args):
     """Voice loop: hands-free 'Hey OMNI' conversation + voice-driven goals."""
-    sys.path.insert(0, str(REPO_ROOT))
     action = getattr(args, "voice_action", None) or "status"
     # build a controller for shared wiring
     from omni_v2.away.desktop import DesktopController
@@ -772,7 +749,6 @@ def cmd_voice(args):
 
 def cmd_guardian(args):
     """Proactive guardian: watch apps/processes/health + notify anomalies."""
-    sys.path.insert(0, str(REPO_ROOT))
     action = getattr(args, "guardian_action", None) or "status"
     from omni_v2.away.desktop import DesktopController
     c = DesktopController()
@@ -818,7 +794,6 @@ def cmd_guardian(args):
 
 def cmd_delegate(args):
     """Sub-agent delegation: run goal steps as parallel sub-agents."""
-    sys.path.insert(0, str(REPO_ROOT))
     from omni_v2.away.desktop import DesktopController
     c = DesktopController()
     action = getattr(args, "delegate_action", None) or "status"
@@ -845,7 +820,6 @@ def cmd_delegate(args):
 
 def cmd_router(args):
     """LLM router v2: cost-aware model selection (DGX-ready)."""
-    sys.path.insert(0, str(REPO_ROOT))
     from omni_v2.away.desktop import DesktopController
     c = DesktopController()
     action = getattr(args, "router_action", None) or "status"
@@ -882,7 +856,6 @@ def cmd_router(args):
 
 def cmd_history(args):
     """Action journal: session replay + safe undo."""
-    sys.path.insert(0, str(REPO_ROOT))
     from omni_v2.away.desktop import DesktopController
     c = DesktopController()
     action = getattr(args, "history_action", None) or "list"
@@ -909,7 +882,6 @@ def cmd_history(args):
 
 def cmd_photo(args):
     """Photo memory: caption images into the knowledge base."""
-    sys.path.insert(0, str(REPO_ROOT))
     from omni_v2.away.desktop import DesktopController
     c = DesktopController()
     action = getattr(args, "photo_action", None) or "status"
@@ -936,7 +908,6 @@ def cmd_photo(args):
 
 def cmd_backup(args):
     """Backup & restore the whole OMNI state."""
-    sys.path.insert(0, str(REPO_ROOT))
     from omni_v2.away.desktop import DesktopController
     c = DesktopController()
     action = getattr(args, "backup_action", None) or "list"
@@ -962,7 +933,6 @@ def cmd_backup(args):
 
 def cmd_file(args):
     """NL file manager: safe file operations from natural language."""
-    sys.path.insert(0, str(REPO_ROOT))
     from omni_v2.away.desktop import DesktopController
     c = DesktopController()
     action = getattr(args, "file_action", None) or "run"
@@ -983,7 +953,6 @@ def cmd_file(args):
 
 def cmd_remote(args):
     """LAN remote control: control OMNI from another device (via API)."""
-    sys.path.insert(0, str(REPO_ROOT))
     from omni_v2.away.desktop import DesktopController
     c = DesktopController()
     action = getattr(args, "remote_action", None) or "info"
@@ -1003,7 +972,6 @@ def cmd_remote(args):
 
 def cmd_engine(args):
     """QueryEngine: the agentic tool-calling runtime."""
-    sys.path.insert(0, str(REPO_ROOT))
     from omni_v2.away.desktop import DesktopController
     c = DesktopController()
     action = getattr(args, "engine_action", None) or "info"
@@ -1019,7 +987,6 @@ def cmd_engine(args):
 
 def cmd_metaharness(args):
     """Meta-Harness: self-improvement outer loop."""
-    sys.path.insert(0, str(REPO_ROOT))
     from omni_v2.away.desktop import DesktopController
     c = DesktopController()
     action = getattr(args, "metaharness_action", None) or "info"
@@ -1040,7 +1007,6 @@ def cmd_metaharness(args):
 
 def cmd_mesh(args):
     """OMNI Mesh: multi-machine state sync."""
-    sys.path.insert(0, str(REPO_ROOT))
     from omni_v2.away.desktop import DesktopController
     c = DesktopController()
     action = getattr(args, "mesh_action", None) or "export"
@@ -1060,7 +1026,6 @@ def cmd_mesh(args):
 
 def cmd_gui(args):
     """GUI agent: vision-driven, sandboxed screen automation."""
-    sys.path.insert(0, str(REPO_ROOT))
     from omni_v2.away.desktop import DesktopController
     c = DesktopController()
     action = getattr(args, "gui_action", None) or "info"
@@ -1075,7 +1040,6 @@ def cmd_gui(args):
 
 def cmd_schedule(args):
     """Recurring scheduler: run OMNI actions on cron/interval schedules."""
-    sys.path.insert(0, str(REPO_ROOT))
     from omni_v2.away.desktop import DesktopController
     c = DesktopController()
     action = getattr(args, "schedule_action", None) or "list"
@@ -1137,7 +1101,6 @@ def cmd_schedule(args):
 
 def cmd_wake(args):
     """Wake routine: the 'Good morning Zarrar' scripted flow."""
-    sys.path.insert(0, str(REPO_ROOT))
     from omni_v2.away.desktop import DesktopController
     c = DesktopController()
     action = getattr(args, "wake_action", None) or "status"
@@ -1164,7 +1127,6 @@ def cmd_wake(args):
 
 def cmd_leaderboard(args):
     """Harness leaderboard: prioritize which skills/automations to improve."""
-    sys.path.insert(0, str(REPO_ROOT))
     from omni_v2.away.desktop import DesktopController
     c = DesktopController()
     action = getattr(args, "leaderboard_action", None) or "report"
@@ -1194,7 +1156,6 @@ def cmd_leaderboard(args):
 
 def cmd_personal(args):
     """Personal context: local calendar + contacts, and KB answers with citations."""
-    sys.path.insert(0, str(REPO_ROOT))
     from omni_v2.away.desktop import DesktopController
     c = DesktopController()
     action = getattr(args, "personal_action", None) or "status"
@@ -1250,7 +1211,6 @@ def cmd_personal(args):
 
 def cmd_vault(args):
     """Credential vault: encrypted local secrets with a permission gate."""
-    sys.path.insert(0, str(REPO_ROOT))
     from omni_v2.away.desktop import DesktopController
     c = DesktopController()
     action = getattr(args, "vault_action", None) or "list"
@@ -1310,7 +1270,6 @@ def cmd_vault(args):
 
 def cmd_sandbox(args):
     """Skill sandbox: run untrusted skill code in an isolated subprocess."""
-    sys.path.insert(0, str(REPO_ROOT))
     from omni_v2.away.desktop import DesktopController
     c = DesktopController()
     action = getattr(args, "sandbox_action", None) or "status"
@@ -1344,7 +1303,6 @@ def cmd_sandbox(args):
 
 def cmd_benchmark(args):
     """Self-improvement benchmark: measure how much faster/cheaper OMNI gets."""
-    sys.path.insert(0, str(REPO_ROOT))
     from omni_v2.away.desktop import DesktopController
     c = DesktopController()
     action = getattr(args, "benchmark_action", None) or "report"
@@ -1389,7 +1347,6 @@ def cmd_benchmark(args):
 
 def cmd_daemon(args):
     """OMNI daemon: always-on resident agent + auto-start."""
-    sys.path.insert(0, str(REPO_ROOT))
     from omni_v2.daemon.daemon import AutoStartManager, DaemonController
     from omni_v2.away.desktop import DesktopController
     action = getattr(args, "daemon_action", None) or "status"
@@ -1438,7 +1395,6 @@ def cmd_daemon(args):
 
 def cmd_automation(args):
     """Automation triggers: webhook/schedule/file events wake OMNI."""
-    sys.path.insert(0, str(REPO_ROOT))
     from omni_v2.away.desktop import DesktopController
     c = DesktopController()
     action = getattr(args, "automation_action", None) or "status"
@@ -1486,7 +1442,6 @@ def cmd_automation(args):
 
 def cmd_compaction(args):
     """Context auto-compaction: summarize old turns to save tokens."""
-    sys.path.insert(0, str(REPO_ROOT))
     from omni_v2.llm.compaction import Compactor
     c = Compactor()
     action = getattr(args, "compaction_action", None) or "status"
@@ -1507,7 +1462,6 @@ def cmd_compaction(args):
 
 def cmd_skill_verify(args):
     """Auto skill verification: test harness skills, roll back failures."""
-    sys.path.insert(0, str(REPO_ROOT))
     from omni_v2.away.desktop import DesktopController
     c = DesktopController()
     action = getattr(args, "sv_action", None) or "status"
@@ -1543,7 +1497,6 @@ def cmd_skill_verify(args):
 
 def cmd_mcp(args):
     """MCP: connect OMNI to the Model Context Protocol ecosystem."""
-    sys.path.insert(0, str(REPO_ROOT))
     from omni_v2.away.desktop import DesktopController
     c = DesktopController()
     action = getattr(args, "mcp_action", None) or "status"
@@ -1595,7 +1548,6 @@ def cmd_mcp(args):
 
 def cmd_harness(args):
     """Continual harness: self-refining skills/memory/lessons from trajectories."""
-    sys.path.insert(0, str(REPO_ROOT))
     from omni_v2.away.desktop import DesktopController
     c = DesktopController()
     action = getattr(args, "harness_action", None) or "status"
@@ -1649,7 +1601,6 @@ def cmd_harness(args):
 
 def cmd_graph(args):
     """Knowledge graph: build/visualize memory as a graph."""
-    sys.path.insert(0, str(REPO_ROOT))
     from omni_v2.graph.knowledge_graph import KnowledgeGraphBuilder
     from omni_v2.memory.hybrid_memory import get_hybrid_memory
     from omni_v2.memory.session_memory import SessionMemoryStore
@@ -1672,7 +1623,7 @@ def cmd_graph(args):
         return 0
 
     if action == "json":
-        out = args.out or (REPO_ROOT / "data" / "knowledge_graph.json")
+        out = args.out or (DATA_ROOT / "knowledge_graph.json")
         path = g.to_json(out)
         print(f"  ✅ Graph saved to {path}")
         return 0
@@ -1689,7 +1640,6 @@ def cmd_graph(args):
 
 def cmd_briefing(args):
     """Morning briefing: build + deliver today's intel."""
-    sys.path.insert(0, str(REPO_ROOT))
     from omni_v2.briefing.briefing import MorningBriefing
     from omni_v2.brain.goals import GoalStack
     from omni_v2.brain.identity import IdentityCore
@@ -1724,7 +1674,6 @@ def cmd_briefing(args):
 
 def cmd_add_skill(args):
     """Skill installer: omni add-skill <url> pulls + verifies + wires a skill."""
-    sys.path.insert(0, str(REPO_ROOT))
     from omni_v2.skills.installer import SkillInstaller
     inst = SkillInstaller()
     action = getattr(args, "skill_action", None) or "install"
@@ -1751,7 +1700,6 @@ def cmd_add_skill(args):
 
 def cmd_meta(args):
     """Jarvis Brain metacognition: evaluate an outcome + feed back into a goal."""
-    sys.path.insert(0, str(REPO_ROOT))
     from omni_v2.brain.metacog import Metacog
     from omni_v2.brain.goals import GoalStack
     m = Metacog()
@@ -1808,7 +1756,6 @@ def cmd_meta(args):
 
 def cmd_reflect(args):
     """Jarvis Brain episodic reflection + pattern awareness (Step 5)."""
-    sys.path.insert(0, str(REPO_ROOT))
     from omni_v2.brain.reflect import Reflector
     from omni_v2.memory.session_memory import SessionMemoryStore
     from omni_v2.memory.hybrid_memory import get_hybrid_memory
@@ -1845,7 +1792,6 @@ def cmd_reflect(args):
 
 def cmd_goal(args):
     """Jarvis Brain goals: persistent goal stack (decompose / progress / replan)."""
-    sys.path.insert(0, str(REPO_ROOT))
     from omni_v2.brain.goals import GoalStack
     gs = GoalStack()
     action = getattr(args, "goal_action", None) or "list"
@@ -1932,7 +1878,6 @@ def cmd_goal(args):
 
 def cmd_messenger(args):
     """Messenger setup & diagnostics (WhatsApp for Pakistan / Telegram / file)."""
-    sys.path.insert(0, str(REPO_ROOT))
     from omni_v2.away.messenger import (
         load_away_config, save_away_config, whatsapp_setup_guide,
         MessengerRouter, normalize_phone, WhatsAppMessenger,
@@ -2007,7 +1952,6 @@ def cmd_messenger(args):
 
 def cmd_security(args):
     """Local camera security: enroll owner, arm/disarm guard, lock."""
-    sys.path.insert(0, str(REPO_ROOT))
     from omni_v2.security.face_auth import FaceAuth
     from omni_v2.security.guard_monitor import GuardMonitor
     from omni_v2.security.lockdown import LockdownController
@@ -2061,7 +2005,7 @@ def cmd_security(args):
 def main():
     parser = argparse.ArgumentParser(
         prog="omni",
-        description="OMNI V3 - Local, Private, Cinematic AGI",
+        description="Experimental local-first OMNI personal AI assistant",
     )
     sub = parser.add_subparsers(dest="cmd", required=False)
 

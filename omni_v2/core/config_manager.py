@@ -1,4 +1,4 @@
-"""Config Manager V2 - Phase 2 Hardened - Data Inside Project Root (Unanimous)"""
+"""Configuration stored under OMNI's canonical writable data directory."""
 import json
 from pathlib import Path
 from typing import Any, Dict, Optional
@@ -10,14 +10,7 @@ except ImportError:
     import logging
     logger = logging.getLogger("ConfigV2")
 
-try:
-    from omni_v2.core.paths import DATA_DIR, CONFIG_PATH, MEMORY_DB_PATH, VECTOR_DB_PATH
-except ImportError:
-    # Fallback if paths module not available
-    DATA_DIR = Path.home() / ".omni_v2"
-    CONFIG_PATH = DATA_DIR / "config.json"
-    MEMORY_DB_PATH = DATA_DIR / "memory.db"
-    VECTOR_DB_PATH = DATA_DIR / "chroma"
+from omni_v2.core.paths import CONFIG_PATH, MEMORY_DB_PATH, VECTOR_DB_PATH
 
 @dataclass
 class OMNISettings:
@@ -40,7 +33,7 @@ class OMNISettings:
     llm_provider: str = "ollama"
     llm_model: str = "llama3.1:8b"
     llm_tier: str = "auto"
-    # Memory - Now inside project/data/
+    # Memory paths use the writable per-user data root.
     memory_enabled: bool = True
     memory_db_path: str = str(MEMORY_DB_PATH)
     vector_db_path: str = str(VECTOR_DB_PATH)
@@ -63,7 +56,6 @@ class OMNISettings:
         return asdict(self)
 
 class ConfigManager:
-    # V2: Now inside project/data/ - unanimous and portable!
     DEFAULT_CONFIG_PATH = CONFIG_PATH
     
     def __init__(self, config_path: Optional[Path] = None):
@@ -71,7 +63,7 @@ class ConfigManager:
         self.settings = OMNISettings()
         self.config_path.parent.mkdir(parents=True, exist_ok=True)
         try:
-            logger.info(f"ConfigManager V2 at {self.config_path} (inside project data/)")
+            logger.info(f"ConfigManager V2 at {self.config_path}")
         except Exception:
             pass
     
@@ -81,7 +73,7 @@ class ConfigManager:
                 with open(self.config_path, 'r') as f:
                     data = json.load(f)
                 self.settings = OMNISettings.from_dict(data)
-                logger.info("V2 Settings loaded from project data/")
+                logger.info(f"V2 settings loaded from {self.config_path}")
             except Exception as e:
                 logger.warning(f"Failed to load config: {e}")
                 self.settings = OMNISettings()
@@ -93,7 +85,7 @@ class ConfigManager:
         try:
             with open(self.config_path, 'w') as f:
                 json.dump(self.settings.to_dict(), f, indent=2)
-            logger.info("V2 Settings saved to project data/")
+            logger.info(f"V2 settings saved to {self.config_path}")
             return True
         except Exception as e:
             logger.error(f"Failed to save config: {e}")

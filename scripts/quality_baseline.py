@@ -676,8 +676,8 @@ def render_capability_doc(capabilities: dict[str, Any], inventory: dict[str, Any
         "",
         "> **Generated file.** Edit `quality/capabilities.json`, then run `python scripts/quality_baseline.py generate`.",
         "",
-        f"**Authority verified:** {md(capabilities['verified_on'])}  ",
-        f"**Release state:** {md(product['release_state'])}  ",
+        f"**Authority verified:** {md(capabilities['verified_on'])}<br>",
+        f"**Release state:** {md(product['release_state'])}<br>",
         f"**Source inventory digest:** `{inventory['source_digest']}`",
         "",
         "## Locked Product Promise",
@@ -804,10 +804,10 @@ def render_scorecard_doc(scorecard: dict[str, Any]) -> str:
         "",
         "> **Generated file.** Edit `quality/scorecard.json`, then run `python scripts/quality_baseline.py generate`.",
         "",
-        f"**Scope:** {scorecard['scope']}  ",
-        f"**Evidence verified:** {scorecard['verified_on']}  ",
-        f"**Current batch:** `{scorecard['batch_state']['current_batch'] or 'none'}`  ",
-        f"**Next batch:** `{scorecard['batch_state']['next_batch'] or 'none'}`  ",
+        f"**Scope:** {scorecard['scope']}<br>",
+        f"**Evidence verified:** {scorecard['verified_on']}<br>",
+        f"**Current batch:** `{scorecard['batch_state']['current_batch'] or 'none'}`<br>",
+        f"**Next batch:** `{scorecard['batch_state']['next_batch'] or 'none'}`<br>",
         f"**Feature freeze:** `{'enabled' if scorecard['batch_state']['feature_freeze'] else 'disabled'}`",
         "",
         scorecard["scoring_policy"],
@@ -832,7 +832,7 @@ def render_scorecard_doc(scorecard: dict[str, Any]) -> str:
         result += [
             f"### {row['name']} — {display_score(row['current_score'])}",
             "",
-            f"**Status:** `{row['status']}`  ",
+            f"**Status:** `{row['status']}`<br>",
             f"**Closure gate:** `{row['closure_batch']}`",
             "",
             "**Current evidence**",
@@ -840,7 +840,8 @@ def render_scorecard_doc(scorecard: dict[str, Any]) -> str:
         ]
         result.extend(f"- {item}" for item in row["evidence"])
         result += ["", "**10/10 exit criteria**", ""]
-        result.extend(f"- [ ] {item}" for item in row["exit_criteria"])
+        marker = "x" if row["status"] == "pass" else " "
+        result.extend(f"- [{marker}] {item}" for item in row["exit_criteria"])
         result.append("")
     return "\n".join(result).rstrip() + "\n"
 
@@ -851,9 +852,9 @@ def render_batches_doc(batches: dict[str, Any], policy: dict[str, Any]) -> str:
         "",
         "> **Generated file.** Edit `quality/batches.json` or `quality/policy.json`, then run `python scripts/quality_baseline.py generate`.",
         "",
-        f"**Current batch:** `{policy['execution']['current_batch'] or 'none'}`  ",
-        f"**Next batch:** `{policy['execution']['next_batch'] or 'none'}`  ",
-        f"**Feature freeze:** `{'enabled' if policy['feature_freeze']['enabled'] else 'disabled'}`  ",
+        f"**Current batch:** `{policy['execution']['current_batch'] or 'none'}`<br>",
+        f"**Next batch:** `{policy['execution']['next_batch'] or 'none'}`<br>",
+        f"**Feature freeze:** `{'enabled' if policy['feature_freeze']['enabled'] else 'disabled'}`<br>",
         "**Execution rule:** one batch at a time; implementation, tests, audit, documentation, evidence, and the complete exit gate must pass before the next batch starts.",
         "",
         "## Sequence",
@@ -870,9 +871,9 @@ def render_batches_doc(batches: dict[str, Any], policy: dict[str, Any]) -> str:
         result += [
             f"### {row['id']} — {row['title']}",
             "",
-            f"**Status:** `{row['status']}`  ",
-            f"**Depends on:** `{', '.join(row['depends_on']) or 'none'}`  ",
-            f"**Solo estimate:** {row['solo_estimate']}  ",
+            f"**Status:** `{row['status']}`<br>",
+            f"**Depends on:** `{', '.join(row['depends_on']) or 'none'}`<br>",
+            f"**Solo estimate:** {row['solo_estimate']}<br>",
             f"**Evidence:** `{row['evidence_path']}`",
             "",
             f"**Objective:** {row['objective']}",
@@ -888,7 +889,8 @@ def render_batches_doc(batches: dict[str, Any], policy: dict[str, Any]) -> str:
         result += ["", "**Principal risks**", ""]
         result.extend(f"- {item}" for item in row["risks"])
         result += ["", "**Exit gate**", ""]
-        result.extend(f"- [ ] {item}" for item in row["exit_gate"])
+        marker = "x" if row["status"] == "closed" else " "
+        result.extend(f"- [{marker}] {item}" for item in row["exit_gate"])
         result.append("")
     result += [
         "## Post-10 Expansion Queue",

@@ -24,7 +24,8 @@
     ],
     "current_batch": null,
     "closed_batches": [
-      "B00"
+      "B00",
+      "B01"
     ],
     "rules": [
       "Execute one batch at a time in the declared order.",
@@ -33,7 +34,7 @@
       "Absence of a defect report is not evidence of correctness.",
       "The exact release artifact, not a mutable source checkout, is the final qualification subject."
     ],
-    "next_batch": "B01"
+    "next_batch": "B02"
   },
   "feature_freeze": {
     "enabled": true,

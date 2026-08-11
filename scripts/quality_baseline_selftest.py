@@ -33,6 +33,18 @@ def main() -> int:
     capabilities, scorecard, policy, batches = authorities()
     quality.validate_authorities(capabilities, scorecard, policy, batches)
 
+    batches_doc = quality.render_batches_doc(batches, policy)
+    b01_section = batches_doc.split("### B01", 1)[1].split("### B02", 1)[0]
+    assert "- [x] Every declared profile resolves" in b01_section
+    b02_section = batches_doc.split("### B02", 1)[1].split("### B03", 1)[0]
+    assert "- [ ] Fresh Windows 11 x64 machine reaches" in b02_section
+
+    scorecard_doc = quality.render_scorecard_doc(scorecard)
+    vision_section = scorecard_doc.split("### Product vision", 1)[1].split("### Implementation", 1)[0]
+    assert "- [x] One clear personal-assistant promise" in vision_section
+    implementation_section = scorecard_doc.split("### Implementation", 1)[1].split("### Automated", 1)[0]
+    assert "- [ ] Every advertised stable capability" in implementation_section
+
     stable = copy.deepcopy(capabilities)
     row = next(item for item in stable["capabilities"] if item["id"] == "tools.ai")
     row["lifecycle"] = "stable"

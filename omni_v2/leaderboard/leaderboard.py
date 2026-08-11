@@ -27,10 +27,7 @@ except ImportError:
     import logging
     logger = logging.getLogger("Leaderboard")
 
-try:
-    from omni_v2.core.paths import DATA_DIR
-except Exception:
-    DATA_DIR = Path.cwd() / "data"
+from omni_v2.core.paths import DATA_DIR
 
 LEADERBOARD_PATH = DATA_DIR / "brain" / "leaderboard.json"
 

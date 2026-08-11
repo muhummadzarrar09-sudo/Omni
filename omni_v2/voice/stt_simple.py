@@ -10,7 +10,6 @@ FIXES (from diagnostic/01_DIAGNOSTIC_REPORT.md):
 - STT-BUG-07 [LOW] : WAV saved only if RMS > 0.001
 """
 import os
-from pathlib import Path
 from typing import Optional
 import numpy as np
 
@@ -20,10 +19,7 @@ except ImportError:
     import logging
     logger = logging.getLogger("STTSimpleV3")
 
-try:
-    from omni_v2.core.paths import DATA_DIR
-except ImportError:
-    DATA_DIR = Path(__file__).resolve().parents[2] / "data"
+from omni_v2.core.paths import DATA_DIR
 
 
 class SimpleSTT:

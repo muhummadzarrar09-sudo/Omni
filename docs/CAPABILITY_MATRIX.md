@@ -2,9 +2,9 @@
 
 > **Generated file.** Edit `quality/capabilities.json`, then run `python scripts/quality_baseline.py generate`.
 
-**Authority verified:** 2026-08-11  
-**Release state:** pre-alpha recovery  
-**Source inventory digest:** `12c045db881c35936ce758e59b160b507c5525db648a948925d526a76261e240`
+**Authority verified:** 2026-08-11<br>
+**Release state:** pre-alpha recovery<br>
+**Source inventory digest:** `b33434ab727a66831e00800e06134f681f93b2c415d4a2e6723c14c658ac4fc1`
 
 ## Locked Product Promise
 
@@ -75,7 +75,7 @@ Lifecycle and implementation reality are separate. `beta/real` means concrete be
 | ID | Capability | Area | Lifecycle | Reality | Target | Summary |
 |---|---|---|---|---|---|---|
 | `runtime.application` | Application runtime, configuration, events, and paths | core | `beta` | `infrastructure` | `personal_core` | Core application composition, workspace paths, configuration, event bus, intent mapping, guardrails, and utility setup exist. |
-| `runtime.cli_launchers` | CLI and launchers | core | `experimental` | `partial` | `personal_core` | A large CLI and platform launch scripts exist, but documented one-click installation and distribution are broken. |
+| `runtime.cli_launchers` | CLI and launchers | core | `experimental` | `partial` | `personal_core` | Package discovery, artifacts, profile locks, and selected installed CLI paths are repaired; one-click product startup remains unqualified. |
 | `brain.local_llm` | Local LLM loading and routing | brain | `beta` | `partial` | `personal_core` | Local GGUF loading, model download, routing, fallback, and compaction code exists. |
 | `brain.agent_execution` | Planning, execution, monitoring, and evaluation | brain | `beta` | `partial` | `personal_core` | Planner, executor, monitor, evaluator, memory-agent, and query-engine layers exist. |
 | `brain.identity_personality` | Identity, personality, mood, and opinions | brain | `beta` | `real` | `personal_core` | Persistent identity/personality models and deterministic opinion/mood behaviors exist with unit tests. |
@@ -136,7 +136,7 @@ Test paths below record only the presence of relevant test code. They do not imp
 - **Owner:** `personal_repository_owner`
 - **Entry points:** `omni_v2/app.py`
 - **Source paths:** `omni_v2/app.py`, `omni_v2/core/*.py`, `omni_v2/utils/*.py`, `omni_v2/__init__.py`
-- **Requirements audit:** `known_subset_dependency_closure_in_B01`
+- **Requirements audit:** `production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified`
 - **Known packages:** none recorded
 - **Models:** none recorded
 - **Accounts or keys:** none recorded
@@ -148,7 +148,7 @@ Test paths below record only the presence of relevant test code. They do not imp
 - **Required test types before stable:** `unit_or_contract`, `integration`, `end_to_end`
 - **Test qualification:** `not_qualified` — Mapped files are presence only; skips, mocks, and broad baseline failures prevent a release claim.
 - **Verified platforms:** none recorded
-- **Platform note:** No release-qualified platform evidence exists at B00; target-platform qualification is scheduled in B13.
+- **Platform note:** No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.
 - **Data accessed:** configuration, process state, events, logs
 - **Network mode:** `mixed`
 - **Network destinations:** `destinations selected by composed adapters`
@@ -157,7 +157,7 @@ Test paths below record only the presence of relevant test code. They do not imp
 - **Tool/API interface audit:** `not_applicable` over not_applicable; evidence: none recorded
 - **Known gaps:**
   - Configuration is fragmented across modules and environment variables
-  - Clean installed-package startup is not qualified
+  - Installed artifact import, CLI, resource, and backend-health smoke passes, but whole-product startup is not qualified
   - Several broad fallbacks obscure component availability
 
 ### `runtime.cli_launchers` — CLI and launchers
@@ -165,7 +165,7 @@ Test paths below record only the presence of relevant test code. They do not imp
 - **Owner:** `personal_repository_owner`
 - **Entry points:** `omni/*.py`
 - **Source paths:** `omni/*.py`, `omni.py`, `omni_daemon.py`, `omni_desktop.py`, `start.sh`, `start.bat`, `install.bat`, `scripts/install.sh`, `scripts/install.ps1`
-- **Requirements audit:** `known_subset_dependency_closure_in_B01`
+- **Requirements audit:** `production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified`
 - **Known packages:** none recorded
 - **Models:** none recorded
 - **Accounts or keys:** none recorded
@@ -177,7 +177,7 @@ Test paths below record only the presence of relevant test code. They do not imp
 - **Required test types before stable:** `unit_or_contract`, `integration`, `end_to_end`
 - **Test qualification:** `not_qualified` — Mapped files are presence only; skips, mocks, and broad baseline failures prevent a release claim.
 - **Verified platforms:** none recorded
-- **Platform note:** No release-qualified platform evidence exists at B00; target-platform qualification is scheduled in B13.
+- **Platform note:** No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.
 - **Data accessed:** configuration, process state, events, logs
 - **Network mode:** `optional`
 - **Network destinations:** `package indexes`, `model download hosts`, `configured service endpoints`
@@ -185,16 +185,16 @@ Test paths below record only the presence of relevant test code. They do not imp
 - **Network disclosure:** Inventory only: destination enforcement, consent, offline no-egress, and exact privacy behavior remain unqualified until B08/B11.
 - **Tool/API interface audit:** `not_applicable` over not_applicable; evidence: none recorded
 - **Known gaps:**
-  - start.sh calls a missing root install.sh
-  - Built wheel omits most application packages
-  - Installer profiles and dependency constraints are not reproducible
+  - Windows and Unix launchers have not passed target-platform install/start/stop/restart gates
+  - CLI paths that depend on checkout-only frontend or root scripts are not installed-artifact qualified
+  - Centralized configuration and process lifecycle remain B02 work
 
 ### `brain.local_llm` — Local LLM loading and routing
 
 - **Owner:** `personal_repository_owner`
 - **Entry points:** `omni_v2/llm/*.py`
 - **Source paths:** `omni_v2/llm/*.py`
-- **Requirements audit:** `known_subset_dependency_closure_in_B01`
+- **Requirements audit:** `production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified`
 - **Known packages:** `llama-cpp-python`, `huggingface-hub`
 - **Models:** `configured GGUF language model`
 - **Accounts or keys:** none recorded
@@ -206,7 +206,7 @@ Test paths below record only the presence of relevant test code. They do not imp
 - **Required test types before stable:** `unit_or_contract`, `integration`, `end_to_end`
 - **Test qualification:** `not_qualified` — Mapped files are presence only; skips, mocks, and broad baseline failures prevent a release claim.
 - **Verified platforms:** none recorded
-- **Platform note:** No release-qualified platform evidence exists at B00; target-platform qualification is scheduled in B13.
+- **Platform note:** No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.
 - **Data accessed:** owner requests, prompts, plans, model responses, execution history
 - **Network mode:** `optional`
 - **Network destinations:** `model download host when explicitly requested`
@@ -223,7 +223,7 @@ Test paths below record only the presence of relevant test code. They do not imp
 - **Owner:** `personal_repository_owner`
 - **Entry points:** `omni_v2/agents/planner.py`
 - **Source paths:** `omni_v2/agents/planner.py`, `omni_v2/agents/executor.py`, `omni_v2/agents/monitor.py`, `omni_v2/agents/evaluator.py`, `omni_v2/agents/memory.py`, `omni_v2/engine/*.py`
-- **Requirements audit:** `known_subset_dependency_closure_in_B01`
+- **Requirements audit:** `production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified`
 - **Known packages:** none recorded
 - **Models:** none recorded
 - **Accounts or keys:** none recorded
@@ -235,7 +235,7 @@ Test paths below record only the presence of relevant test code. They do not imp
 - **Required test types before stable:** `unit_or_contract`, `integration`, `end_to_end`
 - **Test qualification:** `not_qualified` — Mapped files are presence only; skips, mocks, and broad baseline failures prevent a release claim.
 - **Verified platforms:** none recorded
-- **Platform note:** No release-qualified platform evidence exists at B00; target-platform qualification is scheduled in B13.
+- **Platform note:** No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.
 - **Data accessed:** owner requests, prompts, plans, model responses, execution history
 - **Network mode:** `mixed`
 - **Network destinations:** `destinations selected by invoked tools`
@@ -252,7 +252,7 @@ Test paths below record only the presence of relevant test code. They do not imp
 - **Owner:** `personal_repository_owner`
 - **Entry points:** `omni_v2/brain/identity.py`
 - **Source paths:** `omni_v2/brain/identity.py`, `omni_v2/agents/personality.py`, `omni_v2/agents/opinion.py`
-- **Requirements audit:** `known_subset_dependency_closure_in_B01`
+- **Requirements audit:** `production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified`
 - **Known packages:** none recorded
 - **Models:** none recorded
 - **Accounts or keys:** none recorded
@@ -264,7 +264,7 @@ Test paths below record only the presence of relevant test code. They do not imp
 - **Required test types before stable:** `unit_or_contract`, `integration`, `end_to_end`
 - **Test qualification:** `not_qualified` — Mapped files are presence only; skips, mocks, and broad baseline failures prevent a release claim.
 - **Verified platforms:** none recorded
-- **Platform note:** No release-qualified platform evidence exists at B00; target-platform qualification is scheduled in B13.
+- **Platform note:** No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.
 - **Data accessed:** owner requests, prompts, plans, model responses, execution history
 - **Network mode:** `none_expected`
 - **Network destinations:** none recorded
@@ -281,7 +281,7 @@ Test paths below record only the presence of relevant test code. They do not imp
 - **Owner:** `personal_repository_owner`
 - **Entry points:** `omni_v2/brain/goals.py`
 - **Source paths:** `omni_v2/brain/goals.py`
-- **Requirements audit:** `known_subset_dependency_closure_in_B01`
+- **Requirements audit:** `production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified`
 - **Known packages:** none recorded
 - **Models:** none recorded
 - **Accounts or keys:** none recorded
@@ -293,7 +293,7 @@ Test paths below record only the presence of relevant test code. They do not imp
 - **Required test types before stable:** `unit_or_contract`, `integration`, `end_to_end`
 - **Test qualification:** `not_qualified` — Mapped files are presence only; skips, mocks, and broad baseline failures prevent a release claim.
 - **Verified platforms:** none recorded
-- **Platform note:** No release-qualified platform evidence exists at B00; target-platform qualification is scheduled in B13.
+- **Platform note:** No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.
 - **Data accessed:** owner requests, prompts, plans, model responses, execution history
 - **Network mode:** `none_expected`
 - **Network destinations:** none recorded
@@ -310,7 +310,7 @@ Test paths below record only the presence of relevant test code. They do not imp
 - **Owner:** `personal_repository_owner`
 - **Entry points:** `omni_v2/brain/reflect.py`
 - **Source paths:** `omni_v2/brain/reflect.py`, `omni_v2/brain/metacog.py`
-- **Requirements audit:** `known_subset_dependency_closure_in_B01`
+- **Requirements audit:** `production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified`
 - **Known packages:** none recorded
 - **Models:** none recorded
 - **Accounts or keys:** none recorded
@@ -322,7 +322,7 @@ Test paths below record only the presence of relevant test code. They do not imp
 - **Required test types before stable:** `unit_or_contract`, `integration`, `end_to_end`
 - **Test qualification:** `not_qualified` — Mapped files are presence only; skips, mocks, and broad baseline failures prevent a release claim.
 - **Verified platforms:** none recorded
-- **Platform note:** No release-qualified platform evidence exists at B00; target-platform qualification is scheduled in B13.
+- **Platform note:** No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.
 - **Data accessed:** owner requests, prompts, plans, model responses, execution history
 - **Network mode:** `none_expected`
 - **Network destinations:** none recorded
@@ -339,7 +339,7 @@ Test paths below record only the presence of relevant test code. They do not imp
 - **Owner:** `personal_repository_owner`
 - **Entry points:** `omni_v2/agents/subagents.py`
 - **Source paths:** `omni_v2/agents/subagents.py`, `omni_v2/harness/*.py`, `omni_v2/meta/*.py`
-- **Requirements audit:** `known_subset_dependency_closure_in_B01`
+- **Requirements audit:** `production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified`
 - **Known packages:** none recorded
 - **Models:** none recorded
 - **Accounts or keys:** none recorded
@@ -351,7 +351,7 @@ Test paths below record only the presence of relevant test code. They do not imp
 - **Required test types before stable:** `unit_or_contract`, `integration`, `end_to_end`
 - **Test qualification:** `not_qualified` — Mapped files are presence only; skips, mocks, and broad baseline failures prevent a release claim.
 - **Verified platforms:** none recorded
-- **Platform note:** No release-qualified platform evidence exists at B00; target-platform qualification is scheduled in B13.
+- **Platform note:** No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.
 - **Data accessed:** owner requests, prompts, plans, model responses, execution history
 - **Network mode:** `mixed`
 - **Network destinations:** `destinations selected by delegated tools`
@@ -368,7 +368,7 @@ Test paths below record only the presence of relevant test code. They do not imp
 - **Owner:** `personal_repository_owner`
 - **Entry points:** `omni_v2/agents/user_profile.py`
 - **Source paths:** `omni_v2/agents/user_profile.py`, `omni_v2/memory/session_memory.py`
-- **Requirements audit:** `known_subset_dependency_closure_in_B01`
+- **Requirements audit:** `production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified`
 - **Known packages:** none recorded
 - **Models:** none recorded
 - **Accounts or keys:** none recorded
@@ -380,7 +380,7 @@ Test paths below record only the presence of relevant test code. They do not imp
 - **Required test types before stable:** `unit_or_contract`, `integration`, `end_to_end`
 - **Test qualification:** `not_qualified` — Mapped files are presence only; skips, mocks, and broad baseline failures prevent a release claim.
 - **Verified platforms:** none recorded
-- **Platform note:** No release-qualified platform evidence exists at B00; target-platform qualification is scheduled in B13.
+- **Platform note:** No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.
 - **Data accessed:** owner profile, sessions, stored documents, embeddings, retrieval history
 - **Network mode:** `none_expected`
 - **Network destinations:** none recorded
@@ -397,7 +397,7 @@ Test paths below record only the presence of relevant test code. They do not imp
 - **Owner:** `personal_repository_owner`
 - **Entry points:** `omni_v2/memory/fast_af_store.py`
 - **Source paths:** `omni_v2/memory/fast_af_store.py`, `omni_v2/memory/hybrid_memory.py`, `omni_v2/memory/sqlite_store.py`, `omni_v2/memory/vector_store.py`, `omni_v2/memory/__init__.py`
-- **Requirements audit:** `known_subset_dependency_closure_in_B01`
+- **Requirements audit:** `production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified`
 - **Known packages:** `numpy`, `configured vector/embedding backend`
 - **Models:** `configured embedding model`
 - **Accounts or keys:** none recorded
@@ -409,7 +409,7 @@ Test paths below record only the presence of relevant test code. They do not imp
 - **Required test types before stable:** `unit_or_contract`, `integration`, `end_to_end`
 - **Test qualification:** `not_qualified` — Mapped files are presence only; skips, mocks, and broad baseline failures prevent a release claim.
 - **Verified platforms:** none recorded
-- **Platform note:** No release-qualified platform evidence exists at B00; target-platform qualification is scheduled in B13.
+- **Platform note:** No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.
 - **Data accessed:** owner profile, sessions, stored documents, embeddings, retrieval history
 - **Network mode:** `optional`
 - **Network destinations:** `configured model download or retrieval backend`
@@ -426,7 +426,7 @@ Test paths below record only the presence of relevant test code. They do not imp
 - **Owner:** `personal_repository_owner`
 - **Entry points:** `omni_v2/graph/*.py`
 - **Source paths:** `omni_v2/graph/*.py`, `omni_v2/history/*.py`, `omni_v2/photos/*.py`
-- **Requirements audit:** `known_subset_dependency_closure_in_B01`
+- **Requirements audit:** `production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified`
 - **Known packages:** none recorded
 - **Models:** none recorded
 - **Accounts or keys:** none recorded
@@ -438,7 +438,7 @@ Test paths below record only the presence of relevant test code. They do not imp
 - **Required test types before stable:** `unit_or_contract`, `integration`, `end_to_end`
 - **Test qualification:** `not_qualified` — Mapped files are presence only; skips, mocks, and broad baseline failures prevent a release claim.
 - **Verified platforms:** none recorded
-- **Platform note:** No release-qualified platform evidence exists at B00; target-platform qualification is scheduled in B13.
+- **Platform note:** No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.
 - **Data accessed:** owner profile, sessions, stored documents, embeddings, retrieval history
 - **Network mode:** `optional`
 - **Network destinations:** `configured caption/model backend`
@@ -455,7 +455,7 @@ Test paths below record only the presence of relevant test code. They do not imp
 - **Owner:** `personal_repository_owner`
 - **Entry points:** `omni_v2/personal/*.py`
 - **Source paths:** `omni_v2/personal/*.py`
-- **Requirements audit:** `known_subset_dependency_closure_in_B01`
+- **Requirements audit:** `production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified`
 - **Known packages:** none recorded
 - **Models:** none recorded
 - **Accounts or keys:** none recorded
@@ -467,7 +467,7 @@ Test paths below record only the presence of relevant test code. They do not imp
 - **Required test types before stable:** `unit_or_contract`, `integration`, `end_to_end`
 - **Test qualification:** `not_qualified` — Mapped files are presence only; skips, mocks, and broad baseline failures prevent a release claim.
 - **Verified platforms:** none recorded
-- **Platform note:** No release-qualified platform evidence exists at B00; target-platform qualification is scheduled in B13.
+- **Platform note:** No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.
 - **Data accessed:** owner commands, calendar, tasks, contacts, preferences, assistant responses
 - **Network mode:** `none_expected`
 - **Network destinations:** none recorded
@@ -484,7 +484,7 @@ Test paths below record only the presence of relevant test code. They do not imp
 - **Owner:** `personal_repository_owner`
 - **Entry points:** `omni_v2/briefing/*.py`
 - **Source paths:** `omni_v2/briefing/*.py`, `omni_v2/wake/*.py`
-- **Requirements audit:** `known_subset_dependency_closure_in_B01`
+- **Requirements audit:** `production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified`
 - **Known packages:** none recorded
 - **Models:** none recorded
 - **Accounts or keys:** none recorded
@@ -496,7 +496,7 @@ Test paths below record only the presence of relevant test code. They do not imp
 - **Required test types before stable:** `unit_or_contract`, `integration`, `end_to_end`
 - **Test qualification:** `not_qualified` — Mapped files are presence only; skips, mocks, and broad baseline failures prevent a release claim.
 - **Verified platforms:** none recorded
-- **Platform note:** No release-qualified platform evidence exists at B00; target-platform qualification is scheduled in B13.
+- **Platform note:** No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.
 - **Data accessed:** owner commands, calendar, tasks, contacts, preferences, assistant responses
 - **Network mode:** `mixed`
 - **Network destinations:** `explicitly configured briefing sources`
@@ -513,7 +513,7 @@ Test paths below record only the presence of relevant test code. They do not imp
 - **Owner:** `personal_repository_owner`
 - **Entry points:** `omni_v2/agents/proactive.py`
 - **Source paths:** `omni_v2/agents/proactive.py`, `omni_v2/agents/proactive_v2.py`, `omni_v2/agents/onboarding.py`, `omni_v2/agents/stats.py`, `omni_v2/agents/demo_mode.py`, `omni_v2/tools/demo_scenarios.py`
-- **Requirements audit:** `known_subset_dependency_closure_in_B01`
+- **Requirements audit:** `production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified`
 - **Known packages:** none recorded
 - **Models:** none recorded
 - **Accounts or keys:** none recorded
@@ -525,7 +525,7 @@ Test paths below record only the presence of relevant test code. They do not imp
 - **Required test types before stable:** `unit_or_contract`, `integration`, `end_to_end`
 - **Test qualification:** `not_qualified` — Mapped files are presence only; skips, mocks, and broad baseline failures prevent a release claim.
 - **Verified platforms:** none recorded
-- **Platform note:** No release-qualified platform evidence exists at B00; target-platform qualification is scheduled in B13.
+- **Platform note:** No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.
 - **Data accessed:** owner commands, calendar, tasks, contacts, preferences, assistant responses
 - **Network mode:** `none_expected`
 - **Network destinations:** none recorded
@@ -542,7 +542,7 @@ Test paths below record only the presence of relevant test code. They do not imp
 - **Owner:** `personal_repository_owner`
 - **Entry points:** `omni_v2/agents/scheduler.py`
 - **Source paths:** `omni_v2/agents/scheduler.py`, `omni_v2/schedule/*.py`
-- **Requirements audit:** `known_subset_dependency_closure_in_B01`
+- **Requirements audit:** `production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified`
 - **Known packages:** none recorded
 - **Models:** none recorded
 - **Accounts or keys:** none recorded
@@ -554,7 +554,7 @@ Test paths below record only the presence of relevant test code. They do not imp
 - **Required test types before stable:** `unit_or_contract`, `integration`, `end_to_end`
 - **Test qualification:** `not_qualified` — Mapped files are presence only; skips, mocks, and broad baseline failures prevent a release claim.
 - **Verified platforms:** none recorded
-- **Platform note:** No release-qualified platform evidence exists at B00; target-platform qualification is scheduled in B13.
+- **Platform note:** No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.
 - **Data accessed:** task definitions, triggers, schedules, execution results
 - **Network mode:** `none_expected`
 - **Network destinations:** none recorded
@@ -570,7 +570,7 @@ Test paths below record only the presence of relevant test code. They do not imp
 - **Owner:** `personal_repository_owner`
 - **Entry points:** `omni_v2/automation/*.py`
 - **Source paths:** `omni_v2/automation/*.py`
-- **Requirements audit:** `known_subset_dependency_closure_in_B01`
+- **Requirements audit:** `production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified`
 - **Known packages:** none recorded
 - **Models:** none recorded
 - **Accounts or keys:** none recorded
@@ -582,7 +582,7 @@ Test paths below record only the presence of relevant test code. They do not imp
 - **Required test types before stable:** `unit_or_contract`, `integration`, `end_to_end`
 - **Test qualification:** `not_qualified` — Mapped files are presence only; skips, mocks, and broad baseline failures prevent a release claim.
 - **Verified platforms:** none recorded
-- **Platform note:** No release-qualified platform evidence exists at B00; target-platform qualification is scheduled in B13.
+- **Platform note:** No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.
 - **Data accessed:** task definitions, triggers, schedules, execution results
 - **Network mode:** `required_for_network_trigger`
 - **Network destinations:** `configured webhook and trigger destinations`
@@ -599,7 +599,7 @@ Test paths below record only the presence of relevant test code. They do not imp
 - **Owner:** `personal_repository_owner`
 - **Entry points:** `omni_v2/away/*.py`
 - **Source paths:** `omni_v2/away/*.py`
-- **Requirements audit:** `known_subset_dependency_closure_in_B01`
+- **Requirements audit:** `production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified`
 - **Known packages:** none recorded
 - **Models:** none recorded
 - **Accounts or keys:** none recorded
@@ -611,7 +611,7 @@ Test paths below record only the presence of relevant test code. They do not imp
 - **Required test types before stable:** `unit_or_contract`, `integration`, `end_to_end`
 - **Test qualification:** `not_qualified` — Mapped files are presence only; skips, mocks, and broad baseline failures prevent a release claim.
 - **Verified platforms:** none recorded
-- **Platform note:** No release-qualified platform evidence exists at B00; target-platform qualification is scheduled in B13.
+- **Platform note:** No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.
 - **Data accessed:** task definitions, triggers, schedules, execution results
 - **Network mode:** `required_for_remote_paths`
 - **Network destinations:** `user-configured research URLs`, `messaging provider`, `remote command endpoint`
@@ -628,7 +628,7 @@ Test paths below record only the presence of relevant test code. They do not imp
 - **Owner:** `personal_repository_owner`
 - **Entry points:** `omni_v2/agents/geofence.py`
 - **Source paths:** `omni_v2/agents/geofence.py`
-- **Requirements audit:** `known_subset_dependency_closure_in_B01`
+- **Requirements audit:** `production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified`
 - **Known packages:** none recorded
 - **Models:** none recorded
 - **Accounts or keys:** none recorded
@@ -640,7 +640,7 @@ Test paths below record only the presence of relevant test code. They do not imp
 - **Required test types before stable:** `unit_or_contract`, `integration`, `end_to_end`
 - **Test qualification:** `not_qualified` — Mapped files are presence only; skips, mocks, and broad baseline failures prevent a release claim.
 - **Verified platforms:** none recorded
-- **Platform note:** No release-qualified platform evidence exists at B00; target-platform qualification is scheduled in B13.
+- **Platform note:** No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.
 - **Data accessed:** task definitions, triggers, schedules, execution results
 - **Network mode:** `lan_or_remote_optional`
 - **Network destinations:** `paired mobile/backend endpoint`
@@ -657,7 +657,7 @@ Test paths below record only the presence of relevant test code. They do not imp
 - **Owner:** `personal_repository_owner`
 - **Entry points:** `omni_v2/agents/screen_watcher.py`
 - **Source paths:** `omni_v2/agents/screen_watcher.py`
-- **Requirements audit:** `known_subset_dependency_closure_in_B01`
+- **Requirements audit:** `production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified`
 - **Known packages:** none recorded
 - **Models:** none recorded
 - **Accounts or keys:** none recorded
@@ -669,7 +669,7 @@ Test paths below record only the presence of relevant test code. They do not imp
 - **Required test types before stable:** `unit_or_contract`, `integration`, `end_to_end`
 - **Test qualification:** `not_qualified` — Mapped files are presence only; skips, mocks, and broad baseline failures prevent a release claim.
 - **Verified platforms:** none recorded
-- **Platform note:** No release-qualified platform evidence exists at B00; target-platform qualification is scheduled in B13.
+- **Platform note:** No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.
 - **Data accessed:** task definitions, triggers, schedules, execution results
 - **Network mode:** `none_expected`
 - **Network destinations:** none recorded
@@ -686,7 +686,7 @@ Test paths below record only the presence of relevant test code. They do not imp
 - **Owner:** `personal_repository_owner`
 - **Entry points:** `omni_v2/guardian/*.py`
 - **Source paths:** `omni_v2/guardian/*.py`, `omni_v2/daemon/*.py`
-- **Requirements audit:** `known_subset_dependency_closure_in_B01`
+- **Requirements audit:** `production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified`
 - **Known packages:** none recorded
 - **Models:** none recorded
 - **Accounts or keys:** none recorded
@@ -698,7 +698,7 @@ Test paths below record only the presence of relevant test code. They do not imp
 - **Required test types before stable:** `unit_or_contract`, `integration`, `end_to_end`
 - **Test qualification:** `not_qualified` — Mapped files are presence only; skips, mocks, and broad baseline failures prevent a release claim.
 - **Verified platforms:** none recorded
-- **Platform note:** No release-qualified platform evidence exists at B00; target-platform qualification is scheduled in B13.
+- **Platform note:** No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.
 - **Data accessed:** process health, file observations, daemon state, alerts
 - **Network mode:** `optional`
 - **Network destinations:** `configured remote alert destination`
@@ -715,7 +715,7 @@ Test paths below record only the presence of relevant test code. They do not imp
 - **Owner:** `personal_repository_owner`
 - **Entry points:** `omni_v2/tools/__init__.py`
 - **Source paths:** `omni_v2/tools/__init__.py`
-- **Requirements audit:** `known_subset_dependency_closure_in_B01`
+- **Requirements audit:** `production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified`
 - **Known packages:** none recorded
 - **Models:** none recorded
 - **Accounts or keys:** none recorded
@@ -727,7 +727,7 @@ Test paths below record only the presence of relevant test code. They do not imp
 - **Required test types before stable:** `unit_or_contract`, `integration`, `end_to_end`
 - **Test qualification:** `not_qualified` — Mapped files are presence only; skips, mocks, and broad baseline failures prevent a release claim.
 - **Verified platforms:** none recorded
-- **Platform note:** No release-qualified platform evidence exists at B00; target-platform qualification is scheduled in B13.
+- **Platform note:** No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.
 - **Data accessed:** owner commands, tool arguments/results, approved local files or application state
 - **Network mode:** `none_expected`
 - **Network destinations:** none recorded
@@ -744,7 +744,7 @@ Test paths below record only the presence of relevant test code. They do not imp
 - **Owner:** `personal_repository_owner`
 - **Entry points:** `omni_v2/tools/files.py`
 - **Source paths:** `omni_v2/tools/files.py`
-- **Requirements audit:** `known_subset_dependency_closure_in_B01`
+- **Requirements audit:** `production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified`
 - **Known packages:** none recorded
 - **Models:** none recorded
 - **Accounts or keys:** none recorded
@@ -756,7 +756,7 @@ Test paths below record only the presence of relevant test code. They do not imp
 - **Required test types before stable:** `unit_or_contract`, `integration`, `end_to_end`
 - **Test qualification:** `not_qualified` — Mapped files are presence only; skips, mocks, and broad baseline failures prevent a release claim.
 - **Verified platforms:** none recorded
-- **Platform note:** No release-qualified platform evidence exists at B00; target-platform qualification is scheduled in B13.
+- **Platform note:** No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.
 - **Data accessed:** owner commands, tool arguments/results, approved local files or application state
 - **Network mode:** `none_expected`
 - **Network destinations:** none recorded
@@ -773,7 +773,7 @@ Test paths below record only the presence of relevant test code. They do not imp
 - **Owner:** `personal_repository_owner`
 - **Entry points:** `omni_v2/tools/windows.py`
 - **Source paths:** `omni_v2/tools/windows.py`, `omni_v2/tools/system.py`
-- **Requirements audit:** `known_subset_dependency_closure_in_B01`
+- **Requirements audit:** `production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified`
 - **Known packages:** `pyautogui`, `Windows platform APIs`
 - **Models:** none recorded
 - **Accounts or keys:** none recorded
@@ -785,7 +785,7 @@ Test paths below record only the presence of relevant test code. They do not imp
 - **Required test types before stable:** `unit_or_contract`, `integration`, `end_to_end`, `hardware`
 - **Test qualification:** `not_qualified` — Mapped files are presence only; skips, mocks, and broad baseline failures prevent a release claim.
 - **Verified platforms:** none recorded
-- **Platform note:** No release-qualified platform evidence exists at B00; target-platform qualification is scheduled in B13.
+- **Platform note:** No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.
 - **Data accessed:** owner commands, tool arguments/results, approved local files or application state
 - **Network mode:** `none_expected`
 - **Network destinations:** none recorded
@@ -802,7 +802,7 @@ Test paths below record only the presence of relevant test code. They do not imp
 - **Owner:** `personal_repository_owner`
 - **Entry points:** `omni_v2/tools/browser.py`
 - **Source paths:** `omni_v2/tools/browser.py`, `omni_v2/tools/browser_v3.py`, `omni_v2/tools/browser_playwright.py`
-- **Requirements audit:** `known_subset_dependency_closure_in_B01`
+- **Requirements audit:** `production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified`
 - **Known packages:** `Playwright and/or Selenium`, `compatible browser`
 - **Models:** none recorded
 - **Accounts or keys:** none recorded
@@ -814,7 +814,7 @@ Test paths below record only the presence of relevant test code. They do not imp
 - **Required test types before stable:** `unit_or_contract`, `integration`, `end_to_end`, `hardware`
 - **Test qualification:** `not_qualified` — Mapped files are presence only; skips, mocks, and broad baseline failures prevent a release claim.
 - **Verified platforms:** none recorded
-- **Platform note:** No release-qualified platform evidence exists at B00; target-platform qualification is scheduled in B13.
+- **Platform note:** No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.
 - **Data accessed:** owner commands, tool arguments/results, approved local files or application state
 - **Network mode:** `required`
 - **Network destinations:** `user-requested websites and search destinations`
@@ -823,7 +823,7 @@ Test paths below record only the presence of relevant test code. They do not imp
 - **Tool/API interface audit:** `not_qualified` over all declared actions and routes in mapped source paths; evidence: none recorded
 - **Known gaps:**
   - Multiple overlapping implementations need consolidation
-  - Browser dependencies and binaries are not clean-install qualified
+  - The desktop profile resolves on B01 Linux, but browser binaries and end-to-end startup are not clean-install qualified
   - Action verification and robust page-state contracts are incomplete
 
 ### `tools.desktop_productivity` — VS Code, media, accessibility, and OMNI utility tools
@@ -831,7 +831,7 @@ Test paths below record only the presence of relevant test code. They do not imp
 - **Owner:** `personal_repository_owner`
 - **Entry points:** `omni_v2/tools/vscode.py`
 - **Source paths:** `omni_v2/tools/vscode.py`, `omni_v2/tools/media.py`, `omni_v2/tools/accessibility.py`, `omni_v2/tools/omni.py`
-- **Requirements audit:** `known_subset_dependency_closure_in_B01`
+- **Requirements audit:** `production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified`
 - **Known packages:** `pyautogui`, `application-specific desktop interfaces`
 - **Models:** none recorded
 - **Accounts or keys:** none recorded
@@ -843,7 +843,7 @@ Test paths below record only the presence of relevant test code. They do not imp
 - **Required test types before stable:** `unit_or_contract`, `integration`, `end_to_end`, `hardware`
 - **Test qualification:** `not_qualified` — Mapped files are presence only; skips, mocks, and broad baseline failures prevent a release claim.
 - **Verified platforms:** none recorded
-- **Platform note:** No release-qualified platform evidence exists at B00; target-platform qualification is scheduled in B13.
+- **Platform note:** No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.
 - **Data accessed:** owner commands, tool arguments/results, approved local files or application state
 - **Network mode:** `none_expected`
 - **Network destinations:** none recorded
@@ -860,7 +860,7 @@ Test paths below record only the presence of relevant test code. They do not imp
 - **Owner:** `personal_repository_owner`
 - **Entry points:** `omni_v2/tools/ai.py`
 - **Source paths:** `omni_v2/tools/ai.py`
-- **Requirements audit:** `known_subset_dependency_closure_in_B01`
+- **Requirements audit:** `production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified`
 - **Known packages:** none recorded
 - **Models:** `configured local language model`
 - **Accounts or keys:** none recorded
@@ -872,7 +872,7 @@ Test paths below record only the presence of relevant test code. They do not imp
 - **Required test types before stable:** `unit_or_contract`, `integration`, `end_to_end`
 - **Test qualification:** `not_qualified` — Mapped files are presence only; skips, mocks, and broad baseline failures prevent a release claim.
 - **Verified platforms:** none recorded
-- **Platform note:** No release-qualified platform evidence exists at B00; target-platform qualification is scheduled in B13.
+- **Platform note:** No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.
 - **Data accessed:** owner commands, tool arguments/results, approved local files or application state
 - **Network mode:** `optional`
 - **Network destinations:** `configured model endpoint when non-local`
@@ -889,7 +889,7 @@ Test paths below record only the presence of relevant test code. They do not imp
 - **Owner:** `personal_repository_owner`
 - **Entry points:** `omni_v2/tools/integrations.py`
 - **Source paths:** `omni_v2/tools/integrations.py`
-- **Requirements audit:** `known_subset_dependency_closure_in_B01`
+- **Requirements audit:** `production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified`
 - **Known packages:** none recorded
 - **Models:** none recorded
 - **Accounts or keys:** `real service accounts after demo replacement`
@@ -901,7 +901,7 @@ Test paths below record only the presence of relevant test code. They do not imp
 - **Required test types before stable:** `unit_or_contract`, `integration`, `end_to_end`
 - **Test qualification:** `not_qualified` — Mapped files are presence only; skips, mocks, and broad baseline failures prevent a release claim.
 - **Verified platforms:** none recorded
-- **Platform note:** No release-qualified platform evidence exists at B00; target-platform qualification is scheduled in B13.
+- **Platform note:** No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.
 - **Data accessed:** canned/demo connector inputs and outputs
 - **Network mode:** `demo_only`
 - **Network destinations:** none recorded
@@ -918,7 +918,7 @@ Test paths below record only the presence of relevant test code. They do not imp
 - **Owner:** `personal_repository_owner`
 - **Entry points:** `omni_v2/agents/notifications.py`
 - **Source paths:** `omni_v2/agents/notifications.py`, `omni_v2/agents/notification_prefs.py`, `omni_v2/tools/send_to_phone.py`, `omni_v2/tools/snooze.py`
-- **Requirements audit:** `known_subset_dependency_closure_in_B01`
+- **Requirements audit:** `production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified`
 - **Known packages:** `optional WebSocket/push transport`
 - **Models:** none recorded
 - **Accounts or keys:** `paired device for remote delivery`
@@ -930,7 +930,7 @@ Test paths below record only the presence of relevant test code. They do not imp
 - **Required test types before stable:** `unit_or_contract`, `integration`, `end_to_end`, `hardware`
 - **Test qualification:** `not_qualified` — Mapped files are presence only; skips, mocks, and broad baseline failures prevent a release claim.
 - **Verified platforms:** none recorded
-- **Platform note:** No release-qualified platform evidence exists at B00; target-platform qualification is scheduled in B13.
+- **Platform note:** No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.
 - **Data accessed:** notification content, preferences, subscriptions or device tokens
 - **Network mode:** `lan_or_remote_optional`
 - **Network destinations:** `paired phone, WebSocket, or push destination`
@@ -947,7 +947,7 @@ Test paths below record only the presence of relevant test code. They do not imp
 - **Owner:** `personal_repository_owner`
 - **Entry points:** `omni_v2/voice/audio_device.py`
 - **Source paths:** `omni_v2/voice/audio_device.py`, `omni_v2/voice/audio_device_v3.py`, `omni_v2/voice/pipeline.py`, `omni_v2/voice/pipeline_v3.py`, `omni_v2/voice/pipeline_v3_fixed.py`, `omni_v2/voice/ptt_manager.py`, `omni_v2/voice/stt_manager.py`, `omni_v2/voice/stt_simple.py`, `omni_v2/voice/test_mic_fixed.py`, `omni_v2/voice/voice_loop.py`, `omni_v2/voice/loop.py`, `omni_v2/voice/__init__.py`
-- **Requirements audit:** `known_subset_dependency_closure_in_B01`
+- **Requirements audit:** `production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified`
 - **Known packages:** `sounddevice`, `numpy`, `faster-whisper or selected STT adapter`
 - **Models:** `speech-recognition model`
 - **Accounts or keys:** none recorded
@@ -959,7 +959,7 @@ Test paths below record only the presence of relevant test code. They do not imp
 - **Required test types before stable:** `unit_or_contract`, `integration`, `end_to_end`, `hardware`
 - **Test qualification:** `not_qualified` — Mapped files are presence only; skips, mocks, and broad baseline failures prevent a release claim.
 - **Verified platforms:** none recorded
-- **Platform note:** No release-qualified platform evidence exists at B00; target-platform qualification is scheduled in B13.
+- **Platform note:** No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.
 - **Data accessed:** microphone audio, transcripts, voice configuration, generated audio
 - **Network mode:** `optional`
 - **Network destinations:** `configured remote STT endpoint when selected`
@@ -976,7 +976,7 @@ Test paths below record only the presence of relevant test code. They do not imp
 - **Owner:** `personal_repository_owner`
 - **Entry points:** `omni_v2/voice/tts_best.py`
 - **Source paths:** `omni_v2/voice/tts_best.py`, `omni_v2/voice/tts_simple.py`
-- **Requirements audit:** `known_subset_dependency_closure_in_B01`
+- **Requirements audit:** `production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified`
 - **Known packages:** `pyttsx3 or selected local TTS adapter`, `edge-tts only in online mode`
 - **Models:** `selected TTS voice/model`
 - **Accounts or keys:** none recorded
@@ -988,7 +988,7 @@ Test paths below record only the presence of relevant test code. They do not imp
 - **Required test types before stable:** `unit_or_contract`, `integration`, `end_to_end`, `hardware`
 - **Test qualification:** `not_qualified` — Mapped files are presence only; skips, mocks, and broad baseline failures prevent a release claim.
 - **Verified platforms:** none recorded
-- **Platform note:** No release-qualified platform evidence exists at B00; target-platform qualification is scheduled in B13.
+- **Platform note:** No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.
 - **Data accessed:** microphone audio, transcripts, voice configuration, generated audio
 - **Network mode:** `optional`
 - **Network destinations:** `Microsoft Edge TTS service when edge-tts is selected`
@@ -1005,7 +1005,7 @@ Test paths below record only the presence of relevant test code. They do not imp
 - **Owner:** `personal_repository_owner`
 - **Entry points:** `omni_v2/voice/wake_word.py`
 - **Source paths:** `omni_v2/voice/wake_word.py`, `omni_v2/voice/wake_word_best.py`, `omni_v2/voice/wake_word_v3.py`
-- **Requirements audit:** `known_subset_dependency_closure_in_B01`
+- **Requirements audit:** `production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified`
 - **Known packages:** `openwakeword or pvporcupine`
 - **Models:** `wake-word model`
 - **Accounts or keys:** `Porcupine key only when that backend is selected`
@@ -1017,7 +1017,7 @@ Test paths below record only the presence of relevant test code. They do not imp
 - **Required test types before stable:** `unit_or_contract`, `integration`, `end_to_end`, `hardware`
 - **Test qualification:** `not_qualified` — Mapped files are presence only; skips, mocks, and broad baseline failures prevent a release claim.
 - **Verified platforms:** none recorded
-- **Platform note:** No release-qualified platform evidence exists at B00; target-platform qualification is scheduled in B13.
+- **Platform note:** No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.
 - **Data accessed:** microphone audio, transcripts, voice configuration, generated audio
 - **Network mode:** `optional`
 - **Network destinations:** `licensed backend or model download host`
@@ -1034,7 +1034,7 @@ Test paths below record only the presence of relevant test code. They do not imp
 - **Owner:** `personal_repository_owner`
 - **Entry points:** `omni_v2/voice/voice_clone.py`
 - **Source paths:** `omni_v2/voice/voice_clone.py`
-- **Requirements audit:** `known_subset_dependency_closure_in_B01`
+- **Requirements audit:** `production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified`
 - **Known packages:** `audio capture dependencies; training stack is absent`
 - **Models:** `no cloned-voice model is implemented`
 - **Accounts or keys:** none recorded
@@ -1046,7 +1046,7 @@ Test paths below record only the presence of relevant test code. They do not imp
 - **Required test types before stable:** `unit_or_contract`, `integration`, `end_to_end`, `hardware`
 - **Test qualification:** `not_qualified` — Mapped files are presence only; skips, mocks, and broad baseline failures prevent a release claim.
 - **Verified platforms:** none recorded
-- **Platform note:** No release-qualified platform evidence exists at B00; target-platform qualification is scheduled in B13.
+- **Platform note:** No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.
 - **Data accessed:** microphone audio, transcripts, voice configuration, generated audio
 - **Network mode:** `none_expected`
 - **Network destinations:** none recorded
@@ -1064,7 +1064,7 @@ Test paths below record only the presence of relevant test code. They do not imp
 - **Owner:** `personal_repository_owner`
 - **Entry points:** `omni_v2/vision/*.py`
 - **Source paths:** `omni_v2/vision/*.py`
-- **Requirements audit:** `known_subset_dependency_closure_in_B01`
+- **Requirements audit:** `production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified`
 - **Known packages:** `Pillow`, `pytesseract`, `opencv`, `optional model adapter`
 - **Models:** `optional OCR/VLM model`
 - **Accounts or keys:** none recorded
@@ -1076,7 +1076,7 @@ Test paths below record only the presence of relevant test code. They do not imp
 - **Required test types before stable:** `unit_or_contract`, `integration`, `end_to_end`, `hardware`
 - **Test qualification:** `not_qualified` — Mapped files are presence only; skips, mocks, and broad baseline failures prevent a release claim.
 - **Verified platforms:** none recorded
-- **Platform note:** No release-qualified platform evidence exists at B00; target-platform qualification is scheduled in B13.
+- **Platform note:** No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.
 - **Data accessed:** screenshots/images, OCR text, derived visual output
 - **Network mode:** `optional`
 - **Network destinations:** `model download host or configured visual-model endpoint`
@@ -1093,7 +1093,7 @@ Test paths below record only the presence of relevant test code. They do not imp
 - **Owner:** `personal_repository_owner`
 - **Entry points:** `omni_v2/core/guardrails.py`
 - **Source paths:** `omni_v2/core/guardrails.py`, `omni_v2/core/safe_execute.py`
-- **Requirements audit:** `known_subset_dependency_closure_in_B01`
+- **Requirements audit:** `production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified`
 - **Known packages:** none recorded
 - **Models:** none recorded
 - **Accounts or keys:** none recorded
@@ -1105,7 +1105,7 @@ Test paths below record only the presence of relevant test code. They do not imp
 - **Required test types before stable:** `unit_or_contract`, `integration`, `end_to_end`
 - **Test qualification:** `not_qualified` — Mapped files are presence only; skips, mocks, and broad baseline failures prevent a release claim.
 - **Verified platforms:** none recorded
-- **Platform note:** No release-qualified platform evidence exists at B00; target-platform qualification is scheduled in B13.
+- **Platform note:** No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.
 - **Data accessed:** commands, paths, policy decisions, audit state, security-specific biometrics or secrets
 - **Network mode:** `none_expected`
 - **Network destinations:** none recorded
@@ -1122,7 +1122,7 @@ Test paths below record only the presence of relevant test code. They do not imp
 - **Owner:** `personal_repository_owner`
 - **Entry points:** `omni_v2/vault/*.py`
 - **Source paths:** `omni_v2/vault/*.py`
-- **Requirements audit:** `known_subset_dependency_closure_in_B01`
+- **Requirements audit:** `production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified`
 - **Known packages:** `cryptography`
 - **Models:** none recorded
 - **Accounts or keys:** none recorded
@@ -1134,7 +1134,7 @@ Test paths below record only the presence of relevant test code. They do not imp
 - **Required test types before stable:** `unit_or_contract`, `integration`, `end_to_end`, `hardware`
 - **Test qualification:** `not_qualified` — Mapped files are presence only; skips, mocks, and broad baseline failures prevent a release claim.
 - **Verified platforms:** none recorded
-- **Platform note:** No release-qualified platform evidence exists at B00; target-platform qualification is scheduled in B13.
+- **Platform note:** No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.
 - **Data accessed:** commands, paths, policy decisions, audit state, security-specific biometrics or secrets
 - **Network mode:** `none_expected`
 - **Network destinations:** none recorded
@@ -1142,7 +1142,7 @@ Test paths below record only the presence of relevant test code. They do not imp
 - **Network disclosure:** Inventory only: destination enforcement, consent, offline no-egress, and exact privacy behavior remain unqualified until B08/B11.
 - **Tool/API interface audit:** `not_applicable` over not_applicable; evidence: none recorded
 - **Known gaps:**
-  - Cryptography is not correctly declared in the root package
+  - Cryptography is declared and resolved in the B01 core profile, but vault behavior is not release-qualified
   - OS credential-store integration and key lifecycle need qualification
   - Backup/recovery and multi-profile behavior require release tests
 
@@ -1151,7 +1151,7 @@ Test paths below record only the presence of relevant test code. They do not imp
 - **Owner:** `personal_repository_owner`
 - **Entry points:** `omni_v2/security/*.py`
 - **Source paths:** `omni_v2/security/*.py`
-- **Requirements audit:** `known_subset_dependency_closure_in_B01`
+- **Requirements audit:** `production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified`
 - **Known packages:** `opencv-contrib-python or selected verifier`
 - **Models:** `optional face-verification model`
 - **Accounts or keys:** none recorded
@@ -1163,7 +1163,7 @@ Test paths below record only the presence of relevant test code. They do not imp
 - **Required test types before stable:** `unit_or_contract`, `integration`, `end_to_end`, `hardware`
 - **Test qualification:** `not_qualified` — Mapped files are presence only; skips, mocks, and broad baseline failures prevent a release claim.
 - **Verified platforms:** none recorded
-- **Platform note:** No release-qualified platform evidence exists at B00; target-platform qualification is scheduled in B13.
+- **Platform note:** No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.
 - **Data accessed:** commands, paths, policy decisions, audit state, security-specific biometrics or secrets
 - **Network mode:** `none_expected`
 - **Network destinations:** none recorded
@@ -1171,7 +1171,7 @@ Test paths below record only the presence of relevant test code. They do not imp
 - **Network disclosure:** Inventory only: destination enforcement, consent, offline no-egress, and exact privacy behavior remain unqualified until B08/B11.
 - **Tool/API interface audit:** `not_applicable` over not_applicable; evidence: none recorded
 - **Known gaps:**
-  - OpenCV contrib dependency is misdeclared
+  - OpenCV Contrib is declared in the B01 vision profile, but no native vision installation or hardware gate has run
   - Biometric accuracy, spoof resistance, and hardware behavior are not qualified
   - Security-sensitive fallbacks require explicit policy
 
@@ -1180,7 +1180,7 @@ Test paths below record only the presence of relevant test code. They do not imp
 - **Owner:** `personal_repository_owner`
 - **Entry points:** `omni_v2/sdk/*.py`
 - **Source paths:** `omni_v2/sdk/*.py`, `omni_v2/skills/registry.py`, `omni_v2/skills/__init__.py`
-- **Requirements audit:** `known_subset_dependency_closure_in_B01`
+- **Requirements audit:** `production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified`
 - **Known packages:** none recorded
 - **Models:** none recorded
 - **Accounts or keys:** none recorded
@@ -1192,7 +1192,7 @@ Test paths below record only the presence of relevant test code. They do not imp
 - **Required test types before stable:** `unit_or_contract`, `integration`, `end_to_end`
 - **Test qualification:** `not_qualified` — Mapped files are presence only; skips, mocks, and broad baseline failures prevent a release claim.
 - **Verified platforms:** none recorded
-- **Platform note:** No release-qualified platform evidence exists at B00; target-platform qualification is scheduled in B13.
+- **Platform note:** No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.
 - **Data accessed:** skill source, package metadata, permissions, verification/install state
 - **Network mode:** `none_expected`
 - **Network destinations:** none recorded
@@ -1209,7 +1209,7 @@ Test paths below record only the presence of relevant test code. They do not imp
 - **Owner:** `personal_repository_owner`
 - **Entry points:** `omni_v2/skills/marketplace.py`
 - **Source paths:** `omni_v2/skills/marketplace.py`, `omni_v2/skills/installer.py`
-- **Requirements audit:** `known_subset_dependency_closure_in_B01`
+- **Requirements audit:** `production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified`
 - **Known packages:** `HTTP/archive/install tooling`
 - **Models:** none recorded
 - **Accounts or keys:** `marketplace service is not established`
@@ -1221,7 +1221,7 @@ Test paths below record only the presence of relevant test code. They do not imp
 - **Required test types before stable:** `unit_or_contract`, `integration`, `end_to_end`
 - **Test qualification:** `not_qualified` — Mapped files are presence only; skips, mocks, and broad baseline failures prevent a release claim.
 - **Verified platforms:** none recorded
-- **Platform note:** No release-qualified platform evidence exists at B00; target-platform qualification is scheduled in B13.
+- **Platform note:** No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.
 - **Data accessed:** skill source, package metadata, permissions, verification/install state
 - **Network mode:** `required`
 - **Network destinations:** `configured marketplace/package hosts`
@@ -1238,7 +1238,7 @@ Test paths below record only the presence of relevant test code. They do not imp
 - **Owner:** `personal_repository_owner`
 - **Entry points:** `omni_v2/skills/generator.py`
 - **Source paths:** `omni_v2/skills/generator.py`
-- **Requirements audit:** `known_subset_dependency_closure_in_B01`
+- **Requirements audit:** `production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified`
 - **Known packages:** none recorded
 - **Models:** `configured language model`
 - **Accounts or keys:** none recorded
@@ -1250,7 +1250,7 @@ Test paths below record only the presence of relevant test code. They do not imp
 - **Required test types before stable:** `unit_or_contract`, `integration`, `end_to_end`
 - **Test qualification:** `not_qualified` — Mapped files are presence only; skips, mocks, and broad baseline failures prevent a release claim.
 - **Verified platforms:** none recorded
-- **Platform note:** No release-qualified platform evidence exists at B00; target-platform qualification is scheduled in B13.
+- **Platform note:** No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.
 - **Data accessed:** skill source, package metadata, permissions, verification/install state
 - **Network mode:** `optional`
 - **Network destinations:** `configured model endpoint when non-local`
@@ -1267,7 +1267,7 @@ Test paths below record only the presence of relevant test code. They do not imp
 - **Owner:** `personal_repository_owner`
 - **Entry points:** `omni_v2/skills/sandbox.py`
 - **Source paths:** `omni_v2/skills/sandbox.py`, `omni_v2/skills/verifier.py`
-- **Requirements audit:** `known_subset_dependency_closure_in_B01`
+- **Requirements audit:** `production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified`
 - **Known packages:** none recorded
 - **Models:** none recorded
 - **Accounts or keys:** none recorded
@@ -1279,7 +1279,7 @@ Test paths below record only the presence of relevant test code. They do not imp
 - **Required test types before stable:** `unit_or_contract`, `integration`, `end_to_end`
 - **Test qualification:** `not_qualified` — Mapped files are presence only; skips, mocks, and broad baseline failures prevent a release claim.
 - **Verified platforms:** none recorded
-- **Platform note:** No release-qualified platform evidence exists at B00; target-platform qualification is scheduled in B13.
+- **Platform note:** No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.
 - **Data accessed:** skill source, package metadata, permissions, verification/install state
 - **Network mode:** `none_expected`
 - **Network destinations:** none recorded
@@ -1296,7 +1296,7 @@ Test paths below record only the presence of relevant test code. They do not imp
 - **Owner:** `personal_repository_owner`
 - **Entry points:** `backend_fastapi/*.py`
 - **Source paths:** `backend_fastapi/*.py`, `backend_fastapi/core/*.py`
-- **Requirements audit:** `known_subset_dependency_closure_in_B01`
+- **Requirements audit:** `production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified`
 - **Known packages:** `fastapi`, `uvicorn`, `WebSocket dependencies`
 - **Models:** none recorded
 - **Accounts or keys:** none recorded
@@ -1308,7 +1308,7 @@ Test paths below record only the presence of relevant test code. They do not imp
 - **Required test types before stable:** `unit_or_contract`, `integration`, `end_to_end`
 - **Test qualification:** `not_qualified` — Mapped files are presence only; skips, mocks, and broad baseline failures prevent a release claim.
 - **Verified platforms:** none recorded
-- **Platform note:** No release-qualified platform evidence exists at B00; target-platform qualification is scheduled in B13.
+- **Platform note:** No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.
 - **Data accessed:** requests, responses, WebSocket events, authentication/session state
 - **Network mode:** `lan_optional`
 - **Network destinations:** `configured API clients`
@@ -1326,7 +1326,7 @@ Test paths below record only the presence of relevant test code. They do not imp
 - **Owner:** `personal_repository_owner`
 - **Entry points:** `frontend_next/app/*.js`
 - **Source paths:** `frontend_next/app/*.js`, `frontend_next/app/**/*.js`, `frontend_next/app/*.css`, `frontend_next/components/*.js`, `frontend_next/next.config.js`
-- **Requirements audit:** `known_subset_dependency_closure_in_B01`
+- **Requirements audit:** `production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified`
 - **Known packages:** `packages locked by frontend_next/package-lock.json`
 - **Models:** none recorded
 - **Accounts or keys:** none recorded
@@ -1338,7 +1338,7 @@ Test paths below record only the presence of relevant test code. They do not imp
 - **Required test types before stable:** `unit_or_contract`, `integration`, `end_to_end`, `hardware`
 - **Test qualification:** `not_qualified` — Mapped files are presence only; skips, mocks, and broad baseline failures prevent a release claim.
 - **Verified platforms:** none recorded
-- **Platform note:** No release-qualified platform evidence exists at B00; target-platform qualification is scheduled in B13.
+- **Platform note:** No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.
 - **Data accessed:** commands, responses, connection state, displayed personal data
 - **Network mode:** `lan_optional`
 - **Network destinations:** `OMNI backend`, `Google Fonts under current styling`
@@ -1347,17 +1347,15 @@ Test paths below record only the presence of relevant test code. They do not imp
 - **Tool/API interface audit:** `not_applicable` over not_applicable; evidence: none recorded
 - **Known gaps:**
   - Large monolithic client page
-  - Hard-coded localhost backend/WebSocket assumptions
   - Successful mock execute fallback
-  - Lint is unconfigured
-  - Dependency audit has critical/high findings
+  - Frontend clean install, dependency audit, lint, and build pass on B01 Linux; product startup and browser E2E remain unqualified
 
 ### `ui.desktop` — Desktop HUD, tray, dashboard, and voice UI variants
 
 - **Owner:** `personal_repository_owner`
 - **Entry points:** `omni_v2/ui/*.py`
 - **Source paths:** `omni_v2/ui/*.py`, `omni_v2/ui/*.html`, `omni_v2/gui/*.py`, `omni_v2/web_ui/*.html`
-- **Requirements audit:** `known_subset_dependency_closure_in_B01`
+- **Requirements audit:** `production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified`
 - **Known packages:** `selected Tkinter/PySide/desktop GUI stack`
 - **Models:** none recorded
 - **Accounts or keys:** none recorded
@@ -1369,7 +1367,7 @@ Test paths below record only the presence of relevant test code. They do not imp
 - **Required test types before stable:** `unit_or_contract`, `integration`, `end_to_end`, `hardware`
 - **Test qualification:** `not_qualified` — Mapped files are presence only; skips, mocks, and broad baseline failures prevent a release claim.
 - **Verified platforms:** none recorded
-- **Platform note:** No release-qualified platform evidence exists at B00; target-platform qualification is scheduled in B13.
+- **Platform note:** No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.
 - **Data accessed:** commands, responses, connection state, displayed personal data
 - **Network mode:** `none_expected`
 - **Network destinations:** none recorded
@@ -1386,7 +1384,7 @@ Test paths below record only the presence of relevant test code. They do not imp
 - **Owner:** `personal_repository_owner`
 - **Entry points:** `mobile/*.js`
 - **Source paths:** `mobile/*.js`, `mobile/*.html`, `mobile/*.css`, `mobile/*.json`
-- **Requirements audit:** `known_subset_dependency_closure_in_B01`
+- **Requirements audit:** `production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified`
 - **Known packages:** `modern mobile browser`
 - **Models:** none recorded
 - **Accounts or keys:** none recorded
@@ -1398,7 +1396,7 @@ Test paths below record only the presence of relevant test code. They do not imp
 - **Required test types before stable:** `unit_or_contract`, `integration`, `end_to_end`, `hardware`
 - **Test qualification:** `not_qualified` — Mapped files are presence only; skips, mocks, and broad baseline failures prevent a release claim.
 - **Verified platforms:** none recorded
-- **Platform note:** No release-qualified platform evidence exists at B00; target-platform qualification is scheduled in B13.
+- **Platform note:** No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.
 - **Data accessed:** pairing data, commands, voice/location input, notifications
 - **Network mode:** `lan_optional`
 - **Network destinations:** `paired OMNI backend`
@@ -1415,7 +1413,7 @@ Test paths below record only the presence of relevant test code. They do not imp
 - **Owner:** `personal_repository_owner`
 - **Entry points:** `omni_v2/network/*.py`
 - **Source paths:** `omni_v2/network/*.py`
-- **Requirements audit:** `known_subset_dependency_closure_in_B01`
+- **Requirements audit:** `production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified`
 - **Known packages:** `optional mDNS/network adapters`
 - **Models:** none recorded
 - **Accounts or keys:** none recorded
@@ -1427,7 +1425,7 @@ Test paths below record only the presence of relevant test code. They do not imp
 - **Required test types before stable:** `unit_or_contract`, `integration`, `end_to_end`, `hardware`
 - **Test qualification:** `not_qualified` — Mapped files are presence only; skips, mocks, and broad baseline failures prevent a release claim.
 - **Verified platforms:** none recorded
-- **Platform note:** No release-qualified platform evidence exists at B00; target-platform qualification is scheduled in B13.
+- **Platform note:** No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.
 - **Data accessed:** device identity, LAN addresses, pairing tokens, transport messages
 - **Network mode:** `lan`
 - **Network destinations:** `local mDNS/UDP/WebSocket peers`
@@ -1444,7 +1442,7 @@ Test paths below record only the presence of relevant test code. They do not imp
 - **Owner:** `personal_repository_owner`
 - **Entry points:** `omni_v2/sync/*.py`
 - **Source paths:** `omni_v2/sync/*.py`
-- **Requirements audit:** `known_subset_dependency_closure_in_B01`
+- **Requirements audit:** `production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified`
 - **Known packages:** none recorded
 - **Models:** none recorded
 - **Accounts or keys:** none recorded
@@ -1456,7 +1454,7 @@ Test paths below record only the presence of relevant test code. They do not imp
 - **Required test types before stable:** `unit_or_contract`, `integration`, `end_to_end`
 - **Test qualification:** `not_qualified` — Mapped files are presence only; skips, mocks, and broad baseline failures prevent a release claim.
 - **Verified platforms:** none recorded
-- **Platform note:** No release-qualified platform evidence exists at B00; target-platform qualification is scheduled in B13.
+- **Platform note:** No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.
 - **Data accessed:** owner state selected for synchronization, node/transport metadata
 - **Network mode:** `none_active`
 - **Network destinations:** none recorded
@@ -1474,7 +1472,7 @@ Test paths below record only the presence of relevant test code. They do not imp
 - **Owner:** `personal_repository_owner`
 - **Entry points:** `omni_v2/mesh/*.py`
 - **Source paths:** `omni_v2/mesh/*.py`
-- **Requirements audit:** `known_subset_dependency_closure_in_B01`
+- **Requirements audit:** `production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified`
 - **Known packages:** none recorded
 - **Models:** none recorded
 - **Accounts or keys:** none recorded
@@ -1486,7 +1484,7 @@ Test paths below record only the presence of relevant test code. They do not imp
 - **Required test types before stable:** `unit_or_contract`, `integration`, `end_to_end`
 - **Test qualification:** `not_qualified` — Mapped files are presence only; skips, mocks, and broad baseline failures prevent a release claim.
 - **Verified platforms:** none recorded
-- **Platform note:** No release-qualified platform evidence exists at B00; target-platform qualification is scheduled in B13.
+- **Platform note:** No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.
 - **Data accessed:** owner state selected for synchronization, node/transport metadata
 - **Network mode:** `lan_optional`
 - **Network destinations:** `configured mesh peers`
@@ -1502,7 +1500,7 @@ Test paths below record only the presence of relevant test code. They do not imp
 - **Owner:** `personal_repository_owner`
 - **Entry points:** `omni_v2/mcp/*.py`
 - **Source paths:** `omni_v2/mcp/*.py`
-- **Requirements audit:** `known_subset_dependency_closure_in_B01`
+- **Requirements audit:** `production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified`
 - **Known packages:** `real MCP adapter dependency not selected`
 - **Models:** none recorded
 - **Accounts or keys:** `configured MCP server after qualification`
@@ -1514,7 +1512,7 @@ Test paths below record only the presence of relevant test code. They do not imp
 - **Required test types before stable:** `unit_or_contract`, `integration`, `end_to_end`
 - **Test qualification:** `not_qualified` — Mapped files are presence only; skips, mocks, and broad baseline failures prevent a release claim.
 - **Verified platforms:** none recorded
-- **Platform note:** No release-qualified platform evidence exists at B00; target-platform qualification is scheduled in B13.
+- **Platform note:** No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.
 - **Data accessed:** tool schemas, tool arguments/results, provider metadata
 - **Network mode:** `optional`
 - **Network destinations:** `configured MCP server`
@@ -1531,7 +1529,7 @@ Test paths below record only the presence of relevant test code. They do not imp
 - **Owner:** `personal_repository_owner`
 - **Entry points:** `omni_v2/backup/*.py`
 - **Source paths:** `omni_v2/backup/*.py`
-- **Requirements audit:** `known_subset_dependency_closure_in_B01`
+- **Requirements audit:** `production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified`
 - **Known packages:** none recorded
 - **Models:** none recorded
 - **Accounts or keys:** none recorded
@@ -1543,7 +1541,7 @@ Test paths below record only the presence of relevant test code. They do not imp
 - **Required test types before stable:** `unit_or_contract`, `integration`, `end_to_end`
 - **Test qualification:** `not_qualified` — Mapped files are presence only; skips, mocks, and broad baseline failures prevent a release claim.
 - **Verified platforms:** none recorded
-- **Platform note:** No release-qualified platform evidence exists at B00; target-platform qualification is scheduled in B13.
+- **Platform note:** No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.
 - **Data accessed:** local application state, backup manifests, restored data
 - **Network mode:** `none_expected`
 - **Network destinations:** none recorded
@@ -1560,7 +1558,7 @@ Test paths below record only the presence of relevant test code. They do not imp
 - **Owner:** `personal_repository_owner`
 - **Entry points:** `omni_v2/files/*.py`
 - **Source paths:** `omni_v2/files/*.py`
-- **Requirements audit:** `known_subset_dependency_closure_in_B01`
+- **Requirements audit:** `production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified`
 - **Known packages:** none recorded
 - **Models:** none recorded
 - **Accounts or keys:** none recorded
@@ -1572,7 +1570,7 @@ Test paths below record only the presence of relevant test code. They do not imp
 - **Required test types before stable:** `unit_or_contract`, `integration`, `end_to_end`
 - **Test qualification:** `not_qualified` — Mapped files are presence only; skips, mocks, and broad baseline failures prevent a release claim.
 - **Verified platforms:** none recorded
-- **Platform note:** No release-qualified platform evidence exists at B00; target-platform qualification is scheduled in B13.
+- **Platform note:** No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.
 - **Data accessed:** owner command, approved paths, file metadata/content, operation history
 - **Network mode:** `none_expected`
 - **Network destinations:** none recorded
@@ -1589,7 +1587,7 @@ Test paths below record only the presence of relevant test code. They do not imp
 - **Owner:** `personal_repository_owner`
 - **Entry points:** `omni_v2/benchmark/*.py`
 - **Source paths:** `omni_v2/benchmark/*.py`, `omni_v2/leaderboard/*.py`
-- **Requirements audit:** `known_subset_dependency_closure_in_B01`
+- **Requirements audit:** `production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified`
 - **Known packages:** none recorded
 - **Models:** none recorded
 - **Accounts or keys:** none recorded
@@ -1601,7 +1599,7 @@ Test paths below record only the presence of relevant test code. They do not imp
 - **Required test types before stable:** `unit_or_contract`, `integration`, `end_to_end`
 - **Test qualification:** `not_qualified` — Mapped files are presence only; skips, mocks, and broad baseline failures prevent a release claim.
 - **Verified platforms:** none recorded
-- **Platform note:** No release-qualified platform evidence exists at B00; target-platform qualification is scheduled in B13.
+- **Platform note:** No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.
 - **Data accessed:** benchmark cases, timings, scores, leaderboard records
 - **Network mode:** `none_expected`
 - **Network destinations:** none recorded
@@ -1617,7 +1615,7 @@ Test paths below record only the presence of relevant test code. They do not imp
 - **Owner:** `personal_repository_owner`
 - **Entry points:** `omni_v2/pda/*.py`
 - **Source paths:** `omni_v2/pda/*.py`
-- **Requirements audit:** `known_subset_dependency_closure_in_B01`
+- **Requirements audit:** `production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified`
 - **Known packages:** none recorded
 - **Models:** `configured language model`
 - **Accounts or keys:** none recorded
@@ -1629,7 +1627,7 @@ Test paths below record only the presence of relevant test code. They do not imp
 - **Required test types before stable:** `unit_or_contract`, `integration`, `end_to_end`
 - **Test qualification:** `not_qualified` — Mapped files are presence only; skips, mocks, and broad baseline failures prevent a release claim.
 - **Verified platforms:** none recorded
-- **Platform note:** No release-qualified platform evidence exists at B00; target-platform qualification is scheduled in B13.
+- **Platform note:** No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.
 - **Data accessed:** owner commands, calendar, tasks, contacts, preferences, assistant responses
 - **Network mode:** `none_expected`
 - **Network destinations:** none recorded

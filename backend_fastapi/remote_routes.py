@@ -11,14 +11,7 @@ Fully local (LAN only, not internet). Headless-testable via the command layer.
 """
 from fastapi import APIRouter, Header
 from pydantic import BaseModel
-from pathlib import Path
-import sys
 from typing import Any, Dict, Optional
-
-THIS_FILE = Path(__file__).resolve()
-REPO_ROOT = THIS_FILE.parent.parent
-if str(REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(REPO_ROOT))
 
 from omni_v2.away.desktop import DesktopController
 

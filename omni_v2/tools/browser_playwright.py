@@ -17,7 +17,6 @@ Falls back to webbrowser module if Playwright not installed.
 from __future__ import annotations
 import asyncio
 import threading
-from pathlib import Path
 from typing import Dict, Any, Optional
 import json
 
@@ -67,7 +66,9 @@ class BrowserV4Playwright(CommandPlugin):
         self.page = None
         self._loop: Optional[asyncio.AbstractEventLoop] = None
         self._thread: Optional[threading.Thread] = None
-        self.profile_dir = Path.cwd() / "data" / "chrome_profile_v4"
+        from omni_v2.core.paths import get_data_dir
+
+        self.profile_dir = get_data_dir() / "browser" / "chrome_profile_v4"
         self.profile_dir.mkdir(parents=True, exist_ok=True)
         self._init_lock = threading.Lock()
         self._initialized = False

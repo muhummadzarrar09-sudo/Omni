@@ -42,10 +42,7 @@ except ImportError:
     import logging
     logger = logging.getLogger("HybridMemory")
 
-try:
-    from omni_v2.core.paths import DATA_DIR
-except Exception:
-    DATA_DIR = Path.cwd() / "data"
+from omni_v2.core.paths import DATA_DIR
 
 # ---------------------------------------------------------------------------
 # Sparse hashing vectorizer (offline, deterministic, no deps)

@@ -190,10 +190,12 @@ if PYQT_AVAILABLE:
                             abs_three = assets_path.absolute().as_uri()
                             html = html.replace("../../assets/three.min.js", abs_three)
                             html = html.replace("../../assets/three.min.js", abs_three)
-                            # Write temp fixed
-                            temp_html = Path.cwd() / "data" / "orb_fixed.html"
-                            temp_html.parent.mkdir(exist_ok=True)
-                            temp_html.write_text(html)
+                            # Write the generated page to the user data directory.
+                            from omni_v2.core.paths import get_data_dir
+
+                            temp_html = get_data_dir() / "ui" / "orb_fixed.html"
+                            temp_html.parent.mkdir(parents=True, exist_ok=True)
+                            temp_html.write_text(html, encoding="utf-8")
                             self.webview.load(QUrl.fromLocalFile(str(temp_html.absolute())))
                             logger.info(f"Three.js orb loading with absolute path: {abs_three}")
                         else:

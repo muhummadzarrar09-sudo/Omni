@@ -5,7 +5,6 @@ Qwen2-VL-2B: 2B, 4GB VRAM, 90.1% DocVQA, 25-30 tok/s
 For GTX 1050 Ti 4GB: Moondream2 fits easily, LLaVA 7B needs 6GB (doesn't fit)
 """
 
-from pathlib import Path
 from typing import Tuple, Optional
 import os
 
@@ -15,10 +14,7 @@ except ImportError:
     import logging
     logger = logging.getLogger("TurboVLM")
 
-try:
-    from omni_v2.core.paths import DATA_DIR
-except ImportError:
-    DATA_DIR = Path.home() / ".omni_v2"
+from omni_v2.core.paths import DATA_DIR
 
 MODELS_DIR = DATA_DIR / "models"
 

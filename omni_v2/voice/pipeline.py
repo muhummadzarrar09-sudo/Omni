@@ -1,7 +1,6 @@
 """Voice Pipeline V2 - Phase 4 - ACCESSIBILITY FIRST - STT Manager 4 Tiers - Actually HEARS Everyone!"""
 import time
 import threading
-from pathlib import Path
 from typing import Callable, Optional
 import numpy as np
 
@@ -11,10 +10,7 @@ except ImportError:
     import logging
     logger = logging.getLogger("VoicePipelineV2")
 
-try:
-    from omni_v2.core.paths import DATA_DIR
-except ImportError:
-    DATA_DIR = Path.home() / ".omni_v2"
+from omni_v2.core.paths import DATA_DIR
 
 class VoicePipelineV2:
     """Voice Pipeline V2 Phase 4 - Accessibility First - STT 4 Tiers - Never fails if audio has speech"""

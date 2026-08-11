@@ -1,127 +1,228 @@
 [build-system]
-requires = ["setuptools>=83", "wheel>=0.47"]
+requires = ["setuptools>=77,<82", "wheel>=0.45,<1"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "omni-agi"
 version = "3.2.0"
-description = "OMNI - Local, private, cinematic AGI assistant. Multi-agent brain powered by Qwen2.5-1.5B GGUF, with voice (faster-whisper, edge-tts, openwakeword), vision (Moondream2), Playwright browser, and 100+ tools."
+description = "Experimental local-first personal AI assistant"
 readme = "README.md"
-license = {text = "MIT"}
-authors = [{name = "Zarrar + Agent", email = "team@omni-agi.dev"}]
-requires-python = ">=3.10"
-keywords = ["agi", "voice-assistant", "llama-cpp", "whisper", "edge-tts", "openwakeword", "playwright", "local-ai", "hackathon", "jarvis"]
-
-# Runtime deps - LATEST versions (as of 2026-07-15) for the BEST experience
-dependencies = [
-    # Core
-    "loguru>=0.7.3",
-    "numpy>=2.5.1",
-    "psutil>=7.2.2",
-    "packaging>=24.0",
-    # LLM brain (PRIMARY)
-    "llama-cpp-python>=0.3.34",        # LLaMA.cpp Python bindings (latest)
-    # Voice STT - BEST OF THE BEST
-    "faster-whisper>=1.2.1",           # Whisper.cpp binding, fastest
-    "sounddevice>=0.5.5",              # Reliable cross-platform audio
-    # Voice TTS - NATURAL VOICES
-    "edge-tts>=7.2.8",                 # Microsoft Edge natural voices (FREE)
-    "piper-tts>=1.4.2",                # Offline neural TTS (optional)
-    # Wake word - REAL detection
-    "openwakeword>=0.6.0",             # "Hey OMNI" detection (ONNX, free)
-    "pvporcupine>=4.0.3",              # Best accuracy (requires Picovoice key)
-    # Browser automation - REAL browser
-    "playwright>=1.61.0",              # Headless Chromium automation
-    "playwright-stealth>=2.0.3",       # Bypass bot detection
-    # Vector memory - FAST
-    "chromadb>=1.5.9",                 # Vector store
-    "lancedb>=0.34.0",                 # 10x faster alt
-    "sentence-transformers>=5.6.0",    # BGE/MiniLM embeddings
-    "faiss-cpu>=1.14.3",               # Fast similarity search
-    # Tools
-    "pyautogui>=0.9.54",               # UI automation
-    "pynput>=1.8.2",                   # Keyboard/mouse
-    "pytesseract>=0.3.13",             # OCR
-    "Pillow>=12.3.0",                  # Image processing
-    "opencv-python>=5.0.0.93",         # Computer vision
-    "mss>=10.2.0",                     # Screen capture
-    "pyperclip>=1.11.0",               # Clipboard
-    "psutil>=7.2.2",                   # System stats
-    "pywin32>=312; sys_platform == 'win32'",  # Windows API
-    "apscheduler>=3.11.3",             # Cron-style scheduling
-    "schedule>=1.2.2",                 # Lightweight scheduling
-    "pedalboard>=0.9.24",              # Audio effects (Spotify's library)
-    "pydub>=0.25.1",                   # Audio manipulation
-    "soundfile>=0.14.0",               # Audio I/O
-    "requests>=2.34.2",
-    "pydantic>=2.13.4",
-    "httpx>=0.28.1",
-    "beautifulsoup4>=4.15.0",          # HTML parsing
-    "trafilatura>=2.1.0",              # Web content extraction
-    "duckdb>=1.5.4",                   # In-process OLAP
+requires-python = ">=3.11,<3.12"
+license = "MIT"
+authors = [{ name = "Muhammad Zarrar" }]
+keywords = ["local-ai", "personal-assistant", "multi-agent", "voice", "automation"]
+classifiers = [
+    "Development Status :: 2 - Pre-Alpha",
+    "Intended Audience :: Developers",
+    "Operating System :: Microsoft :: Windows :: Windows 11",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
-
-[project.optional-dependencies]
-# Optional features - install what you need
-brain = [
-    "llama-cpp-python>=0.3.34",
-]
-voice = [
-    "faster-whisper>=1.2.1",
-    "sounddevice>=0.5.5",
-    "edge-tts>=7.2.8",
-    "openwakeword>=0.6.0",
-    "pyttsx3>=2.99",
-    "piper-tts>=1.4.2",
-]
-vision = [
-    "mss>=10.2.0",
-    "opencv-python>=5.0.0.93",
-    "Pillow>=12.3.0",
-    "pytesseract>=0.3.13",
-]
-browser = [
-    "playwright>=1.61.0",
-    "playwright-stealth>=2.0.3",
-    "selenium>=4.46.0",
-]
-memory = [
-    "chromadb>=1.5.9",
-    "lancedb>=0.34.0",
-    "sentence-transformers>=5.6.0",
-    "faiss-cpu>=1.14.3",
-]
-ui = [
-    "PyQt6>=6.11.0",
-    "customtkinter>=6.0.0",
-]
-fastapi = [
-    "fastapi>=0.139.0",
-    "uvicorn[standard]>=0.51.0",
-    "python-multipart>=0.0.32",
-    "websockets>=16.1",
-    "starlette>=1.3.1",
-]
-all = [
-    "omni-agi[brain,voice,vision,browser,memory,ui,fastapi]",
-]
-dev = [
-    "pytest>=9.1.1",
-    "pytest-asyncio>=1.4.0",
-    "black>=26.5.1",
-    "mypy>=2.3.0",
-    "ruff>=0.15.21",
-    "uv>=0.11.28",
-]
+# The base distribution is intentionally dependency-free: it provides package
+# metadata and lightweight CLI commands such as `omni --help`, `omni install`,
+# and `omni engine info`.
+# Install one of the documented profiles for runtime capabilities.
+dependencies = []
 
 [project.urls]
-Homepage = "https://github.com/muhummadzarrar09-sudo/Omni"
+Repository = "https://github.com/muhummadzarrar09-sudo/Omni"
 Issues = "https://github.com/muhummadzarrar09-sudo/Omni/issues"
 
 [project.scripts]
-# After `pip install -e .` you get an `omni` command
 omni = "omni.cli:main"
 
-[tool.setuptools]
-packages = ["omni", "omni_v2"]
-include-package-data = true
+[project.optional-dependencies]
+# Core orchestration, persistence, scheduling, vault, and FastAPI backend.
+core = [
+    "APScheduler>=3.10,<4",
+    "cryptography>=42,<51",
+    "fastapi>=0.115,<1",
+    "loguru>=0.7,<1",
+    "numpy>=1.26.4,<2.5",
+    "packaging>=23,<27",
+    "psutil>=5.9,<8",
+    "pydantic>=2.7,<3",
+    "python-multipart>=0.0.9,<1",
+    "qrcode>=7.4,<9",
+    "requests>=2.31,<3",
+    "schedule>=1.2,<2",
+    "uvicorn[standard]>=0.30,<1",
+    "websockets>=13,<18",
+]
+
+# Speech-to-text, text-to-speech, microphone, and wake-word implementations.
+voice = [
+    "edge-tts>=6.1,<8",
+    "loguru>=0.7,<1",
+    "numpy>=1.26.4,<2.5",
+    "espeakng-loader>=0.2,<1",
+    "faster-whisper>=1.0,<2",
+    "gTTS>=2.5,<3",
+    "kokoro-onnx>=0.4,<1",
+    "openwakeword>=0.6,<1",
+    "piper-tts>=1.4,<2",
+    "playsound==1.2.2",
+    "PyAudio>=0.2.14,<1",
+    "pydub>=0.25,<1",
+    "requests>=2.31,<3",
+    "pvporcupine>=3,<5",
+    "pyttsx3>=2.90,<3",
+    "sounddevice>=0.4.6,<1",
+    "soundfile>=0.12,<1",
+    "SpeechRecognition>=3.10,<4",
+    "vosk>=0.3.45,<1",
+]
+
+# Screen capture, OCR, local visual models, and face-security implementations.
+vision = [
+    "face-recognition>=1.3,<2",
+    "loguru>=0.7,<1",
+    "moondream>=1.3,<3",
+    "mss>=9,<11",
+    "numpy>=1.26.4,<2.5",
+    "ollama>=0.4,<1",
+    "opencv-contrib-python>=4.10,<6",
+    "pdfplumber>=0.11,<1",
+    "Pillow>=10.3,<13",
+    "pyautogui>=0.9.54,<1",
+    "pytesseract>=0.3.10,<1",
+    "transformers>=4.45,<6",
+]
+
+# Native desktop UI, input automation, and browser automation.
+desktop = [
+    "keyboard>=0.13.5,<1",
+    "loguru>=0.7,<1",
+    "playwright>=1.45,<2",
+    "psutil>=5.9,<8",
+    "playwright-stealth>=1.0.6,<3",
+    "PyGetWindow>=0.0.9,<1",
+    "PyQt5>=5.15.10,<6",
+    "pyautogui>=0.9.54,<1",
+    "pyperclip>=1.9,<2",
+    "pynput>=1.7.7,<2",
+    "pywin32>=306,<312; platform_system == 'Windows'",
+]
+
+# Core runtime plus deterministic build, test, lint, lock, and audit tooling.
+dev = [
+    "APScheduler>=3.10,<4",
+    "build>=1.2,<2",
+    "cryptography>=42,<51",
+    "fastapi>=0.115,<1",
+    "httpx>=0.27,<1",
+    "loguru>=0.7,<1",
+    "numpy>=1.26.4,<2.5",
+    "packaging>=23,<27",
+    "pip-audit>=2.7,<3",
+    "pip-licenses>=5,<6",
+    "pip-tools>=7.4,<8",
+    "psutil>=5.9,<8",
+    "pydantic>=2.7,<3",
+    "pytest>=8.2,<10",
+    "pytest-asyncio>=0.23,<2",
+    "pytest-cov>=5,<8",
+    "python-multipart>=0.0.9,<1",
+    "qrcode>=7.4,<9",
+    "requests>=2.31,<3",
+    "ruff>=0.8,<1",
+    "schedule>=1.2,<2",
+    "twine>=5.1,<7",
+    "uvicorn[standard]>=0.30,<1",
+    "websockets>=13,<18",
+    "wheel>=0.45,<1",
+]
+
+# Complete runtime: core + voice + vision + desktop plus optional LLM,
+# vector-memory, MCP, notification, and messenger adapters imported by source.
+all = [
+    "APScheduler>=3.10,<4",
+    "chromadb>=1.0,<2",
+    "cryptography>=42,<51",
+    "duckdb>=1.1,<2",
+    "edge-tts>=6.1,<8",
+    "espeakng-loader>=0.2,<1",
+    "face-recognition>=1.3,<2",
+    "fastapi>=0.115,<1",
+    "faster-whisper>=1.0,<2",
+    "gTTS>=2.5,<3",
+    "huggingface-hub>=0.25,<2",
+    "keyboard>=0.13.5,<1",
+    "kokoro-onnx>=0.4,<1",
+    "llama-cpp-python>=0.3,<0.4",
+    "loguru>=0.7,<1",
+    "mcp>=1.9,<3",
+    "moondream>=1.3,<3",
+    "mss>=9,<11",
+    "numpy>=1.26.4,<2.5",
+    "ollama>=0.4,<1",
+    "opencv-contrib-python>=4.10,<6",
+    "openwakeword>=0.6,<1",
+    "packaging>=23,<27",
+    "pdfplumber>=0.11,<1",
+    "Pillow>=10.3,<13",
+    "piper-tts>=1.4,<2",
+    "playwright>=1.45,<2",
+    "playwright-stealth>=1.0.6,<3",
+    "playsound==1.2.2",
+    "psutil>=5.9,<8",
+    "PyAudio>=0.2.14,<1",
+    "pydantic>=2.7,<3",
+    "pydub>=0.25,<1",
+    "PyGetWindow>=0.0.9,<1",
+    "pyautogui>=0.9.54,<1",
+    "pyperclip>=1.9,<2",
+    "pynput>=1.7.7,<2",
+    "pytesseract>=0.3.10,<1",
+    "python-multipart>=0.0.9,<1",
+    "python-telegram-bot>=21,<23",
+    "pyttsx3>=2.90,<3",
+    "pywebpush>=2.0,<3",
+    "pywhatkit>=5.4,<6",
+    "PyQt5>=5.15.10,<6",
+    "pywin32>=306,<312; platform_system == 'Windows'",
+    "pvporcupine>=3,<5",
+    "qrcode>=7.4,<9",
+    "requests>=2.31,<3",
+    "schedule>=1.2,<2",
+    "sentence-transformers>=3,<6",
+    "sounddevice>=0.4.6,<1",
+    "soundfile>=0.12,<1",
+    "SpeechRecognition>=3.10,<4",
+    "transformers>=4.45,<6",
+    "uvicorn[standard]>=0.30,<1",
+    "vosk>=0.3.45,<1",
+    "websockets>=13,<18",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["omni", "omni.*", "omni_v2", "omni_v2.*", "backend_fastapi", "backend_fastapi.*"]
+exclude = ["omni_v2.tests", "omni_v2.tests.*"]
+namespaces = false
+
+[tool.setuptools.package-data]
+omni_v2 = ["ui/*.html", "web_ui/*.html"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests", "omni_v2/tests"]
+addopts = "--strict-config --strict-markers"
+asyncio_mode = "strict"
+markers = [
+    "backend_live: requires a separately running backend or live service boundary",
+    "contract: request/response or protocol contract coverage",
+    "e2e: end-to-end workflow coverage",
+    "hardware: requires physical hardware",
+    "integration: crosses a real component boundary",
+    "manual: requires explicit human observation",
+    "platform: platform-specific qualification coverage",
+    "privacy: privacy or egress-control verification",
+    "security: security-focused verification",
+    "unit: isolated deterministic unit coverage",
+]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+exclude = ["archive", "node_modules"]

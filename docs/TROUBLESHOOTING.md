@@ -1,472 +1,280 @@
-# 🔧 OMNI V3 — Troubleshooting
+# OMNI installation and troubleshooting
 
-> **Document status (2026-08-11): historical or unqualified reference.** This file records earlier intent, implementation, audit, or setup work. Its completion, test-count, performance, privacy, platform, and production-readiness statements are **not current release claims**. Use the generated [Capability Matrix](CAPABILITY_MATRIX.md) and [Quality Scorecard](QUALITY_SCORECARD.md) for current truth.
+**Qualification date:** 2026-08-11
 
+**Project status:** experimental personal build; not a published or production-ready release
 
-> Common issues and how to fix them.
+This document is the current installation authority for B01. It does not imply
+that unfinished capabilities are stable. Consult the generated
+[Capability Matrix](CAPABILITY_MATRIX.md) and
+[Quality Scorecard](QUALITY_SCORECARD.md) for capability truth.
 
----
+## Supported environment
 
-## Installation Issues
+### Python
 
-### `pip install -e .[all]` fails with "CMake Error: CMAKE_C_COMPILER not set"
+- Interpreter contract: **CPython `>=3.11,<3.12`**.
+- Tested interpreter: **CPython 3.11.2**.
+- Resolver and hash-lock qualification: **Linux x86_64 with CPython 3.11**.
+- Python 3.10, Python 3.12+, PyPy, Windows dependency resolution, and macOS
+  dependency resolution are not qualified by B01.
+- Windows 11 x64 remains the intended primary owner platform, but its complete
+  install cannot be called qualified until a Windows gate runs in a later
+  platform batch.
 
-**Problem:** `llama-cpp-python` is trying to build from source instead of using the prebuilt wheel.
+Do not bypass `Requires-Python` with `--ignore-requires-python`.
 
-**Fix:** Use the install script which uses the prebuilt wheel index:
+### Frontend
 
-```powershell
-# Windows
-.\install.ps1
+The B01 frontend qualification uses Node.js `>=22.22.2 <23` and npm `12.0.2`.
+The exact npm version is recorded in `frontend_next/package.json`. The reviewed
+`unrs-resolver@1.12.2` native-binding postinstall is the only explicitly
+allowlisted install script.
 
-# Linux / macOS
-./install.sh
-```
+## Python installation profiles
 
-If that doesn't work, install the wheel manually:
+The base distribution is intentionally dependency-free. It supports package
+inspection and the lightweight CLI paths exercised by package tests. Runtime
+capabilities require one of these extras:
+
+| Profile | Purpose | B01 Linux resolver result |
+| --- | --- | ---: |
+| `core` | FastAPI, orchestration, persistence, scheduling, and vault | 36 distributions including OMNI |
+| `voice` | Audio, microphone, STT, TTS, and wake word | 90 distributions including OMNI |
+| `vision` | Capture, OCR, face recognition, and visual models | 88 distributions including OMNI |
+| `desktop` | Native UI, browser, and desktop automation | 26 distributions including OMNI |
+| `dev` | Core plus build, test, lock, vulnerability, and license tools | 92 distributions including OMNI |
+| `all` | Complete runtime dependency surface; excludes development tools | 219 distributions including OMNI |
+
+`voice`, `vision`, `desktop`, and especially `all` contain native or very large
+dependencies. B01 proves that all six profiles resolve on the qualified Linux
+environment. It does **not** claim clean native installation or hardware
+operation for every profile. The exact core profile is additionally installed
+and exercised in a disposable environment outside the checkout.
+
+The canonical import-to-distribution map is
+`quality/dependency-profiles.json`. Exact Linux locks are under
+`requirements/locks/cpython-3.11-linux-x86_64/`.
+
+## Install the qualified local artifact
+
+There is currently no qualified PyPI release. Build and install the exact local
+artifact instead of assuming `omni-agi` on an index is this checkout.
 
 ```bash
-pip install llama-cpp-python --extra-index-url https://abetlen.github.io/llama-cpp-python/whl/cpu
+python3.11 -m venv .venv
+source .venv/bin/activate                    # Windows: .venv\Scripts\activate
+python -m pip install --upgrade pip
+
+# From the repository root, build both artifacts.
+python -m pip install 'build>=1.2,<2'
+python -m build
+
+# Install the exact qualified core dependency lock, then the wheel itself.
+python -m pip install --require-hashes \
+  -r requirements/locks/cpython-3.11-linux-x86_64/core.txt
+python -m pip install --no-deps dist/omni_agi-3.2.0-py3-none-any.whl
+
+omni --help
+omni install
+omni engine info
 ```
 
-### `omni: command not found` after `pip install`
-
-**Problem:** The `omni` command wasn't installed in your PATH.
-
-**Fix:**
+After a future index release is created and qualified, normal extra syntax will
+be:
 
 ```bash
-# Reinstall in editable mode
-pip install -e .
+python -m pip install 'omni-agi[core]'
+```
 
-# Or check if it's in a different location
+That command is documented as future index syntax, not evidence that a release
+currently exists.
+
+## Reproduce the B01 package gates
+
+Use the exact development lock on the qualified Linux environment:
+
+```bash
+python3.11 -m venv .venv
+source .venv/bin/activate
+python -m pip install --require-hashes \
+  -r requirements/locks/cpython-3.11-linux-x86_64/dev.txt
+
+python scripts/resolve_profiles.py
+rm -rf build dist omni_agi.egg-info
+python -m build
+python scripts/check_package_contents.py dist/*.whl dist/*.tar.gz
+python -m twine check dist/*
+python -m pytest -q tests/package
+python scripts/smoke_installed_artifact.py \
+  dist/omni_agi-3.2.0-py3-none-any.whl
+python -m pip_audit --require-hashes \
+  -r requirements/locks/cpython-3.11-linux-x86_64/dev.txt
+python scripts/audit_python_licenses.py \
+  requirements/locks/cpython-3.11-linux-x86_64/dev.txt
+```
+
+The installed-artifact smoke creates a new virtual environment, installs the
+hash-locked core dependencies, installs the exact wheel with `--no-deps`, moves
+to a directory outside the checkout, checks package resources and imports,
+executes meaningful CLI dispatch, and starts the backend health path.
+
+Frontend gates:
+
+```bash
+cd frontend_next
+npx --yes npm@12.0.2 ci
+npx --yes npm@12.0.2 install-scripts ls
+npx --yes npm@12.0.2 ls --all
+npx --yes npm@12.0.2 audit --audit-level=low
+npm run lint
+npm run build
+```
+
+## Runtime data location
+
+Installed package code may be read-only. OMNI therefore does not store runtime
+state in the repository or beside files under `site-packages`.
+
+Defaults:
+
+- Windows: `%LOCALAPPDATA%\OMNI`
+- Linux: `${XDG_DATA_HOME:-~/.local/share}/omni`
+- macOS path behavior exists but is not B01-qualified:
+  `~/Library/Application Support/OMNI`
+
+Set `OMNI_DATA_DIR` to choose another writable location:
+
+```bash
+# Linux/macOS shell
+export OMNI_DATA_DIR="$HOME/omni-data"
+
+# PowerShell
+$env:OMNI_DATA_DIR = "$HOME\omni-data"
+```
+
+The explicit override may target another drive, encrypted mount, or temporary
+test directory. The user running OMNI must have permission to create and modify
+it.
+
+## Common installation failures
+
+### `ERROR: Package ... requires a different Python`
+
+Check the active interpreter:
+
+```bash
+python -VV
+python -c "import sys; print(sys.executable); print(sys.version_info)"
+```
+
+Create the environment with CPython 3.11. Do not try to repair this by removing
+the upper bound; Python 3.12+ has not been qualified.
+
+### Hash mismatch while installing a lock
+
+A downloaded file does not match the exact lock, the lock is being used on the
+wrong platform, or the package index changed unexpectedly. Stop rather than
+using `--no-deps` or removing hashes. Confirm:
+
+```bash
+python -VV
+python -c "import platform; print(platform.system(), platform.machine())"
+```
+
+The committed locks are only for CPython 3.11 on Linux x86_64. Regenerate them
+with `scripts/resolve_profiles.py` only as a reviewed dependency update.
+
+### Native build errors (`CMake`, compiler, PortAudio, dlib, or PyAudio)
+
+The selected profile includes a native dependency without a compatible wheel.
+Do not treat resolver success as proof that the native toolchain works. Start
+with `core`; defer `voice`, `vision`, `desktop`, or `all` until the target OS
+has the required compiler, system libraries, devices, and a dedicated
+qualification run.
+
+### `omni: command not found`
+
+Ensure the environment is active and inspect the scripts directory:
+
+```bash
+python -m pip show omni-agi
+python -c "import sysconfig; print(sysconfig.get_path('scripts'))"
 python -m omni.cli --help
 ```
 
-### UnicodeEncodeError: 'charmap' codec can't encode '✅'
+Do not use `pip install -e .` as a workaround for artifact validation. Editable
+installs can hide missing packages in a wheel.
 
-**Problem:** Windows console is using cp1252 instead of UTF-8.
+### `ModuleNotFoundError` for an optional dependency
 
-**Fix:** Set PowerShell to UTF-8 (run before starting OMNI):
-
-```powershell
-$OutputEncoding = [System.Text.Encoding]::UTF8
-[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
-chcp 65001 | Out-Null
-$env:PYTHONIOENCODING = "utf-8"
-```
-
-This is already handled in `omni_v2/utils/utf8.py`, which is called at the
-top of `omni.py` and `omni/cli.py`. If you still see this, set the env var
-before running.
-
----
-
-## Model Issues
-
-### `Model not found: data/models/qwen2.5-1.5b-instruct-q4_k_m.gguf`
-
-**Fix:**
+Install the profile that owns the capability. Examples:
 
 ```bash
-omni model download
+# Future qualified index syntax
+python -m pip install 'omni-agi[voice]'
+python -m pip install 'omni-agi[vision]'
+python -m pip install 'omni-agi[desktop]'
 ```
 
-This fetches the 1.1GB Qwen2.5-1.5B model from HuggingFace.
+For the current checkout, use the matching exact lock followed by the wheel.
+Do not install undeclared packages one at a time; that creates an environment
+which the evidence cannot reproduce.
 
-### `Brain loaded but token generation is very slow`
+### Permission error under `site-packages` or the source checkout
 
-**Problem:** Model is running on CPU, not GPU.
+Upgrade to the B01 artifact and set a writable `OMNI_DATA_DIR`. A final B01
+installed smoke explicitly verifies that voice recording state is created
+under the configured data root rather than under the installed package.
 
-**Fix:** Ensure `n_gpu_layers=20` in `omni_v2/llm/brain.py`. Check GPU is detected:
+### Backend cannot be reached from the frontend
 
-```python
-import torch
-print(torch.cuda.is_available())  # Should be True on NVIDIA
-print(torch.cuda.device_count())  # Should be >= 1
-```
-
-For NVIDIA GPUs, install llama-cpp-python with CUDA support:
-
-```powershell
-.\install.ps1 -Cuda cu121
-```
-
-### `Brain takes >10s to load`
-
-**Problem:** Cold load is loading the model from disk. Once loaded, it stays in RAM.
-
-**Fix:** First command will be slow. Subsequent commands are 1-2s.
-
-To preload, send a dummy command after startup:
+The browser uses same-origin `/api/...` and `/ws` paths. Next.js proxies those
+requests to `OMNI_BACKEND_URL`, which defaults to `http://127.0.0.1:8765` on
+the server side.
 
 ```bash
-curl -X POST http://localhost:8765/api/execute -H "Content-Type: application/json" -d "{\"command\":\"hello\"}"
+# Terminal 1, repository root with the core environment active
+python -m uvicorn backend_fastapi.main:app --host 127.0.0.1 --port 8765
+
+# Terminal 2
+cd frontend_next
+npx --yes npm@12.0.2 ci
+npm run dev
 ```
 
----
+If the backend uses another address, set `OMNI_BACKEND_URL` before starting
+Next.js. Browser code should not be changed to hard-code a cross-origin
+`localhost` URL.
 
-## Voice Issues
+### Frontend clean install reports blocked scripts
 
-### Microphone not detected (no input devices)
-
-**Problem:** PyAudio is not installed (we don't use it), or sounddevice can't find the mic.
-
-**Fix:**
+Run:
 
 ```bash
-# List available devices
-python -c "import sounddevice as sd; print(sd.query_devices())"
+npx --yes npm@12.0.2 install-scripts ls
 ```
 
-If empty list, check:
-- Microphone is plugged in
-- Microphone is not muted in OS settings
-- Privacy settings allow microphone access (Windows 10+)
-
-### STT returns empty text
-
-**Problem:** Microphone level too low, or background noise.
-
-**Fix:**
-
-1. Check mic level: `POST /api/test-mic`
-2. Speak louder, closer to the mic
-3. Reduce background noise
-4. Boost mic gain in OS settings (Windows: Settings → Sound → Input)
-
-### TTS sounds robotic
-
-**Problem:** SAPI5 fallback is being used instead of edge-tts.
-
-**Fix:** Install edge-tts:
-
-```bash
-pip install edge-tts
-```
-
-Restart OMNI. Check status: `GET /api/health` → `tts.engine` should be `edge-tts`.
-
-### Wake word not triggering
-
-**Problem:** Wake word sensitivity is too low, or wrong keyword.
-
-**Fix:**
-
-```bash
-# Check status
-curl http://localhost:8765/api/health
-```
-
-Look for `wake_word` status. Should say `loaded` with a backend.
-
-If not, install openwakeword:
-
-```bash
-pip install openwakeword
-```
-
-For "Hey OMNI" specifically, you can train a custom model (Phase 4).
-
----
-
-## Backend Issues
-
-### `Address already in use: 0.0.0.0:8765`
-
-**Problem:** Another instance of OMNI is running on the same port.
-
-**Fix:**
-
-```bash
-# Windows: Find and kill the process
-Get-Process python | Where-Object {$_.MainWindowTitle -like "*uvicorn*"} | Stop-Process -Force
-
-# Linux / macOS
-lsof -i :8765  # find PID
-kill -9 <PID>
-```
-
-### `omni start` doesn't open a browser
-
-**Problem:** Browser launch failed (headless server, no display).
-
-**Fix:** Use `--no-browser` flag and open manually:
-
-```bash
-omni start --no-browser
-# Then open http://localhost:8765/docs manually
-```
-
-### Frontend shows "Failed to fetch" or CORS error
-
-**Problem:** CORS is blocking the request.
-
-**Fix:** CORS is configured to allow all origins by default. If you see this:
-
-1. Check the backend is running: `curl http://localhost:8765/api/health`
-2. Check the frontend is on port 3000: `curl http://localhost:3000`
-3. Check the API URL in `frontend_next/app/page.js` is `http://localhost:8765`
-
-### WebSocket disconnects immediately
-
-**Problem:** WebSocket route is missing or proxy is blocking it.
-
-**Fix:** Check that `WS /ws` is in the FastAPI routes. It's defined in `backend_fastapi/main.py` around line 480.
-
----
-
-## Tool Issues
-
-### `Open this_doesnt_exist.exe` fails
-
-**Expected!** The system is designed to self-heal. Look for:
-- Multiple tool calls in the response (chrome → msedge → fallback)
-- "I tried X, then Y, then Z" type messages
-- Graceful error message at the end
-
-If you get a hard error instead, the tool's allowlist needs updating.
-
-### `open github` opens but Chrome shows email
-
-**Problem:** Browser profile isn't isolated.
-
-**Fix:** Check `data/chrome_profile/OMNI-Profile/`. It should be a separate Chrome profile. If not, delete it and let OMNI recreate:
-
-```bash
-# Stop OMNI
-rm -rf data/chrome_profile
-omni start
-# Try again
-```
-
-### Files write fails with "Path blocked by guardrail"
-
-**Expected!** The guardrail blocks writes outside `data/output/`. This is by design.
-
-**Fix:** Either:
-- Save to `data/output/` (e.g. `data/output/myfile.txt`)
-- Modify `omni_v2/core/guardrails.py` to allow other paths (not recommended)
-
----
-
-## Memory Issues
-
-### Session memory grows unbounded
-
-**Fix:** Run cleanup:
-
-```python
-from omni_v2.memory.session_memory import get_session_memory
-deleted = get_session_memory().cleanup_old_sessions(max_age_days=90)
-print(f"Deleted {deleted} old sessions")
-```
-
-Or add a cron job:
-
-```bash
-curl -X POST http://localhost:8765/api/scheduler/cron \
-  -H "Content-Type: application/json" \
-  -d '{"name":"memory cleanup","command":"run cleanup","cron":"0 3 * * 0"}'
-```
-
-### Profile doesn't persist
-
-**Problem:** `data/profiles/user.json` not being saved.
-
-**Fix:** Check disk space. Check write permissions on the `data/` directory.
-
-```bash
-ls -la data/profiles/
-```
-
-If the file doesn't exist, set a value via API and check again:
-
-```bash
-curl -X POST http://localhost:8765/api/user/profile \
-  -H "Content-Type: application/json" \
-  -d '{"name":"Test"}'
-
-ls -la data/profiles/
-```
-
----
-
-## UI Issues
-
-### Cinematic UI shows "Can't reach backend"
-
-**Fix:** Check that backend is running on port 8765:
-
-```bash
-curl http://localhost:8765/api/health
-```
-
-If yes, check CORS. The frontend should be on `http://localhost:3000` and backend on `http://localhost:8765`.
-
-### UI shows but commands don't work
-
-**Fix:** Open browser DevTools (F12) → Network tab. Look for failed requests to `/api/execute`. Check the response body for error messages.
-
-### Proactive banner doesn't appear
-
-**Fix:** Wait 60 seconds (proactive engine runs every 60s). Check it's enabled:
-
-```bash
-curl http://localhost:8765/api/health
-# Look for: "proactive_active": true
-```
-
-If false, check the backend logs for errors related to proactive_v2.
-
----
-
-## Test Issues
-
-### `omni test` fails with "ModuleNotFoundError: No module named 'omni_v2'"
-
-**Fix:**
-
-```bash
-# Make sure you installed in editable mode
-pip install -e .
-
-# Or run from the repo root
-cd /path/to/Omni
-python -m omni_v2.tests.test_security_guardrails
-```
-
-### Individual test passes but `omni test` fails
-
-**Problem:** Singleton state pollution between tests.
-
-**Fix:** This is expected in some cases. The tests are designed to be runnable individually. To run all:
-
-```bash
-for t in test_security_guardrails test_fast_af_db test_hermes_refinement test_skill_synthesis test_user_profile test_session_memory test_personality test_opinion test_onboarding test_demo_mode test_stats test_vision test_voice_clone test_marketplace; do
-    python -m omni_v2.tests.$t 2>&1 | tail -1
-done
-```
-
-If a specific test fails, run it individually to see the issue.
-
----
-
-## Skill Marketplace Issues
-
-### `omni skills install` fails with network error
-
-**Problem:** Can't reach the GitHub marketplace URL.
-
-**Fix:** The installer creates a stub skill offline. Check:
-
-```bash
-ls data/skills/installed/
-```
-
-If the file exists, the install "succeeded" (offline). To get the real skill, connect to the internet and reinstall.
-
-### Custom skill doesn't load
-
-**Problem:** Skill file syntax error or missing required structure.
-
-**Fix:** Use the SDK template:
-
-```python
-from omni_v2.sdk import skill, command, reply
-
-@skill(
-    name="my_skill",
-    category="custom",
-    description="What my skill does",
-)
-class MySkill:
-    async def execute(self, entities, context):
-        return reply("hello!")
-```
-
-Save to `data/skills/installed/my_skill.py`. Restart OMNI.
-
----
-
-## Performance Issues
-
-### Brain is slow (>5s per turn)
-
-**Possible causes:**
-
-1. **CPU fallback:** GPU not detected. Check `n_gpu_layers=20` in `brain.py`.
-2. **Large context:** History > 5 turns. Reduce `_max_history`.
-3. **Other apps using GPU:** Close Chrome, games, etc.
-
-### UI is laggy
-
-**Fix:**
-
-1. Reduce proactive polling: change `setInterval(pollProactive, 30000)` to 60000 in `page.js`
-2. Disable live thought stream animation
-3. Use SSE streaming instead of polling
-
-### High memory usage (>4GB)
-
-**Fix:**
-
-1. Run cleanup: `session_memory.cleanup_old_sessions(max_age_days=30)`
-2. Don't load Moondream2 unless using vision
-3. Reduce Whisper model: use `tiny.en` instead of `base.en`
-
----
-
-## Getting More Help
-
-1. **Check the logs:** `backend_fastapi/main.py` uses `loguru` for structured logging
-2. **Run with debug:** Set `LOGURU_LEVEL=DEBUG` env var
-3. **Check the docs:**
-   - [docs/ARCHITECTURE.md](ARCHITECTURE.md) — system architecture
-   - [docs/API.md](API.md) — API reference
-   - [docs/PERFORMANCE.md](PERFORMANCE.md) — benchmarks
-4. **File an issue:** [GitHub Issues](https://github.com/muhummadzarrar09-sudo/Omni/issues)
-5. **Read the source:** Everything is well-commented. Start with `omni_v2/llm/brain.py`.
-
----
-
-## Diagnostic Commands
-
-```bash
-# Full health check
-curl http://localhost:8765/api/health
-
-# Brain status
-curl http://localhost:8765/api/personality
-
-# Recent sessions
-curl "http://localhost:8765/api/memory/sessions?days=1"
-
-# Today's digest
-curl http://localhost:8765/api/memory/today
-
-# User stats
-curl http://localhost:8765/api/user/stats
-
-# Vision status
-curl http://localhost:8765/api/vision/status
-
-# Voice clone status
-curl http://localhost:8765/api/voice/clone/status
-
-# Skill marketplace status
-curl http://localhost:8765/api/skills/marketplace/status
-
-# Run all tests
-omni test
-```
-
----
-
-## See Also
-
-- **[docs/ARCHITECTURE.md](ARCHITECTURE.md)** — System architecture
-- **[docs/API.md](API.md)** — API reference
-- **[docs/PERFORMANCE.md](PERFORMANCE.md)** — Benchmarks
-- **[docs/CHANGELOG.md](CHANGELOG.md)** — Version history
-- **[README.md](../README.md)** — Top-level docs
+The qualified tree reports no unreviewed scripts. Do not approve a new package
+without reviewing its exact version and install script and committing the
+resulting explicit allowlist change.
+
+## Audit interpretation
+
+- A zero-vulnerability result means the audit databases had no known advisory
+  for the exact locked versions at audit time. It is not a permanent security
+  guarantee.
+- The Python license report requires an entry for every exact dev-lock
+  distribution and fails on missing or unknown metadata.
+- `docutils` and `qrcode` expose mixed classifier metadata that remains listed
+  under `review_required`. The inventory is not legal advice or a claim that
+  every possible redistribution is license-compatible.
+- Models, external executables, browser downloads, OS packages, and remote
+  services are outside this Python metadata inventory and require separate
+  audits in later batches.
+
+## Evidence
+
+B01 machine-readable evidence is stored under `quality/evidence/B01/`, including
+profile resolution, installed-artifact smoke, vulnerability audits, license
+inventory, frontend dependency-tree validation, and final closure evidence.

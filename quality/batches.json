@@ -71,35 +71,52 @@
     {
       "id": "B01",
       "title": "Dependency and Package Rescue",
-      "status": "ready",
+      "status": "closed",
       "depends_on": [
         "B00"
       ],
       "objective": "Make supported Python installation profiles resolve reproducibly and produce complete wheel/sdist artifacts.",
       "in_scope": [
-        "Set and enforce supported Python range",
+        "Set and enforce the supported Python range and one canonical distribution version",
         "Separate minimal/core, voice, vision, desktop, development, and full dependency profiles",
-        "Correct impossible and undeclared requirements, including NumPy, OpenCV Contrib, and cryptography",
-        "Replace manual package lists with complete package discovery",
-        "Build wheel and sdist and inspect exact contents",
-        "Run import and CLI smoke tests from installed artifacts outside the checkout"
+        "Map every locked-scope production import to declared profiles and correct impossible or undeclared requirements",
+        "Generate exact hash-locked CPython 3.11 Linux x86_64 profile resolutions and audit the development lock",
+        "Replace manual package lists with complete package discovery and explicit package data",
+        "Keep runtime state out of the source and installed package trees through one writable-data authority",
+        "Build wheel and sdist, inspect exact contents, and validate metadata",
+        "Install the exact artifact outside the checkout and smoke imports, resources, CLI dispatch, backend health, clean-CWD behavior, and installed-tree immutability",
+        "Repair and qualify the exact frontend lock, install-script policy, dependency tree, audit, lint, and production build",
+        "Document the qualified path and every interpreter, platform, native dependency, artifact, and release limitation"
       ],
       "target_paths": [
         "pyproject.toml",
+        "requirements.txt",
         "backend_fastapi/requirements.txt",
+        "requirements/locks/cpython-3.11-linux-x86_64/",
+        "quality/dependency-profiles.json",
         "frontend_next/package.json",
         "frontend_next/package-lock.json",
+        "scripts/resolve_profiles.py",
         "scripts/check_package_contents.py",
+        "scripts/smoke_installed_artifact.py",
+        "scripts/audit_python_licenses.py",
         "tests/package/",
-        "docs/TROUBLESHOOTING.md"
+        "omni_v2/core/paths.py",
+        "docs/TROUBLESHOOTING.md",
+        "quality/evidence/B01/"
       ],
       "verification_commands": [
-        "python -m pip install --dry-run '.[core]'",
-        "python -m pip install --dry-run '.[all]'",
+        "python scripts/resolve_profiles.py",
+        "python -m pip install --require-hashes -r requirements/locks/cpython-3.11-linux-x86_64/dev.txt",
+        "python -m pip check",
         "python -m build",
-        "python scripts/check_package_contents.py dist/*.whl dist/*.tar.gz",
+        "python scripts/check_package_contents.py --json dist/*.whl dist/*.tar.gz",
+        "python -m twine check dist/*",
         "python -m pytest -q tests/package",
-        "pip-audit"
+        "python scripts/smoke_installed_artifact.py dist/omni_agi-3.2.0-py3-none-any.whl",
+        "python -m pip_audit --require-hashes -r requirements/locks/cpython-3.11-linux-x86_64/dev.txt",
+        "python scripts/audit_python_licenses.py requirements/locks/cpython-3.11-linux-x86_64/dev.txt",
+        "cd frontend_next && npx --yes npm@12.0.2 ci && npx --yes npm@12.0.2 install-scripts ls && npx --yes npm@12.0.2 ls --all && npx --yes npm@12.0.2 audit --audit-level=low && npx --yes npm@12.0.2 run lint && npx --yes npm@12.0.2 run build"
       ],
       "evidence_path": "quality/evidence/B01/",
       "solo_estimate": "4-8 focused days",
@@ -114,12 +131,14 @@
         "Clean isolated artifact install starts CLI and backend smoke paths",
         "Dependency declarations match imports for locked scope",
         "B01 evidence reproduces without the repaired B00 environment"
-      ]
+      ],
+      "closed_on": "2026-08-11",
+      "closure_evidence": "quality/evidence/B01/closure.json"
     },
     {
       "id": "B02",
       "title": "Install, Configuration, and Startup Qualification",
-      "status": "locked",
+      "status": "ready",
       "depends_on": [
         "B01"
       ],

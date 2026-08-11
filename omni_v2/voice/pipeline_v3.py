@@ -9,7 +9,6 @@ Tested: Your mic test got RMS 0.3918 = mic works, just PyAudio continuous stream
 """
 import threading
 import time
-from pathlib import Path
 from typing import Callable, Optional
 import numpy as np
 
@@ -19,10 +18,7 @@ except ImportError:
     import logging
     logger = logging.getLogger("PipelineV3Fixed")
 
-try:
-    from omni_v2.core.paths import DATA_DIR
-except ImportError:
-    DATA_DIR = Path(__file__).resolve().parents[2] / "data"
+from omni_v2.core.paths import DATA_DIR
 
 class VoicePipelineV3Fixed:
     """Fixed pipeline - sounddevice primary, pyaudio fallback, auto resample"""

@@ -1,6 +1,5 @@
 """Windows Tool V2 - 15 tools - Phase 4 Hardened - Fixed shell=True with allowlist"""
 import subprocess
-from pathlib import Path
 from typing import Dict, Any
 from omni_v2.core.plugin_manager import CommandPlugin, CommandMetadata, CommandResult
 
@@ -10,11 +9,7 @@ except ImportError:
     import logging
     logger = logging.getLogger("WindowsToolV2")
 
-try:
-    from omni_v2.core.paths import DATA_DIR, LOGS_DIR
-except ImportError:
-    DATA_DIR = Path.home() / ".omni_v2"
-    LOGS_DIR = DATA_DIR / "logs"
+from omni_v2.core.paths import LOGS_DIR
 
 class WindowsTool(CommandPlugin):
     metadata = CommandMetadata(

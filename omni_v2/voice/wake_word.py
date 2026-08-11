@@ -2,7 +2,6 @@
 
 import os
 import threading
-from pathlib import Path
 from typing import Callable, Optional
 
 try:
@@ -11,10 +10,7 @@ except ImportError:
     import logging
     logger = logging.getLogger("WakeWordV2")
 
-try:
-    from omni_v2.core.paths import DATA_DIR
-except ImportError:
-    DATA_DIR = Path.home() / ".omni_v2"
+from omni_v2.core.paths import DATA_DIR
 
 class WakeWordDetector:
     """Wake Word - Fixed to actually work - salvaged from best JARVIS repos"""

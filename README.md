@@ -2,11 +2,11 @@
 
 > **Status: pre-alpha recovery. Not release-ready. No capability is currently qualified as stable.**
 >
-> **Execution:** B00 is closed. B01 is ready but has not started; the feature freeze remains active.
+> **Execution:** B00 and B01 are closed. B02 is ready but has not started; the feature freeze remains active.
 
 OMNI is a personal, local-first assistant under active reconstruction. The intended product is deliberately narrower than the repository's historical “AGI” and “100+ tools” language: one owner, one qualified Windows 11 x64 machine, and ten safe daily desktop, file, browser, memory, scheduling, and voice workflows.
 
-The repository contains substantial working code and tests, but it also contains overlapping implementations, optional backends, demos, placeholders, stubs, unsafe successful fallbacks, broken packaging, and unqualified platform paths. Those are tracked openly rather than counted as finished features.
+The repository contains substantial working code and tests, but it also contains overlapping implementations, optional backends, demos, placeholders, stubs, unsafe successful fallbacks, unqualified startup paths, and unqualified product platforms. Those are tracked openly rather than counted as finished features.
 
 ## Current Source of Truth
 
@@ -58,13 +58,14 @@ See the generated matrix for every capability's lifecycle, implementation realit
 
 ## Platform and Installation Status
 
-| Platform | Current claim |
+| Environment | Current claim |
 |---|---|
-| Windows 11 x64 | Primary target, **not yet qualified** |
-| Linux | Development-only and unqualified as a product |
+| CPython `>=3.11,<3.12` on Linux x86_64 | B01-qualified for dependency resolution, exact-lock installation, artifact installation, package imports, lightweight CLI paths, packaged resources, and backend health smoke |
+| Windows 11 x64 | Primary product target, **not yet qualified**; B01 did not run the Windows dependency or startup gates |
+| Linux | Package-development environment only; not qualified as an end-user product |
 | macOS | Unsupported and unverified |
 
-There is currently **no supported clean installation path**. Known blockers include unresolved Python dependency constraints, an incomplete wheel, divergent installers, and broken launcher assumptions. Do not treat `pip install -e .`, `start.bat`, or `start.sh` as release-qualified setup instructions. Installation and startup are scheduled for B01–B02.
+B01 establishes a reproducible **local-artifact package path**, not a qualified product installation. There is no qualified PyPI release and no qualified one-click setup or startup path yet. Build the exact local wheel and use the hash-locked profile instructions in [installation and troubleshooting](docs/TROUBLESHOOTING.md). Do not use `pip install -e .` as package evidence, and do not treat `start.bat` or `start.sh` as release-qualified. Idempotent installation, centralized configuration, process lifecycle, and primary-platform startup remain B02 work.
 
 ## Privacy and Network Truth
 
@@ -98,17 +99,32 @@ python scripts/quality_baseline.py capture
 
 Full probe output is written to ignored `quality/.local/`. A concise reviewed result may be published explicitly with `--publish <path>`. A failing probe is expected at this stage and must remain visible; baseline capture is not a claim that the build passes.
 
-## Development Warning
+## B01 Package Evidence
 
-Development currently requires manual environment repair and does not represent a fresh install. If you already have a prepared environment, useful diagnostics are:
+B01 closed the dependency and package-rescue gate on 2026-08-11 for its deliberately narrow environment:
+
+- CPython 3.11.2 on Linux x86_64; Python 3.10, Python 3.12+, PyPy, Windows, and macOS are not claimed.
+- Six resolver profiles (`core`, `voice`, `vision`, `desktop`, `dev`, and `all`) with exact hash-locked Linux files.
+- One wheel and one sdist containing all 190 required runtime files, with metadata validation and no forbidden runtime-data payload.
+- Isolated wheel installation outside the checkout using the exact `core` lock; imports, CLI, package resources, backend health, clean working directory, and installed-tree immutability passed.
+- Python development-lock vulnerability audit: 87 dependencies, zero known vulnerabilities. License inventory: 91 records complete; `docutils==0.23` and `qrcode==8.2` still require review.
+- Node 22.22.3/npm 12.0.2 clean frontend install, dependency tree, audit, lint, and production build passed; the tracked npm audit has zero known vulnerabilities.
+
+This is not a whole-product quality pass. The latest broad Python run measured **668 passed, 33 skipped, and 10 failed**: one wall-clock calendar boundary failure and nine optional-vision/security failures in an environment without OpenCV/face fixtures. Those failures remain visible for B03; no B01 package gate was weakened to hide them. See [`quality/evidence/B01/`](quality/evidence/B01/) for the closure record and raw summaries.
+
+## Reproducible Development Environment
+
+Use the exact B01 Linux development lock rather than repairing an environment package by package:
 
 ```bash
-python -m compileall -q omni_v2 omni backend_fastapi
-python -m pytest -q
-cd frontend_next && npm run build
+python3.11 -m venv .venv
+.venv/bin/python -m pip install --require-hashes \
+  -r requirements/locks/cpython-3.11-linux-x86_64/dev.txt
+.venv/bin/python -m pip check
+.venv/bin/python -m pytest -q tests/package
 ```
 
-Results depend on installed optional dependencies, models, services, hardware, current time, and platform. Record the exact command and environment when reporting a result. Frontend lint is not configured for unattended execution, backend-live tests can skip when no service is running, and a manually repaired environment is not packaging evidence.
+Frontend commands require Node `>=22.22.2 <23` and npm `12.0.2`; the complete reviewed sequence is in [installation and troubleshooting](docs/TROUBLESHOOTING.md). Results outside the qualified interpreter, operating system, architecture, lock, or exact local artifacts are not B01 evidence. Optional models, services, native libraries, and hardware remain separately unqualified.
 
 ## Repository Map
 

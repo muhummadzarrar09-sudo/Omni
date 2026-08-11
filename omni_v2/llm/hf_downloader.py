@@ -18,10 +18,7 @@ except ImportError:
     import logging
     logger = logging.getLogger("HFDownloader")
 
-try:
-    from omni_v2.core.paths import DATA_DIR
-except ImportError:
-    DATA_DIR = Path.home() / ".omni_v2"
+from omni_v2.core.paths import DATA_DIR
 
 MODELS_DIR = DATA_DIR / "models"
 MODELS_DIR.mkdir(parents=True, exist_ok=True)

@@ -25,10 +25,7 @@ except ImportError:
     import logging
     logger = logging.getLogger("UserProfile")
 
-try:
-    from omni_v2.core.paths import DATA_DIR
-except Exception:
-    DATA_DIR = Path(__file__).resolve().parents[2] / "data"
+from omni_v2.core.paths import DATA_DIR
 
 
 SCHEMA_VERSION = 2

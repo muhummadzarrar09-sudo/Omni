@@ -1,0 +1,24 @@
+include LICENSE
+include README.md
+include pyproject.toml
+include scripts/check_package_contents.py
+recursive-include omni *.py
+recursive-include omni_v2 *.py *.html
+recursive-exclude omni_v2/tests *
+recursive-include backend_fastapi *.py
+recursive-include tests/package *.py
+prune archive
+prune data
+prune frontend
+prune frontend_next
+prune logs
+prune mobile
+prune quality
+prune scripts/__pycache__
+global-exclude *.py[cod]
+global-exclude __pycache__
+global-exclude .env
+global-exclude .env.*
+global-exclude *.db
+global-exclude *.sqlite*
+global-exclude *.gguf

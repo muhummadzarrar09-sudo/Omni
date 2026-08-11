@@ -49,10 +49,7 @@ except ImportError:
     import logging
     logger = logging.getLogger("Marketplace")
 
-try:
-    from omni_v2.core.paths import DATA_DIR
-except Exception:
-    DATA_DIR = Path.cwd() / "data"
+from omni_v2.core.paths import DATA_DIR
 
 
 # Sample marketplace index (could be moved to a remote URL)

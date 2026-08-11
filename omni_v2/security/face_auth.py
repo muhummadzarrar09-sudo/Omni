@@ -45,10 +45,7 @@ except ImportError:
     import logging
     logger = logging.getLogger("FaceAuth")
 
-try:
-    from omni_v2.core.paths import DATA_DIR
-except Exception:
-    DATA_DIR = Path.cwd() / "data"
+from omni_v2.core.paths import DATA_DIR
 
 SECURITY_DIR = DATA_DIR / "security"
 OWNER_PATH = SECURITY_DIR / "owner.json"

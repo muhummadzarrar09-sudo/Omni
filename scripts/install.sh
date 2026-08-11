@@ -1,116 +1,59 @@
-#!/bin/bash
-# OMNI V3 - One-shot install for Unix/macOS - LATEST DEPENDENCIES
+#!/usr/bin/env bash
+# OMNI source-checkout convenience installer.
 #
-# Usage:
-#   ./install.sh                  # full install (CPU)
-#   ./install.sh --cuda cu121      # NVIDIA GPU acceleration
-#   ./install.sh --minimal        # just the brain
-#   ./install.sh --upgrade        # upgrade all packages to latest
-#
-# After install:
-#   omni model download
-#   omni test
-#   omni start
+# This script resolves declared dependency ranges from package indexes. It is
+# not B01 qualification evidence. The qualified CPython 3.11/Linux x86_64
+# hash-lock + local-wheel workflow is documented in docs/TROUBLESHOOTING.md.
 
-set -e
+set -euo pipefail
 
-echo ""
-echo "  ====================================================="
-echo "   OMNI V3 - Install (Unix/macOS) - LATEST DEPS"
-echo "  ====================================================="
-echo ""
-
-# Parse args
-CUDA=""
-MINIMAL=""
-UPGRADE=""
-for arg in "$@"; do
-    case $arg in
-        --cuda)
-            CUDA="$2"
-            shift 2
+PROFILE="all"
+for argument in "$@"; do
+    case "$argument" in
+        --minimal|--core)
+            PROFILE="core"
             ;;
-        --minimal)
-            MINIMAL="1"
-            shift
+        --all)
+            PROFILE="all"
             ;;
-        --upgrade)
-            UPGRADE="1"
-            shift
+        -h|--help)
+            echo "Usage: scripts/install.sh [--core|--minimal|--all]"
+            exit 0
+            ;;
+        *)
+            echo "ERROR: unsupported option: $argument" >&2
+            echo "Use --core or --all. CUDA and unconstrained upgrade modes were removed." >&2
+            exit 2
             ;;
     esac
 done
 
-# 1. Find Python
-PY=$(command -v python3 || command -v python)
+ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+cd "$ROOT"
+
+PY=$(command -v python3 || command -v python || true)
 if [ -z "$PY" ]; then
-    echo "  ❌ Python 3 not found. Install from https://python.org"
+    echo "ERROR: CPython 3.11 was not found." >&2
     exit 1
 fi
-PY_VERSION=$($PY -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
-echo "  Python: $PY ($PY_VERSION)"
+if ! "$PY" -c 'import sys; raise SystemExit(0 if sys.version_info[:2] == (3, 11) else 1)'; then
+    echo "ERROR: OMNI requires CPython >=3.11,<3.12; found $("$PY" -VV 2>&1)." >&2
+    exit 1
+fi
 
-# 2. Create venv
-if [ -z "$VIRTUAL_ENV" ]; then
-    if [ ! -d ".venv" ]; then
-        echo "  Creating venv at .venv..."
-        $PY -m venv .venv
+if [ -z "${VIRTUAL_ENV:-}" ]; then
+    if [ ! -d .venv ]; then
+        "$PY" -m venv .venv
     fi
-    echo "  Activated venv: .venv"
+    # shellcheck disable=SC1091
     source .venv/bin/activate
     PY=python
 fi
 
-# 3. Upgrade pip + setuptools + wheel to LATEST
-echo "  Upgrading pip, setuptools, wheel to LATEST..."
-$PY -m pip install --upgrade --quiet pip setuptools wheel
-echo "    -> $($PY -m pip --version)"
+echo "OMNI source install: profile=$PROFILE (index-resolved; not B01 evidence)"
+echo "For the qualified workflow, see docs/TROUBLESHOOTING.md."
+"$PY" -m pip install ".[${PROFILE}]"
+"$PY" -m pip check
 
-# 4. Install llama-cpp-python FIRST with prebuilt wheel
-echo "  Installing llama-cpp-python (prebuilt wheel, latest)..."
-if [ -n "$CUDA" ]; then
-    echo "    -> CUDA variant: $CUDA"
-    $PY -m pip install --upgrade "llama-cpp-python" \
-        --extra-index-url "https://abetlen.github.io/llama-cpp-python/whl/$CUDA" \
-        --quiet
-else
-    echo "    -> CPU variant (no GPU needed)"
-    $PY -m pip install --upgrade "llama-cpp-python" \
-        --extra-index-url "https://abetlen.github.io/llama-cpp-python/whl/cpu" \
-        --quiet
-fi
-
-# 5. Install the rest
-echo "  Installing OMNI V3 with LATEST dependencies..."
-if [ -n "$MINIMAL" ]; then
-    $PY -m pip install -e ".[brain]" --upgrade --quiet
-else
-    $PY -m pip install -e ".[all]" --upgrade --quiet
-fi
-
-# 6. Playwright browsers
-if [ -z "$MINIMAL" ]; then
-    echo "  Ensuring Playwright browser binaries..."
-    $PY -m playwright install chromium 2>&1 | tail -2 || true
-    echo "    -> Chromium ready"
-fi
-
-# 7. Show versions
-echo ""
-echo "  ====================================================="
-echo "  ✅ OMNI V3 installed with LATEST deps!"
-echo "  ====================================================="
-echo ""
-echo "  Installed versions:"
-for pkg in llama-cpp-python faster-whisper edge-tts openwakeword playwright fastapi uvicorn apscheduler sentence-transformers chromadb; do
-    ver=$($PY -m pip show $pkg 2>/dev/null | grep "^Version:" | awk '{print $2}')
-    if [ -n "$ver" ]; then
-        echo "    $pkg: $ver"
-    fi
-done
-echo ""
-echo "  Next steps:"
-echo "    omni model download    # fetches 1.1GB Qwen2.5-1.5B GGUF"
-echo "    omni test              # runs 4 test suites"
-echo "    omni start             # starts backend on :8765"
-echo ""
+echo "Installed OMNI from this checkout with the '$PROFILE' profile."
+echo "Run: omni --help"

@@ -21,7 +21,6 @@ import time
 import json
 import re
 import threading
-from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional
 
 try:
@@ -30,10 +29,7 @@ except ImportError:
     import logging
     logger = logging.getLogger("CommandChannel")
 
-try:
-    from omni_v2.core.paths import DATA_DIR
-except Exception:
-    DATA_DIR = Path.cwd() / "data"
+from omni_v2.core.paths import DATA_DIR
 
 
 class CommandRouter:

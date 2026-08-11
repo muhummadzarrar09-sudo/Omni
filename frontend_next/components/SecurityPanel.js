@@ -30,7 +30,13 @@ export default function SecurityPanel() {
   const [msg, setMsg] = useState('')
 
   const load = async () => { setStatus(await jget(API.status)) }
-  useEffect(() => { load() }, [])
+  useEffect(() => {
+    let cancelled = false
+    jget(API.status).then((nextStatus) => {
+      if (!cancelled) setStatus(nextStatus)
+    })
+    return () => { cancelled = true }
+  }, [])
 
   const doEnroll = async () => { setBusy(true); const r = await jpost(API.enroll); setMsg(r.detail || 'enroll'); setBusy(false); load() }
   const doArm = async () => { setBusy(true); const r = await jpost(API.arm); setMsg(r.detail || 'arm'); setBusy(false); load() }

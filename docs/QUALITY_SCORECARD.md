@@ -2,10 +2,10 @@
 
 > **Generated file.** Edit `quality/scorecard.json`, then run `python scripts/quality_baseline.py generate`.
 
-**Scope:** OMNI Personal Core  
-**Evidence verified:** 2026-08-11  
-**Current batch:** `none`  
-**Next batch:** `B01`  
+**Scope:** OMNI Personal Core<br>
+**Evidence verified:** 2026-08-11<br>
+**Current batch:** `none`<br>
+**Next batch:** `B02`<br>
 **Feature freeze:** `enabled`
 
 Scores are evidence-backed current estimates. A category reaches 10 only when every listed exit criterion is verified against the exact release artifact. Commercial defensibility is not scored for the personal build.
@@ -16,13 +16,13 @@ Scores are evidence-backed current estimates. A category reaches 10 only when ev
 |---|---:|---:|---|---|
 | Product vision and scope | 10.0/10 | 10.0/10 | `pass` | `B00` |
 | Implementation breadth and depth | 6.5/10 | 10.0/10 | `blocked` | `B11` |
-| Automated testing and continuous verification | 6.0/10 | 10.0/10 | `blocked` | `B03` |
+| Automated testing and continuous verification | 6.5/10 | 10.0/10 | `blocked` | `B03` |
 | User experience and accessibility | 5.5/10 | 10.0/10 | `blocked` | `B13` |
 | Feature authenticity and truthful effects | 3.5/10 | 10.0/10 | `blocked` | `B11` |
 | Architecture and maintainability | 3.5/10 | 10.0/10 | `blocked` | `B08` |
-| Installation, packaging, and startup | 1.5/10 | 10.0/10 | `blocked` | `B02` |
-| Security, privacy, and safe autonomy | 2.5/10 | 10.0/10 | `blocked` | `B12` |
-| Documentation and claim accuracy | 5.0/10 | 10.0/10 | `in_progress` | `B14` |
+| Installation, packaging, and startup | 6.0/10 | 10.0/10 | `blocked` | `B02` |
+| Security, privacy, and safe autonomy | 3.5/10 | 10.0/10 | `blocked` | `B12` |
+| Documentation and claim accuracy | 5.5/10 | 10.0/10 | `blocked` | `B14` |
 | Personal utility and reliability | 0.0/10 | 10.0/10 | `not_measured` | `B15` |
 | Commercial defensibility | N/A | N/A | `not_applicable_personal_scope` | `optional_post_10` |
 
@@ -32,7 +32,7 @@ Commercial defensibility is intentionally outside the personal-core score. It re
 
 ### Product vision and scope — 10.0/10
 
-**Status:** `pass`  
+**Status:** `pass`<br>
 **Closure gate:** `B00`
 
 **Current evidence**
@@ -43,15 +43,15 @@ Commercial defensibility is intentionally outside the personal-core score. It re
 
 **10/10 exit criteria**
 
-- [ ] One clear personal-assistant promise
-- [ ] Explicit stable scope and non-goals
-- [ ] Primary and secondary platform claims are bounded
-- [ ] Ten measurable owner workflows are locked
-- [ ] Post-10 ideas are separated from core scope
+- [x] One clear personal-assistant promise
+- [x] Explicit stable scope and non-goals
+- [x] Primary and secondary platform claims are bounded
+- [x] Ten measurable owner workflows are locked
+- [x] Post-10 ideas are separated from core scope
 
 ### Implementation breadth and depth — 6.5/10
 
-**Status:** `blocked`  
+**Status:** `blocked`<br>
 **Closure gate:** `B11`
 
 **Current evidence**
@@ -66,16 +66,17 @@ Commercial defensibility is intentionally outside the personal-core score. It re
 - [ ] Every stable capability has availability, timeout, cancellation, and failure behavior
 - [ ] Ten core workflows meet repeated success targets
 
-### Automated testing and continuous verification — 6.0/10
+### Automated testing and continuous verification — 6.5/10
 
-**Status:** `blocked`  
+**Status:** `blocked`<br>
 **Closure gate:** `B03`
 
 **Current evidence**
 
-- Latest manually repaired environment produced 663 passed, 1 failed, and 35 skipped
-- Python compilation and Next.js production build passed
-- No CI workflow currently exists
+- B01 package suite passes: 14 package metadata, runtime-path, content, and isolated artifact-install tests
+- Latest broad Python run: 668 passed, 33 skipped, 10 failed; one calendar timing failure and nine optional-vision/security failures remain B03 blockers
+- Frontend clean install, dependency tree, audit, zero-warning lint, and production build pass on Node 22/npm 12
+- No CI workflow currently exists and the required broad suite is not green
 
 **10/10 exit criteria**
 
@@ -87,7 +88,7 @@ Commercial defensibility is intentionally outside the personal-core score. It re
 
 ### User experience and accessibility — 5.5/10
 
-**Status:** `blocked`  
+**Status:** `blocked`<br>
 **Closure gate:** `B13`
 
 **Current evidence**
@@ -105,7 +106,7 @@ Commercial defensibility is intentionally outside the personal-core score. It re
 
 ### Feature authenticity and truthful effects — 3.5/10
 
-**Status:** `blocked`  
+**Status:** `blocked`<br>
 **Closure gate:** `B11`
 
 **Current evidence**
@@ -126,7 +127,7 @@ Commercial defensibility is intentionally outside the personal-core score. It re
 
 ### Architecture and maintainability — 3.5/10
 
-**Status:** `blocked`  
+**Status:** `blocked`<br>
 **Closure gate:** `B08`
 
 **Current evidence**
@@ -143,17 +144,18 @@ Commercial defensibility is intentionally outside the personal-core score. It re
 - [ ] Storage ownership, migrations, locking, backup, and retention are explicit
 - [ ] Stable core passes agreed lint, type, and complexity policies
 
-### Installation, packaging, and startup — 1.5/10
+### Installation, packaging, and startup — 6.0/10
 
-**Status:** `blocked`  
+**Status:** `blocked`<br>
 **Closure gate:** `B02`
 
 **Current evidence**
 
-- Declared full dependencies do not resolve on Python 3.11
-- Built wheel omits most omni_v2 packages
-- start.sh references the wrong installer location
-- Browser-facing frontend URLs are hard-coded
+- B01 declares CPython >=3.11,<3.12 and resolves core, voice, vision, desktop, dev, and all profiles on CPython 3.11 Linux x86_64 with exact hashed locks
+- Validated 3.2.0 wheel and sdist contain all 190 required runtime files; package-content and Twine metadata gates pass
+- Exact core-lock wheel smoke passes outside the checkout for imports, CLI dispatch, package resources, backend health, clean CWD, and installed-tree immutability
+- There is no qualified PyPI release, Windows/macOS resolver run, one-click product install, or target-platform startup qualification
+- B02 still owns idempotent installation, centralized configuration/origins, and start/stop/restart qualification
 
 **10/10 exit criteria**
 
@@ -163,17 +165,17 @@ Commercial defensibility is intentionally outside the personal-core score. It re
 - [ ] One-click startup succeeds twice on a fresh primary machine
 - [ ] Configuration and origins are centralized and documented
 
-### Security, privacy, and safe autonomy — 2.5/10
+### Security, privacy, and safe autonomy — 3.5/10
 
-**Status:** `blocked`  
+**Status:** `blocked`<br>
 **Closure gate:** `B12`
 
 **Current evidence**
 
-- Focused guardrail and face-auth tests pass after manual dependency repair
-- API authentication is optional by default
-- Frontend audit reports 1 critical and 10 high vulnerabilities
-- Offline behavior is a claim rather than an enforced no-egress mode
+- B01 exact Python dev-lock audit reports 87 dependencies and zero known vulnerabilities at audit time
+- B01 npm 12 audit reports zero known vulnerabilities in the exact frontend lock
+- Python license inventory covers 91 expected distributions; docutils and qrcode remain review-required
+- API authentication is optional by default and offline behavior remains a claim rather than an enforced no-egress mode
 
 **10/10 exit criteria**
 
@@ -184,15 +186,16 @@ Commercial defensibility is intentionally outside the personal-core score. It re
 - [ ] No unaccepted critical/high runtime dependency vulnerabilities remain
 - [ ] Independent security review findings are closed
 
-### Documentation and claim accuracy — 5.0/10
+### Documentation and claim accuracy — 5.5/10
 
-**Status:** `in_progress`  
+**Status:** `blocked`<br>
 **Closure gate:** `B14`
 
 **Current evidence**
 
-- README and docs index are reset during B00
-- Capability and quality status are generated from machine-readable authorities
+- README and docs index were reset during B00
+- B01 adds a current install/profile/lock/artifact/runtime-data troubleshooting authority and closes stale top-level packaging claims
+- Capability and quality status remain generated from machine-readable authorities and local Markdown links pass
 - Historical phase/API/architecture documents remain non-authoritative until later drift and command checks are implemented
 
 **10/10 exit criteria**
@@ -205,7 +208,7 @@ Commercial defensibility is intentionally outside the personal-core score. It re
 
 ### Personal utility and reliability — 0.0/10
 
-**Status:** `not_measured`  
+**Status:** `not_measured`<br>
 **Closure gate:** `B15`
 
 **Current evidence**
@@ -223,7 +226,7 @@ Commercial defensibility is intentionally outside the personal-core score. It re
 
 ### Commercial defensibility — N/A
 
-**Status:** `not_applicable_personal_scope`  
+**Status:** `not_applicable_personal_scope`<br>
 **Closure gate:** `optional_post_10`
 
 **Current evidence**

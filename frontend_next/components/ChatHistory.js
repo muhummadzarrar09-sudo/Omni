@@ -20,7 +20,7 @@ export default function ChatHistory({ messages, onClear }) {
 
             Your mic RMS 0.014 = LOUD, mic works. -9999 fixed via sounddevice primary.
 
-            Try: "open github" → opens in isolated Chrome profile without email.
+            Try: &quot;open github&quot; → opens in isolated Chrome profile without email.
           </div>
         )}
         

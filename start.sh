@@ -23,8 +23,8 @@ fi
 echo "  Activating virtual environment..."
 source .venv/bin/activate
 
-# Check if model is downloaded
-if [ ! -f "data/models/qwen2.5-1.5b-instruct-q4_k_m.gguf" ]; then
+# Query the canonical per-user model location through the installed CLI.
+if ! omni model info >/dev/null 2>&1; then
     echo ""
     echo "  Model not found - downloading Qwen2.5-1.5B (~1.1GB)..."
     echo "  This is a one-time download."
