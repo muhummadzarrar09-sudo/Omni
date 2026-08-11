@@ -118,7 +118,8 @@ class GoalStack:
 
     def __init__(self, goals_path: Optional[Path] = None,
                  decomposer: Optional[Callable[[str], List[str]]] = None,
-                 notifier: Optional[Callable[[str], Any]] = None):
+                 notifier: Optional[Callable[[str], Any]] = None,
+                 post_goal_hook: Optional[Callable[[Any, bool], None]] = None):
         self.goals_path = Path(goals_path) if goals_path else GOALS_PATH
         self.goals_path.parent.mkdir(parents=True, exist_ok=True)
         self._lock = threading.RLock()
@@ -126,6 +127,9 @@ class GoalStack:
         self.decomposer = decomposer
         # notifier(text) -> push a message (messenger) for follow-through
         self.notifier = notifier
+        # post_goal_hook(goal, success) -> called when a goal completes or fails;
+        # used by the Continual Harness to auto-refine skills/memory/lessons.
+        self.post_goal_hook = post_goal_hook
         self._goals: Dict[str, Goal] = {}
         self._load()
 
@@ -260,6 +264,7 @@ class GoalStack:
         if g.status == ST_DONE:
             self._log(g, "GOAL COMPLETE")
             self._maybe_follow_up(g)
+            self._fire_post_hook(g, success=True)
         self._save()
         return g
 
@@ -279,6 +284,7 @@ class GoalStack:
             self._log(g, f"replanned: added fix step '{suggested_fix}'")
         g.status = ST_BLOCKED if not g.status == ST_DONE else g.status
         self._log(g, f"step failed: {error}")
+        self._fire_post_hook(g, success=False)
         self._save()
         return g
 
@@ -324,6 +330,17 @@ class GoalStack:
                 self._log(g, "follow-up notification sent")
             except Exception as e:
                 logger.warning(f"follow-up notify failed: {e}")
+
+    def _fire_post_hook(self, g: Goal, success: bool) -> None:
+        """Call the post-goal hook (auto harness refine) in a non-blocking thread."""
+        if self.post_goal_hook is None:
+            return
+        try:
+            import threading as _th
+            _th.Thread(target=self.post_goal_hook, args=(g, success),
+                       daemon=True, name="omni-post-goal").start()
+        except Exception as e:
+            logger.warning(f"post_goal_hook fire failed: {e}")
 
     # -- internal -------------------------------------------------------------
     def _log(self, g: Goal, msg: str) -> None:

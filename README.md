@@ -477,7 +477,8 @@ Omni/
   distills finished goal trajectories into versioned **skills / memory / lessons**
   (snapshot + rollback, never touches the base prompt), auto-creates skills on
   repeated success, and self-improves them when metacog flags a misfire. Works on
-  CPU today; auto-upgrades on the DGX Station.
+  CPU today; auto-upgrades on the DGX Station. An **auto post-goal flow** fires this
+  automatically whenever a goal completes or fails — no manual command needed.
 - **Full feature rundown:** see [docs/PR_SUMMARY.md](docs/PR_SUMMARY.md) for the
   complete map of Away Mode, Desktop + Security, the Jarvis Brain, Voice Loop and
   the Proactive Guardian.

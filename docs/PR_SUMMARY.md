@@ -131,6 +131,10 @@ goal trajectories** — never rewriting the immutable base prompt.
   artifacts — the retrieve-on-demand token/memory efficiency win.
 - **DGX-ready:** the plumbing is headless-testable with no model (deterministic
   distiller); on the DGX Station a real LLM distiller drops in for richer skills.
+- **Auto post-goal flow (Phase 12.1):** GoalStack now accepts a `post_goal_hook`
+  that fires automatically (in a thread) whenever a goal completes or fails —
+  `build_away_stack()` wires it to auto-refine the finished goal into the Continual
+  Harness (skills/memory/lessons). No manual command needed.
 - CLI `omni harness status/list/refine/rollback/context`; FastAPI
   `/api/harness/*`; desktop "Harness" tab.
 

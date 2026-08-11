@@ -188,7 +188,7 @@ def cmd_model_download_deep(args):
 def cmd_test(args):
     """Run all 20 test suites."""
     print("\n  " + "=" * 60)
-    print("  OMNI V3 - Full Test Suite (41 suites)")
+    print("  OMNI V3 - Full Test Suite (42 suites)")
     print("  " + "=" * 60 + "\n")
 
     # All 20 test suites
@@ -236,7 +236,8 @@ def cmd_test(args):
         ("[38/41] Knowledge graph",                  "omni_v2.tests.test_knowledge_graph", "module"),
         ("[39/41] Morning briefing",                 "omni_v2.tests.test_briefing", "module"),
         ("[40/41] Skill installer",                  "omni_v2.tests.test_skill_installer", "module"),
-        ("[41/41] Continual harness",                "omni_v2.tests.test_harness", "module"),
+        ("[41/42] Continual harness",                "omni_v2.tests.test_harness", "module"),
+        ("[42/42] Auto post-goal flow",              "omni_v2.tests.test_post_goal_flow", "module"),
     ]
 
     all_ok = True

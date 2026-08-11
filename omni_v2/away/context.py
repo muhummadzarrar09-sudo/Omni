@@ -46,7 +46,29 @@ def build_away_stack(knowledge_base=None, reporter=None, messenger=None,
     )
     memory = kb.memory or get_hybrid_memory()
     identity = IdentityCore()
-    goals = GoalStack(notifier=messenger_obj.send_text)
+    harness = ContinualHarness()
+
+    def _auto_refine_goal(goal, success: bool) -> None:
+        """Auto post-goal flow: distill the finished goal into the Continual
+        Harness (skills/memory/lessons) + log a reflection. Runs in a thread."""
+        try:
+            verdicts = []
+            try:
+                for rec in metacog.history(20):
+                    v = rec.get("verdict", {})
+                    if v.get("suggested_fix"):
+                        verdicts.append(v)
+            except Exception:
+                pass
+            committed = harness.refine_from_trajectory(goal, verdicts=verdicts,
+                                                       success=success,
+                                                       repeated=False)
+            logger.info(f"post-goal: auto-refined {goal.id} -> {committed}")
+        except Exception as e:
+            logger.warning(f"post-goal auto-refine failed: {e}")
+
+    goals = GoalStack(notifier=messenger_obj.send_text,
+                      post_goal_hook=_auto_refine_goal)
     metacog = Metacog()
     try:
         session_store = SessionMemoryStore()
