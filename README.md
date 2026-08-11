@@ -159,6 +159,45 @@ After `pip install -e .[all]`:
 | `omni ui` | Start Next.js UI on :3000 |
 | `omni dev` | Start backend + UI + open browser |
 | `omni shell` | Interactive brain REPL |
+| `omni kb add <path\|url>` | Ingest files/folders/URLs into the local knowledge base (RAG+CAG) |
+| `omni kb query "q"` | Ask the knowledge base (long-term RAG + short-term CAG fused) |
+| `omni research "topic"` | Run autonomous research → save a report |
+| `omni away start\|status\|add\|run` | Unattended away-mode task queue |
+| `omni report list\|digest` | Browse reports / build a digest |
+| `omni app` | Launch the full Python desktop app (Away Mode + Security) |
+| `omni security enroll\|arm\|disarm\|snapshot\|lock` | Local camera guard & lockdown |
+| `omni messenger setup-whatsapp\|whatsapp-set\|test\|status` | WhatsApp/Telegram report setup |
+| `./scripts/setup_hardware.sh` | One-shot real-hardware setup (models + offline TTS + WhatsApp) |
+| `omni voice start\|stop\|status\|respond` | Hands-free "Hey OMNI" voice loop |
+| `omni guardian start\|stop\|scan\|recent\|status` | Proactive machine watcher (apps/health) |
+| `omni graph build\|json\|view` | Visualize your RAG+CAG memory as a knowledge graph |
+| `omni briefing build\|deliver` | Personal morning briefing (goals + recap + research) |
+| `omni add-skill install\|list` | Install a community skill (verified, auto-wired) |
+| `omni harness status\|list\|refine\|rollback\|context` | Continual harness: self-refining skills/memory/lessons |
+| `omni mcp status\|add-demo\|list\|add` | Connect to the MCP ecosystem (Model Context Protocol) |
+| `omni skill-verify status\|run\|history` | Auto skill verification (test skills, roll back failures) |
+| `omni compaction status` | Context auto-compaction (token/memory efficiency) |
+| `omni delegate goal\|status` | Sub-agent delegation (run goal steps in parallel) |
+| `omni automation status\|add\|fire\|list` | Webhook/schedule/file triggers that wake OMNI |
+| `omni router status\|route` | LLM router v2: cost-aware model selection (DGX-ready) |
+| `omni daemon enable\|disable\|status\|start\|stop` | Always-on resident agent + auto-start on boot |
+| `omni benchmark run\|report` | Self-improvement benchmark (faster/cheaper over time) |
+| `omni sandbox status\|run` | Skill sandbox: run untrusted skill code isolated |
+| `omni vault list\|set\|get\|delete\|stats` | Credential vault: encrypted local secrets |
+| `omni personal calendar\|contacts\|cite\|status` | Local calendar/contacts + KB answers with citations |
+| `omni wake run\|status` | Wake routine: "Good morning Zarrar" scripted flow |
+| `omni leaderboard report\|record` | Harness leaderboard: prioritize what to improve |
+| `omni schedule list\|add\|remove\|fire` | Recurring scheduler: OMNI actions on cron/interval |
+| `omni history list\|replay\|undo` | Action journal: session replay + safe undo |
+| `omni photo caption\|dir\|search` | Photo memory: caption images into the KB |
+| `omni backup create\|restore\|list` | Backup & restore the whole OMNI state |
+| `omni file run <cmd>` | NL file manager: safe file operations from natural language |
+| `omni remote info` | LAN remote control (token-authed, from another device) |
+| `omni engine\|metaharness\|mesh\|gui info` | Big subsystems: agentic runtime, self-improving harness, multi-machine sync, vision GUI agent |
+| `omni brain status\|user\|set-name\|set-mood\|reflect` | Jarvis Identity core + user model |
+| `omni goal new\|list\|status\|advance\|fail\|follow-up` | Jarvis persistent goal stack (decompose → progress → replan) |
+| `omni meta evaluate\|history\|stats` | Jarvis metacognition (evaluate outcome → replan/ask/escalate) |
+| `omni reflect today\|patterns\|episodes` | Jarvis episodic reflection + pattern awareness |
 
 ---
 
@@ -420,6 +459,113 @@ Omni/
 - **Voice clone:** Record 30s → OMNI speaks in your voice
 - **Vision:** "What's on my screen?" → describes it
 - **Skills:** `omni skills install morning_briefing` → installs community skill
+- **Away Mode (Phase 7):** runs autonomous research while you're away, stores
+  everything in a **hybrid RAG+CAG knowledge base** (long-term semantic recall +
+  short-term fast cache), and sends you reports to your phone (WhatsApp /
+  Telegram / local file). See [docs/AWAY_MODE.md](docs/AWAY_MODE.md).
+- **Desktop app (Phase 8):** a full Python control panel (`omni app`) with tabs
+  for Dashboard, Knowledge Base, Research, Away Tasks, Reports, Messenger and
+  **Security**.
+- **Camera security (Phase 8):** enroll your face locally, arm a guard that
+  watches the camera, and if someone unrecognized is at the machine it **alerts
+  you first, then locks the laptop**. See [docs/DESKTOP_SECURITY.md](docs/DESKTOP_SECURITY.md).
+- **Jarvis Brain (Phase 9):** a persistent **Identity core** (name, persona, mood,
+  values) + **user model** (likes, tone, prefs) injected into every prompt, plus a
+  **goal stack** that decomposes big intents into steps and tracks progress across
+  sessions, **model tiering** (auto-swaps to a 3B deep model for hard reasoning), and a
+  **metacognition loop** (the evaluator's verdict feeds back into goals to replan / ask
+  / escalate), **episodic reflection** (daily recaps + pattern awareness so OMNI notices
+  things on its own), **visible plan-before-acting**, and **offline-first TTS** (piper
+  local, edge-tts cloud only if opted in). See [docs/JARVIS_BRAIN.md](docs/JARVIS_BRAIN.md).
+- **Offline voice (Phase 8.2):** wake word defaults to **openwakeword** (free, offline,
+  no key) — Picovoice is demoted to an explicit opt-in that needs a key. STT is
+  faster-whisper (fully offline).
+- **Voice Loop (Phase 10):** a continuous hands-free conversation cycle — always-on
+  "Hey OMNI" → hear you → think → speak back — with voice-driven goals ("research X and
+  report back" becomes an away-mode goal).
+- **Proactive Guardian (Phase 10):** a background watcher that checks processes, system
+  health (battery/disk/CPU) and files, surfacing observations and notifying you (via
+  messenger) about anomalies — "Jarvis watches your back."
+- **Knowledge Graph (Phase 11):** visualize your RAG+CAG memory as an interactive
+  node/edge graph (`omni graph`, web viewer at `/knowledge-graph`) — topics, files,
+  tools, commands and how they connect.
+- **Morning Briefing (Phase 11):** a scheduled digest of your open goals + yesterday's
+  recap + fresh research, delivered to WhatsApp/Telegram/file (`omni briefing deliver`).
+- **Skill Installer (Phase 11):** `omni add-skill <url>` pulls a community skill,
+  verifies it with the AST safety checker, and auto-wires it into the brain's tools.
+- **Continual Harness (Phase 12):** a Prime-Agent-style self-refining loop — OMNI
+  distills finished goal trajectories into versioned **skills / memory / lessons**
+  (snapshot + rollback, never touches the base prompt), auto-creates skills on
+  repeated success, and self-improves them when metacog flags a misfire. Works on
+  CPU today; auto-upgrades on the DGX Station. An **auto post-goal flow** fires this
+  automatically whenever a goal completes or fails — no manual command needed.
+- **Sub-Agent Delegation (Phase 13 #4):** the RLM-style "sub-agents as calls" — a goal's
+  steps run as **parallel sub-agents** that each report back **compactly** to a parent
+  that stays small and focused. `omni delegate goal <id>`, `/api/goals/{id}/delegate`.
+- **Automation Triggers (Phase 13 #5):** external events wake OMNI — **webhook**
+  (`POST /api/automation/webhook/<name>`), **schedule**, or **file** triggers fire
+  automations that start a goal / run research / send a message / queue an away task.
+  `omni automation add/fire/list`.
+- **LLM Router V2 (Phase 13 #6, DGX-ready):** a cost-aware model router that picks the
+  **cheapest capable model per task** (fast/balanced/deep/reasoning/local tiers).
+  On the 1050 Ti it uses 1.5B/3B; on the DGX it automatically uses 14B/72B+ reasoning
+  tiers. `omni router status/route`.
+- **Daemon + Auto-start (Phase 14 #1):** OMNI becomes an **always-on resident agent** —
+  `omni daemon enable` registers it to start on boot (systemd / XDG autostart), and a
+  DaemonController keeps guardian + automation + away services running persistently.
+- **Self-Improvement Benchmark (Phase 14 #2):** measures whether OMNI gets **faster /
+  cheaper** on repeated task types as the Continual Harness accumulates skills —
+  compares the "early" (no skill) vs "late" (skill present) cohort. `omni benchmark`.
+- **Skill Sandbox (Phase 14 #3):** run untrusted / harness-created skills in an **isolated
+  subprocess** with OS-level guardrails — hard timeout, memory limit (RLIMIT_AS), network
+  blocked, clean env. `omni sandbox status/run`.
+- **Credential Vault (Phase 14 #4):** local, **Fernet-encrypted** store for secrets with a
+  **permission gate** (allow-list + optional human-approval hook) before tools use them.
+  `omni vault set/get/list`.
+- **Personal Context (Phase 14 #5):** parse **local `.ics` calendar** files + **.vcf/JSON
+  contacts** so the briefing & guardian reference your real schedule and people.
+- **RAG-with-Citations (Phase 14 #6):** ask the knowledge base and get answers **grounded
+  in sources** — every retrieved chunk links back to its file/URL. `omni personal cite`.
+- **Wake Routine (Phase 14 #7):** "Good morning Zarrar" — a scripted flow that greets you
+  by name, reports today's events + open goals, and can speak/push it. `omni wake`.
+- **Harness Leaderboard (Phase 14 #8b):** tracks which skills/automations work best so OMNI
+  **prioritizes** what to refine or retire. `omni leaderboard`.
+- **Recurring Scheduler (Phase 15 #1):** run OMNI actions (briefing, guardian, digests,
+  notify, research, away) on **cron/interval** schedules so it acts automatically.
+  `omni schedule add --cron "0 8 * * *" briefing`.
+- **Action Journal (Phase 15 #2):** a persistent record of every OMNI action you can
+  **replay** and **safely undo** (snapshot-based file undo). `omni history list/replay/undo`.
+- **Photo Memory (Phase 15 #3):** captions local images with the vision module and stores
+  them in RAG memory — "what did I take pictures of?" `omni photo caption/dir/search`.
+- **Backup & Restore (Phase 15 #4):** export/import the whole OMNI state (brain, harness,
+  KB, goals, config, calendar, etc.) to a folder or zip. `omni backup create/restore/list`.
+- **NL File Manager (Phase 15 #5):** "move all PDFs from Downloads to Documents" — safe,
+  sandboxed (allowed-root), journal-backed file operations. `omni file run <cmd>`.
+- **LAN Remote Control (Phase 15 #6):** control OMNI from another device on your local
+  network via the token-authed API (`/api/remote/status|command|goal`).
+- **QueryEngine (Phase 16 #1):** an OpenHarness-style **agentic tool-calling runtime** —
+  brain + tool registry + permission gate + pre/post hooks + cost metering + compaction.
+- **Meta-Harness (Phase 16 #2):** the **self-improvement outer loop** — mines failure
+  traces, proposes harness edits, validates via regression, keeps only improvements.
+- **OMNI Mesh (Phase 16 #3):** multi-machine state sync (export/import/reconcile brain,
+  harness, KB, goals, identity) between your laptop and the DGX.
+- **GUI Agent (Phase 16 #4):** vision-driven, **sandboxed** screen automation
+  (screenshot → vision → click/type), journaled for undo.
+- **Real MCP servers (Phase 14 #8a):** persistent stdio MCP sessions so real server tools
+  can actually be called, not just registered.
+  (6,000+ servers/tools). MCP tools register as native OMNI plugins the brain can call
+  like built-ins. `omni mcp add-demo`, `/api/mcp/*`, desktop "MCP" tab.
+- **Auto Skill Verification (Phase 13 #2):** whenever the Continual Harness creates or
+  refines a skill, it's run through a tester — kept if it passes, **rolled back** (or
+  dropped) if it fails. Closes the "is this skill actually good?" loop automatically.
+  `omni skill-verify status/run/history`.
+- **Context Auto-Compaction (Phase 13 #3):** when a conversation outgrows the token
+  budget, the Brain summarizes the older middle into a compact note while preserving the
+  task + recent turns — the token/memory efficiency win for the small brain.
+  `omni compaction status`.
+- **Full feature rundown:** see [docs/PR_SUMMARY.md](docs/PR_SUMMARY.md) for the
+  complete map of Away Mode, Desktop + Security, the Jarvis Brain, Voice Loop and
+  the Proactive Guardian.
 
 ---
 

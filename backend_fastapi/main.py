@@ -54,6 +54,105 @@ def api_error(message: str, status_code: int = 500):
     """Consistent error response for mutating API handlers."""
     return JSONResponse(status_code=status_code, content={"status": "error", "error": message})
 
+
+# Away Mode (Phase 7): RAG+CAG knowledge base, autonomous research, task queue,
+# reports & messenger. Fully local. See away_routes.py.
+try:
+    from away_routes import router as away_router
+    app.include_router(away_router)
+    logger.info("Away Mode router mounted at /api/away")
+except Exception as e:  # pragma: no cover - non-fatal if deps missing
+    logger.warning(f"Away Mode router not mounted: {e}")
+
+# Jarvis Brain (Phase 9): identity core (self) + user model. Fully local.
+try:
+    from brain_routes import router as brain_router
+    app.include_router(brain_router)
+    logger.info("Brain router mounted at /api/brain")
+except Exception as e:  # pragma: no cover - non-fatal if deps missing
+    logger.warning(f"Brain router not mounted: {e}")
+
+# Jarvis Brain (Phase 9 Step 3): persistent goal stack. Fully local.
+try:
+    from goals_routes import router as goals_router
+    app.include_router(goals_router)
+    logger.info("Goals router mounted at /api/goals")
+except Exception as e:  # pragma: no cover - non-fatal if deps missing
+    logger.warning(f"Goals router not mounted: {e}")
+
+# Jarvis Brain (Phase 9 Step 4): metacognition (evaluator feedback loop).
+try:
+    from metacog_routes import router as metacog_router
+    app.include_router(metacog_router)
+    logger.info("Metacog router mounted at /api/metacog")
+except Exception as e:  # pragma: no cover - non-fatal if deps missing
+    logger.warning(f"Metacog router not mounted: {e}")
+
+# Jarvis Brain (Phase 9 Step 5): episodic reflection + pattern awareness.
+try:
+    from reflect_routes import router as reflect_router
+    app.include_router(reflect_router)
+    logger.info("Reflect router mounted at /api/reflect")
+except Exception as e:  # pragma: no cover - non-fatal if deps missing
+    logger.warning(f"Reflect router not mounted: {e}")
+
+# Jarvis Brain (Phase 8): camera security over HTTP. Fully local.
+try:
+    from security_routes import router as security_router
+    app.include_router(security_router)
+    logger.info("Security router mounted at /api/security")
+except Exception as e:  # pragma: no cover - non-fatal if deps missing
+    logger.warning(f"Security router not mounted: {e}")
+
+# Voice loop + Guardian (Phase 10). Fully local.
+try:
+    from assistant_routes import router as assistant_router
+    app.include_router(assistant_router)
+    logger.info("Assistant router mounted at /api/assistant")
+except Exception as e:  # pragma: no cover - non-fatal if deps missing
+    logger.warning(f"Assistant router not mounted: {e}")
+
+# Knowledge Graph, Morning Briefing, Skill Installer (Phase 11). Fully local.
+try:
+    from intel_routes import router as intel_router
+    app.include_router(intel_router)
+    logger.info("Intel router mounted at /api (knowledge-graph/briefing/skills)")
+except Exception as e:  # pragma: no cover - non-fatal if deps missing
+    logger.warning(f"Intel router not mounted: {e}")
+
+# Continual Harness (Phase 12): self-refining skills/memory/lessons. Fully local.
+try:
+    from harness_routes import router as harness_router
+    app.include_router(harness_router)
+    logger.info("Harness router mounted at /api/harness")
+except Exception as e:  # pragma: no cover - non-fatal if deps missing
+    logger.warning(f"Harness router not mounted: {e}")
+
+# MCP Bridge (Phase 13). Fully local.
+try:
+    from mcp_routes import router as mcp_router
+    app.include_router(mcp_router)
+    logger.info("MCP router mounted at /api/mcp")
+except Exception as e:  # pragma: no cover - non-fatal if deps missing
+    logger.warning(f"MCP router not mounted: {e}")
+
+# Automation triggers (Phase 13 #5): webhook/schedule/file. Fully local.
+try:
+    from automation_routes import router as automation_router
+    app.include_router(automation_router)
+    logger.info("Automation router mounted at /api/automation")
+except Exception as e:  # pragma: no cover - non-fatal if deps missing
+    logger.warning(f"Automation router not mounted: {e}")
+
+# Remote control (Phase 15 #6): LAN-only command surface. Token-authed via
+# the app-level OMNI_API_TOKEN / device-token middleware.
+try:
+    from remote_routes import router as remote_router
+    app.include_router(remote_router)
+    logger.info("Remote router mounted at /api/remote")
+except Exception as e:  # pragma: no cover - non-fatal if deps missing
+    logger.warning(f"Remote router not mounted: {e}")
+
 # SMOKE-10 fix: cap request body size at 64KB to prevent OOM attacks
 MAX_REQUEST_BYTES = 64 * 1024
 

@@ -89,37 +89,49 @@ class TTSBest:
             logger.info(f"🔊 TTS voice changed to {persona} ({self.edge_voice})")
 
     def _init_engines(self):
-        # Try edge-tts first (best quality, free)
+        # FULLY LOCAL: Piper (offline neural) is PRIMARY. edge-tts is a cloud
+        # engine (Microsoft's neural voices) and is demoted to an OPTIONAL
+        # fallback only when the user explicitly opts in — OMNI's promise is
+        # "no data leaves your machine", so offline TTS comes first.
+        # Try Piper first (offline neural, super fast)
         try:
-            import edge_tts
-            self.engine_type = "edge-tts"
-            self.init_status = "edge_tts_ready"
-            # List available voices (cached for performance)
-            try:
-                # Note: this is async, but we just record the engine is available
-                self.edge_voices_available = [
-                    "en-US-GuyNeural", "en-US-JennyNeural", "en-US-AriaNeural",
-                    "en-US-DavisNeural", "en-US-SaraNeural", "en-US-TonyNeural",
-                    "en-US-NancyNeural", "en-US-JaneNeural", "en-US-JasonNeural",
-                    "en-GB-RyanNeural", "en-GB-SoniaNeural", "en-GB-LibbyNeural",
-                ]
-                logger.info(f"✅ TTS V4: edge-tts ready (voices: {self.edge_voice})")
-            except Exception:
-                pass
-            return
-        except ImportError:
-            self.last_error = "edge-tts not installed"
-            logger.debug("edge-tts not installed - pip install edge-tts")
-
-        # Try Piper (offline neural, super fast)
-        try:
-            import piper
+            import piper  # noqa: PLC0415
             self.engine_type = "piper"
             self.init_status = "piper_ready"
-            logger.info("✅ TTS V4: piper-tts ready")
+            logger.info("✅ TTS V4: piper-tts ready (OFFLINE)")
             return
         except ImportError:
+            self.last_error = "piper-tts not installed"
             logger.debug("piper-tts not installed - pip install piper-tts")
+
+        # Fallback: edge-tts (cloud) ONLY if explicitly enabled via config,
+        # otherwise skip straight to SAPI. Keeps the default fully local.
+        edge_enabled = False
+        try:
+            from omni_v2.core.config_manager import ConfigManager
+            cfg = ConfigManager().load()
+            edge_enabled = getattr(cfg, "tts_allow_cloud", False)
+        except Exception:
+            edge_enabled = False
+        if edge_enabled:
+            try:
+                import edge_tts  # noqa: PLC0415
+                self.engine_type = "edge-tts"
+                self.init_status = "edge_tts_ready"
+                try:
+                    self.edge_voices_available = [
+                        "en-US-GuyNeural", "en-US-JennyNeural", "en-US-AriaNeural",
+                        "en-US-DavisNeural", "en-US-SaraNeural", "en-US-TonyNeural",
+                        "en-US-NancyNeural", "en-US-JaneNeural", "en-US-JasonNeural",
+                        "en-GB-RyanNeural", "en-GB-SoniaNeural", "en-GB-LibbyNeural",
+                    ]
+                    logger.info(f"✅ TTS V4: edge-tts ready (cloud, voices: {self.edge_voice})")
+                except Exception:
+                    pass
+                return
+            except ImportError:
+                logger.debug("edge-tts not installed or not enabled (cloud)")
+
 
         # Fallback to SAPI5
         try:

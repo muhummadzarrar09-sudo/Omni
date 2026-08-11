@@ -201,7 +201,10 @@ class OMNIBrain:
                 )
             else:
                 content = "# Built by OMNI\nprint('Hello from OMNI')\n"
-            path = f"D:/Omni/data/output/{filename}"
+            # Portable output dir: use the project's data/output (no D:/Omni hardcode)
+            out_dir = REPO_ROOT / "data" / "output"
+            out_dir.mkdir(parents=True, exist_ok=True)
+            path = str(out_dir / filename)
             from omni_v2.core.command_registry import ActionStep
             from omni_v2.core.plugin_manager import CommandResult
             # Write the file

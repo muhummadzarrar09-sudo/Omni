@@ -204,3 +204,10 @@ Cargo.lock
 data/**
 !data/.gitkeep
 .omni_v2/**
+
+# Next.js build artifacts
+.next/
+frontend_next/.next/
+
+# Runtime DB (binary)
+data/memory.db
