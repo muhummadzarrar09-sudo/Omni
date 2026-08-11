@@ -179,6 +179,7 @@ After `pip install -e .[all]`:
 | `omni compaction status` | Context auto-compaction (token/memory efficiency) |
 | `omni delegate goal\|status` | Sub-agent delegation (run goal steps in parallel) |
 | `omni automation status\|add\|fire\|list` | Webhook/schedule/file triggers that wake OMNI |
+| `omni router status\|route` | LLM router v2: cost-aware model selection (DGX-ready) |
 | `omni brain status\|user\|set-name\|set-mood\|reflect` | Jarvis Identity core + user model |
 | `omni goal new\|list\|status\|advance\|fail\|follow-up` | Jarvis persistent goal stack (decompose → progress → replan) |
 | `omni meta evaluate\|history\|stats` | Jarvis metacognition (evaluate outcome → replan/ask/escalate) |
@@ -491,6 +492,10 @@ Omni/
   (`POST /api/automation/webhook/<name>`), **schedule**, or **file** triggers fire
   automations that start a goal / run research / send a message / queue an away task.
   `omni automation add/fire/list`.
+- **LLM Router V2 (Phase 13 #6, DGX-ready):** a cost-aware model router that picks the
+  **cheapest capable model per task** (fast/balanced/deep/reasoning/local tiers).
+  On the 1050 Ti it uses 1.5B/3B; on the DGX it automatically uses 14B/72B+ reasoning
+  tiers. `omni router status/route`.
 - **MCP Bridge (Phase 13):** connect OMNI to the **Model Context Protocol** ecosystem
   (6,000+ servers/tools). MCP tools register as native OMNI plugins the brain can call
   like built-ins. `omni mcp add-demo`, `/api/mcp/*`, desktop "MCP" tab.

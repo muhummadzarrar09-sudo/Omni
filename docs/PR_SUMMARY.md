@@ -192,6 +192,17 @@ goal trajectories** — never rewriting the immutable base prompt.
 - CLI `omni automation status/add/fire/list`; FastAPI `/api/automation/*` incl.
   `POST /api/automation/webhook/<name>`.
 
+## 4.15 LLM Router V2 (Phase 13 #6) — DGX-ready model routing
+
+- **`omni_v2/llm/router_v2.py`**: cost-aware multi-tier router (fast / brain / deep /
+  reasoning / local). Each tier has candidate models with `cost` + `capability`; the
+  router picks the **cheapest capable model** per task (OpenSquilla-style). Heuristic
+  capability estimation + token estimate. Pluggable resolver for real calls.
+- On the 1050 Ti: 1.5B (fast/brain) + 3B (deep). On the DGX: automatically uses 14B /
+  72B+ reasoning tiers when present.
+- CLI `omni router status/route`; FastAPI `GET /api/brain/router`; wired into the
+  DesktopController + status.
+
 ## 5. Fixes & hygiene
 
 - Fixed pre-existing `omni/cli.py` f-string syntax bug (blocked CLI on Python ≤ 3.11).

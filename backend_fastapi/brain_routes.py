@@ -97,3 +97,10 @@ def compaction() -> Dict[str, Any]:
     """Context auto-compaction status (Phase 13 #3)."""
     from omni_v2.llm.compaction import Compactor
     return {"ok": True, "status": Compactor().stats()}
+
+
+@router.get("/router")
+def router() -> Dict[str, Any]:
+    """LLM router v2 status (Phase 13 #6)."""
+    from omni_v2.llm.router_v2 import LLMRouterV2
+    return {"ok": True, "status": LLMRouterV2().stats()}

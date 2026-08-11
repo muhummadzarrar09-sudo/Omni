@@ -139,6 +139,32 @@ class DesktopController:
         self.delegator = None
         # -- automation triggers (Phase 13 #5) -------------------------------
         self.triggers = None
+        # -- LLM router v2 (Phase 13 #6) -------------------------------------
+        self.router_v2 = None
+
+    def _get_router_v2(self):
+        if self.router_v2 is not None:
+            return self.router_v2
+        try:
+            from omni_v2.llm.router_v2 import LLMRouterV2
+            # On this machine, constrain to models we actually have; on the DGX
+            # pass more. Default = all available (DGX-ready).
+            self.router_v2 = LLMRouterV2()
+        except Exception as e:
+            logger.warning(f"router_v2 build failed: {e}")
+            self.router_v2 = None
+        return self.router_v2
+
+    def router_select(self, text: str) -> Dict[str, Any]:
+        r = self._get_router_v2()
+        if r is None:
+            return {"ok": False, "detail": "router unavailable"}
+        dec = r.select(text)
+        return {"ok": True, "decision": dec.to_dict()}
+
+    def router_stats(self) -> Dict[str, Any]:
+        r = self._get_router_v2()
+        return r.stats() if r else {"tiers": []}
 
     def _get_triggers(self):
         if self.triggers is not None:
@@ -374,6 +400,8 @@ class DesktopController:
             out["delegator"] = self.delegator.stats()
         if self.triggers:
             out["automation"] = self.triggers.stats()
+        if self.router_v2:
+            out["router"] = self.router_v2.stats()
         if self.voice_loop:
             out["voice"] = self.voice_loop.stats()
         if self.guardian:

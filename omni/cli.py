@@ -188,7 +188,7 @@ def cmd_model_download_deep(args):
 def cmd_test(args):
     """Run all 20 test suites."""
     print("\n  " + "=" * 60)
-    print("  OMNI V3 - Full Test Suite (47 suites)")
+    print("  OMNI V3 - Full Test Suite (48 suites)")
     print("  " + "=" * 60 + "\n")
 
     # All 20 test suites
@@ -242,7 +242,8 @@ def cmd_test(args):
         ("[44/45] Auto skill verification",          "omni_v2.tests.test_skill_verify", "module"),
         ("[45/46] Context compaction",               "omni_v2.tests.test_compaction", "module"),
         ("[46/47] Sub-agent delegation",             "omni_v2.tests.test_subagents", "module"),
-        ("[47/47] Automation triggers",              "omni_v2.tests.test_automation", "module"),
+        ("[47/48] Automation triggers",              "omni_v2.tests.test_automation", "module"),
+        ("[48/48] LLM router v2 (DGX-ready)",        "omni_v2.tests.test_router_v2", "module"),
     ]
 
     all_ok = True
@@ -824,6 +825,43 @@ def cmd_delegate(args):
         print(f"    Succeeded: {st.get('succeeded', 0)}")
         print(f"    Failed   : {st.get('failed', 0)}")
         print(f"    Max work : {st.get('max_workers', 3)}")
+        print()
+        return 0
+    return 1
+
+
+def cmd_router(args):
+    """LLM router v2: cost-aware model selection (DGX-ready)."""
+    sys.path.insert(0, str(REPO_ROOT))
+    from omni_v2.away.desktop import DesktopController
+    c = DesktopController()
+    action = getattr(args, "router_action", None) or "status"
+
+    if action == "status":
+        st = c.router_stats()
+        print("\n  🎛️  LLM Router V2")
+        print(f"    Tiers          : {', '.join(st.get('tiers', []))}")
+        print(f"    Available      : {', '.join(st.get('available_models', []))}")
+        print(f"    Has resolver   : {st.get('has_resolver', False)}")
+        print("\n  (Cost-aware: picks the cheapest capable model per task.")
+        print("   On the 1050 Ti: 1.5B fast/brain, 3B deep.")
+        print("   On the DGX: automatically uses 14B/72B+ reasoning tiers.)")
+        print()
+        return 0
+
+    if action == "route":
+        text = " ".join(args.rest)
+        if not text:
+            print("  Usage: omni router route <task text>")
+            return 1
+        res = c.router_select(text)
+        if not res.get("ok"):
+            print(f"  ❌ {res.get('detail','?')}")
+            return 1
+        d = res["decision"]
+        print(f"\n  Task: {text}\n")
+        print(f"    → tier {d['tier']} · model {d['model']} (required cap {d['required_cap']})")
+        print(f"      {d['reason']} · est {d['estimated_tokens']} tokens")
         print()
         return 0
     return 1
@@ -1596,6 +1634,12 @@ def main():
     _af.add_argument("name")
     auto_sub.add_parser("list")
 
+    rtr = sub.add_parser("router", help="LLM router v2: cost-aware model selection (DGX-ready)")
+    rtr_sub = rtr.add_subparsers(dest="router_action")
+    rtr_sub.add_parser("status")
+    _rr = rtr_sub.add_parser("route")
+    _rr.add_argument("rest", nargs=argparse.REMAINDER)
+
     mcp = sub.add_parser("mcp", help="MCP: connect to the Model Context Protocol ecosystem")
     mcp_sub = mcp.add_subparsers(dest="mcp_action")
     mcp_sub.add_parser("status")
@@ -1730,6 +1774,8 @@ def main():
         return cmd_delegate(args)
     if cmd == "automation":
         return cmd_automation(args)
+    if cmd == "router":
+        return cmd_router(args)
     if cmd == "briefing":
         return cmd_briefing(args)
     if cmd == "add-skill":
