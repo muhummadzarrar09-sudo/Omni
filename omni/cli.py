@@ -188,7 +188,7 @@ def cmd_model_download_deep(args):
 def cmd_test(args):
     """Run all 20 test suites."""
     print("\n  " + "=" * 60)
-    print("  OMNI V3 - Full Test Suite (53 suites)")
+    print("  OMNI V3 - Full Test Suite (54 suites)")
     print("  " + "=" * 60 + "\n")
 
     # All 20 test suites
@@ -248,7 +248,8 @@ def cmd_test(args):
         ("[50/51] Self-improvement benchmark",       "omni_v2.tests.test_benchmark", "module"),
         ("[51/52] Skill sandbox",                    "omni_v2.tests.test_sandbox", "module"),
         ("[52/53] Credential vault",                 "omni_v2.tests.test_vault", "module"),
-        ("[53/53] Personal context (calendar/contacts/citations)", "omni_v2.tests.test_personal", "module"),
+        ("[53/54] Personal context (calendar/contacts/citations)", "omni_v2.tests.test_personal", "module"),
+        ("[54/54] Wake routine + harness leaderboard", "omni_v2.tests.test_wake_leaderboard", "module"),
     ]
 
     all_ok = True
@@ -868,6 +869,63 @@ def cmd_router(args):
         print(f"    → tier {d['tier']} · model {d['model']} (required cap {d['required_cap']})")
         print(f"      {d['reason']} · est {d['estimated_tokens']} tokens")
         print()
+        return 0
+    return 1
+
+
+def cmd_wake(args):
+    """Wake routine: the 'Good morning Zarrar' scripted flow."""
+    sys.path.insert(0, str(REPO_ROOT))
+    from omni_v2.away.desktop import DesktopController
+    c = DesktopController()
+    action = getattr(args, "wake_action", None) or "status"
+
+    if action == "run":
+        res = c.wake_run(speak=args.speak, push=args.push)
+        print(f"\n  🌅 Wake routine: {res.get('greeting', res.get('detail','?'))}")
+        print(f"    spoken : {'✅' if res.get('spoken') else '❌'}  pushed: {'✅' if res.get('pushed') else '❌'}  guardian: {'✅' if res.get('guardian_warmed') else '❌'}")
+        print()
+        return 0
+    if action == "status":
+        res = c.wake_status()
+        print("\n  🌅 Wake Routine")
+        print(f"    User       : {res.get('user_name') or '(not set)'}")
+        print(f"    Identity   : {'✅' if res.get('has_identity') else '❌'}")
+        print(f"    Calendar   : {'✅' if res.get('has_calendar') else '❌'}")
+        print(f"    Briefing   : {'✅' if res.get('has_briefing') else '❌'}")
+        print(f"    TTS        : {'✅' if res.get('has_tts') else '❌'}")
+        print(f"    Messenger  : {'✅' if res.get('has_messenger') else '❌'}")
+        print()
+        return 0
+    return 1
+
+
+def cmd_leaderboard(args):
+    """Harness leaderboard: prioritize which skills/automations to improve."""
+    sys.path.insert(0, str(REPO_ROOT))
+    from omni_v2.away.desktop import DesktopController
+    c = DesktopController()
+    action = getattr(args, "leaderboard_action", None) or "report"
+
+    if action == "report":
+        kind = args.kind or ""
+        rep = c.leaderboard_report(kind).get("report", {})
+        print(f"\n  🏆 Harness Leaderboard ({kind or 'all'}): {rep.get('total', 0)} tracked\n")
+        print("  KEEP (working well):")
+        for e in rep.get("keep", []):
+            print(f"    ✓ {e['name']}  uses={e['uses']} ok={e['ok']} fail={e['fail']}")
+        if not rep.get("keep"):
+            print("    (none)")
+        print("\n  REFINE (failing/unused):")
+        for e in rep.get("refine", []):
+            print(f"    ⚠ {e['name']}  uses={e['uses']} ok={e['ok']} fail={e['fail']}")
+        if not rep.get("refine"):
+            print("    (none)")
+        print()
+        return 0
+    if action == "record":
+        res = c.leaderboard_record(args.name, args.kind or "skill", args.ok)
+        print(f"  ✅ Recorded {args.name} ({args.ok})")
         return 0
     return 1
 
@@ -1927,6 +1985,22 @@ def main():
     _vd.add_argument("name")
     vl_sub.add_parser("stats")
 
+    wk = sub.add_parser("wake", help="Wake routine: 'Good morning' scripted flow")
+    wk_sub = wk.add_subparsers(dest="wake_action")
+    _wkr = wk_sub.add_parser("run")
+    _wkr.add_argument("--no-speak", action="store_true")
+    _wkr.add_argument("--no-push", action="store_true")
+    wk_sub.add_parser("status")
+
+    lb = sub.add_parser("leaderboard", help="Harness leaderboard: prioritize improvement")
+    lb_sub = lb.add_subparsers(dest="leaderboard_action")
+    _lbr = lb_sub.add_parser("report")
+    _lbr.add_argument("kind", nargs="?", default="")
+    _lbre = lb_sub.add_parser("record")
+    _lbre.add_argument("name")
+    _lbre.add_argument("--kind", default="skill")
+    _lbre.add_argument("--fail", action="store_true")
+
     per = sub.add_parser("personal", help="Personal context: calendar, contacts, KB citations")
     per_sub = per.add_subparsers(dest="personal_action")
     _pc = per_sub.add_parser("calendar")
@@ -2083,6 +2157,10 @@ def main():
         return cmd_vault(args)
     if cmd == "personal":
         return cmd_personal(args)
+    if cmd == "wake":
+        return cmd_wake(args)
+    if cmd == "leaderboard":
+        return cmd_leaderboard(args)
     if cmd == "briefing":
         return cmd_briefing(args)
     if cmd == "add-skill":

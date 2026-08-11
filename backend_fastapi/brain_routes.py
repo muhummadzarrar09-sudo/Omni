@@ -138,3 +138,17 @@ def personal() -> Dict[str, Any]:
         "contacts": c.contacts.stats() if c.contacts else {"contacts": 0},
         "citations": True,
     }
+
+
+@router.get("/wake")
+def wake() -> Dict[str, Any]:
+    """Wake routine status (Phase 14 #7)."""
+    from omni_v2.away.desktop import DesktopController
+    return {"ok": True, **DesktopController().wake_status()}
+
+
+@router.get("/leaderboard")
+def leaderboard() -> Dict[str, Any]:
+    """Harness leaderboard (Phase 14 #8b)."""
+    from omni_v2.away.desktop import DesktopController
+    return DesktopController().leaderboard_report()

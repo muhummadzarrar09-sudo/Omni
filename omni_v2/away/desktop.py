@@ -183,6 +183,47 @@ class DesktopController:
     def kb_query_cited(self, question: str) -> Dict[str, Any]:
         return self.kb.query_with_citations(question) if self.kb else {"hit_count": 0}
 
+    # -- wake routine (Phase 14 #7) -------------------------------------------
+    def wake_run(self, speak: bool = True, push: bool = True) -> Dict[str, Any]:
+        from omni_v2.wake.wake_routine import WakeRoutine
+        from omni_v2.briefing.briefing import MorningBriefing
+        from omni_v2.away.messenger import MessengerRouter
+        try:
+            briefing = MorningBriefing(goals=self.goals, reflector=self.reflector,
+                                       reporter=self.reporter, messenger=self.messenger,
+                                       identity=self.identity)
+        except Exception:
+            briefing = None
+        w = WakeRoutine(identity=self.identity, calendar=self.calendar,
+                        briefing=briefing, tts=None,
+                        messenger=self.messenger, guardian=self.guardian)
+        return {"ok": True, **w.run(speak=speak, push=push)}
+
+    def wake_status(self) -> Dict[str, Any]:
+        from omni_v2.wake.wake_routine import WakeRoutine
+        return {"ok": True, **WakeRoutine(identity=self.identity,
+                                          calendar=self.calendar).status()}
+
+    # -- harness leaderboard (Phase 14 #8b) -----------------------------------
+    def _get_leaderboard(self):
+        try:
+            from omni_v2.leaderboard.leaderboard import Leaderboard
+            return Leaderboard()
+        except Exception as e:
+            logger.warning(f"leaderboard build failed: {e}")
+            return None
+
+    def leaderboard_report(self, kind: str = "") -> Dict[str, Any]:
+        lb = self._get_leaderboard()
+        return {"ok": True, "report": lb.report(kind) if lb else {"total": 0}}
+
+    def leaderboard_record(self, name: str, kind: str, ok: bool) -> Dict[str, Any]:
+        lb = self._get_leaderboard()
+        if lb is None:
+            return {"ok": False}
+        lb.record(name, kind=kind, ok=ok)
+        return {"ok": True}
+
     def _get_vault(self):
         if self.vault is not None:
             return self.vault

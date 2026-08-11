@@ -253,6 +253,20 @@ goal trajectories** — never rewriting the immutable base prompt.
   wired into the DesktopController.
 - Tests: test_personal (8) → 591 total passing, offline.
 
+## 4.21 Wake Routine, Real MCP Servers + Harness Leaderboard (Phase 14 #7/#8)
+
+- **Wake routine** (`omni_v2/wake/wake_routine.py`): the "Good morning Zarrar" flow — greets
+  by name, reports today's events + open goals, optionally speaks (TTS) + pushes (messenger),
+  warms the guardian. CLI `omni wake run/status`.
+- **Real MCP servers** (`omni_v2/mcp/bridge.py`): the real stdio path now holds a **persistent
+  session** (background event loop per server) so tools can actually be called, not just
+  registered.
+- **Harness leaderboard** (`omni_v2/leaderboard/leaderboard.py`): counts skill/automation
+  usage + usefulness; ranks a KEEP list (working) vs REFINE list (failing/unused) so OMNI
+  prioritizes what to improve. CLI `omni leaderboard report/record`.
+- FastAPI `GET /api/brain/{wake,leaderboard}`; wired into the DesktopController.
+- Tests: test_wake_leaderboard (10) → 601 total passing, offline.
+
 ## 5. Fixes & hygiene
 
 - Fixed pre-existing `omni/cli.py` f-string syntax bug (blocked CLI on Python ≤ 3.11).

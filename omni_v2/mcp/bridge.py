@@ -181,7 +181,7 @@ class MCPBridge:
         return _call
 
     async def _real_call_tool(self, session, tname, args):
-        """Call a real MCP tool via the mcp SDK ClientSession."""
+        """Call a real MCP tool via a persistent ClientSession."""
         client_session = session.get("_client_session")
         if client_session is None:
             raise RuntimeError("MCP client session not available")
@@ -199,7 +199,8 @@ class MCPBridge:
         return str(result)
 
     def _add_real_server(self, name, command):
-        """Spawn a real MCP stdio server, list its tools, register each."""
+        """Spawn a real MCP stdio server and keep a persistent session so tools
+        can actually be called. Uses a background event loop per server."""
         if self._real_mcp is None:
             raise RuntimeError("mcp SDK not installed. pip install mcp")
         if not command or not command[0]:
@@ -211,39 +212,68 @@ class MCPBridge:
         from mcp.client.stdio import stdio_client  # noqa: PLC0415
 
         params = StdioServerParameters(command=command[0], args=command[1:], env=None)
-        session_info = {"name": name, "tools": [], "handlers": {}, "connected": True}
+        session_info = {"name": name, "tools": [], "handlers": {}, "connected": False,
+                        "_loop": None, "_client_session": None}
 
         import asyncio  # noqa: PLC0415
 
-        async def _bootstrap():
-            async with stdio_client(params) as (read, write):
-                async with ClientSession(read, write) as cs:
-                    await cs.initialize()
-                    tools = await cs.list_tools()
-                    tool_list = []
-                    for t in tools.tools:
-                        tool_list.append({
-                            "name": t.name,
-                            "description": t.description,
-                            "inputSchema": getattr(t, "inputSchema", None) or getattr(t, "input_schema", {}) or {},
-                        })
-                    session_info["tools"] = tool_list
-                    session_info["_client_session"] = cs
-                    # NOTE: the session must stay alive for calls; this keeps a
-                    # reference. In practice a persistent session manager is used.
+        async def _run_server():
+            # holds the stdio transport + session open for the life of the server
+            try:
+                async with stdio_client(params) as (read, write):
+                    async with ClientSession(read, write) as cs:
+                        await cs.initialize()
+                        tools = await cs.list_tools()
+                        tool_list = []
+                        for t in tools.tools:
+                            tool_list.append({
+                                "name": t.name,
+                                "description": t.description,
+                                "inputSchema": getattr(t, "inputSchema", None) or
+                                               getattr(t, "input_schema", {}) or {},
+                            })
+                        session_info["tools"] = tool_list
+                        session_info["_client_session"] = cs
+                        session_info["connected"] = True
+                        self._servers[name] = session_info
+                        registered = self._register_tools(name, session_info)
+                        logger.info(f"mcp: server '{name}' connected, {registered} tool(s) registered")
+                        # keep the session alive
+                        while not session_info.get("_shutdown", False):
+                            await asyncio.sleep(1)
+            except Exception as e:
+                logger.error(f"mcp server '{name}' error: {e}")
+                session_info["connected"] = False
 
-        # Run bootstrap synchronously (a real app would hold the session open).
-        try:
+        # run the persistent server in a dedicated thread/loop
+        import threading as _th
+        def _run_loop():
             loop = asyncio.new_event_loop()
-            loop.run_until_complete(_bootstrap())
+            asyncio.set_event_loop(loop)
+            session_info["_loop"] = loop
+            loop.run_until_complete(_run_server())
             loop.close()
-        except Exception as e:
-            logger.error(f"real MCP bootstrap failed: {e}")
-            return {"server": name, "error": str(e), "registered_tools": 0}
 
-        self._servers[name] = session_info
-        registered = self._register_tools(name, session_info)
-        return {"server": name, "registered_tools": registered, "fake": False}
+        t = _th.Thread(target=_run_loop, daemon=True, name=f"mcp-{name}")
+        t.start()
+        # wait briefly for connect
+        import time as _t
+        for _ in range(40):
+            if session_info["connected"]:
+                break
+            _t.sleep(0.1)
+
+        if session_info["connected"]:
+            return {"server": name, "registered_tools": len(session_info["tools"]),
+                    "fake": False, "connected": True}
+        return {"server": name, "error": "mcp server did not connect", "registered_tools": 0}
+
+    def _shutdown(self, name: str) -> None:
+        with self._lock:
+            s = self._servers.get(name)
+            if s:
+                s["_shutdown"] = True
+                self._servers.pop(name, None)
 
     # -- introspection --------------------------------------------------------
     def list_servers(self) -> List[Dict[str, Any]]:
