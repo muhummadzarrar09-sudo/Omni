@@ -4,7 +4,7 @@
   "scope": "OMNI Personal Core",
   "scoring_policy": "Scores are evidence-backed current estimates. A category reaches 10 only when every listed exit criterion is verified against the exact release artifact. Commercial defensibility is not scored for the personal build.",
   "batch_state": {
-    "current_batch": null,
+    "current_batch": "B02",
     "last_closed_batch": "B01",
     "feature_freeze": true,
     "expansion_allowed": false,

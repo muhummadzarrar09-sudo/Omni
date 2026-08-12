@@ -29,7 +29,8 @@ except ImportError:
     import logging
     logger = logging.getLogger("MultimodalVision")
 
-from omni_v2.core.paths import DATA_DIR
+from omni_v2.core.config import load_config
+from omni_v2.core.model_policy import huggingface_pretrained_kwargs
 
 
 @dataclass
@@ -64,7 +65,8 @@ class MultimodalVision:
     def __init__(self):
         if self._initialized:
             return
-        self.uploads_dir = DATA_DIR / "vision" / "uploads"
+        self.runtime_config = load_config()
+        self.uploads_dir = self.runtime_config.data_dir / "vision" / "uploads"
         self.uploads_dir.mkdir(parents=True, exist_ok=True)
         self._moondream = None
         self._tesseract = None
@@ -234,13 +236,17 @@ class MultimodalVision:
             if self._md_model is None:
                 logger.info("Loading Moondream2 (one-time, ~1GB)...")
                 self._md_model_id = "vikhyatk/moondream2"
+                model_policy = huggingface_pretrained_kwargs(self.runtime_config)
                 self._md_model = AutoModelForCausalLM.from_pretrained(
                     self._md_model_id,
                     trust_remote_code=True,
                     torch_dtype="auto",
+                    **model_policy,
                 ).to("cpu")  # CPU for compatibility
                 self._md_processor = AutoProcessor.from_pretrained(
-                    self._md_model_id, trust_remote_code=True
+                    self._md_model_id,
+                    trust_remote_code=True,
+                    **model_policy,
                 )
             # Encode image
             enc_image = self._md_model.encode_image(image)

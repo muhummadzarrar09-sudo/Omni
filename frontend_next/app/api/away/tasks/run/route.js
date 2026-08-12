@@ -1,14 +1,5 @@
-// Next.js API route -> proxies to FastAPI /api/away/tasks/run
-export async function POST(request) {
-  try {
-    const body = await request.json()
-    const res = await fetch('http://localhost:8765/api/away/tasks/run', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
-    })
-    const data = await res.json()
-    return Response.json(data)
-  } catch (e) {
-    return Response.json({ ran: [], mock: true })
-  }
+import { backendProxy } from '@/backend'
+
+export function POST(request) {
+  return backendProxy('/api/away/tasks/run', { sourceRequest: request })
 }

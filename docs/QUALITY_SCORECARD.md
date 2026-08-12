@@ -4,7 +4,7 @@
 
 **Scope:** OMNI Personal Core<br>
 **Evidence verified:** 2026-08-11<br>
-**Current batch:** `none`<br>
+**Current batch:** `B02`<br>
 **Next batch:** `B02`<br>
 **Feature freeze:** `enabled`
 

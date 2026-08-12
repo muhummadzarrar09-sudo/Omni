@@ -19,18 +19,20 @@ except ImportError:
     import logging
     logger = logging.getLogger("STTSimpleV3")
 
-from omni_v2.core.paths import DATA_DIR
+from omni_v2.core.config import load_config
+from omni_v2.core.model_policy import faster_whisper_kwargs
 
 
 class SimpleSTT:
     """One engine, reliable, no fighting"""
 
-    def __init__(self, model_size: str = "base.en"):
+    def __init__(self, model_size: str | None = None):
+        self.runtime_config = load_config()
         self.model = None
         self.device = "cpu"
         self.compute_type = "int8"
-        self.model_size = model_size
-        self.recordings_dir = DATA_DIR / "recordings"
+        self.model_size = model_size or self.runtime_config.stt_model
+        self.recordings_dir = self.runtime_config.data_dir / "recordings"
         self.recordings_dir.mkdir(parents=True, exist_ok=True)
         # Diagnostics
         self.init_status = "pending"
@@ -44,17 +46,15 @@ class SimpleSTT:
         try:
             from faster_whisper import WhisperModel
 
-            # STT-BUG-01: removed "cpu", "int8_float32" (invalid), added proper float32 fallback
-            for device, compute in [
-                ("cuda", "int8"),
-                ("cuda", "float16"),
-                ("cpu", "int8"),
-                ("cpu", "int8_float16"),  # valid in newer faster-whisper
-                ("cpu", "float32"),
-            ]:
+            for device, compute in self.runtime_config.stt_device_attempts:
                 try:
                     logger.info(f"STT V3 - Trying {self.model_size} on {device} {compute}...")
-                    self.model = WhisperModel(self.model_size, device=device, compute_type=compute)
+                    self.model = WhisperModel(
+                        self.model_size,
+                        device=device,
+                        compute_type=compute,
+                        **faster_whisper_kwargs(self.runtime_config),
+                    )
                     self.device = device
                     self.compute_type = compute
                     self.init_status = f"loaded_{device}_{compute}"

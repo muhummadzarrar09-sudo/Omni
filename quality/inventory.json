@@ -19,28 +19,28 @@
   },
   "authority_sha256": {
     "quality/capabilities.json": "1ad3dbac2487fe32a04b070535a60682547902cceb3855906844c4840698d44c",
-    "quality/scorecard.json": "84fbd7f44ad05f00f81d2826db367b59cf3e684780fe0c675c785d6815558b81",
-    "quality/policy.json": "794f448c72365b2b89dfc34fa3e3e4b0191cb57006e5ebe78b57d6804f31d278",
-    "quality/batches.json": "9e0568d44e0964a13b4a58f63ed798768dc6955c1f46be1f9ff70a9a60ab5e80"
+    "quality/scorecard.json": "35a11763ae158d195418c58ea1495b515527530910d5446ac478e029536633c0",
+    "quality/policy.json": "45a10db90f8b7b21c714af567a9794605181b966a096aa8a125c703d63c2482f",
+    "quality/batches.json": "419addb1250fafacb3857eab4599fd1bfc88313543a0d531785fd4b815f26d84"
   },
-  "source_digest": "b33434ab727a66831e00800e06134f681f93b2c415d4a2e6723c14c658ac4fc1",
+  "source_digest": "1ac3dbb3f59165522abfb56889df97930147b95915eb3fd03fbcc1e384d6de09",
   "counts": {
-    "production_files": 228,
-    "production_bytes": 1806541,
-    "production_lines": 45611,
-    "production_nonblank_lines": 40177,
+    "production_files": 234,
+    "production_bytes": 1884032,
+    "production_lines": 47717,
+    "production_nonblank_lines": 41983,
     "test_files": 62,
-    "test_bytes": 359588,
-    "test_lines": 10464,
-    "test_nonblank_lines": 8753,
+    "test_bytes": 359672,
+    "test_lines": 10466,
+    "test_nonblank_lines": 8755,
     "capabilities": 52,
     "core_workflows": 10,
     "areas": 21,
-    "fastapi_route_decorators": 191,
+    "fastapi_route_decorators": 192,
     "declared_tool_classes": 17,
     "declared_tool_actions": 88,
-    "classes": 365,
-    "functions": 2946
+    "classes": 375,
+    "functions": 3035
   },
   "capabilities_by_lifecycle": {
     "beta": 24,
@@ -85,7 +85,7 @@
     "scorecard_category_count": 11,
     "batch_count": 17,
     "expansion_count": 10,
-    "covered_active_source_count": 185,
+    "covered_active_source_count": 191,
     "source_pattern_count": 128
   },
   "fastapi_routes": [
@@ -571,10 +571,18 @@
     },
     {
       "method": "POST",
+      "path": "/api/onboarding/reset",
+      "handler": "onboarding_reset",
+      "owner": "app",
+      "source": "backend_fastapi/main.py:1008",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "POST",
       "path": "/api/demo",
       "handler": "demo_control",
       "owner": "app",
-      "source": "backend_fastapi/main.py:1011",
+      "source": "backend_fastapi/main.py:1030",
       "implementation_signal": "code_present_effect_unverified"
     },
     {
@@ -582,7 +590,7 @@
       "path": "/api/demo/status",
       "handler": "demo_status",
       "owner": "app",
-      "source": "backend_fastapi/main.py:1056",
+      "source": "backend_fastapi/main.py:1075",
       "implementation_signal": "code_present_effect_unverified"
     },
     {
@@ -590,7 +598,7 @@
       "path": "/api/demo/script",
       "handler": "demo_script",
       "owner": "app",
-      "source": "backend_fastapi/main.py:1076",
+      "source": "backend_fastapi/main.py:1095",
       "implementation_signal": "code_present_effect_unverified"
     },
     {
@@ -598,7 +606,7 @@
       "path": "/api/stats",
       "handler": "get_stats",
       "owner": "app",
-      "source": "backend_fastapi/main.py:1101",
+      "source": "backend_fastapi/main.py:1120",
       "implementation_signal": "code_present_effect_unverified"
     },
     {
@@ -606,7 +614,7 @@
       "path": "/api/stats/today",
       "handler": "get_stats_today",
       "owner": "app",
-      "source": "backend_fastapi/main.py:1112",
+      "source": "backend_fastapi/main.py:1131",
       "implementation_signal": "code_present_effect_unverified"
     },
     {
@@ -614,7 +622,7 @@
       "path": "/api/stats/lifetime",
       "handler": "get_stats_lifetime",
       "owner": "app",
-      "source": "backend_fastapi/main.py:1123",
+      "source": "backend_fastapi/main.py:1142",
       "implementation_signal": "code_present_effect_unverified"
     },
     {
@@ -622,7 +630,7 @@
       "path": "/api/stats/time-saved",
       "handler": "get_stats_time_saved",
       "owner": "app",
-      "source": "backend_fastapi/main.py:1134",
+      "source": "backend_fastapi/main.py:1153",
       "implementation_signal": "code_present_effect_unverified"
     },
     {
@@ -630,7 +638,7 @@
       "path": "/api/vision",
       "handler": "vision_process",
       "owner": "app",
-      "source": "backend_fastapi/main.py:1152",
+      "source": "backend_fastapi/main.py:1171",
       "implementation_signal": "code_present_effect_unverified"
     },
     {
@@ -638,7 +646,7 @@
       "path": "/api/vision/status",
       "handler": "vision_status",
       "owner": "app",
-      "source": "backend_fastapi/main.py:1187",
+      "source": "backend_fastapi/main.py:1206",
       "implementation_signal": "code_present_effect_unverified"
     },
     {
@@ -646,7 +654,7 @@
       "path": "/api/voice/clone/start",
       "handler": "voice_clone_start",
       "owner": "app",
-      "source": "backend_fastapi/main.py:1199",
+      "source": "backend_fastapi/main.py:1218",
       "implementation_signal": "code_present_effect_unverified"
     },
     {
@@ -654,7 +662,7 @@
       "path": "/api/voice/clone/stop",
       "handler": "voice_clone_stop",
       "owner": "app",
-      "source": "backend_fastapi/main.py:1215",
+      "source": "backend_fastapi/main.py:1234",
       "implementation_signal": "code_present_effect_unverified"
     },
     {
@@ -662,7 +670,7 @@
       "path": "/api/voice/clone/train",
       "handler": "voice_clone_train",
       "owner": "app",
-      "source": "backend_fastapi/main.py:1234",
+      "source": "backend_fastapi/main.py:1253",
       "implementation_signal": "code_present_effect_unverified"
     },
     {
@@ -670,7 +678,7 @@
       "path": "/api/voice/clone/samples",
       "handler": "voice_clone_samples",
       "owner": "app",
-      "source": "backend_fastapi/main.py:1246",
+      "source": "backend_fastapi/main.py:1265",
       "implementation_signal": "code_present_effect_unverified"
     },
     {
@@ -678,7 +686,7 @@
       "path": "/api/voice/clone/voices",
       "handler": "voice_clone_voices",
       "owner": "app",
-      "source": "backend_fastapi/main.py:1257",
+      "source": "backend_fastapi/main.py:1276",
       "implementation_signal": "code_present_effect_unverified"
     },
     {
@@ -686,7 +694,7 @@
       "path": "/api/voice/clone/status",
       "handler": "voice_clone_status",
       "owner": "app",
-      "source": "backend_fastapi/main.py:1268",
+      "source": "backend_fastapi/main.py:1287",
       "implementation_signal": "code_present_effect_unverified"
     },
     {
@@ -694,7 +702,7 @@
       "path": "/api/skills/marketplace",
       "handler": "skills_marketplace",
       "owner": "app",
-      "source": "backend_fastapi/main.py:1280",
+      "source": "backend_fastapi/main.py:1299",
       "implementation_signal": "code_present_effect_unverified"
     },
     {
@@ -702,7 +710,7 @@
       "path": "/api/skills/install",
       "handler": "skill_install",
       "owner": "app",
-      "source": "backend_fastapi/main.py:1301",
+      "source": "backend_fastapi/main.py:1320",
       "implementation_signal": "code_present_effect_unverified"
     },
     {
@@ -710,7 +718,7 @@
       "path": "/api/skills/uninstall",
       "handler": "skill_uninstall",
       "owner": "app",
-      "source": "backend_fastapi/main.py:1312",
+      "source": "backend_fastapi/main.py:1331",
       "implementation_signal": "code_present_effect_unverified"
     },
     {
@@ -718,7 +726,7 @@
       "path": "/api/skills/installed",
       "handler": "skills_installed",
       "owner": "app",
-      "source": "backend_fastapi/main.py:1324",
+      "source": "backend_fastapi/main.py:1343",
       "implementation_signal": "code_present_effect_unverified"
     },
     {
@@ -726,7 +734,7 @@
       "path": "/api/skills/updates",
       "handler": "skills_updates",
       "owner": "app",
-      "source": "backend_fastapi/main.py:1334",
+      "source": "backend_fastapi/main.py:1353",
       "implementation_signal": "code_present_effect_unverified"
     },
     {
@@ -734,7 +742,7 @@
       "path": "/api/skills/marketplace/status",
       "handler": "skills_marketplace_status",
       "owner": "app",
-      "source": "backend_fastapi/main.py:1344",
+      "source": "backend_fastapi/main.py:1363",
       "implementation_signal": "code_present_effect_unverified"
     },
     {
@@ -742,7 +750,7 @@
       "path": "/api/sdk",
       "handler": "sdk_info",
       "owner": "app",
-      "source": "backend_fastapi/main.py:1355",
+      "source": "backend_fastapi/main.py:1374",
       "implementation_signal": "code_present_effect_unverified"
     },
     {
@@ -750,7 +758,7 @@
       "path": "/api/network/info",
       "handler": "get_network_info",
       "owner": "app",
-      "source": "backend_fastapi/main.py:1372",
+      "source": "backend_fastapi/main.py:1391",
       "implementation_signal": "code_present_effect_unverified"
     },
     {
@@ -758,7 +766,7 @@
       "path": "/api/network/pair",
       "handler": "generate_pairing",
       "owner": "app",
-      "source": "backend_fastapi/main.py:1396",
+      "source": "backend_fastapi/main.py:1415",
       "implementation_signal": "code_present_effect_unverified"
     },
     {
@@ -766,7 +774,15 @@
       "path": "/api/network/qr",
       "handler": "get_qr_code",
       "owner": "app",
-      "source": "backend_fastapi/main.py:1414",
+      "source": "backend_fastapi/main.py:1434",
+      "implementation_signal": "code_present_effect_unverified"
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/websocket-ticket",
+      "handler": "create_websocket_ticket",
+      "owner": "app",
+      "source": "backend_fastapi/main.py:1534",
       "implementation_signal": "code_present_effect_unverified"
     },
     {
@@ -774,7 +790,7 @@
       "path": "/api/network/pair/verify",
       "handler": "verify_pairing_code",
       "owner": "app",
-      "source": "backend_fastapi/main.py:1474",
+      "source": "backend_fastapi/main.py:1547",
       "implementation_signal": "code_present_effect_unverified"
     },
     {
@@ -782,7 +798,7 @@
       "path": "/api/voice/transcribe",
       "handler": "transcribe_audio",
       "owner": "app",
-      "source": "backend_fastapi/main.py:1496",
+      "source": "backend_fastapi/main.py:1581",
       "implementation_signal": "code_present_effect_unverified"
     },
     {
@@ -790,7 +806,7 @@
       "path": "/api/network/pair/active",
       "handler": "get_active_pair_code",
       "owner": "app",
-      "source": "backend_fastapi/main.py:1557",
+      "source": "backend_fastapi/main.py:1657",
       "implementation_signal": "code_present_effect_unverified"
     },
     {
@@ -798,7 +814,7 @@
       "path": "/api/mobile/qr-page",
       "handler": "mobile_qr_page_data",
       "owner": "app",
-      "source": "backend_fastapi/main.py:1602",
+      "source": "backend_fastapi/main.py:1690",
       "implementation_signal": "code_present_effect_unverified"
     },
     {
@@ -806,7 +822,7 @@
       "path": "/ws/mobile",
       "handler": "websocket_mobile",
       "owner": "app",
-      "source": "backend_fastapi/main.py:1625",
+      "source": "backend_fastapi/main.py:1714",
       "implementation_signal": "code_present_effect_unverified"
     },
     {
@@ -814,7 +830,7 @@
       "path": "/api/notifications/status",
       "handler": "notifications_status",
       "owner": "app",
-      "source": "backend_fastapi/main.py:1848",
+      "source": "backend_fastapi/main.py:1952",
       "implementation_signal": "code_present_effect_unverified"
     },
     {
@@ -822,7 +838,7 @@
       "path": "/api/notifications/dashboard",
       "handler": "notifications_dashboard",
       "owner": "app",
-      "source": "backend_fastapi/main.py:1857",
+      "source": "backend_fastapi/main.py:1961",
       "implementation_signal": "code_present_effect_unverified"
     },
     {
@@ -830,7 +846,7 @@
       "path": "/api/notifications",
       "handler": "list_notifications",
       "owner": "app",
-      "source": "backend_fastapi/main.py:1866",
+      "source": "backend_fastapi/main.py:1970",
       "implementation_signal": "code_present_effect_unverified"
     },
     {
@@ -838,7 +854,7 @@
       "path": "/api/notifications/vapid",
       "handler": "get_vapid_public_key",
       "owner": "app",
-      "source": "backend_fastapi/main.py:1887",
+      "source": "backend_fastapi/main.py:1991",
       "implementation_signal": "code_present_effect_unverified"
     },
     {
@@ -846,7 +862,7 @@
       "path": "/api/notifications/devices",
       "handler": "list_devices_endpoint",
       "owner": "app",
-      "source": "backend_fastapi/main.py:1898",
+      "source": "backend_fastapi/main.py:2002",
       "implementation_signal": "code_present_effect_unverified"
     },
     {
@@ -854,7 +870,7 @@
       "path": "/api/notifications/subscribe",
       "handler": "subscribe_push",
       "owner": "app",
-      "source": "backend_fastapi/main.py:1908",
+      "source": "backend_fastapi/main.py:2012",
       "implementation_signal": "code_present_effect_unverified"
     },
     {
@@ -862,7 +878,7 @@
       "path": "/api/notifications/subscribe/{device_id}",
       "handler": "unsubscribe_push",
       "owner": "app",
-      "source": "backend_fastapi/main.py:1924",
+      "source": "backend_fastapi/main.py:2028",
       "implementation_signal": "code_present_effect_unverified"
     },
     {
@@ -870,7 +886,7 @@
       "path": "/api/notifications/prefs",
       "handler": "get_notification_prefs_endpoint",
       "owner": "app",
-      "source": "backend_fastapi/main.py:1935",
+      "source": "backend_fastapi/main.py:2039",
       "implementation_signal": "code_present_effect_unverified"
     },
     {
@@ -878,7 +894,7 @@
       "path": "/api/notifications/prefs",
       "handler": "update_notification_prefs",
       "owner": "app",
-      "source": "backend_fastapi/main.py:1945",
+      "source": "backend_fastapi/main.py:2049",
       "implementation_signal": "code_present_effect_unverified"
     },
     {
@@ -886,7 +902,7 @@
       "path": "/api/notifications/prefs/reset",
       "handler": "reset_notification_prefs",
       "owner": "app",
-      "source": "backend_fastapi/main.py:1957",
+      "source": "backend_fastapi/main.py:2061",
       "implementation_signal": "code_present_effect_unverified"
     },
     {
@@ -894,7 +910,7 @@
       "path": "/api/notifications/snooze",
       "handler": "snooze_notifications",
       "owner": "app",
-      "source": "backend_fastapi/main.py:1967",
+      "source": "backend_fastapi/main.py:2071",
       "implementation_signal": "code_present_effect_unverified"
     },
     {
@@ -902,7 +918,7 @@
       "path": "/api/notifications/snooze",
       "handler": "unsnooze_notifications",
       "owner": "app",
-      "source": "backend_fastapi/main.py:1983",
+      "source": "backend_fastapi/main.py:2087",
       "implementation_signal": "code_present_effect_unverified"
     },
     {
@@ -910,7 +926,7 @@
       "path": "/api/notifications/export",
       "handler": "export_notifications",
       "owner": "app",
-      "source": "backend_fastapi/main.py:1993",
+      "source": "backend_fastapi/main.py:2097",
       "implementation_signal": "code_present_effect_unverified"
     },
     {
@@ -918,7 +934,7 @@
       "path": "/api/notifications/{notif_id}",
       "handler": "get_notification",
       "owner": "app",
-      "source": "backend_fastapi/main.py:2036",
+      "source": "backend_fastapi/main.py:2140",
       "implementation_signal": "code_present_effect_unverified"
     },
     {
@@ -926,7 +942,7 @@
       "path": "/api/notifications/{notif_id}/read",
       "handler": "mark_notification_read",
       "owner": "app",
-      "source": "backend_fastapi/main.py:2048",
+      "source": "backend_fastapi/main.py:2152",
       "implementation_signal": "code_present_effect_unverified"
     },
     {
@@ -934,7 +950,7 @@
       "path": "/api/notifications/read-all",
       "handler": "mark_all_read",
       "owner": "app",
-      "source": "backend_fastapi/main.py:2058",
+      "source": "backend_fastapi/main.py:2162",
       "implementation_signal": "code_present_effect_unverified"
     },
     {
@@ -942,7 +958,7 @@
       "path": "/api/notifications",
       "handler": "create_notification",
       "owner": "app",
-      "source": "backend_fastapi/main.py:2068",
+      "source": "backend_fastapi/main.py:2172",
       "implementation_signal": "code_present_effect_unverified"
     },
     {
@@ -950,7 +966,7 @@
       "path": "/api/notifications",
       "handler": "clear_notifications",
       "owner": "app",
-      "source": "backend_fastapi/main.py:2084",
+      "source": "backend_fastapi/main.py:2188",
       "implementation_signal": "code_present_effect_unverified"
     },
     {
@@ -958,7 +974,7 @@
       "path": "/api/geofence/status",
       "handler": "geofence_status",
       "owner": "app",
-      "source": "backend_fastapi/main.py:2133",
+      "source": "backend_fastapi/main.py:2237",
       "implementation_signal": "code_present_effect_unverified"
     },
     {
@@ -966,7 +982,7 @@
       "path": "/api/geofence/dashboard",
       "handler": "geofence_dashboard",
       "owner": "app",
-      "source": "backend_fastapi/main.py:2143",
+      "source": "backend_fastapi/main.py:2247",
       "implementation_signal": "code_present_effect_unverified"
     },
     {
@@ -974,7 +990,7 @@
       "path": "/api/geofence/places",
       "handler": "geofence_list_places",
       "owner": "app",
-      "source": "backend_fastapi/main.py:2153",
+      "source": "backend_fastapi/main.py:2257",
       "implementation_signal": "code_present_effect_unverified"
     },
     {
@@ -982,7 +998,7 @@
       "path": "/api/geofence/places",
       "handler": "geofence_add_place",
       "owner": "app",
-      "source": "backend_fastapi/main.py:2163",
+      "source": "backend_fastapi/main.py:2267",
       "implementation_signal": "code_present_effect_unverified"
     },
     {
@@ -990,7 +1006,7 @@
       "path": "/api/geofence/places/{place_id}/update",
       "handler": "geofence_update_place",
       "owner": "app",
-      "source": "backend_fastapi/main.py:2177",
+      "source": "backend_fastapi/main.py:2281",
       "implementation_signal": "code_present_effect_unverified"
     },
     {
@@ -998,7 +1014,7 @@
       "path": "/api/geofence/places/{place_id}",
       "handler": "geofence_remove_place",
       "owner": "app",
-      "source": "backend_fastapi/main.py:2193",
+      "source": "backend_fastapi/main.py:2297",
       "implementation_signal": "code_present_effect_unverified"
     },
     {
@@ -1006,7 +1022,7 @@
       "path": "/api/geofence/rules",
       "handler": "geofence_list_rules",
       "owner": "app",
-      "source": "backend_fastapi/main.py:2203",
+      "source": "backend_fastapi/main.py:2307",
       "implementation_signal": "code_present_effect_unverified"
     },
     {
@@ -1014,7 +1030,7 @@
       "path": "/api/geofence/rules",
       "handler": "geofence_add_rule",
       "owner": "app",
-      "source": "backend_fastapi/main.py:2221",
+      "source": "backend_fastapi/main.py:2325",
       "implementation_signal": "code_present_effect_unverified"
     },
     {
@@ -1022,7 +1038,7 @@
       "path": "/api/geofence/rules/{rule_id}",
       "handler": "geofence_remove_rule",
       "owner": "app",
-      "source": "backend_fastapi/main.py:2238",
+      "source": "backend_fastapi/main.py:2342",
       "implementation_signal": "code_present_effect_unverified"
     },
     {
@@ -1030,7 +1046,7 @@
       "path": "/api/geofence/location",
       "handler": "geofence_update_location",
       "owner": "app",
-      "source": "backend_fastapi/main.py:2248",
+      "source": "backend_fastapi/main.py:2352",
       "implementation_signal": "code_present_effect_unverified"
     },
     {
@@ -1038,7 +1054,7 @@
       "path": "/api/geofence/location",
       "handler": "geofence_current_location",
       "owner": "app",
-      "source": "backend_fastapi/main.py:2314",
+      "source": "backend_fastapi/main.py:2418",
       "implementation_signal": "code_present_effect_unverified"
     },
     {
@@ -1046,7 +1062,7 @@
       "path": "/api/geofence/location/history",
       "handler": "geofence_location_history",
       "owner": "app",
-      "source": "backend_fastapi/main.py:2331",
+      "source": "backend_fastapi/main.py:2435",
       "implementation_signal": "code_present_effect_unverified"
     },
     {
@@ -1054,7 +1070,7 @@
       "path": "/api/geofence/events",
       "handler": "geofence_recent_events",
       "owner": "app",
-      "source": "backend_fastapi/main.py:2341",
+      "source": "backend_fastapi/main.py:2445",
       "implementation_signal": "code_present_effect_unverified"
     },
     {
@@ -1062,7 +1078,7 @@
       "path": "/api/geofence/seed",
       "handler": "geofence_seed_samples",
       "owner": "app",
-      "source": "backend_fastapi/main.py:2351",
+      "source": "backend_fastapi/main.py:2455",
       "implementation_signal": "code_present_effect_unverified"
     },
     {
@@ -1070,7 +1086,7 @@
       "path": "/api/geofence/clear-events",
       "handler": "geofence_clear_events",
       "owner": "app",
-      "source": "backend_fastapi/main.py:2379",
+      "source": "backend_fastapi/main.py:2483",
       "implementation_signal": "code_present_effect_unverified"
     },
     {
@@ -1078,7 +1094,7 @@
       "path": "/api/geofence/reset",
       "handler": "geofence_reset_all",
       "owner": "app",
-      "source": "backend_fastapi/main.py:2389",
+      "source": "backend_fastapi/main.py:2493",
       "implementation_signal": "code_present_effect_unverified"
     },
     {
@@ -1086,7 +1102,7 @@
       "path": "/api/screen/status",
       "handler": "screen_status",
       "owner": "app",
-      "source": "backend_fastapi/main.py:2402",
+      "source": "backend_fastapi/main.py:2506",
       "implementation_signal": "code_present_effect_unverified"
     },
     {
@@ -1094,7 +1110,7 @@
       "path": "/api/screen/context",
       "handler": "screen_context",
       "owner": "app",
-      "source": "backend_fastapi/main.py:2412",
+      "source": "backend_fastapi/main.py:2516",
       "implementation_signal": "code_present_effect_unverified"
     },
     {
@@ -1102,7 +1118,7 @@
       "path": "/api/screen/dashboard",
       "handler": "screen_dashboard",
       "owner": "app",
-      "source": "backend_fastapi/main.py:2422",
+      "source": "backend_fastapi/main.py:2526",
       "implementation_signal": "code_present_effect_unverified"
     },
     {
@@ -1110,7 +1126,7 @@
       "path": "/api/screen/recent",
       "handler": "screen_recent",
       "owner": "app",
-      "source": "backend_fastapi/main.py:2432",
+      "source": "backend_fastapi/main.py:2536",
       "implementation_signal": "code_present_effect_unverified"
     },
     {
@@ -1118,7 +1134,7 @@
       "path": "/api/screen/start",
       "handler": "screen_start",
       "owner": "app",
-      "source": "backend_fastapi/main.py:2443",
+      "source": "backend_fastapi/main.py:2547",
       "implementation_signal": "code_present_effect_unverified"
     },
     {
@@ -1126,7 +1142,7 @@
       "path": "/api/screen/stop",
       "handler": "screen_stop",
       "owner": "app",
-      "source": "backend_fastapi/main.py:2454",
+      "source": "backend_fastapi/main.py:2558",
       "implementation_signal": "code_present_effect_unverified"
     },
     {
@@ -1134,7 +1150,7 @@
       "path": "/api/screen/capture",
       "handler": "screen_capture",
       "owner": "app",
-      "source": "backend_fastapi/main.py:2465",
+      "source": "backend_fastapi/main.py:2569",
       "implementation_signal": "code_present_effect_unverified"
     },
     {
@@ -1142,7 +1158,7 @@
       "path": "/api/screen/classify",
       "handler": "screen_classify",
       "owner": "app",
-      "source": "backend_fastapi/main.py:2483",
+      "source": "backend_fastapi/main.py:2587",
       "implementation_signal": "code_present_effect_unverified"
     },
     {
@@ -1150,7 +1166,7 @@
       "path": "/api/devices",
       "handler": "devices",
       "owner": "app",
-      "source": "backend_fastapi/main.py:2493",
+      "source": "backend_fastapi/main.py:2597",
       "implementation_signal": "code_present_effect_unverified"
     },
     {
@@ -1158,7 +1174,7 @@
       "path": "/api/execute",
       "handler": "execute",
       "owner": "app",
-      "source": "backend_fastapi/main.py:2498",
+      "source": "backend_fastapi/main.py:2602",
       "implementation_signal": "code_present_effect_unverified"
     },
     {
@@ -1166,7 +1182,7 @@
       "path": "/api/execute/stream",
       "handler": "execute_stream",
       "owner": "app",
-      "source": "backend_fastapi/main.py:2551",
+      "source": "backend_fastapi/main.py:2655",
       "implementation_signal": "code_present_effect_unverified"
     },
     {
@@ -1174,7 +1190,7 @@
       "path": "/api/demo/{demo_type}",
       "handler": "demo",
       "owner": "app",
-      "source": "backend_fastapi/main.py:2588",
+      "source": "backend_fastapi/main.py:2692",
       "implementation_signal": "code_present_effect_unverified"
     },
     {
@@ -1182,7 +1198,7 @@
       "path": "/api/test-mic",
       "handler": "test_mic",
       "owner": "app",
-      "source": "backend_fastapi/main.py:2609",
+      "source": "backend_fastapi/main.py:2713",
       "implementation_signal": "code_present_effect_unverified"
     },
     {
@@ -1190,7 +1206,7 @@
       "path": "/api/ptt/start",
       "handler": "ptt_start",
       "owner": "app",
-      "source": "backend_fastapi/main.py:2665",
+      "source": "backend_fastapi/main.py:2769",
       "implementation_signal": "code_present_effect_unverified"
     },
     {
@@ -1198,7 +1214,7 @@
       "path": "/api/ptt/stop",
       "handler": "ptt_stop",
       "owner": "app",
-      "source": "backend_fastapi/main.py:2722",
+      "source": "backend_fastapi/main.py:2826",
       "implementation_signal": "code_present_effect_unverified"
     },
     {
@@ -1206,7 +1222,7 @@
       "path": "/ws",
       "handler": "websocket_endpoint",
       "owner": "app",
-      "source": "backend_fastapi/main.py:2823",
+      "source": "backend_fastapi/main.py:2927",
       "implementation_signal": "code_present_effect_unverified"
     },
     {
@@ -1214,7 +1230,7 @@
       "path": "/",
       "handler": "root",
       "owner": "app",
-      "source": "backend_fastapi/main.py:426",
+      "source": "backend_fastapi/main.py:445",
       "implementation_signal": "code_present_effect_unverified"
     },
     {
@@ -1222,7 +1238,7 @@
       "path": "/api/health",
       "handler": "health",
       "owner": "app",
-      "source": "backend_fastapi/main.py:438",
+      "source": "backend_fastapi/main.py:457",
       "implementation_signal": "code_present_effect_unverified"
     },
     {
@@ -1230,7 +1246,7 @@
       "path": "/api/proactive/suggestions",
       "handler": "get_proactive_suggestions",
       "owner": "app",
-      "source": "backend_fastapi/main.py:462",
+      "source": "backend_fastapi/main.py:481",
       "implementation_signal": "code_present_effect_unverified"
     },
     {
@@ -1238,7 +1254,7 @@
       "path": "/api/user/profile",
       "handler": "get_user_profile",
       "owner": "app",
-      "source": "backend_fastapi/main.py:478",
+      "source": "backend_fastapi/main.py:497",
       "implementation_signal": "code_present_effect_unverified"
     },
     {
@@ -1246,7 +1262,7 @@
       "path": "/api/user/profile",
       "handler": "update_user_profile",
       "owner": "app",
-      "source": "backend_fastapi/main.py:508",
+      "source": "backend_fastapi/main.py:527",
       "implementation_signal": "code_present_effect_unverified"
     },
     {
@@ -1254,7 +1270,7 @@
       "path": "/api/user/profile/{field}",
       "handler": "forget_user_profile_field",
       "owner": "app",
-      "source": "backend_fastapi/main.py:525",
+      "source": "backend_fastapi/main.py:544",
       "implementation_signal": "code_present_effect_unverified"
     },
     {
@@ -1262,7 +1278,7 @@
       "path": "/api/user/greeting",
       "handler": "get_user_greeting",
       "owner": "app",
-      "source": "backend_fastapi/main.py:538",
+      "source": "backend_fastapi/main.py:557",
       "implementation_signal": "code_present_effect_unverified"
     },
     {
@@ -1270,7 +1286,7 @@
       "path": "/api/user/stats",
       "handler": "get_user_stats",
       "owner": "app",
-      "source": "backend_fastapi/main.py:587",
+      "source": "backend_fastapi/main.py:606",
       "implementation_signal": "code_present_effect_unverified"
     },
     {
@@ -1278,7 +1294,7 @@
       "path": "/api/memory/sessions",
       "handler": "get_sessions",
       "owner": "app",
-      "source": "backend_fastapi/main.py:607",
+      "source": "backend_fastapi/main.py:626",
       "implementation_signal": "code_present_effect_unverified"
     },
     {
@@ -1286,7 +1302,7 @@
       "path": "/api/memory/session/{session_id}",
       "handler": "get_session_details",
       "owner": "app",
-      "source": "backend_fastapi/main.py:623",
+      "source": "backend_fastapi/main.py:642",
       "implementation_signal": "code_present_effect_unverified"
     },
     {
@@ -1294,7 +1310,7 @@
       "path": "/api/memory/search",
       "handler": "search_memory",
       "owner": "app",
-      "source": "backend_fastapi/main.py:638",
+      "source": "backend_fastapi/main.py:657",
       "implementation_signal": "code_present_effect_unverified"
     },
     {
@@ -1302,7 +1318,7 @@
       "path": "/api/memory/today",
       "handler": "get_today_memory",
       "owner": "app",
-      "source": "backend_fastapi/main.py:655",
+      "source": "backend_fastapi/main.py:674",
       "implementation_signal": "code_present_effect_unverified"
     },
     {
@@ -1310,7 +1326,7 @@
       "path": "/api/memory/yesterday",
       "handler": "get_yesterday_memory",
       "owner": "app",
-      "source": "backend_fastapi/main.py:667",
+      "source": "backend_fastapi/main.py:686",
       "implementation_signal": "code_present_effect_unverified"
     },
     {
@@ -1318,7 +1334,7 @@
       "path": "/api/memory/weekly",
       "handler": "get_weekly_memory",
       "owner": "app",
-      "source": "backend_fastapi/main.py:681",
+      "source": "backend_fastapi/main.py:700",
       "implementation_signal": "code_present_effect_unverified"
     },
     {
@@ -1326,7 +1342,7 @@
       "path": "/api/proactive/action",
       "handler": "proactive_action",
       "owner": "app",
-      "source": "backend_fastapi/main.py:698",
+      "source": "backend_fastapi/main.py:717",
       "implementation_signal": "code_present_effect_unverified"
     },
     {
@@ -1334,7 +1350,7 @@
       "path": "/api/proactive/context",
       "handler": "update_proactive_context",
       "owner": "app",
-      "source": "backend_fastapi/main.py:724",
+      "source": "backend_fastapi/main.py:743",
       "implementation_signal": "code_present_effect_unverified"
     },
     {
@@ -1342,7 +1358,7 @@
       "path": "/api/scheduler/tasks",
       "handler": "list_scheduled_tasks",
       "owner": "app",
-      "source": "backend_fastapi/main.py:758",
+      "source": "backend_fastapi/main.py:777",
       "implementation_signal": "code_present_effect_unverified"
     },
     {
@@ -1350,7 +1366,7 @@
       "path": "/api/scheduler/cron",
       "handler": "add_cron_task",
       "owner": "app",
-      "source": "backend_fastapi/main.py:769",
+      "source": "backend_fastapi/main.py:788",
       "implementation_signal": "code_present_effect_unverified"
     },
     {
@@ -1358,7 +1374,7 @@
       "path": "/api/scheduler/interval",
       "handler": "add_interval_task",
       "owner": "app",
-      "source": "backend_fastapi/main.py:784",
+      "source": "backend_fastapi/main.py:803",
       "implementation_signal": "code_present_effect_unverified"
     },
     {
@@ -1366,7 +1382,7 @@
       "path": "/api/scheduler/once",
       "handler": "add_once_task",
       "owner": "app",
-      "source": "backend_fastapi/main.py:800",
+      "source": "backend_fastapi/main.py:819",
       "implementation_signal": "code_present_effect_unverified"
     },
     {
@@ -1374,7 +1390,7 @@
       "path": "/api/scheduler/remove",
       "handler": "remove_scheduled_task",
       "owner": "app",
-      "source": "backend_fastapi/main.py:821",
+      "source": "backend_fastapi/main.py:840",
       "implementation_signal": "code_present_effect_unverified"
     },
     {
@@ -1382,7 +1398,7 @@
       "path": "/api/voice/set",
       "handler": "set_voice_persona",
       "owner": "app",
-      "source": "backend_fastapi/main.py:838",
+      "source": "backend_fastapi/main.py:857",
       "implementation_signal": "code_present_effect_unverified"
     },
     {
@@ -1390,7 +1406,7 @@
       "path": "/api/voice/personas",
       "handler": "list_voice_personas",
       "owner": "app",
-      "source": "backend_fastapi/main.py:852",
+      "source": "backend_fastapi/main.py:871",
       "implementation_signal": "code_present_effect_unverified"
     },
     {
@@ -1398,7 +1414,7 @@
       "path": "/api/personality",
       "handler": "get_personality",
       "owner": "app",
-      "source": "backend_fastapi/main.py:873",
+      "source": "backend_fastapi/main.py:892",
       "implementation_signal": "code_present_effect_unverified"
     },
     {
@@ -1406,7 +1422,7 @@
       "path": "/api/personality",
       "handler": "update_personality",
       "owner": "app",
-      "source": "backend_fastapi/main.py:884",
+      "source": "backend_fastapi/main.py:903",
       "implementation_signal": "code_present_effect_unverified"
     },
     {
@@ -1414,7 +1430,7 @@
       "path": "/api/personality/mood",
       "handler": "set_mood",
       "owner": "app",
-      "source": "backend_fastapi/main.py:905",
+      "source": "backend_fastapi/main.py:924",
       "implementation_signal": "code_present_effect_unverified"
     },
     {
@@ -1422,7 +1438,7 @@
       "path": "/api/personality/test",
       "handler": "test_personality_phrase",
       "owner": "app",
-      "source": "backend_fastapi/main.py:920",
+      "source": "backend_fastapi/main.py:939",
       "implementation_signal": "code_present_effect_unverified"
     },
     {
@@ -1430,7 +1446,7 @@
       "path": "/api/onboarding",
       "handler": "get_onboarding_state",
       "owner": "app",
-      "source": "backend_fastapi/main.py:939",
+      "source": "backend_fastapi/main.py:958",
       "implementation_signal": "code_present_effect_unverified"
     },
     {
@@ -1438,7 +1454,7 @@
       "path": "/api/onboarding/advance",
       "handler": "onboarding_advance",
       "owner": "app",
-      "source": "backend_fastapi/main.py:954",
+      "source": "backend_fastapi/main.py:973",
       "implementation_signal": "code_present_effect_unverified"
     },
     {
@@ -1446,15 +1462,7 @@
       "path": "/api/onboarding/skip",
       "handler": "onboarding_skip",
       "owner": "app",
-      "source": "backend_fastapi/main.py:977",
-      "implementation_signal": "code_present_effect_unverified"
-    },
-    {
-      "method": "POST",
-      "path": "/api/onboarding/reset",
-      "handler": "onboarding_reset",
-      "owner": "app",
-      "source": "backend_fastapi/main.py:989",
+      "source": "backend_fastapi/main.py:996",
       "implementation_signal": "code_present_effect_unverified"
     },
     {
@@ -1981,10 +1989,10 @@
       },
       {
         "path": "backend_fastapi/main.py",
-        "bytes": 109259,
-        "lines": 2854,
-        "nonblank_lines": 2502,
-        "sha256": "24d55c8694e730132296e375cebe42fa55cfefd6b72d9744a36307ac2eef9c04"
+        "bytes": 113736,
+        "lines": 2963,
+        "nonblank_lines": 2597,
+        "sha256": "bbf1987fa4fcee483ca9b27c9286b168996ecd2bfc67f725fd8d82b51590e5b1"
       },
       {
         "path": "backend_fastapi/mcp_routes.py",
@@ -2023,150 +2031,157 @@
       },
       {
         "path": "frontend_next/app/api/away/status/route.js",
-        "bytes": 329,
-        "lines": 10,
-        "nonblank_lines": 10,
-        "sha256": "b0d6f30b470c84c93974a87e7f634af7faebf4ba2549f80a4433055f23071d17"
+        "bytes": 110,
+        "lines": 5,
+        "nonblank_lines": 4,
+        "sha256": "58436b8804fa5d3fe7ee70bce94ee09f753f0c78740d2a3b15f5ce5d730a45a3"
       },
       {
         "path": "frontend_next/app/api/away/tasks/route.js",
-        "bytes": 771,
-        "lines": 24,
-        "nonblank_lines": 23,
-        "sha256": "6ef6f947d44421fcd6d58547379a090ebc8059117382984bfd9035db6a75ea85"
+        "bytes": 213,
+        "lines": 9,
+        "nonblank_lines": 7,
+        "sha256": "cb2de024ba70b332649f1d442f28180961f22c0496d12deac28c6e6484433c39"
       },
       {
         "path": "frontend_next/app/api/away/tasks/run/route.js",
-        "bytes": 469,
-        "lines": 14,
-        "nonblank_lines": 14,
-        "sha256": "87441ccf671b34533f21c8b4cc66079379fd163fe0c44af884bff354ef7fbd76"
+        "bytes": 149,
+        "lines": 5,
+        "nonblank_lines": 4,
+        "sha256": "c589948282e145a2b52f56053849de9bb2f6466fff5db3375d3f490bb9bcf073"
       },
       {
         "path": "frontend_next/app/api/brain/identity/route.js",
-        "bytes": 920,
-        "lines": 26,
-        "nonblank_lines": 25,
-        "sha256": "db35d488708016e6d597440856fe22d7d58c39a1b8c96115fa68d61182f560e7"
+        "bytes": 221,
+        "lines": 9,
+        "nonblank_lines": 7,
+        "sha256": "7deee7bee62f2fcde538da5844c8b7e3b293ae6be1a8a6b38a5fbde569d0cace"
       },
       {
         "path": "frontend_next/app/api/brain/user/route.js",
-        "bytes": 802,
-        "lines": 24,
-        "nonblank_lines": 23,
-        "sha256": "f7a0c737858726f091e28d042986f0decbcb2094415549f3556a96154970e072"
+        "bytes": 231,
+        "lines": 9,
+        "nonblank_lines": 7,
+        "sha256": "d36de408d2fceb62d2671eab6eef70d4b146f4e2d1f97ed389378e78bc2b68b0"
       },
       {
         "path": "frontend_next/app/api/demo/[type]/route.js",
-        "bytes": 1867,
-        "lines": 60,
-        "nonblank_lines": 57,
-        "sha256": "eeeabc94f9cc9b5d68f1575b347282580797852bc41467f9cee64599805eebaf"
+        "bytes": 188,
+        "lines": 6,
+        "nonblank_lines": 5,
+        "sha256": "23fb743a1a9eb6a42f9f707a7c086860d520e3e90a8ea001bf07a2c728369abc"
       },
       {
         "path": "frontend_next/app/api/devices/route.js",
-        "bytes": 738,
-        "lines": 20,
-        "nonblank_lines": 20,
-        "sha256": "e4c0b1cc1426703145bac4becc6343f4ce6e7e0eff7f66ccf87136e787862d87"
+        "bytes": 106,
+        "lines": 5,
+        "nonblank_lines": 4,
+        "sha256": "89fdf04c2212eefa68e9fef48ad141c93dcf5bae3284a6c67832e3141f194522"
       },
       {
         "path": "frontend_next/app/api/execute/route.js",
-        "bytes": 1124,
-        "lines": 31,
-        "nonblank_lines": 29,
-        "sha256": "2c3a3c343ac733e82869803b8e70fdbb8663695aa8183373a31333f66d51c597"
+        "bytes": 142,
+        "lines": 5,
+        "nonblank_lines": 4,
+        "sha256": "f7fd441242f8f878849b6623ff39c52319dbbac5acdb3a18b608641cabe8f34f"
       },
       {
         "path": "frontend_next/app/api/goals/route.js",
-        "bytes": 758,
-        "lines": 24,
-        "nonblank_lines": 23,
-        "sha256": "427d346c457c95caf48b18c5b11abdff104055d918a35b11b2cdeaa04bca3ef6"
+        "bytes": 203,
+        "lines": 9,
+        "nonblank_lines": 7,
+        "sha256": "3eeaa03192e6329a2e97fa610dd4866c6f0f744b6380790c8e25b2c296cf87c1"
       },
       {
         "path": "frontend_next/app/api/health/route.js",
-        "bytes": 601,
-        "lines": 17,
-        "nonblank_lines": 17,
-        "sha256": "a16b49addb49949bf274d5350954899f77f9808cbceaa674fd99212ffea3e4de"
+        "bytes": 487,
+        "lines": 15,
+        "nonblank_lines": 14,
+        "sha256": "a8028b81fe26f0ceeb8b6f28b7b4459d27fe45a3de9897d37983af5832cda29f"
       },
       {
         "path": "frontend_next/app/api/knowledge-graph/route.js",
-        "bytes": 376,
-        "lines": 10,
-        "nonblank_lines": 10,
-        "sha256": "53353155682de285ba861da5e1e689992bf9015a8e3da1954bdf4f72357d1d22"
+        "bytes": 114,
+        "lines": 5,
+        "nonblank_lines": 4,
+        "sha256": "e12ff9ceb0687bab02868729f9d6e8ce976fee42f44ccf72f8e6605ac7b0827d"
       },
       {
         "path": "frontend_next/app/api/metacog/evaluate/route.js",
-        "bytes": 515,
-        "lines": 14,
-        "nonblank_lines": 14,
-        "sha256": "f675cecb29e91ca24fea5f185108e05a074ba6f3f510b64d69b453d7a76f6b1a"
+        "bytes": 151,
+        "lines": 5,
+        "nonblank_lines": 4,
+        "sha256": "e630a6002f18b8b32a52136f94041d9f1f47731faed04d23813a8f2df755300b"
       },
       {
         "path": "frontend_next/app/api/metacog/history/route.js",
-        "bytes": 316,
-        "lines": 10,
-        "nonblank_lines": 10,
-        "sha256": "00f301d320294e584ac662e802ac585d4b969f86c8ffc0572757d98b2d7225a0"
+        "bytes": 114,
+        "lines": 5,
+        "nonblank_lines": 4,
+        "sha256": "8888463f86650b4dce5ba708ddfa94b03b4d009f67610fc45fc959313e029e0c"
+      },
+      {
+        "path": "frontend_next/app/api/python/[...path]/route.js",
+        "bytes": 500,
+        "lines": 15,
+        "nonblank_lines": 13,
+        "sha256": "5328818fa511fe50093212bf394328c711124ece762c6e42894f913efe9c6c57"
       },
       {
         "path": "frontend_next/app/api/reflect/episodes/route.js",
-        "bytes": 319,
-        "lines": 10,
-        "nonblank_lines": 10,
-        "sha256": "397688b0021f0cbcceaf995dab474b4b8875d6e31acf8ff2023b1a71aab04f95"
+        "bytes": 115,
+        "lines": 5,
+        "nonblank_lines": 4,
+        "sha256": "6836124894322e4664edd53da8f98d88558da261ed633e8b94347c202159005d"
       },
       {
         "path": "frontend_next/app/api/reflect/patterns/route.js",
-        "bytes": 530,
-        "lines": 14,
-        "nonblank_lines": 14,
-        "sha256": "1b1e0a71ccfb3e8352aeff88b1f9a32a1673e9a51b667e8a46396087e38ec868"
+        "bytes": 151,
+        "lines": 5,
+        "nonblank_lines": 4,
+        "sha256": "72859957fa2f050670028a55da5bce9bc846899b463d2f811fb45b42581b6a68"
       },
       {
         "path": "frontend_next/app/api/reflect/today/route.js",
-        "bytes": 410,
-        "lines": 10,
-        "nonblank_lines": 10,
-        "sha256": "269485028a05d75315d3f9f81ad17fbf1d930e3c62291094cba49b2c06370687"
+        "bytes": 148,
+        "lines": 5,
+        "nonblank_lines": 4,
+        "sha256": "ff2ba553724ef4bd7ad550b58cd6fea4bf4bb642f5e7e73507344ea2e3cafb5b"
       },
       {
         "path": "frontend_next/app/api/security/enroll/route.js",
-        "bytes": 469,
-        "lines": 13,
-        "nonblank_lines": 13,
-        "sha256": "fe1be23697cade4af9346166469d6b4eb5335264d357bd774c60f54b77fd5eaa"
+        "bytes": 284,
+        "lines": 10,
+        "nonblank_lines": 9,
+        "sha256": "812a406b43b2ed2f41a23db630469b61b2fc107ae6740b3c1b6bc41f17be35b7"
       },
       {
         "path": "frontend_next/app/api/security/guard/arm/route.js",
-        "bytes": 360,
-        "lines": 10,
-        "nonblank_lines": 10,
-        "sha256": "109665f5ddc5ab7f90ee63a2b4a35dba9674f4c5357e64ab064b395d01fe56a6"
+        "bytes": 153,
+        "lines": 5,
+        "nonblank_lines": 4,
+        "sha256": "39c1447f7b5223843b2022d7bbfd053ae7c78421db68777fb9bdd2cc2b0dd836"
       },
       {
         "path": "frontend_next/app/api/security/guard/disarm/route.js",
-        "bytes": 366,
-        "lines": 10,
-        "nonblank_lines": 10,
-        "sha256": "dfbafd9b75f420db0b28dba0ba57c49882aa4c03a5e8d46459321b2ec326cbcb"
+        "bytes": 156,
+        "lines": 5,
+        "nonblank_lines": 4,
+        "sha256": "028950f252045c0ff70a30efbb0e1bc007d1c5094d8e599fc1aa62846dd35b83"
       },
       {
         "path": "frontend_next/app/api/security/lock/route.js",
-        "bytes": 481,
-        "lines": 13,
-        "nonblank_lines": 13,
-        "sha256": "6789a475f77342eaa87d717be0a8b6c742abf69e3e5065552ef2ee5aac6037a9"
+        "bytes": 298,
+        "lines": 10,
+        "nonblank_lines": 9,
+        "sha256": "3753c97088ab76dc7ac6c968a58937171a41a54ed7245bdb0c66971038a9f851"
       },
       {
         "path": "frontend_next/app/api/security/status/route.js",
-        "bytes": 344,
-        "lines": 10,
-        "nonblank_lines": 10,
-        "sha256": "b4f5cc96140a597774d5929f69a038d7d1d78e498f9cdc2fd30f746ba780172f"
+        "bytes": 114,
+        "lines": 5,
+        "nonblank_lines": 4,
+        "sha256": "fdeb3907befd4c66d0d89640eb52dc1dc0170c2f5289ba5de840470c5b070207"
       },
       {
         "path": "frontend_next/app/globals.css",
@@ -2177,10 +2192,10 @@
       },
       {
         "path": "frontend_next/app/knowledge-graph/page.js",
-        "bytes": 4751,
-        "lines": 114,
-        "nonblank_lines": 109,
-        "sha256": "cd433356edc9c5dc73310199404eaea252cf03cea3f4c72a1b4174d681c41913"
+        "bytes": 4927,
+        "lines": 118,
+        "nonblank_lines": 113,
+        "sha256": "d90ec30647dcd0bc98cd557bb16402b7f3998a7e9a2320f55a95a20883a8b038"
       },
       {
         "path": "frontend_next/app/layout.js",
@@ -2191,17 +2206,17 @@
       },
       {
         "path": "frontend_next/app/page.js",
-        "bytes": 32363,
-        "lines": 755,
-        "nonblank_lines": 704,
-        "sha256": "d51405ca649cc8c312be118da1b0f619f78ec4eb4808d1cbc45e2f1b9c6fb580"
+        "bytes": 33492,
+        "lines": 779,
+        "nonblank_lines": 727,
+        "sha256": "6a5194389a8b4cd8daefa4d206d6e6214b0fbe77f6e5352baa8f1521acbc9d63"
       },
       {
         "path": "frontend_next/components/BrainPanel.js",
-        "bytes": 11853,
-        "lines": 268,
-        "nonblank_lines": 245,
-        "sha256": "6ef85b5dad3190e958b34982129352549435ebdc1f3d0f19f01f598b0ff2c4f5"
+        "bytes": 12902,
+        "lines": 293,
+        "nonblank_lines": 268,
+        "sha256": "6ae3aee87a8cb0b641c9a4e34d908897550a16f05ac120b753a63939b5558500"
       },
       {
         "path": "frontend_next/components/ChatHistory.js",
@@ -2219,10 +2234,10 @@
       },
       {
         "path": "frontend_next/components/MicBar.js",
-        "bytes": 3206,
+        "bytes": 3178,
         "lines": 66,
         "nonblank_lines": 59,
-        "sha256": "bf69609ccd1580e5d06ec7b6388c029e4fc35bec87eb7d2c5ab57a5eee877566"
+        "sha256": "2cf4e26aee53310abccc5f30eb5b91e5c888ebccd47e0c8f6ded1bfcc5f939db"
       },
       {
         "path": "frontend_next/components/Orb.js",
@@ -2233,10 +2248,10 @@
       },
       {
         "path": "frontend_next/components/SecurityPanel.js",
-        "bytes": 4302,
-        "lines": 82,
-        "nonblank_lines": 70,
-        "sha256": "8f5fb78d2b45cf497b522da6b485eb6b746ca7f449f9acd33c3ae20830fdb6c9"
+        "bytes": 5079,
+        "lines": 102,
+        "nonblank_lines": 89,
+        "sha256": "a62d9be7476fa284e3340ae18780bcea60686d6892d4010ab77aba316e22f6f4"
       },
       {
         "path": "mobile/app.js",
@@ -2289,10 +2304,10 @@
       },
       {
         "path": "omni/cli.py",
-        "bytes": 98050,
-        "lines": 2462,
-        "nonblank_lines": 2195,
-        "sha256": "87984c6cb5e878e892f2ee6f25ea3c6bb0d23a061b55594c42fb930807e3abf3"
+        "bytes": 97267,
+        "lines": 2446,
+        "nonblank_lines": 2175,
+        "sha256": "41943a4000614d561ecea5e804ae022af40f4a2d1feced714b5611ac1d24b44e"
       },
       {
         "path": "omni_daemon.py",
@@ -2303,10 +2318,10 @@
       },
       {
         "path": "omni_desktop.py",
-        "bytes": 25058,
-        "lines": 574,
-        "nonblank_lines": 533,
-        "sha256": "275dd6f7bcaee56279fb85d0895499a2cb291e4cd784e0d3dc817a57b704128f"
+        "bytes": 25070,
+        "lines": 575,
+        "nonblank_lines": 534,
+        "sha256": "d98f67c664bb8e0fa75185e44756e6bbdef6b5d20443138daa016b57ab2d3884"
       },
       {
         "path": "omni_v2/__init__.py",
@@ -2631,11 +2646,18 @@
         "sha256": "7dbaf0100a0d8bc00fb045736f35d6fc00d7a4ee9fd95be257a9a1bdba693ff8"
       },
       {
+        "path": "omni_v2/core/config.py",
+        "bytes": 23262,
+        "lines": 638,
+        "nonblank_lines": 560,
+        "sha256": "3dd393d51852cde7b231ce98ccd75eb7d232cff736d848d02f2cc404ca8d07da"
+      },
+      {
         "path": "omni_v2/core/config_manager.py",
-        "bytes": 3790,
-        "lines": 102,
-        "nonblank_lines": 90,
-        "sha256": "1b57448cf6ef7bb9d1a5731046cbde14b04165eb97bbf95418367ea1856785f7"
+        "bytes": 5840,
+        "lines": 161,
+        "nonblank_lines": 139,
+        "sha256": "2b363dd461fa6c4ca903686c08c20885aa7c08733dfd3f4815a750827c66c7ee"
       },
       {
         "path": "omni_v2/core/event_bus.py",
@@ -2659,11 +2681,25 @@
         "sha256": "e62a0c430c2a950fc60c81597d2aecb532671ab7c71855b3fdca0db07f993092"
       },
       {
+        "path": "omni_v2/core/lifecycle.py",
+        "bytes": 21648,
+        "lines": 617,
+        "nonblank_lines": 539,
+        "sha256": "648713dd84b55426bab5de219b5cebfdb8228d4295ef02d541aecaa727c2046a"
+      },
+      {
+        "path": "omni_v2/core/model_policy.py",
+        "bytes": 2448,
+        "lines": 69,
+        "nonblank_lines": 49,
+        "sha256": "2e0f715e368e031b7059387e9e0126838addaf84349f4514430e05092be81d8d"
+      },
+      {
         "path": "omni_v2/core/paths.py",
-        "bytes": 4188,
-        "lines": 123,
-        "nonblank_lines": 91,
-        "sha256": "a417d0b21d4e57f54b9fe032e3ce2afcf81250137fd3a0c6e3eeddf5f2d27955"
+        "bytes": 4519,
+        "lines": 131,
+        "nonblank_lines": 99,
+        "sha256": "300c78326fe74ff5966bacbbbc7729ca09a996243ba366922f685f77d2276a8f"
       },
       {
         "path": "omni_v2/core/plugin_manager.py",
@@ -2671,6 +2707,20 @@
         "lines": 199,
         "nonblank_lines": 182,
         "sha256": "ed64b9043f97aa7ea27362cc8b9cf0a7d3072f557c7d1cd2a3fb4e3882a7555e"
+      },
+      {
+        "path": "omni_v2/core/preflight.py",
+        "bytes": 19150,
+        "lines": 528,
+        "nonblank_lines": 475,
+        "sha256": "d93d94b982e1c111354fdd2d0ace9659cf7c0165553e0e74171fce055ffedda5"
+      },
+      {
+        "path": "omni_v2/core/runtime_cli.py",
+        "bytes": 4784,
+        "lines": 124,
+        "nonblank_lines": 102,
+        "sha256": "3fcf79c20718115172b69fe9c3070ecaef5786b54e7ee23197e06c25efe871ec"
       },
       {
         "path": "omni_v2/core/safe_execute.py",
@@ -2821,10 +2871,10 @@
       },
       {
         "path": "omni_v2/llm/brain.py",
-        "bytes": 31386,
-        "lines": 729,
-        "nonblank_lines": 665,
-        "sha256": "dcc21933d6149143392b96518733268435ada5de91b89de38acbe5863b3a886d"
+        "bytes": 31517,
+        "lines": 739,
+        "nonblank_lines": 674,
+        "sha256": "7a1d2584853a887c451b11df68b75410dfae6ec2f85b5a8e9b48ebac4d22e50c"
       },
       {
         "path": "omni_v2/llm/compaction.py",
@@ -2835,17 +2885,17 @@
       },
       {
         "path": "omni_v2/llm/hf_downloader.py",
-        "bytes": 10596,
-        "lines": 247,
-        "nonblank_lines": 215,
-        "sha256": "33e093f9ea9542740c6e39a153f8e11115278a431fae36a3417422f4cc5baa43"
+        "bytes": 9823,
+        "lines": 233,
+        "nonblank_lines": 202,
+        "sha256": "e145c1acd3d635f7c923a83f4e136212bbb29b0f5c1f520dff7af32f1e5c9514"
       },
       {
         "path": "omni_v2/llm/llama_cpp.py",
-        "bytes": 8805,
-        "lines": 225,
+        "bytes": 8966,
+        "lines": 224,
         "nonblank_lines": 186,
-        "sha256": "20986756a6914439a1749807d9598acb7ac2df36d2b02867b9ceeaf0a83e0afd"
+        "sha256": "0a302a065dc7c4e1590e6a18e6d4f87bc4b77feb7db4cda41ac39abd5f1ad3c5"
       },
       {
         "path": "omni_v2/llm/router.py",
@@ -2954,17 +3004,17 @@
       },
       {
         "path": "omni_v2/network/discovery.py",
-        "bytes": 6573,
-        "lines": 214,
-        "nonblank_lines": 185,
-        "sha256": "32cdfd9c41b7e46b2ca1a48b9cb8538513a6a9b486eb654ce5717a5539a89619"
+        "bytes": 6727,
+        "lines": 217,
+        "nonblank_lines": 187,
+        "sha256": "a41799788438bcf6c7c1725af2d6372d9a6c83f2d52fe8bdc29bbf689b82c614"
       },
       {
         "path": "omni_v2/network/mdns.py",
-        "bytes": 8974,
-        "lines": 269,
-        "nonblank_lines": 239,
-        "sha256": "ab9be842804668d6ed53026c0788978269af85aabfc72c8a47aa27557799bb40"
+        "bytes": 9276,
+        "lines": 282,
+        "nonblank_lines": 252,
+        "sha256": "3f2441d87a3670cb22f51572a38a00cdb76dde694e570b0cf07667dbde54b095"
       },
       {
         "path": "omni_v2/pda/__init__.py",
@@ -3150,10 +3200,10 @@
       },
       {
         "path": "omni_v2/tools/browser_v3.py",
-        "bytes": 8546,
-        "lines": 209,
-        "nonblank_lines": 188,
-        "sha256": "28a93323aa01c2cf66d254a91c280eca3478aa5792835d3856b1c2b77f15102f"
+        "bytes": 8680,
+        "lines": 211,
+        "nonblank_lines": 190,
+        "sha256": "c33763e45d36b5d098f316f5545bcd595cec132cfadcefa0d3addc82c0d79c00"
       },
       {
         "path": "omni_v2/tools/demo_scenarios.py",
@@ -3283,10 +3333,10 @@
       },
       {
         "path": "omni_v2/ui/whisper_flow.py",
-        "bytes": 18356,
-        "lines": 461,
-        "nonblank_lines": 379,
-        "sha256": "5615767eaaaf8326cce6a7ea483dc02f8f65e396ca222c3389616cc9f0c84017"
+        "bytes": 19551,
+        "lines": 486,
+        "nonblank_lines": 403,
+        "sha256": "6189659f9ac4c280d7e51275e87ef91e46809b5f111ad8406695d150231ef530"
       },
       {
         "path": "omni_v2/utils/__init__.py",
@@ -3339,10 +3389,10 @@
       },
       {
         "path": "omni_v2/vision/multimodal.py",
-        "bytes": 13292,
-        "lines": 339,
-        "nonblank_lines": 315,
-        "sha256": "285c4f9b2924998d3f281165a1c71334c279ff7b2b56e47d08f1b46c9a58d29c"
+        "bytes": 13603,
+        "lines": 345,
+        "nonblank_lines": 321,
+        "sha256": "6059adb334bad891e03ffd876aeb3dd61771f411d88a069a9dda48dfc1975ef7"
       },
       {
         "path": "omni_v2/vision/screen.py",
@@ -3353,10 +3403,10 @@
       },
       {
         "path": "omni_v2/vision/turbovlm.py",
-        "bytes": 8585,
-        "lines": 179,
-        "nonblank_lines": 154,
-        "sha256": "af5fadc036164a8eadfa849ffa0b2d3e1a5eaa95be8e9568159ddeaa38c79c42"
+        "bytes": 8601,
+        "lines": 177,
+        "nonblank_lines": 153,
+        "sha256": "d15a08cd4432655abb6fcd5140d8c1341117ea2e51ff2f3b711cbd98a1bd2611"
       },
       {
         "path": "omni_v2/voice/__init__.py",
@@ -3381,17 +3431,17 @@
       },
       {
         "path": "omni_v2/voice/loop.py",
-        "bytes": 13935,
-        "lines": 353,
-        "nonblank_lines": 293,
-        "sha256": "2d8fffe33a5bddc1c9f09503e1f6086611cccb07df79141921b72b8a5f4b6e5f"
+        "bytes": 14368,
+        "lines": 361,
+        "nonblank_lines": 301,
+        "sha256": "d1b110efea67057eb7871c4686ce7a6cf98b70d6e5cfdde56be36572b04e443c"
       },
       {
         "path": "omni_v2/voice/pipeline.py",
-        "bytes": 10143,
-        "lines": 246,
-        "nonblank_lines": 214,
-        "sha256": "4d3dcbcaed3767089c133610747c51a71deff15c957834167e8f2c02dab537f7"
+        "bytes": 10483,
+        "lines": 253,
+        "nonblank_lines": 221,
+        "sha256": "6e5225328f21fc1d0db274972d48e739b16d8928c5b4bbb802c8ad98c973b5b2"
       },
       {
         "path": "omni_v2/voice/pipeline_v3.py",
@@ -3416,38 +3466,38 @@
       },
       {
         "path": "omni_v2/voice/stt_manager.py",
-        "bytes": 16129,
-        "lines": 361,
-        "nonblank_lines": 331,
-        "sha256": "320165ba840479e58ad8d7932e5fe78ad6ffc37c7da094ad4a1fd9817544399b"
+        "bytes": 17283,
+        "lines": 379,
+        "nonblank_lines": 350,
+        "sha256": "aa68d1f2e343a40d81ea5a888b6aec1d527e673e7b56d3b91732ec4bc56a7f52"
       },
       {
         "path": "omni_v2/voice/stt_simple.py",
-        "bytes": 9262,
+        "bytes": 9303,
         "lines": 243,
         "nonblank_lines": 207,
-        "sha256": "e9993ef7f021256b25d5bb1d46d76fd5e47935dc7e519c52be24769df4132478"
+        "sha256": "7776fd12df16629c60e4533ba55341fedf421b8383d073d0f1375e6faa8d82cf"
       },
       {
         "path": "omni_v2/voice/tts_best.py",
-        "bytes": 12600,
-        "lines": 328,
-        "nonblank_lines": 298,
-        "sha256": "0be420c026a607f507ff6f568603a3931b2499d1c2f51d4350b3ba79789044d1"
+        "bytes": 12651,
+        "lines": 325,
+        "nonblank_lines": 295,
+        "sha256": "7e05fdbd54977ea4bd5648995c1b0946ba8a5e60f57cc3866e38f11d9a8802d2"
       },
       {
         "path": "omni_v2/voice/tts_simple.py",
-        "bytes": 10111,
-        "lines": 271,
-        "nonblank_lines": 237,
-        "sha256": "d01269115915a5685227ba80c469445d00f817b1dd4ecba5dce87e24d563fa72"
+        "bytes": 10368,
+        "lines": 277,
+        "nonblank_lines": 243,
+        "sha256": "9e07f6845adfb7c01027084db4b0ff7a5f2cca96a8af4af581738cf0e1941b4e"
       },
       {
         "path": "omni_v2/voice/voice_clone.py",
-        "bytes": 10415,
-        "lines": 278,
-        "nonblank_lines": 257,
-        "sha256": "70852e42d20e05a8460bbe4fa6f52b64a7c0be0c8fb78ed9d6734d49653c008a"
+        "bytes": 10708,
+        "lines": 281,
+        "nonblank_lines": 260,
+        "sha256": "f92ed88b6a91c02e4ed3677fa1380632888a49a5defd4a2565c559d7bb014077"
       },
       {
         "path": "omni_v2/voice/voice_loop.py",
@@ -3458,24 +3508,24 @@
       },
       {
         "path": "omni_v2/voice/wake_word.py",
-        "bytes": 8984,
+        "bytes": 9011,
         "lines": 210,
         "nonblank_lines": 181,
-        "sha256": "63f0b62605628c7b32a15ac1568ec7e2d76513dd5d08ef08e2e4c92658974291"
+        "sha256": "1703d81fd91648ade3ae5e2710b7b7823f05b7f0c1ef859fe4f0191db609c5a9"
       },
       {
         "path": "omni_v2/voice/wake_word_best.py",
-        "bytes": 12975,
-        "lines": 334,
-        "nonblank_lines": 299,
-        "sha256": "1335804cb4fe5151ac17bc31fc01de4116a7190658f21ef41641a70e09aac5b2"
+        "bytes": 13635,
+        "lines": 350,
+        "nonblank_lines": 315,
+        "sha256": "6cf8051694f157f884162d685c353072ae1835d42319aad00d7d06fbbaef74d8"
       },
       {
         "path": "omni_v2/voice/wake_word_v3.py",
-        "bytes": 13362,
-        "lines": 329,
-        "nonblank_lines": 294,
-        "sha256": "5d70a4daf1c5d34acf8fdffbb1781ef4e488b81f116432e9f9a1cab6a0ad0e29"
+        "bytes": 14001,
+        "lines": 345,
+        "nonblank_lines": 310,
+        "sha256": "9893b855860f1d62c33c67cdd05188f334b2384337338b5e0127330ad90a9556"
       },
       {
         "path": "omni_v2/wake/__init__.py",
@@ -3936,10 +3986,10 @@
       },
       {
         "path": "omni_v2/voice/test_mic_fixed.py",
-        "bytes": 5356,
-        "lines": 130,
-        "nonblank_lines": 115,
-        "sha256": "873c7bf315c894506c9647ace05bd3a0a7d0594426324589bb40a7fa98807752"
+        "bytes": 5440,
+        "lines": 132,
+        "nonblank_lines": 117,
+        "sha256": "310e7cced89a1e6ece73c60b94582477f16b9f4dc737c5dc3930934ebabbf825"
       }
     ]
   }

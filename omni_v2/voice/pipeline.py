@@ -10,7 +10,8 @@ except ImportError:
     import logging
     logger = logging.getLogger("VoicePipelineV2")
 
-from omni_v2.core.paths import DATA_DIR
+from omni_v2.core.config import load_config
+from omni_v2.core.model_policy import faster_whisper_kwargs
 
 class VoicePipelineV2:
     """Voice Pipeline V2 Phase 4 - Accessibility First - STT 4 Tiers - Never fails if audio has speech"""
@@ -25,6 +26,7 @@ class VoicePipelineV2:
         self.on_transcription = on_transcription
         self.on_status = on_status
         self.device_index = device_index
+        self.runtime_config = load_config()
 
         self.is_recording = False
         self.audio_buffer = []
@@ -37,7 +39,7 @@ class VoicePipelineV2:
         self.whisper_available = False
         self._init_stt_manager()
 
-        self.recordings_dir = DATA_DIR / "recordings"
+        self.recordings_dir = self.runtime_config.data_dir / "recordings"
         self.recordings_dir.mkdir(parents=True, exist_ok=True)
 
         logger.info("VoicePipeline V2 Phase 4 - Accessibility First - STT 4 Tiers (RealtimeSTT/Vosk/Google/Whisper) - WILL HEAR EVERYONE")
@@ -60,11 +62,16 @@ class VoicePipelineV2:
             logger.error(f"STT Manager not available: {e} - trying old Whisper direct")
             try:
                 from faster_whisper import WhisperModel
-                for device, compute in [("cuda", "float32"), ("cuda", "int8"), ("cpu", "int8")]:
+                for device, compute in self.runtime_config.stt_device_attempts:
                     try:
-                        self.whisper_model = WhisperModel("base.en", device=device, compute_type=compute)
+                        self.whisper_model = WhisperModel(
+                            self.runtime_config.stt_model,
+                            device=device,
+                            compute_type=compute,
+                            **faster_whisper_kwargs(self.runtime_config),
+                        )
                         self.whisper_available = True
-                        logger.info(f"Whisper fallback: base.en on {device} {compute}")
+                        logger.info(f"Whisper fallback: {self.runtime_config.stt_model} on {device} {compute}")
                         return
                     except Exception as ex:
                         logger.debug(f"Whisper {device} {compute} failed: {ex}")

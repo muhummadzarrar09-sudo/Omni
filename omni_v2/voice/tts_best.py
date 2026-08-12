@@ -29,7 +29,8 @@ except ImportError:
     import logging
     logger = logging.getLogger("TTSBest")
 
-from omni_v2.core.paths import DATA_DIR
+from omni_v2.core.config import load_config
+from omni_v2.core.model_policy import require_cloud_tts
 
 
 # Voice personas - JARVIS-like
@@ -63,13 +64,14 @@ class TTSBest:
     def __init__(self, voice: str = "jarvis"):
         if self._initialized:
             return
+        self.runtime_config = load_config()
         self.voice_persona = voice
         self.edge_voice = VOICE_PERSONAS.get(voice, "en-US-GuyNeural")
         self.engine_type = None
         self.edge_voices_available: list = []
         self.piper_voices: dict = {}
         self.sapi_engine = None
-        self.audio_dir = DATA_DIR / "tts_cache"
+        self.audio_dir = self.runtime_config.data_dir / "tts_cache"
         self.audio_dir.mkdir(parents=True, exist_ok=True)
         self.spoken_count = 0
         self.last_error = None
@@ -103,13 +105,7 @@ class TTSBest:
 
         # Fallback: edge-tts (cloud) ONLY if explicitly enabled via config,
         # otherwise skip straight to SAPI. Keeps the default fully local.
-        edge_enabled = False
-        try:
-            from omni_v2.core.config_manager import ConfigManager
-            cfg = ConfigManager().load()
-            edge_enabled = getattr(cfg, "tts_allow_cloud", False)
-        except Exception:
-            edge_enabled = False
+        edge_enabled = self.runtime_config.tts_allow_cloud and not self.runtime_config.offline
         if edge_enabled:
             try:
                 import edge_tts  # noqa: PLC0415
@@ -185,8 +181,9 @@ class TTSBest:
             return True
 
     def _speak_edge_tts(self, text: str, blocking: bool, voice: str) -> bool:
-        """Edge TTS - Microsoft natural voices."""
+        """Edge TTS - Microsoft natural voices, only with explicit cloud opt-in."""
         try:
+            require_cloud_tts(self.runtime_config, "Edge TTS synthesis")
             import edge_tts
             import sounddevice as sd
 

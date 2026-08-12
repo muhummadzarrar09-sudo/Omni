@@ -43,11 +43,11 @@ from omni_v2.network.discovery import (
     TXT_VERSION_VALUE,
     TXT_MODEL_DEFAULT,
     TXT_API_VALUE,
+    DISCOVERY_PORT,
 )
 
 
 # Discovery protocol constants
-DISCOVERY_PORT = 47624
 DISCOVERY_MAGIC = b"OMNI-DISCOVER-v1"
 DISCOVERY_INTERVAL_SEC = 5.0
 DISCOVERY_TIMEOUT_SEC = 2.0
@@ -59,8 +59,15 @@ class OMNIMDNSBroadcaster:
     Sends a UDP broadcast packet every 5 seconds with brain info.
     """
 
-    def __init__(self, port: int = SERVICE_PORT, name: str = "OMNI", capabilities: Optional[List[str]] = None):
+    def __init__(
+        self,
+        port: int = SERVICE_PORT,
+        name: str = "OMNI",
+        capabilities: Optional[List[str]] = None,
+        discovery_port: int = DISCOVERY_PORT,
+    ):
         self.port = port
+        self.discovery_port = discovery_port
         self.name = name
         self.capabilities = capabilities or ["voice", "vision", "wake_word", "memory", "personality"]
         self._running = False
@@ -134,7 +141,7 @@ class OMNIMDNSBroadcaster:
         while self._running:
             try:
                 packet = self._build_packet()
-                self._sock.sendto(packet, ("<broadcast>", DISCOVERY_PORT))
+                self._sock.sendto(packet, ("<broadcast>", self.discovery_port))
                 self._announce_count += 1
             except Exception as e:
                 logger.debug(f"Broadcast error: {e}")
@@ -146,6 +153,7 @@ class OMNIMDNSBroadcaster:
             "name": self.name,
             "host": self._get_local_ip(),
             "port": self.port,
+            "discovery_port": self.discovery_port,
             "announce_count": self._announce_count,
             "interval_sec": DISCOVERY_INTERVAL_SEC,
         }
@@ -157,8 +165,13 @@ class OMNIMDNSDiscovery:
     Listens for UDP broadcast packets and returns found brains.
     """
 
-    def __init__(self, callback: Optional[Callable[[NetworkInfo], None]] = None):
+    def __init__(
+        self,
+        callback: Optional[Callable[[NetworkInfo], None]] = None,
+        discovery_port: int = DISCOVERY_PORT,
+    ):
         self._callback = callback
+        self.discovery_port = discovery_port
         self._running = False
         self._thread: Optional[threading.Thread] = None
         self._sock: Optional[socket.socket] = None
@@ -210,7 +223,7 @@ class OMNIMDNSDiscovery:
                 except Exception:
                     pass
             self._sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-            self._sock.bind(("", DISCOVERY_PORT))
+            self._sock.bind(("", self.discovery_port))
             self._sock.settimeout(1.0)
         except Exception as e:
             logger.error(f"mDNS listener socket failed: {e}")

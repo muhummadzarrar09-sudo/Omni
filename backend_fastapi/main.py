@@ -27,8 +27,12 @@ except ImportError:
     logger = logging.getLogger("FastAPI")
 
 from omni import __version__
+from omni_v2.core.config import load_config
+from omni_v2.core.model_policy import faster_whisper_kwargs
 from omni_v2.core.paths import get_data_dir
 from .core.brain import get_brain
+
+RUNTIME_CONFIG = load_config()
 
 app = FastAPI(
     title="OMNI experimental backend",
@@ -159,29 +163,43 @@ async def limit_request_size(request, call_next):
             pass
     return await call_next(request)
 
-# Optional explicit token for LAN/non-loopback use. Local loopback remains usable by the desktop UI.
+# Optional environment-only token. The managed desktop UI remains usable because
+# its server-side proxy injects the token without exposing it to the browser.
 import os
-OMNI_API_TOKEN = os.environ.get("OMNI_API_TOKEN")
+OMNI_API_TOKEN = RUNTIME_CONFIG.api_token
+
+PAIRING_ISSUER_PATHS = {
+    "/api/network/pair",
+    "/api/network/qr",
+    "/api/network/pair/active",
+    "/api/mobile/qr-page",
+}
+
 
 @app.middleware("http")
 async def require_api_token(request: Request, call_next):
-    # Localhost is trusted only when no explicit token is configured. Once a
-    # token is configured, every mutating HTTP request requires it, regardless
-    # of source address. Pairing bootstrap is the sole exception.
-    bootstrap = request.url.path in {"/api/network/pair", "/api/network/pair/verify"}
-    if OMNI_API_TOKEN and request.method not in {"GET", "HEAD", "OPTIONS"} and not bootstrap:
+    # Once a token is configured, all mutations require a long-lived app or
+    # paired-device credential. Code verification remains public because the
+    # six-digit, short-lived, one-use code is the bootstrap credential; every
+    # endpoint that reveals or creates such a code is explicitly protected,
+    # including its otherwise-safe GET variants.
+    verify_path = request.url.path == "/api/network/pair/verify"
+    is_mutation = request.method not in {"GET", "HEAD", "OPTIONS"}
+    requires_token = request.url.path in PAIRING_ISSUER_PATHS or (is_mutation and not verify_path)
+    if OMNI_API_TOKEN and requires_token:
         supplied = request.headers.get("X-OMNI-Token", "")
         valid = secrets.compare_digest(supplied, OMNI_API_TOKEN)
         if not valid:
-            valid = supplied in _device_tokens and _device_tokens[supplied].get("expires_at", 0) > time.time()
+            device = _device_tokens.get(supplied, {})
+            valid = device.get("expires_at", 0) > time.time()
         if not valid:
             return JSONResponse(status_code=401, content={"error": "Authentication required"})
     return await call_next(request)
 
-# CORS for Next.js (3000) and any origin for judges
+# Exact browser origins come from the canonical runtime configuration.
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
+    allow_origins=list(RUNTIME_CONFIG.cors_origins),
     allow_credentials=True,
     allow_methods=["GET", "POST", "DELETE"],
     allow_headers=["Content-Type", "Authorization", "X-OMNI-Token"],
@@ -328,13 +346,14 @@ async def startup():
             user_name = "User"
         broadcast_name = f"{user_name}'s OMNI" if user_name else "OMNI"
         mdns_broadcaster = OMNIMDNSBroadcaster(
-            port=8765,
+            port=RUNTIME_CONFIG.backend_port,
             name=broadcast_name,
             capabilities=["voice", "vision", "wake_word", "memory", "personality", "marketplace"],
+            discovery_port=RUNTIME_CONFIG.discovery_port,
         )
         mdns_broadcaster.start()
         app.state.mdns_broadcaster = mdns_broadcaster
-        info = make_discovery_info(broadcast_name, 8765)
+        info = make_discovery_info(broadcast_name, RUNTIME_CONFIG.backend_port)
         logger.info(f"📡 mDNS Broadcaster started: {info.http_url}")
         logger.info(f"📱 Mobile companion can discover on WiFi at {info.host}:{info.port}")
     except Exception as e:
@@ -1382,7 +1401,7 @@ async def get_network_info():
                 name = f"{user_name}'s OMNI"
         except Exception:
             pass
-        info = make_discovery_info(name, 8765)
+        info = make_discovery_info(name, RUNTIME_CONFIG.backend_port)
         return {
             "status": "ok",
             "network": info.to_dict(),
@@ -1397,8 +1416,9 @@ async def generate_pairing():
     """Generate a one-time pairing code (5 min TTL) for mobile device."""
     try:
         from omni_v2.network.discovery import generate_pairing_code, make_discovery_info
-        info = make_discovery_info("OMNI", 8765)
+        info = make_discovery_info("OMNI", RUNTIME_CONFIG.backend_port)
         code = generate_pairing_code(info.host, info.port, ttl_sec=300)
+        _remember_pairing_code(code, info)
         return {
             "status": "ok",
             "pair": code.to_dict(),
@@ -1415,8 +1435,9 @@ async def get_qr_code():
     """Get the current QR code (for phone to scan) as base64-encoded PNG."""
     try:
         from omni_v2.network.discovery import generate_pairing_code, make_discovery_info
-        info = make_discovery_info("OMNI", 8765)
+        info = make_discovery_info("OMNI", RUNTIME_CONFIG.backend_port)
         code = generate_pairing_code(info.host, info.port, ttl_sec=300)
+        _remember_pairing_code(code, info)
         uri = code.to_uri()
         # Try to generate a real QR code PNG if qrcode is installed
         qr_image_b64 = None
@@ -1462,9 +1483,61 @@ def make_qr_payload_for_pair(code, info) -> str:
 
 # PHASE-5B: Mobile companion — additional endpoints
 import secrets as _secrets
-_active_pair_codes: Dict[str, Any] = {}  # code -> {created_at, expires_at, host, port}
+_active_pair_codes: Dict[str, Any] = {}  # code -> short-lived one-use issuance record
 _device_tokens: Dict[str, Dict[str, Any]] = {}
+_websocket_tickets: Dict[str, float] = {}
+WEBSOCKET_TICKET_TTL_SECONDS = 30
+MAX_PAIRING_ATTEMPTS = 5
 MAX_WS_MESSAGE_BYTES = 256 * 1024
+
+
+def _remember_pairing_code(code: Any, info: Any) -> None:
+    """Record a generated code so only authenticated issuance can bootstrap."""
+
+    now = time.time()
+    for issued, record in list(_active_pair_codes.items()):
+        if record.get("expires_at", 0) <= now or record.get("used"):
+            _active_pair_codes.pop(issued, None)
+    _active_pair_codes[code.code] = {
+        "created_at": code.created_at,
+        "expires_at": code.expires_at,
+        "used": False,
+        "attempts": 0,
+        "host": info.host,
+        "port": info.port,
+    }
+    # Bound process memory even if an authenticated UI requests codes rapidly.
+    while len(_active_pair_codes) > 10:
+        oldest = min(_active_pair_codes, key=lambda item: _active_pair_codes[item]["created_at"])
+        _active_pair_codes.pop(oldest, None)
+
+
+def _websocket_token_is_valid(token: str) -> bool:
+    """Validate long-lived credentials or consume one short-lived UI ticket."""
+
+    if not OMNI_API_TOKEN:
+        return True
+    now = time.time()
+    for expired, expires_at in list(_websocket_tickets.items()):
+        if expires_at <= now:
+            _websocket_tickets.pop(expired, None)
+    ticket_expires_at = _websocket_tickets.pop(token, 0)
+    device = _device_tokens.get(token, {})
+    return (
+        secrets.compare_digest(token, OMNI_API_TOKEN)
+        or ticket_expires_at > now
+        or device.get("expires_at", 0) > now
+    )
+
+
+@app.post("/api/auth/websocket-ticket")
+async def create_websocket_ticket():
+    """Issue a one-use ticket so the browser never receives OMNI_API_TOKEN."""
+
+    now = time.time()
+    ticket = secrets.token_urlsafe(32)
+    _websocket_tickets[ticket] = now + WEBSOCKET_TICKET_TTL_SECONDS
+    return {"ticket": ticket, "expires_at": now + WEBSOCKET_TICKET_TTL_SECONDS}
 
 
 class PairingVerifyRequest(BaseModel):
@@ -1472,23 +1545,35 @@ class PairingVerifyRequest(BaseModel):
 
 @app.post("/api/network/pair/verify")
 async def verify_pairing_code(req: PairingVerifyRequest):
-    """Verify a pairing code entered by a mobile device.
-    Currently a soft-verify (any 6-digit number is accepted in this dev build).
-    In a hardened build, the laptop would track issued codes and reject others.
-    """
+    """Exchange an issued, short-lived, one-use code for a device token."""
+
     code = req.code.strip()
-    if not code or not code.isdigit() or len(code) != 6:
-        return {"valid": False, "reason": "code must be 6 digits"}
     now = time.time()
+    active_records: list[tuple[str, Dict[str, Any]]] = []
     for issued, record in list(_active_pair_codes.items()):
-        if record.get("expires_at", 0) <= now or record.get("used"):
+        if (
+            record.get("expires_at", 0) <= now
+            or record.get("used")
+            or record.get("attempts", 0) >= MAX_PAIRING_ATTEMPTS
+        ):
             _active_pair_codes.pop(issued, None)
             continue
+        active_records.append((issued, record))
         if secrets.compare_digest(issued, code):
             record["used"] = True
+            _active_pair_codes.pop(issued, None)
             token = secrets.token_urlsafe(32)
-            _device_tokens[token] = {"created_at": now, "expires_at": now + 60 * 60 * 24 * 30}
-            return {"valid": True, "code": code, "token": token, "expires_at": now + 60 * 60 * 24 * 30}
+            expires_at = now + 60 * 60 * 24 * 30
+            _device_tokens[token] = {"created_at": now, "expires_at": expires_at}
+            return {"valid": True, "code": code, "token": token, "expires_at": expires_at}
+
+    # A six-digit code is intentionally low entropy. Bound guesses against every
+    # active issuance globally so rotating network identities cannot brute-force
+    # it; five failures invalidate the code and require authenticated re-issue.
+    for issued, record in active_records:
+        record["attempts"] = record.get("attempts", 0) + 1
+        if record["attempts"] >= MAX_PAIRING_ATTEMPTS:
+            _active_pair_codes.pop(issued, None)
     return {"valid": False, "reason": "invalid or expired code"}
 
 
@@ -1534,8 +1619,23 @@ async def transcribe_audio(audio: UploadFile = File(...)):
                 if hasattr(stt, "transcribe_file"):
                     text = stt.transcribe_file(tmp_path) or ""
                 else:
-                    # Fallback: load a transient whisper model
-                    model = WhisperModel("base.en", device="cpu", compute_type="int8")
+                    # Fallback: load the canonical STT model/device preference.
+                    model = None
+                    for stt_device, compute_type in RUNTIME_CONFIG.stt_device_attempts:
+                        try:
+                            model = WhisperModel(
+                                RUNTIME_CONFIG.stt_model,
+                                device=stt_device,
+                                compute_type=compute_type,
+                                **faster_whisper_kwargs(RUNTIME_CONFIG),
+                            )
+                            break
+                        except Exception as exc:
+                            logger.debug(
+                                f"Configured STT attempt {stt_device}/{compute_type} failed: {exc}"
+                            )
+                    if model is None:
+                        raise RuntimeError("No configured STT device attempt succeeded")
                     segments, _ = model.transcribe(tmp_path, beam_size=5)
                     text = " ".join(seg.text for seg in segments).strip()
         except Exception as e:
@@ -1560,21 +1660,9 @@ async def get_active_pair_code():
     """
     try:
         from omni_v2.network.discovery import generate_pairing_code, make_discovery_info
-        info = make_discovery_info("OMNI", 8765)
+        info = make_discovery_info("OMNI", RUNTIME_CONFIG.backend_port)
         code = generate_pairing_code(info.host, info.port, ttl_sec=600)
-        # Store it
-        _active_pair_codes[code.code] = {
-            "created_at": code.created_at,
-            "expires_at": code.expires_at,
-            "used": False,
-            "host": info.host,
-            "port": info.port,
-        }
-        # Prune expired
-        now = time.time()
-        for k in list(_active_pair_codes.keys()):
-            if _active_pair_codes[k]["expires_at"] < now:
-                del _active_pair_codes[k]
+        _remember_pairing_code(code, info)
         return {
             "status": "ok",
             "pair": code.to_dict(),
@@ -1605,8 +1693,9 @@ if _MOBILE_DIR.exists():
         """
         try:
             from omni_v2.network.discovery import generate_pairing_code, make_discovery_info
-            info = make_discovery_info("OMNI", 8765)
+            info = make_discovery_info("OMNI", RUNTIME_CONFIG.backend_port)
             code = generate_pairing_code(info.host, info.port, ttl_sec=600)
+            _remember_pairing_code(code, info)
             return {
                 "status": "ok",
                 "host": info.host,
@@ -1634,7 +1723,7 @@ async def websocket_mobile(websocket: WebSocket):
       - ping: heartbeat
     """
     ws_token = websocket.query_params.get("token", "")
-    if OMNI_API_TOKEN and not (secrets.compare_digest(ws_token, OMNI_API_TOKEN) or ws_token in _device_tokens):
+    if not _websocket_token_is_valid(ws_token):
         await websocket.close(code=1008, reason="Authentication required")
         return
     await manager.connect(websocket)
@@ -1720,7 +1809,22 @@ async def websocket_mobile(websocket: WebSocket):
                         text = ""
                         try:
                             from faster_whisper import WhisperModel
-                            model = WhisperModel("base.en", device="cpu", compute_type="int8")
+                            model = None
+                            for stt_device, compute_type in RUNTIME_CONFIG.stt_device_attempts:
+                                try:
+                                    model = WhisperModel(
+                                        RUNTIME_CONFIG.stt_model,
+                                        device=stt_device,
+                                        compute_type=compute_type,
+                                        **faster_whisper_kwargs(RUNTIME_CONFIG),
+                                    )
+                                    break
+                                except Exception as exc:
+                                    logger.debug(
+                                        f"Configured STT attempt {stt_device}/{compute_type} failed: {exc}"
+                                    )
+                            if model is None:
+                                raise RuntimeError("No configured STT device attempt succeeded")
                             segments, _ = model.transcribe(tmp_path, beam_size=5)
                             text = " ".join(seg.text for seg in segments).strip()
                         except Exception as e:
@@ -2822,7 +2926,7 @@ manager = ConnectionManager()
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     ws_token = websocket.query_params.get("token", "")
-    if OMNI_API_TOKEN and not (secrets.compare_digest(ws_token, OMNI_API_TOKEN) or ws_token in _device_tokens):
+    if not _websocket_token_is_valid(ws_token):
         await websocket.close(code=1008, reason="Authentication required")
         return
     await manager.connect(websocket)
@@ -2847,8 +2951,13 @@ async def websocket_endpoint(websocket: WebSocket):
 # For direct run
 if __name__ == "__main__":
     import uvicorn
-    print(f"\n🚀 Starting FastAPI at http://localhost:8765")
-    print(f"   Docs: http://localhost:8765/docs")
-    print(f"   Health: http://localhost:8765/api/health")
+    print(f"\n🚀 Starting FastAPI at {RUNTIME_CONFIG.backend_url}")
+    print(f"   Docs: {RUNTIME_CONFIG.backend_docs_url}")
+    print(f"   Health: {RUNTIME_CONFIG.backend_health_url}")
     print(f"   REPO_ROOT: {REPO_ROOT} (portable)")
-    uvicorn.run("main:app", host=os.environ.get("OMNI_HOST", "127.0.0.1"), port=8765, reload=False)
+    uvicorn.run(
+        "backend_fastapi.main:app",
+        host=RUNTIME_CONFIG.backend_host,
+        port=RUNTIME_CONFIG.backend_port,
+        reload=False,
+    )

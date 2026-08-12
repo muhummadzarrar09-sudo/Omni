@@ -1,21 +1,12 @@
 /** @type {import('next').NextConfig} */
-const backendUrl = (process.env.OMNI_BACKEND_URL || 'http://127.0.0.1:8765').replace(/\/$/, '')
+const configuredBackendUrl = process.env.OMNI_BACKEND_URL
+if (!configuredBackendUrl) {
+  throw new Error('OMNI_BACKEND_URL is required; use the managed OMNI installer or launcher')
+}
 
 const nextConfig = {
   turbopack: {
     root: __dirname,
-  },
-  async rewrites() {
-    return [
-      {
-        source: '/api/python/:path*',
-        destination: `${backendUrl}/api/:path*`,
-      },
-      {
-        source: '/ws',
-        destination: `${backendUrl}/ws`,
-      },
-    ]
   },
 }
 

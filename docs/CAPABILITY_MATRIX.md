@@ -4,7 +4,7 @@
 
 **Authority verified:** 2026-08-11<br>
 **Release state:** pre-alpha recovery<br>
-**Source inventory digest:** `b33434ab727a66831e00800e06134f681f93b2c415d4a2e6723c14c658ac4fc1`
+**Source inventory digest:** `1ac3dbb3f59165522abfb56889df97930147b95915eb3fd03fbcc1e384d6de09`
 
 ## Locked Product Promise
 
@@ -46,7 +46,7 @@ A local-first personal assistant for one owner that safely handles a deliberatel
 ## Inventory Summary
 
 - **Capability groups:** 52
-- **Mapped active source files:** 185
+- **Mapped active source files:** 191
 - **Stable capabilities:** 0
 - **Stable claim policy:** no capability is stable until exact-artifact qualification passes.
 

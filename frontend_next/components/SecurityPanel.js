@@ -14,14 +14,28 @@ const API = {
   lock: '/api/security/lock',
 }
 
+async function readResponse(response) {
+  let data = {}
+  try { data = await response.json() } catch { /* status remains authoritative */ }
+  if (response.ok) return data
+  return {
+    unavailable: true,
+    detail: data.detail || data.message || data.error || `Backend request failed: HTTP ${response.status}`,
+  }
+}
+
 async function jget(path) {
-  try { return await (await fetch(path)).json() } catch (e) { return { mock: true } }
+  try { return await readResponse(await fetch(path)) } catch (error) {
+    return { unavailable: true, detail: error.message }
+  }
 }
 async function jpost(path) {
   try {
-    const r = await fetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' })
-    return await r.json()
-  } catch (e) { return { mock: true } }
+    const response = await fetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' })
+    return await readResponse(response)
+  } catch (error) {
+    return { unavailable: true, detail: error.message }
+  }
 }
 
 export default function SecurityPanel() {
@@ -29,19 +43,25 @@ export default function SecurityPanel() {
   const [busy, setBusy] = useState(false)
   const [msg, setMsg] = useState('')
 
-  const load = async () => { setStatus(await jget(API.status)) }
+  const load = async () => {
+    const nextStatus = await jget(API.status)
+    setStatus(nextStatus)
+    if (nextStatus.unavailable) setMsg(`Backend unavailable: ${nextStatus.detail}`)
+  }
   useEffect(() => {
     let cancelled = false
     jget(API.status).then((nextStatus) => {
-      if (!cancelled) setStatus(nextStatus)
+      if (cancelled) return
+      setStatus(nextStatus)
+      if (nextStatus.unavailable) setMsg(`Backend unavailable: ${nextStatus.detail}`)
     })
     return () => { cancelled = true }
   }, [])
 
-  const doEnroll = async () => { setBusy(true); const r = await jpost(API.enroll); setMsg(r.detail || 'enroll'); setBusy(false); load() }
-  const doArm = async () => { setBusy(true); const r = await jpost(API.arm); setMsg(r.detail || 'arm'); setBusy(false); load() }
-  const doDisarm = async () => { setBusy(true); await jpost(API.disarm); setMsg('disarmed'); setBusy(false); load() }
-  const doLock = async () => { setBusy(true); const r = await jpost(API.lock); setMsg(r.detail || 'locking'); setBusy(false) }
+  const doEnroll = async () => { setBusy(true); const r = await jpost(API.enroll); setMsg(r.detail || (r.ok ? 'enrolled' : 'Enroll failed')); setBusy(false); load() }
+  const doArm = async () => { setBusy(true); const r = await jpost(API.arm); setMsg(r.detail || (r.ok ? 'armed' : 'Arm failed')); setBusy(false); load() }
+  const doDisarm = async () => { setBusy(true); const r = await jpost(API.disarm); setMsg(r.detail || (r.ok ? 'disarmed' : 'Disarm failed')); setBusy(false); load() }
+  const doLock = async () => { setBusy(true); const r = await jpost(API.lock); setMsg(r.detail || (r.ok ? 'locking' : 'Lock failed')); setBusy(false) }
 
   const card = 'bg-[#0D1424] border border-white/10 rounded-xl p-3'
   const btn = (c) => `text-xs font-mono px-3 py-1.5 rounded-lg ${c}`

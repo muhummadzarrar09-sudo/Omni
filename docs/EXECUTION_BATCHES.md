@@ -2,7 +2,7 @@
 
 > **Generated file.** Edit `quality/batches.json` or `quality/policy.json`, then run `python scripts/quality_baseline.py generate`.
 
-**Current batch:** `none`<br>
+**Current batch:** `B02`<br>
 **Next batch:** `B02`<br>
 **Feature freeze:** `enabled`<br>
 **Execution rule:** one batch at a time; implementation, tests, audit, documentation, evidence, and the complete exit gate must pass before the next batch starts.
@@ -13,7 +13,7 @@
 |---|---|---|---|---|
 | `B00` | Scope Lock and Truth Reset | `closed` | None | 2-4 focused days |
 | `B01` | Dependency and Package Rescue | `closed` | B00 | 4-8 focused days |
-| `B02` | Install, Configuration, and Startup Qualification | `ready` | B01 | 5-10 focused days plus Windows hardware access |
+| `B02` | Install, Configuration, and Startup Qualification | `in_progress` | B01 | 5-10 focused days plus Windows hardware access |
 | `B03` | Continuous Verification and Flake Elimination | `locked` | B02 | 6-12 focused days |
 | `B04` | Truthful Result Contract and Degraded Recovery | `locked` | B03 | 6-12 focused days |
 | `B05` | Canonical Capability and Tool Registry | `locked` | B04 | 8-15 focused days |
@@ -162,7 +162,7 @@
 
 ### B02 — Install, Configuration, and Startup Qualification
 
-**Status:** `ready`<br>
+**Status:** `in_progress`<br>
 **Depends on:** `B01`<br>
 **Solo estimate:** 5-10 focused days plus Windows hardware access<br>
 **Evidence:** `quality/evidence/B02/`

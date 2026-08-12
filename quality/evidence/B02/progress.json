@@ -1,0 +1,133 @@
+{
+  "schema_version": 1,
+  "batch": "B02",
+  "title": "Install, Configuration, and Startup Qualification",
+  "decision": "in_progress_blocked_on_native_windows_qualification",
+  "recorded_on": "2026-08-12",
+  "base_commit": "464915e20cdd6ea19c46bc3d9bca9c2b01b0ef25",
+  "source_digest": "1ac3dbb3f59165522abfb56889df97930147b95915eb3fd03fbcc1e384d6de09",
+  "authority": {
+    "batch_status": "in_progress",
+    "next_batch": "B03",
+    "next_batch_status": "locked",
+    "closure_claimed": false,
+    "closure_evidence_present": false
+  },
+  "available_host": {
+    "platform": "Linux 6.1.158+ x86_64 with glibc 2.36",
+    "qualification_role": "developer host only; not a product platform",
+    "python": "CPython 3.11.2 64-bit",
+    "node": "22.22.3",
+    "corepack": "0.34.6",
+    "npm": "12.0.2",
+    "powershell_5_1": "unavailable",
+    "native_windows_11_x64": false
+  },
+  "implemented_scope": [
+    "canonical validated configuration for hosts, ports, URLs, origins, data/model/browser paths, STT/TTS models and devices, offline request state, and environment-only secrets",
+    "owned backend/frontend process lifecycle with conservative locking, process identity, readiness, stop, restart, stale-state handling, diagnostics, and CLI contracts",
+    "Windows 11 x64 workstation installer, launcher, preflight, verifier, and fail-closed uninstaller contracts",
+    "Unix developer installer and launcher without Linux product-support claims",
+    "same-origin authenticated frontend HTTP proxy and dedicated one-time-ticket WebSocket relay with exact-origin, size, timeout, and handshake controls",
+    "truthful preflight states for platform, Python, configuration, paths, ports, local model, microphone, browser, frontend, and optional dependencies",
+    "canonical local-only/cache policy projection for Faster-Whisper, Hugging Face Hub, and Transformers plus explicit cloud-TTS guards"
+  ],
+  "verification": [
+    {
+      "command": ".venv/bin/python -m pytest -q tests/install",
+      "status": "pass",
+      "result": "Final staged run: 52 passed with 5 known FastAPI/Starlette deprecation warnings in 6.85s."
+    },
+    {
+      "command": ".venv/bin/python scripts/verify_config_contract.py",
+      "status": "pass",
+      "result": "B02 configuration contract: PASS."
+    },
+    {
+      "command": ".venv/bin/python scripts/smoke_startup.py --restart",
+      "status": "pass_current_host_only",
+      "result": "Managed backend/frontend startup, authenticated proxy mutation, WebSocket ticket/relay, restart, stop, state cleanup, and PID cleanup passed; script explicitly reports that this is not Windows evidence."
+    },
+    {
+      "command": "cd frontend_next && corepack npm@12.0.2 run test:proxy",
+      "status": "pass",
+      "result": "13 of 13 dedicated HTTP origin-policy and WebSocket relay tests passed."
+    },
+    {
+      "command": "cd frontend_next && corepack npm@12.0.2 run lint",
+      "status": "pass",
+      "result": "ESLint passed with zero warnings."
+    },
+    {
+      "command": "cd frontend_next && OMNI_BACKEND_URL=http://127.0.0.1:8765 corepack npm@12.0.2 run build",
+      "status": "pass",
+      "result": "Optimized 24-route Next.js production build passed under the required managed backend URL contract."
+    },
+    {
+      "command": ".venv/bin/python -m build && .venv/bin/python -m pytest -q tests/package && .venv/bin/python -m twine check dist/*",
+      "status": "pass",
+      "result": "Fresh wheel and sdist include the new canonical runtime modules; 14 package tests and both Twine checks passed."
+    },
+    {
+      "command": ".venv/bin/ruff check --select E9,F63,F7,F82 omni backend_fastapi omni_v2 scripts tests/install tests/package",
+      "status": "pass",
+      "result": "Fatal syntax and undefined-name checks passed."
+    },
+    {
+      "command": ".venv/bin/python -m compileall -q omni_v2 backend_fastapi tests/install scripts && bash -n start.sh scripts/install.sh && git diff --check",
+      "status": "pass",
+      "result": "Python compilation, shell parsing, and tracked-diff whitespace checks passed before final staging."
+    },
+    {
+      "command": ".venv/bin/python scripts/check_markdown_links.py --local-only README.md docs quality/evidence",
+      "status": "pass",
+      "result": "Final staged-content run passed 116 local targets across 28 Markdown files, including this evidence directory."
+    },
+    {
+      "command": "powershell -File scripts/verify_windows_install.ps1",
+      "status": "blocked_not_run",
+      "result": "PowerShell 5.1 and a fresh native Windows 11 x64 workstation are unavailable on this Linux host; no substitution is accepted."
+    }
+  ],
+  "exit_gate_mapping": [
+    {
+      "requirement": "Fresh Windows 11 x64 machine reaches a useful first-run state from one documented path",
+      "status": "blocked",
+      "evidence_needed": "Native verifier JSON and transcript from a fresh Windows 11 x64 workstation."
+    },
+    {
+      "requirement": "Installer is idempotent and second run is safe",
+      "status": "blocked",
+      "evidence_needed": "Native second-install execution using the native exact Windows core lock."
+    },
+    {
+      "requirement": "Startup, shutdown, and restart leave no orphan services",
+      "status": "pass_current_host_blocked_primary_host",
+      "evidence_needed": "Current-host smoke passed; native Windows verifier must reproduce process replacement and cleanup."
+    },
+    {
+      "requirement": "UI reaches backend through centralized configuration",
+      "status": "pass_current_host",
+      "evidence": "Configuration contract, authenticated same-origin mutation, WebSocket relay, frontend tests, and production build passed."
+    },
+    {
+      "requirement": "Missing model, microphone, browser, or optional dependency is diagnosed without mock success",
+      "status": "pass_contract_current_host",
+      "evidence": "Preflight and frontend source/response contracts pass; native host output remains part of first-run qualification."
+    }
+  ],
+  "required_absent_artifacts": [
+    "requirements/locks/cpython-3.11-windows-x86_64/core.txt",
+    "quality/evidence/B02/cpython-3.11-windows-x86_64-profile-resolution.json",
+    "quality/evidence/B02/windows-install-qualification.json",
+    "quality/evidence/B02/windows-install-qualification.log"
+  ],
+  "nonclaims": [
+    "B02 is not closed.",
+    "B03 has not started and remains locked.",
+    "Linux developer smoke evidence does not qualify the Windows product path.",
+    "Static PowerShell inspection does not establish PowerShell 5.1 execution correctness.",
+    "Offline configuration is not a whole-process no-egress sandbox; that release gate remains assigned to B15.",
+    "No release, broad-suite pass, cross-platform support, or 10/10 status is claimed."
+  ]
+}

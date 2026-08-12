@@ -9,6 +9,7 @@ platform's per-user data location is used.
 from __future__ import annotations
 
 import os
+from collections.abc import Mapping
 from pathlib import Path
 
 
@@ -22,13 +23,14 @@ def get_project_root() -> Path:
     return Path(__file__).resolve().parent.parent.parent
 
 
-def _default_data_dir() -> Path:
+def _default_data_dir(environment: Mapping[str, str] | None = None) -> Path:
+    env = os.environ if environment is None else environment
     if os.name == "nt":
-        base = Path(os.environ.get("LOCALAPPDATA", Path.home() / "AppData" / "Local"))
+        base = Path(env.get("LOCALAPPDATA", Path.home() / "AppData" / "Local"))
         return base / "OMNI"
     if sys_platform() == "darwin":
         return Path.home() / "Library" / "Application Support" / "OMNI"
-    base = Path(os.environ.get("XDG_DATA_HOME", Path.home() / ".local" / "share"))
+    base = Path(env.get("XDG_DATA_HOME", Path.home() / ".local" / "share"))
     return base / "omni"
 
 
@@ -40,19 +42,25 @@ def sys_platform() -> str:
     return sys.platform
 
 
-def get_data_dir(*, create: bool = True) -> Path:
+def get_data_dir(
+    *,
+    create: bool = True,
+    environment: Mapping[str, str] | None = None,
+) -> Path:
     """Return OMNI's writable user-data directory.
 
     ``OMNI_DATA_DIR`` is intentionally allowed to point outside the home
     directory: operators may use another drive, an encrypted mount, or a test
-    sandbox. The caller controls that location and its permissions.
+    sandbox. The caller controls that location and its permissions. Passing an
+    explicit environment keeps configuration-contract tests deterministic.
     """
 
-    configured = os.environ.get("OMNI_DATA_DIR")
+    env = os.environ if environment is None else environment
+    configured = env.get("OMNI_DATA_DIR")
     data_dir = (
         Path(configured).expanduser().resolve()
         if configured
-        else _default_data_dir().expanduser().resolve()
+        else _default_data_dir(env).expanduser().resolve()
     )
     if create:
         data_dir.mkdir(parents=True, exist_ok=True)

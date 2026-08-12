@@ -2,7 +2,7 @@
 
 > **Status: pre-alpha recovery. Not release-ready. No capability is currently qualified as stable.**
 >
-> **Execution:** B00 and B01 are closed. B02 is ready but has not started; the feature freeze remains active.
+> **Execution:** B00 and B01 are closed. B02 is active but not qualified; the feature freeze remains active.
 
 OMNI is a personal, local-first assistant under active reconstruction. The intended product is deliberately narrower than the repository's historical “AGI” and “100+ tools” language: one owner, one qualified Windows 11 x64 machine, and ten safe daily desktop, file, browser, memory, scheduling, and voice workflows.
 
@@ -65,7 +65,7 @@ See the generated matrix for every capability's lifecycle, implementation realit
 | Linux | Package-development environment only; not qualified as an end-user product |
 | macOS | Unsupported and unverified |
 
-B01 establishes a reproducible **local-artifact package path**, not a qualified product installation. There is no qualified PyPI release and no qualified one-click setup or startup path yet. Build the exact local wheel and use the hash-locked profile instructions in [installation and troubleshooting](docs/TROUBLESHOOTING.md). Do not use `pip install -e .` as package evidence, and do not treat `start.bat` or `start.sh` as release-qualified. Idempotent installation, centralized configuration, process lifecycle, and primary-platform startup remain B02 work.
+B01 establishes a reproducible **local-artifact package path**, not a qualified product installation. There is no qualified PyPI release. B02 now implements a Windows 11 x64 source-checkout installer, centralized configuration, preflight, and owned lifecycle, but they remain **unqualified until fresh native Windows install/start/stop/restart/second-install/uninstall evidence passes**. Follow [installation and troubleshooting](docs/TROUBLESHOOTING.md). Do not use `pip install -e .` as package evidence, and do not call `start.bat` or `start.sh` release-qualified before the B02 gate closes.
 
 ## Privacy and Network Truth
 
@@ -124,7 +124,7 @@ python3.11 -m venv .venv
 .venv/bin/python -m pytest -q tests/package
 ```
 
-Frontend commands require Node `>=22.22.2 <23` and npm `12.0.2`; the complete reviewed sequence is in [installation and troubleshooting](docs/TROUBLESHOOTING.md). Results outside the qualified interpreter, operating system, architecture, lock, or exact local artifacts are not B01 evidence. Optional models, services, native libraries, and hardware remain separately unqualified.
+Frontend commands require Node `>=22.22.2 <23`; exact npm `12.0.2` is invoked through Corepack, so a different global npm is ignored. The complete reviewed sequence is in [installation and troubleshooting](docs/TROUBLESHOOTING.md). Results outside the qualified interpreter, operating system, architecture, lock, or exact local artifacts are not B01 evidence. Optional models, services, native libraries, and hardware remain separately unqualified.
 
 ## Repository Map
 

@@ -18,6 +18,7 @@ DesktopController still works headlessly via tests/CLI).
 
 Launch:  python omni_desktop.py        (or)   omni app
 """
+import json
 import sys
 from pathlib import Path
 

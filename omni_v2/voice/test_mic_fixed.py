@@ -82,6 +82,7 @@ def test_pyaudio_fallback():
         idx = mgr.get_best_index()
         print(f"PyAudio best index: {idx} {mgr.get_best_name()}")
         
+        last_error: Exception | None = None
         for sr in [48000, 44100, 16000]:
             try:
                 print(f"Trying PyAudio @ {sr}Hz...")
@@ -100,11 +101,12 @@ def test_pyaudio_fallback():
                 pa.terminate()
                 return None
             except Exception as e:
+                last_error = e
                 print(f"  ❌ @ {sr}Hz failed: {e}")
         
         pa.terminate()
         print("❌ All PyAudio samplerates failed - use sounddevice")
-        pytest.skip(f"Audio hardware unavailable: {e}")
+        pytest.skip(f"Audio hardware unavailable: {last_error}")
         
     except Exception as e:
         print(f"❌ PyAudio test failed: {e}")

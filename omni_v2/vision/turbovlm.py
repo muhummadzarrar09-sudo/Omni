@@ -6,7 +6,6 @@ For GTX 1050 Ti 4GB: Moondream2 fits easily, LLaVA 7B needs 6GB (doesn't fit)
 """
 
 from typing import Tuple, Optional
-import os
 
 try:
     from loguru import logger
@@ -14,14 +13,13 @@ except ImportError:
     import logging
     logger = logging.getLogger("TurboVLM")
 
-from omni_v2.core.paths import DATA_DIR
-
-MODELS_DIR = DATA_DIR / "models"
+from omni_v2.core.config import load_config
 
 class TurboVLM:
     """TurboVLM - Moondream2 + Qwen2-VL - EVEN FASTER than LLaVA, fits 1050 Ti"""
 
     def __init__(self, model_name: str = "moondream2"):
+        self.models_dir = load_config().models_dir
         self.model_name = model_name.lower()
         self.model = None
         self.processor = None
@@ -41,7 +39,7 @@ class TurboVLM:
                 # In production, would use llama.cpp for moondream GGUF
                 logger.info("TurboVLM Moondream2 - trying moondream pip package")
                 # Mock for now - real would be:
-                # self.model = md.vl(model=MODELS_DIR / "moondream2" / "moondream2-text-model.Q4_K_M.gguf")
+                # self.model = md.vl(model=self.models_dir / "moondream2" / "moondream2-text-model.Q4_K_M.gguf")
                 self.backend = "moondream_pip"
                 self.model = "mock_moondream_for_demo"
                 logger.info("TurboVLM Moondream2 loaded (mock for demo) - 1.9B, 2GB VRAM, 30-40 tok/s, beats GPT-4o VQAv2 79% vs 77.2%")

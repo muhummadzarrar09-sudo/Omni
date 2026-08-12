@@ -24,16 +24,16 @@ except ImportError:
     import logging
     logger = logging.getLogger("STTManagerV2")
 
-from omni_v2.core.paths import DATA_DIR
-
-MODELS_DIR = DATA_DIR / "models"
-STT_MODELS_DIR = MODELS_DIR / "stt"
-STT_MODELS_DIR.mkdir(parents=True, exist_ok=True)
+from omni_v2.core.config import load_config
+from omni_v2.core.model_policy import faster_whisper_kwargs, require_online
 
 
 class STTManager:
     def __init__(self, preferred_engine: str = None):
-        self.preferred = preferred_engine or os.environ.get("OMNI_STT_ENGINE", "auto")
+        self.runtime_config = load_config()
+        self.stt_models_dir = self.runtime_config.models_dir / "stt"
+        self.stt_models_dir.mkdir(parents=True, exist_ok=True)
+        self.preferred = preferred_engine or self.runtime_config.stt_engine
         self.engines = {}
         self.available_engines = []
         # Diagnostics
@@ -57,18 +57,20 @@ class STTManager:
             model = None
             active_device = "cpu"
             active_compute = "int8"
-            for device, compute in [
-                ("cuda", "int8"),
-                ("cuda", "float16"),
-                ("cpu", "int8"),
-                ("cpu", "int8_float16"),
-                ("cpu", "float32"),
-            ]:
+            for device, compute in self.runtime_config.stt_device_attempts:
                 try:
-                    model = WhisperModel("base.en", device=device, compute_type=compute)
+                    model = WhisperModel(
+                        self.runtime_config.stt_model,
+                        device=device,
+                        compute_type=compute,
+                        **faster_whisper_kwargs(self.runtime_config),
+                    )
                     active_device = device
                     active_compute = compute
-                    logger.info(f"STT Tier 1: Faster-Whisper base.en on {device} {compute}")
+                    logger.info(
+                        f"STT Tier 1: Faster-Whisper {self.runtime_config.stt_model} "
+                        f"on {device} {compute}"
+                    )
                     break
                 except Exception as e:
                     logger.debug(f"Faster-Whisper {device} {compute} failed: {e}")
@@ -78,7 +80,10 @@ class STTManager:
                 self.engines["faster_whisper"] = {
                     "available": True,
                     "model": model,
-                    "description": f"Faster-Whisper base.en {active_device} {active_compute} (Tier 1 primary)",
+                    "description": (
+                        f"Faster-Whisper {self.runtime_config.stt_model} "
+                        f"{active_device} {active_compute} (Tier 1 primary)"
+                    ),
                 }
                 self.available_engines.append("faster_whisper")
             else:
@@ -94,7 +99,7 @@ class STTManager:
         """Tier 2: Vosk (offline 50MB)"""
         try:
             import vosk
-            vosk_model_dir = STT_MODELS_DIR / "vosk-model-small-en-us-0.15"
+            vosk_model_dir = self.stt_models_dir / "vosk-model-small-en-us-0.15"
             if vosk_model_dir.exists() and (vosk_model_dir / "am" / "final.mdl").exists():
                 self.engines["vosk"] = {
                     "available": True,
@@ -105,13 +110,20 @@ class STTManager:
                 logger.info(f"STT Tier 2: Vosk available at {vosk_model_dir}")
             else:
                 self.engines["vosk"] = {
-                    "available": True,
+                    "available": not self.runtime_config.offline,
                     "model_dir": None,
-                    "needs_download": True,
-                    "description": "Vosk - Installed but model not downloaded (Tier 2)",
+                    "needs_download": not self.runtime_config.offline,
+                    "description": (
+                        "Vosk - model absent; download permitted on first use (Tier 2)"
+                        if not self.runtime_config.offline
+                        else "Vosk - model absent and downloads disabled by offline mode"
+                    ),
                 }
-                self.available_engines.append("vosk")
-                logger.info("STT Tier 2: Vosk installed but model not downloaded - will download 50MB on first use")
+                if not self.runtime_config.offline:
+                    self.available_engines.append("vosk")
+                    logger.info("STT Tier 2: Vosk model absent; download permitted on first use")
+                else:
+                    logger.info("STT Tier 2: Vosk unavailable; local model absent and offline mode forbids download")
         except ImportError:
             self.engines["vosk"] = {"available": False}
             logger.debug("Vosk not installed - pip install vosk")
@@ -121,8 +133,8 @@ class STTManager:
 
     def _init_google(self):
         """Tier 3: Google - Cloud fallback - Optional, disabled via OMNI_NO_CLOUD=1"""
-        if os.environ.get("OMNI_NO_CLOUD", "") == "1" or os.environ.get("OMNI_DISABLE_CLOUD", "") == "1":
-            logger.info("STT Tier 3: Google disabled via OMNI_NO_CLOUD=1 - 100% offline mode")
+        if self.runtime_config.offline:
+            logger.info("STT Tier 3: Google disabled by canonical offline configuration")
             self.engines["google"] = {"available": False}
             return
 
@@ -221,8 +233,8 @@ class STTManager:
 
             model_dir = None
             possible_folders = [
-                STT_MODELS_DIR / "vosk-model-small-en-us-0.15",
-                DATA_DIR / "vosk-model-small-en-us-0.15",
+                self.stt_models_dir / "vosk-model-small-en-us-0.15",
+                self.runtime_config.data_dir / "vosk-model-small-en-us-0.15",
                 Path.home() / ".omni_v2" / "vosk-model-small-en-us-0.15",
             ]
             for folder in possible_folders:
@@ -230,20 +242,22 @@ class STTManager:
                     model_dir = folder
                     break
             if not model_dir:
-                possible_dirs = list(STT_MODELS_DIR.glob("vosk-model-*"))
+                possible_dirs = list(self.stt_models_dir.glob("vosk-model-*"))
                 for d in possible_dirs:
                     if d.is_dir() and (d / "am" / "final.mdl").exists():
                         model_dir = d
                         break
             if not model_dir or not Path(model_dir).exists():
-                # STT-BUG-05 fix: robust download with timeouts
+                # Enforce the policy at the network boundary too, even if an
+                # engine registry was mutated after initialization.
+                require_online(self.runtime_config, "Vosk model download")
                 logger.info("Vosk model not found, downloading 50MB...")
                 try:
                     import requests
                     import zipfile
                     url = "https://alphacephei.com/vosk/models/vosk-model-small-en-us-0.15.zip"
-                    zip_path = STT_MODELS_DIR / "vosk-model-small-en-us-0.15.zip"
-                    extract_dir = STT_MODELS_DIR / "vosk-model-small-en-us-0.15"
+                    zip_path = self.stt_models_dir / "vosk-model-small-en-us-0.15.zip"
+                    extract_dir = self.stt_models_dir / "vosk-model-small-en-us-0.15"
                     if not zip_path.exists():
                         logger.info(f"Downloading Vosk from {url}...")
                         # STT-BUG-05: explicit connect/read timeouts, content-length aware
@@ -264,7 +278,7 @@ class STTManager:
                             raise Exception(f"Vosk zip too small: {zip_path.stat().st_size} bytes - download truncated")
                     if not extract_dir.exists():
                         with zipfile.ZipFile(zip_path, 'r') as zip_ref:
-                            zip_ref.extractall(STT_MODELS_DIR)
+                            zip_ref.extractall(self.stt_models_dir)
                     model_dir = extract_dir
                 except Exception as e:
                     logger.error(f"Vosk download failed: {e}")
@@ -297,6 +311,10 @@ class STTManager:
             return None
 
     def _transcribe_google(self, audio: np.ndarray, sample_rate: int) -> Optional[str]:
+        # Enforce offline mode at use time as well as engine discovery time.
+        if self.runtime_config.offline:
+            logger.warning("Google STT is disabled by canonical offline configuration")
+            return None
         # STT-BUG-06 fix: ensure temp WAV is always cleaned up
         temp_path = None
         try:

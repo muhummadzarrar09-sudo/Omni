@@ -138,7 +138,7 @@
     {
       "id": "B02",
       "title": "Install, Configuration, and Startup Qualification",
-      "status": "ready",
+      "status": "in_progress",
       "depends_on": [
         "B01"
       ],

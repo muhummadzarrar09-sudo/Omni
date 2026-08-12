@@ -153,6 +153,9 @@ class Brain:
         self._deep_model_path: Optional[str] = None
         self._deep_llm: Any = None
         self._deep_enabled = True
+        from omni_v2.core.config import load_config
+
+        self.runtime_config = load_config()
 
         # Try to load LLM
         if model_path is None:
@@ -169,10 +172,10 @@ class Brain:
                 logger.debug(f"deep model discovery failed: {e}")
         else:
             logger.warning(
-                "Brain: No GGUF model found. Brain running in REGEX-ONLY mode. "
-                "Download: curl -L -o data/models/qwen2.5-1.5b-instruct-q4_k_m.gguf "
-                "https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct-GGUF/resolve/main/"
-                "qwen2.5-1.5b-instruct-q4_k_m.gguf"
+                f"Brain: configured GGUF model not found at "
+                f"{self.runtime_config.fast_model_path}. Brain is running in "
+                "regex-only mode. Download a model with "
+                "python -m omni_v2.llm.hf_downloader."
             )
 
         # Build tool descriptions for the LLM prompt
@@ -191,42 +194,45 @@ class Brain:
         )
 
     def _find_model(self) -> Optional[str]:
-        """Find a GGUF model under OMNI's canonical writable data root."""
-        from omni_v2.core.paths import DATA_DIR
+        """Find the configured fast GGUF, then a model in the configured directory."""
+        configured = self.runtime_config.fast_model_path
+        if configured.is_file():
+            return str(configured)
 
-        candidates = [DATA_DIR / "models"]
-        for d in candidates:
-            if d.exists():
-                ggufs = sorted(d.glob("*.gguf"), key=lambda p: p.stat().st_size)
-                if ggufs:
-                    # Prefer smaller models (1-3B) for fast inference
-                    for g in ggufs:
-                        if any(s in g.name.lower() for s in ["1.5b", "1b", "2b", "3b"]):
-                            logger.info(f"Brain: Found model {g.name} at {g}")
-                            return str(g.resolve())
-                    logger.info(f"Brain: Found model {ggufs[0].name} at {ggufs[0]}")
-                    return str(ggufs[0].resolve())
+        model_dir = self.runtime_config.models_dir
+        if model_dir.exists():
+            ggufs = sorted(model_dir.glob("*.gguf"), key=lambda path: path.stat().st_size)
+            if ggufs:
+                # Prefer smaller models (1-3B) for fast inference.
+                for model in ggufs:
+                    if any(size in model.name.lower() for size in ["1.5b", "1b", "2b", "3b"]):
+                        logger.info(f"Brain: Found model {model.name} at {model}")
+                        return str(model.resolve())
+                logger.info(f"Brain: Found model {ggufs[0].name} at {ggufs[0]}")
+                return str(ggufs[0].resolve())
         return None
 
     def _find_deep_model(self) -> Optional[str]:
-        """Find a larger deep/reasoning GGUF model in writable runtime data."""
-        from omni_v2.core.paths import DATA_DIR
+        """Find the configured deep GGUF, then a marked model in its directory."""
+        configured = self.runtime_config.deep_model_path
+        if configured.is_file():
+            return str(configured)
 
-        candidates = [DATA_DIR / "models"]
+        model_dir = self.runtime_config.models_dir
         deep_markers = ["3b", "7b", "8b", "14b", "deep", "big", "reasoning", "large"]
-        for d in candidates:
-            if d.exists():
-                ggufs = sorted(d.glob("*.gguf"), key=lambda p: p.stat().st_size)
-                # prefer the largest marked deep model
-                best = None
-                best_size = 0
-                for g in ggufs:
-                    name = g.name.lower()
-                    if any(m in name for m in deep_markers) and g.stat().st_size > best_size:
-                        best = g
-                        best_size = g.stat().st_size
-                if best is not None:
-                    return str(best.resolve())
+        if model_dir.exists():
+            ggufs = sorted(model_dir.glob("*.gguf"), key=lambda path: path.stat().st_size)
+            best = None
+            best_size = 0
+            for model in ggufs:
+                if (
+                    any(marker in model.name.lower() for marker in deep_markers)
+                    and model.stat().st_size > best_size
+                ):
+                    best = model
+                    best_size = model.stat().st_size
+            if best is not None:
+                return str(best.resolve())
         return None
 
     # -- Model tiering (Phase 9 Step 2) ----------------------------------
@@ -652,7 +658,11 @@ class Brain:
             })
             text = f"Executing {parsed.action}..."
         else:
-            text = "I don't have a local LLM loaded and couldn't pattern-match that command. Install one with: curl -L -o data/models/qwen2.5-1.5b-instruct-q4_k_m.gguf https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct-GGUF/resolve/main/qwen2.5-1.5b-instruct-q4_k_m.gguf"
+            text = (
+                "I don't have a local LLM loaded and couldn't pattern-match that "
+                "command. Download the configured model with: "
+                "python -m omni_v2.llm.hf_downloader"
+            )
 
         return BrainResponse(
             text=text,

@@ -28,7 +28,8 @@ except ImportError:
     import logging
     logger = logging.getLogger("VoiceClone")
 
-from omni_v2.core.paths import DATA_DIR
+from omni_v2.core.config import load_config
+from omni_v2.core.model_policy import require_cloud_tts
 
 
 class VoiceCloner:
@@ -49,11 +50,12 @@ class VoiceCloner:
     def __init__(self):
         if self._initialized:
             return
-        self.voice_dir = DATA_DIR / "voice_clone"
+        self.runtime_config = load_config()
+        self.voice_dir = self.runtime_config.data_dir / "voice_clone"
         self.voice_dir.mkdir(parents=True, exist_ok=True)
         self.samples_dir = self.voice_dir / "samples"
         self.samples_dir.mkdir(parents=True, exist_ok=True)
-        self.models_dir = self.voice_dir / "models"
+        self.models_dir = self.runtime_config.models_dir / "voice_clone"
         self.models_dir.mkdir(parents=True, exist_ok=True)
         self._recording = False
         self._record_thread: Optional[threading.Thread] = None
@@ -221,9 +223,10 @@ class VoiceCloner:
         if not voice_id:
             logger.warning("No active cloned voice - falling back to default")
             return False
-        # Real Piper implementation would go here
-        # For now, fall back to edge-tts
+        # Real Piper implementation would go here. The current Edge fallback is
+        # cloud-only and must never bypass canonical offline/cloud policy.
         try:
+            require_cloud_tts(self.runtime_config, "voice-clone Edge TTS fallback")
             import asyncio
             import edge_tts
             # Use a natural-sounding voice

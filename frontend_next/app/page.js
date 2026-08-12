@@ -15,6 +15,19 @@ import SecurityPanel from '../components/SecurityPanel'
  * - Conversation flows naturally without hardcoded states
  */
 
+async function requireJson(response, operation) {
+  let data = null
+  try {
+    data = await response.json()
+  } catch {
+    // Preserve the HTTP status as the useful failure signal when a response is not JSON.
+  }
+  if (!response.ok) {
+    throw new Error(data?.detail || data?.message || `${operation} failed: HTTP ${response.status}`)
+  }
+  return data || {}
+}
+
 const STATE_STYLES = {
   booting:     { color: '#94A3B8', label: 'Booting',  orb: 'dim'    },
   idle:        { color: '#64748B', label: 'Idle',     orb: 'idle'   },
@@ -146,9 +159,9 @@ export default function Home() {
   // Boot - check brain
   useEffect(() => {
     fetch('/api/python/health')
-      .then(r => r.json())
+      .then(r => requireJson(r, 'Health check'))
       .then(d => {
-        setBrainTier(d.brain_ready ? '🧠 LLM Brain Ready' : '⚠️ Brain Mock Mode')
+        setBrainTier(d.brain_ready ? '🧠 LLM Brain Ready' : '⚠️ Regex Fallback Only')
         setState('idle')
         addLog(d.brain_ready
           ? '[Brain] LLM-loaded brain ready - Qwen2.5-1.5B reasoning online'
@@ -176,10 +189,15 @@ export default function Home() {
   useEffect(() => {
     let ws = null
     let reconnectTimer = null
-    const connect = () => {
+    let disposed = false
+    const connect = async () => {
       try {
+        const ticketResponse = await fetch('/api/python/auth/websocket-ticket', { method: 'POST' })
+        if (!ticketResponse.ok) throw new Error(`WebSocket ticket failed: HTTP ${ticketResponse.status}`)
+        const { ticket } = await ticketResponse.json()
+        if (!ticket || disposed) return
         const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-        ws = new WebSocket(`${protocol}//${window.location.host}/ws`)
+        ws = new WebSocket(`${protocol}//${window.location.host}/ws?token=${encodeURIComponent(ticket)}`)
         ws.onmessage = (event) => {
           try {
             const msg = JSON.parse(event.data)
@@ -208,18 +226,18 @@ export default function Home() {
           }
         }
         ws.onclose = () => {
-          // Reconnect after 3s
-          reconnectTimer = setTimeout(connect, 3000)
+          if (!disposed) reconnectTimer = setTimeout(connect, 3000)
         }
         ws.onerror = () => {
           try { ws.close() } catch (e) {}
         }
       } catch (e) {
-        reconnectTimer = setTimeout(connect, 3000)
+        if (!disposed) reconnectTimer = setTimeout(connect, 3000)
       }
     }
     connect()
     return () => {
+      disposed = true
       if (reconnectTimer) clearTimeout(reconnectTimer)
       if (ws) try { ws.close() } catch (e) {}
     }
@@ -296,11 +314,12 @@ export default function Home() {
   // PROACTIVE-UI: dismiss a suggestion
   async function dismissProactive(suggestionId) {
     try {
-      await fetch('/api/python/proactive/action', {
+      const response = await fetch('/api/python/proactive/action', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ suggestion_id: suggestionId, action: 'dismiss' }),
       })
+      await requireJson(response, 'Suggestion dismissal')
       addLog(`[Proactive] Dismissed: ${suggestionId}`)
       setProactiveSuggestions(prev => prev.filter(s => s.id !== suggestionId))
       if (proactiveBanner?.id === suggestionId) {
@@ -322,12 +341,16 @@ export default function Home() {
     }
     // Mark as acted on
     try {
-      await fetch('/api/python/proactive/action', {
+      const response = await fetch('/api/python/proactive/action', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ suggestion_id: suggestion.id, action: 'act' }),
       })
-    } catch (e) {}
+      await requireJson(response, 'Suggestion action')
+    } catch (e) {
+      addLog(`[Proactive] Action failed: ${e.message}`)
+      return
+    }
     addLog(`[Proactive] Acting: ${firstAction.label} → ${firstAction.command}`)
     setProactiveBanner(null)
     setProactiveSuggestions(prev => prev.filter(s => s.id !== suggestion.id))
@@ -358,7 +381,7 @@ export default function Home() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ command: text }),
       })
-      const data = await res.json()
+      const data = await requireJson(res, 'Command execution')
 
       // Animate the LLM response in - simulate streaming by typing it out
       if (data.brain) {
@@ -424,7 +447,8 @@ export default function Home() {
       addLog('[Mic] Unmuted - waiting for input')
       // Start push-to-talk recording on backend
       try {
-        await fetch('/api/python/ptt/start', { method: 'POST' })
+        const response = await fetch('/api/python/ptt/start', { method: 'POST' })
+        await requireJson(response, 'Push-to-talk start')
         addLog('[Mic] PTT recording started - speak now')
       } catch (e) {
         addLog(`[Mic] PTT start failed: ${e.message}`)
@@ -436,7 +460,7 @@ export default function Home() {
       // Stop recording, transcribe, and execute
       try {
         const res = await fetch('/api/python/ptt/stop', { method: 'POST' })
-        const data = await res.json()
+        const data = await requireJson(res, 'Push-to-talk stop')
         if (data.text && data.text.trim()) {
           addLog(`[STT] Heard: "${data.text}"`)
           await handleCommand(data.text)

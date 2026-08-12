@@ -20,13 +20,14 @@ except ImportError:
     import logging
     logger = logging.getLogger("TTSSimpleV3")
 
-from omni_v2.core.paths import DATA_DIR
+from omni_v2.core.config import load_config
 
 
 class SimpleTTS:
     """One engine, reliable, ALWAYS speaks something"""
 
     def __init__(self):
+        self.runtime_config = load_config()
         self.engine_type = None
         self.kokoro_model = None
         self.sapi_engine = None
@@ -51,12 +52,12 @@ class SimpleTTS:
             from kokoro_onnx import Kokoro
 
             model_paths = [
-                DATA_DIR / "models" / "kokoro-v0_19.onnx",
-                DATA_DIR / "models" / "kokoro-v1.0.onnx",
+                self.runtime_config.models_dir / "kokoro-v0_19.onnx",
+                self.runtime_config.models_dir / "kokoro-v1.0.onnx",
             ]
             voices_paths = [
-                DATA_DIR / "models" / "voices.json",
-                DATA_DIR / "models" / "voices-v1.0.bin",
+                self.runtime_config.models_dir / "voices.json",
+                self.runtime_config.models_dir / "voices-v1.0.bin",
             ]
 
             model_file = None
@@ -77,7 +78,9 @@ class SimpleTTS:
                 self.kokoro_model = Kokoro(model_file, voices_file)
                 self.engine_type = "kokoro"
                 self.init_status = "kokoro_loaded"
-                logger.info(f"✅ TTS V3 READY: Kokoro af_sarah - {model_file}")
+                logger.info(
+                    f"✅ TTS V3 READY: Kokoro {self.runtime_config.tts_voice} - {model_file}"
+                )
                 return
             else:
                 logger.warning(f"Kokoro model not found. Searched: {model_paths}")
@@ -163,7 +166,10 @@ class SimpleTTS:
                     try:
                         import sounddevice as sd
                         audio, sample_rate = self.kokoro_model.create(
-                            text, voice="af_sarah", speed=1.0, lang="en-us"
+                            text,
+                            voice=self.runtime_config.tts_voice,
+                            speed=1.0,
+                            lang="en-us",
                         )
                         sd.play(audio, samplerate=sample_rate)
                         if blocking:

@@ -43,10 +43,11 @@ class BrowserToolV3(CommandPlugin):
     ]
     
     def __init__(self):
-        from omni_v2.core.paths import get_data_dir
+        from omni_v2.core.config import load_config
 
-        # Keep browser state out of both the source tree and installed package.
-        self.profile_dir = get_data_dir() / "browser" / "chrome_profile"
+        self.runtime_config = load_config()
+        # Keep browser state at the canonical configured profile path.
+        self.profile_dir = self.runtime_config.browser_profile_dir
         self.profile_dir.mkdir(parents=True, exist_ok=True)
         self.profile_name = "OMNI-Profile"
         logger.info(
@@ -57,6 +58,7 @@ class BrowserToolV3(CommandPlugin):
     def _find_chrome(self) -> str:
         """Find chrome.exe path"""
         possible = [
+            *([self.runtime_config.browser_path] if self.runtime_config.browser_path else []),
             r"C:\Program Files\Google\Chrome\Application\chrome.exe",
             r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe",
             os.path.expandvars(r"%LocalAppData%\Google\Chrome\Application\chrome.exe"),
@@ -84,7 +86,7 @@ class BrowserToolV3(CommandPlugin):
                 "--no-first-run",
                 "--no-default-browser-check",
                 "--disable-features=Translate",
-                "--remote-debugging-port=9222",  # For future Selenium/CDP
+                f"--remote-debugging-port={self.runtime_config.browser_debug_port}",
                 url
             ]
             

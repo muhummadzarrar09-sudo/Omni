@@ -11,23 +11,12 @@ import os
 import json
 from pathlib import Path
 
+from omni_v2.core.config import load_config
+
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
-
-
-def _data_root() -> Path:
-    """Return a writable per-user data root without requiring another package."""
-    configured = os.environ.get("OMNI_DATA_DIR")
-    if configured:
-        return Path(configured).expanduser().resolve()
-    if os.name == "nt":
-        base = Path(os.environ.get("LOCALAPPDATA", Path.home() / "AppData" / "Local"))
-        return base / "OMNI"
-    base = Path(os.environ.get("XDG_DATA_HOME", Path.home() / ".local" / "share"))
-    return base / "omni"
-
-
-DATA_ROOT = _data_root()
+RUNTIME_CONFIG = load_config()
+DATA_ROOT = RUNTIME_CONFIG.data_dir
 
 # Fix Windows cp1252 console encoding FIRST (before any module prints emoji)
 try:
@@ -43,29 +32,22 @@ def _run(cmd, **kwargs):
 
 
 def cmd_install(args):
-    """Print the canonical profile-based installation instructions."""
+    """Print the source-checkout installation and qualification boundary."""
     import platform
 
-    activate_cmd = (
-        ".venv\\Scripts\\activate"
-        if platform.system() == "Windows"
-        else "source .venv/bin/activate"
-    )
     print(f"\n  OMNI installation ({platform.system()}, CPython 3.11 required)\n")
-    print("  1. Create and activate an isolated environment:")
-    print("     python3.11 -m venv .venv")
-    print(f"     {activate_cmd}")
-    print("\n  2. Profile syntax for an explicitly configured package source:")
-    print("     python -m pip install 'omni-agi[core]'     # API + orchestration")
-    print("     python -m pip install 'omni-agi[voice]'    # audio and speech")
-    print("     python -m pip install 'omni-agi[vision]'   # capture and OCR")
-    print("     python -m pip install 'omni-agi[desktop]'  # desktop automation")
-    print("     python -m pip install 'omni-agi[all]'      # complete runtime")
-    print("\n  No public index release is qualified. For this checkout, install the")
-    print("  exact platform lock and local wheel documented in")
-    print("  docs/TROUBLESHOOTING.md. The base distribution is dependency-free.")
-    print("  Committed locks are CPython 3.11/Linux x86_64 specific; other")
-    print("  platforms are not qualified by B01.")
+    if platform.system() == "Windows":
+        print("  Primary source-checkout path: install.bat")
+        print("  PowerShell equivalent: .\\scripts\\install.ps1 -Core")
+        print("  Start after installation: start.bat")
+    else:
+        print("  Developer-only source-checkout path: ./scripts/install.sh --core")
+        print("  Start after installation: ./start.sh")
+        print("  This is not a Linux/macOS product-support claim.")
+    print("\n  No public index release is qualified. Profile and lock details, exact")
+    print("  prerequisites, diagnostics, lifecycle, and uninstall instructions are in")
+    print("  docs/TROUBLESHOOTING.md. B02 remains open until fresh native Windows")
+    print("  qualification and a native CPython 3.11 Windows x64 core lock exist.")
     print(f"\n  User data directory: {DATA_ROOT}\n")
     return 0
 
@@ -73,7 +55,7 @@ def cmd_install(args):
 def cmd_model_info(args):
     """Show which model is loaded, size, speed, etc."""
     print(f"\n  OMNI Model Status\n")
-    model_path = DATA_ROOT / "models"
+    model_path = RUNTIME_CONFIG.models_dir
     if not model_path.exists():
         print("  ❌ No models/ dir. Run: omni model download")
         return 1
@@ -103,7 +85,7 @@ def cmd_model_info(args):
 
 def cmd_model_download(args):
     """Download the default Qwen2.5-1.5B GGUF."""
-    target = DATA_ROOT / "models" / "qwen2.5-1.5b-instruct-q4_k_m.gguf"
+    target = RUNTIME_CONFIG.fast_model_path
     if target.exists():
         print(f"  ✅ Already present: {target} ({target.stat().st_size // 1024 // 1024} MB)")
         return 0
@@ -138,7 +120,7 @@ def cmd_model_download(args):
 
 def cmd_model_download_deep(args):
     """Download the deep-tier Qwen2.5-3B GGUF for hard reasoning (Phase 9 Step 2)."""
-    target = DATA_ROOT / "models" / "qwen2.5-3b-instruct-q4_k_m.gguf"
+    target = RUNTIME_CONFIG.deep_model_path
     if target.exists():
         print(f"  ✅ Already present: {target} ({target.stat().st_size // 1024 // 1024} MB)")
         return 0
@@ -285,152 +267,139 @@ def cmd_test(args):
     return 0 if all_ok else 1
 
 
-def cmd_start(args):
-    """Start the FastAPI backend."""
-    import webbrowser
-    print(f"\n  OMNI V3 - FastAPI backend on http://localhost:8765\n")
-    if not args.no_browser:
-        # Try to open in isolated Chrome
-        try:
-            from omni_v2.tools.browser_v3 import BrowserToolV3
-            browser = BrowserToolV3()
-            browser._launch_chrome_isolated("http://localhost:8765")
-        except Exception:
-            webbrowser.open("http://localhost:8765", new=2)
-    cmd = [sys.executable, "-m", "uvicorn", "backend_fastapi.main:app",
-           "--host", "0.0.0.0", "--port", "8765"]
-    if args.reload:
-        cmd.append("--reload")
+def _print_lifecycle(result) -> None:
+    print(f"\n  OMNI {result.operation}: {'OK' if result.ok else 'NOT RUNNING'}")
+    for service in result.services:
+        pid = f" PID {service.pid}" if service.pid is not None else ""
+        print(f"  {service.name}: {service.status}{pid} — {service.url}")
+        print(f"    {service.detail}")
+    if result.diagnostics_path:
+        print(f"  Diagnostics: {result.diagnostics_path}")
+    print()
+
+
+def _managed_start(*, include_frontend: bool, restart_existing: bool = False):
+    from omni_v2.core.lifecycle import LifecycleError, restart, start, status
+
     try:
-        subprocess.run(cmd, check=True)
-    except KeyboardInterrupt:
-        print("\n  🛑 Stopped")
+        current = status(RUNTIME_CONFIG)
+        has_frontend = any(
+            service.name == "frontend" and service.status == "running"
+            for service in current.services
+        )
+        needs_recovery = any(
+            service.status in {"unhealthy", "unverified"} for service in current.services
+        )
+        if (
+            restart_existing
+            or needs_recovery
+            or (current.ok and include_frontend and not has_frontend)
+        ):
+            operation = restart
+        elif current.ok:
+            result = current
+            _print_lifecycle(result)
+            return result
+        else:
+            operation = start
+        result = operation(
+            config=RUNTIME_CONFIG,
+            repository_root=REPO_ROOT,
+            include_frontend=include_frontend,
+        )
+    except LifecycleError as exc:
+        print(f"  ERROR: {exc}", file=sys.stderr)
+        return None
+    _print_lifecycle(result)
+    return result
+
+
+def cmd_start(args):
+    """Start the backend through the owned process lifecycle."""
+    import webbrowser
+
+    if args.reload:
+        print("  ERROR: --reload is not supported by the managed launcher.", file=sys.stderr)
+        return 2
+    result = _managed_start(include_frontend=False)
+    if result is None or not result.ok:
+        return 1
+    if not args.no_browser:
+        webbrowser.open(RUNTIME_CONFIG.backend_docs_url, new=2)
     return 0
 
 
-def _find_npm():
-    """Locate npm.exe on Windows (venv doesn't put node on PATH)."""
-    import shutil
-    p = shutil.which("npm")
-    if p:
-        return p
-    # Common Windows install paths
-    candidates = [
-        Path(os.environ.get("APPDATA", "")) / "npm" / "npm.cmd",
-        Path("C:/Program Files/nodejs/npm.cmd"),
-        Path("C:/Program Files (x86)/nodejs/npm.cmd"),
-    ]
-    for c in candidates:
-        if c and c.exists():
-            return str(c)
-    return None
-
-
-def _ensure_node_modules(frontend: Path) -> bool:
-    """Install node_modules if missing. Returns True on success."""
-    if (frontend / "node_modules").exists():
-        return True
-    npm = _find_npm()
-    if not npm:
-        print(f"  ⚠️  npm not found on PATH. Install Node.js 18+ from https://nodejs.org")
-        print(f"      Then run: cd frontend_next && npm install")
-        return False
-    print(f"  Installing node_modules (first time, 1-2 min) using {npm}...")
-    try:
-        r = subprocess.run([npm, "install"], cwd=str(frontend), check=True,
-                           shell=True if os.name == "nt" else False)
-        return True
-    except subprocess.CalledProcessError as e:
-        print(f"  ⚠️  npm install failed (exit {e.returncode}). UI won't start.")
-        return False
-
-
 def cmd_ui(args):
-    """Start the Next.js UI."""
-    print(f"\n  OMNI V3 - Next.js UI on http://localhost:3000\n")
-    frontend = REPO_ROOT / "frontend_next"
-    if not _ensure_node_modules(frontend):
+    """Start the complete managed runtime and open its UI."""
+    import webbrowser
+
+    result = _managed_start(include_frontend=True)
+    if result is None or not result.ok:
         return 1
-    npm = _find_npm()
-    if not npm:
-        return 1
-    os.chdir(frontend)
-    try:
-        subprocess.run([npm, "run", "dev"], shell=os.name == "nt")
-    except KeyboardInterrupt:
-        print("\n  🛑 Stopped")
+    webbrowser.open(RUNTIME_CONFIG.frontend_url, new=2)
     return 0
 
 
 def cmd_dev(args):
-    """Start backend + UI, open browser. The 'everything' command."""
-    import threading
-    import webbrowser
-    print(f"\n  OMNI V3 - Dev mode (backend + UI)\n")
+    """Start backend and UI through the same managed lifecycle as production."""
+    result = _managed_start(include_frontend=True)
+    return 0 if result and result.ok else 1
 
-    # 1) Backend FIRST (foreground, but we'll background it via thread)
-    def run_backend():
-        subprocess.run([sys.executable, "-m", "uvicorn", "backend_fastapi.main:app",
-                        "--port", "8765", "--host", "0.0.0.0"])
-    bt = threading.Thread(target=run_backend, daemon=True)
-    bt.start()
-    print("  ⏳ Waiting for backend to come up on :8765...")
-    time.sleep(4)
 
-    # 2) Try UI (non-fatal if it fails)
-    frontend = REPO_ROOT / "frontend_next"
-    ui_ready = _ensure_node_modules(frontend)
-    npm = _find_npm() if ui_ready else None
-    if not npm:
-        print("  ⚠️  UI skipped (no npm). Backend at http://localhost:8765 is LIVE.")
-        print("  Press Ctrl+C to stop. Open http://localhost:8765/docs in your browser.\n")
-        try:
-            bt.join()
-        except KeyboardInterrupt:
-            pass
-        return 0
+def cmd_restart(args):
+    """Replace the managed process generation and re-run readiness checks."""
+    result = _managed_start(
+        include_frontend=not args.backend_only,
+        restart_existing=True,
+    )
+    return 0 if result and result.ok else 1
 
-    def open_browser_later():
-        time.sleep(5)
-        try:
-            webbrowser.open("http://localhost:3000", new=2)
-        except Exception:
-            pass
-    threading.Thread(target=open_browser_later, daemon=True).start()
 
-    # 3) UI in foreground
-    os.chdir(frontend)
-    print("  Starting Next.js UI (Ctrl+C to stop everything)...\n")
+def cmd_stop(args):
+    """Stop only processes whose complete ownership identity matches state."""
+    from omni_v2.core.lifecycle import LifecycleError, stop
+
     try:
-        subprocess.run([npm, "run", "dev"], shell=os.name == "nt")
-    except KeyboardInterrupt:
-        print("\n  🛑 Stopped")
-    return 0
+        result = stop()
+    except LifecycleError as exc:
+        print(f"  ERROR: {exc}", file=sys.stderr)
+        return 1
+    _print_lifecycle(result)
+    return 0 if result.ok else 1
+
+
+def cmd_preflight(args):
+    """Run truthful installation and startup diagnostics."""
+    from omni_v2.core.preflight import render_report, run_preflight, write_json_report
+
+    report = run_preflight(
+        require_primary=args.primary,
+        require_frontend=args.frontend,
+        repository_root=REPO_ROOT,
+        config=RUNTIME_CONFIG,
+    )
+    write_json_report(report, RUNTIME_CONFIG.diagnostics_path)
+    render_report(report)
+    print(f"Diagnostics: {RUNTIME_CONFIG.diagnostics_path}")
+    return 0 if report.ok else 1
 
 
 def cmd_status(args):
-    """Health check - is the backend running? is the brain loaded?"""
-    import urllib.request
-    import urllib.error
-    print("\n  OMNI Status\n")
-    try:
-        with urllib.request.urlopen("http://localhost:8765/api/health", timeout=2) as r:
-            import json
-            data = json.loads(r.read())
-            print(f"  Backend:  ✅ Running (brain_ready={data.get('brain_ready')})")
-            print(f"  Brain:    {data.get('stt', {}).get('init_status', 'unknown')}")
-            print(f"  TTS:      {data.get('tts', {}).get('init_status', 'unknown')}")
-            print(f"  Audio:    {data.get('audio', 'unknown')}")
-    except urllib.error.URLError:
-        print(f"  Backend:  ❌ Not running (start with: omni start)")
+    """Inspect managed ownership state and the canonical local model path."""
+    from omni_v2.core.lifecycle import LifecycleError, status
 
-    # Check model
-    model = DATA_ROOT / "models" / "qwen2.5-1.5b-instruct-q4_k_m.gguf"
-    if model.exists():
-        print(f"  LLM:      ✅ {model.name} ({model.stat().st_size // 1024 // 1024} MB)")
+    try:
+        result = status(RUNTIME_CONFIG)
+    except LifecycleError as exc:
+        print(f"  ERROR: {exc}", file=sys.stderr)
+        return 1
+    _print_lifecycle(result)
+    model = RUNTIME_CONFIG.fast_model_path
+    if model.is_file() and model.stat().st_size > 0:
+        print(f"  LLM: present — {model} ({model.stat().st_size // 1024 // 1024} MB)")
     else:
-        print(f"  LLM:      ❌ Not found. Run: omni model download")
-    print()
+        print(f"  LLM: missing — {model} (run: omni model download)")
+    return 0
 
 
 def cmd_shell(args):
@@ -959,7 +928,10 @@ def cmd_remote(args):
     if action == "info":
         print("\n  📡 LAN Remote Control")
         print("    Start the backend with a token, then from another device on the LAN:")
-        print("      curl -X POST http://<omni-ip>:8765/api/remote/command \\")
+        print(
+            f"      curl -X POST http://<omni-ip>:{RUNTIME_CONFIG.backend_port}"
+            "/api/remote/command \\"
+        )
         print("        -H 'X-Omni-Token: <token>' -H 'Content-Type: application/json' \\")
         print("        -d '{\"command\":\"open the browser\"}'")
         print("    Endpoints: /api/remote/status · /command · /goal")
@@ -1632,8 +1604,8 @@ def cmd_graph(args):
         # print a hint to open the web viewer
         print("\n  Open the web viewer:")
         print("    omni start         # FastAPI backend")
-        print("    cd frontend_next && npm run dev")
-        print("    → http://localhost:3000/knowledge-graph\n")
+        print("    omni ui")
+        print(f"    → {RUNTIME_CONFIG.frontend_url}/knowledge-graph\n")
         return 0
     return 1
 
@@ -2010,7 +1982,13 @@ def main():
     sub = parser.add_subparsers(dest="cmd", required=False)
 
     sub.add_parser("install", help="Print install instructions")
-    sub.add_parser("status", help="Health check")
+    sub.add_parser("status", help="Inspect managed runtime status")
+    sub.add_parser("stop", help="Stop the owned runtime process tree")
+    restart_parser = sub.add_parser("restart", help="Restart and qualify the owned runtime")
+    restart_parser.add_argument("--backend-only", action="store_true")
+    preflight_parser = sub.add_parser("preflight", help="Run installation/startup diagnostics")
+    preflight_parser.add_argument("--primary", action="store_true", help="Require Windows 11 x64")
+    preflight_parser.add_argument("--frontend", action="store_true", help="Require built UI assets")
     sub.add_parser("test", help="Run all test suites").add_argument(
         "-v", "--verbose", action="store_true", help="Show full output"
     )
@@ -2022,12 +2000,12 @@ def main():
         "--deep", action="store_true", help="Download the deep-tier Qwen2.5-3B GGUF instead"
     )
 
-    s = sub.add_parser("start", help="Start FastAPI backend")
+    s = sub.add_parser("start", help="Start the managed FastAPI backend")
     s.add_argument("--no-browser", action="store_true", help="Don't open browser")
-    s.add_argument("--reload", action="store_true", help="Enable hot-reload")
+    s.add_argument("--reload", action="store_true", help="Rejected: managed startup is non-reloading")
 
-    sub.add_parser("ui", help="Start Next.js UI")
-    sub.add_parser("dev", help="Start backend + UI (everything)")
+    sub.add_parser("ui", help="Start the complete managed runtime and open its UI")
+    sub.add_parser("dev", help="Start backend + UI through the managed lifecycle")
     sub.add_parser("shell", help="Interactive brain REPL")
 
     # --- Away Mode (V3) ---
@@ -2355,6 +2333,12 @@ def main():
         return cmd_install(args)
     if cmd == "status":
         return cmd_status(args)
+    if cmd == "stop":
+        return cmd_stop(args)
+    if cmd == "restart":
+        return cmd_restart(args)
+    if cmd == "preflight":
+        return cmd_preflight(args)
     if cmd == "test":
         return cmd_test(args)
     if cmd == "model":

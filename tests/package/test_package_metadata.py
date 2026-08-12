@@ -114,10 +114,11 @@ def test_checkout_installers_use_real_profiles_without_editable_installs() -> No
     assert 'install ".[dev]"' in makefile
     assert all("TROUBLESHOOTING.md" in source for source in installers.values())
     assert "not B01" in combined or "NOT a B01" in combined
+    assert "scripts\\install.ps1" in installers[ROOT / "install.bat"]
     assert all(
         "sys.version_info[:2] == (3, 11)" in source
         for path, source in installers.items()
-        if path.name != "Makefile"
+        if path.name not in {"Makefile", "install.bat"}
     )
 
 

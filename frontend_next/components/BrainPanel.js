@@ -3,8 +3,8 @@ import { useState, useEffect } from 'react'
 
 /**
  * OMNI Jarvis Brain panel - drives identity / goals / reflection / patterns
- * through the Next.js -> FastAPI proxy routes. Works locally; falls back to
- * mock state when FastAPI isn't running.
+ * through authenticated same-origin Next.js -> FastAPI proxy routes.
+ * Backend failures remain explicit and never become fabricated feature state.
  */
 
 const API = {
@@ -21,24 +21,37 @@ const API = {
   metacogHistory: '/api/metacog/history',
 }
 
-async function jget(path) {
-  try {
-    const r = await fetch(path)
-    return await r.json()
-  } catch (e) {
-    return { mock: true }
+async function readResponse(response) {
+  let data = {}
+  try { data = await response.json() } catch { /* status remains authoritative */ }
+  if (response.ok) return data
+  return {
+    unavailable: true,
+    error: data.detail || data.message || data.error || `Backend request failed: HTTP ${response.status}`,
   }
 }
+
+async function jget(path) {
+  try {
+    return await readResponse(await fetch(path))
+  } catch (error) {
+    return { unavailable: true, error: error.message }
+  }
+}
+function backendFailure(values) {
+  return values.find(value => value?.unavailable)?.error || ''
+}
+
 async function jpost(path, body) {
   try {
-    const r = await fetch(path, {
+    const response = await fetch(path, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: body ? JSON.stringify(body) : undefined,
     })
-    return await r.json()
-  } catch (e) {
-    return { mock: true }
+    return await readResponse(response)
+  } catch (error) {
+    return { unavailable: true, error: error.message }
   }
 }
 
@@ -64,6 +77,10 @@ export default function BrainPanel() {
       jget(API.awayStatus),
       jget(API.metacogHistory),
     ])
+    const failure = backendFailure([
+      nextIdentity, nextGoals, nextEpisodes, nextPatterns, nextAwayTasks, nextAwayStatus, nextMetaHistory,
+    ])
+    setMsg(failure ? `Backend unavailable: ${failure}` : '')
     setIdentity(nextIdentity)
     setGoals(nextGoals.goals || [])
     setEpisodes(nextEpisodes.episodes || [])
@@ -85,6 +102,10 @@ export default function BrainPanel() {
       jget(API.metacogHistory),
     ]).then(([nextIdentity, nextGoals, nextEpisodes, nextPatterns, nextAwayTasks, nextAwayStatus, nextMetaHistory]) => {
       if (cancelled) return
+      const failure = backendFailure([
+        nextIdentity, nextGoals, nextEpisodes, nextPatterns, nextAwayTasks, nextAwayStatus, nextMetaHistory,
+      ])
+      setMsg(failure ? `Backend unavailable: ${failure}` : '')
       setIdentity(nextIdentity)
       setGoals(nextGoals.goals || [])
       setEpisodes(nextEpisodes.episodes || [])
@@ -143,6 +164,10 @@ export default function BrainPanel() {
     const name = prompt('Your name:')
     if (!name) return
     const res = await jpost(API.user, { name })
+    if (res.unavailable) {
+      setMsg(`Update failed: ${res.error}`)
+      return
+    }
     setIdentity(await jget(API.identity))
     setMsg(`User set to ${res.name || name}`)
   }

@@ -3,8 +3,6 @@ Llama.cpp Direct V2 - Phase 3.5 Turbo - WAY FASTER than Ollama (10-81% faster)
 Raw llama.cpp via llama-cpp-python, no Ollama daemon overhead
 """
 
-import os
-import sys
 from pathlib import Path
 from typing import Optional, Generator
 
@@ -14,14 +12,14 @@ except ImportError:
     import logging
     logger = logging.getLogger("LlamaCpp")
 
-from omni_v2.core.paths import DATA_DIR
-
-MODELS_DIR = DATA_DIR / "models"
+from omni_v2.core.config import load_config
 
 class LlamaCppDirect:
     """Direct llama.cpp - WAY FASTER than Ollama wrapper - GTX 1050 Ti 4GB Tuned"""
 
     def __init__(self, model_path: Path = None, n_gpu_layers: int = 24, n_ctx: int = 2048, n_threads: int = 8, n_batch: int = 256):
+        self.runtime_config = load_config()
+        self.models_dir = self.runtime_config.models_dir
         self.model_path = model_path or self._find_model()
         self.n_gpu_layers = n_gpu_layers
         self.n_ctx = n_ctx
@@ -31,15 +29,16 @@ class LlamaCppDirect:
         self._init_model()
 
     def _find_model(self) -> Optional[Path]:
-        """Find GGUF model in data/models/"""
-        if not MODELS_DIR.exists():
+        """Find the configured GGUF model, then known alternatives."""
+        if not self.models_dir.exists():
             return None
 
-        # Prefer Llama 3.1 8B Q4_K_M
         candidates = [
-            MODELS_DIR / "llama-3.1-8b.Q4_K_M.gguf",
-            MODELS_DIR / "llama-3.1-8b.Q5_K_M.gguf",
-            MODELS_DIR / "llama-3.2-3b.Q4_K_M.gguf",
+            self.runtime_config.fast_model_path,
+            self.runtime_config.deep_model_path,
+            self.models_dir / "llama-3.1-8b.Q4_K_M.gguf",
+            self.models_dir / "llama-3.1-8b.Q5_K_M.gguf",
+            self.models_dir / "llama-3.2-3b.Q4_K_M.gguf",
         ]
 
         for c in candidates:
@@ -47,7 +46,7 @@ class LlamaCppDirect:
                 return c
 
         # Any GGUF
-        ggufs = list(MODELS_DIR.glob("*.gguf"))
+        ggufs = list(self.models_dir.glob("*.gguf"))
         if ggufs:
             # Prefer smallest that is not vision model
             ggufs = [g for g in ggufs if "moondream" not in g.name.lower() and "qwen" not in g.name.lower() and "llava" not in g.name.lower()]

@@ -1,6 +1,5 @@
 """Wake Word V2 - Fixed - Actually Works with openwakeword + pvporcupine, salvaged from qartex/eadmin2 JARVIS"""
 
-import os
 import threading
 from typing import Callable, Optional
 
@@ -10,7 +9,7 @@ except ImportError:
     import logging
     logger = logging.getLogger("WakeWordV2")
 
-from omni_v2.core.paths import DATA_DIR
+from omni_v2.core.config import load_config
 
 class WakeWordDetector:
     """Wake Word - Fixed to actually work - salvaged from best JARVIS repos"""
@@ -22,6 +21,7 @@ class WakeWordDetector:
         self.detector = None
         self.backend = None
         self.model_path = None
+        self.runtime_config = load_config()
         # engine: "openwakeword" (offline default) | "picovoice" (needs key) | "ptt" | None=auto
         if engine is None:
             try:
@@ -43,7 +43,7 @@ class WakeWordDetector:
                 import openwakeword
                 from openwakeword.model import Model
 
-                model_dir = DATA_DIR / "openwakeword"
+                model_dir = self.runtime_config.models_dir / "openwakeword"
                 model_dir.mkdir(parents=True, exist_ok=True)
 
                 # Try hey_jarvis model first (closest to "hey omni")
@@ -78,7 +78,7 @@ class WakeWordDetector:
         if pref == "picovoice":
             try:
                 import pvporcupine
-                access_key = os.environ.get("PICOVOICE_KEY") or os.environ.get("PORCUPINE_KEY")
+                access_key = self.runtime_config.picovoice_key
                 if access_key:
                     self.detector = pvporcupine.create(
                         access_key=access_key,

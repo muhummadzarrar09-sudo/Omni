@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 /**
  * OMNI Knowledge Graph viewer - renders the RAG+CAG memory graph as an
  * interactive force-directed visualization (canvas, no heavy deps).
- * Loads graph JSON from /api/knowledge-graph, falls back to mock.
+ * Loads graph JSON from /api/knowledge-graph and reports backend failures explicitly.
  */
 
 export default function KnowledgeGraphPage() {
@@ -15,13 +15,17 @@ export default function KnowledgeGraphPage() {
 
   useEffect(() => {
     fetch('/api/knowledge-graph')
-      .then(r => r.json())
+      .then(async r => {
+        const data = await r.json()
+        if (!r.ok) throw new Error(data.detail || `HTTP ${r.status}`)
+        return data
+      })
       .then(d => {
         setGraph(d)
         setStats(d.stats)
       })
-      .catch(() => {
-        setStats({ nodes: 0, edges: 0, message: 'FastAPI not running' })
+      .catch((error) => {
+        setStats({ nodes: 0, edges: 0, message: `Backend unavailable: ${error.message}` })
       })
   }, [])
 
