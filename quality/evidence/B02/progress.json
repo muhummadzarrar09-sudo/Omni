@@ -25,7 +25,7 @@
       "name": "Windows 11 laptop/workstation",
       "native_architecture": "x86_64",
       "role": "hardware-independent qualification and development; not a substitute for Arm64",
-      "b02_status": "attempt_7eb6e148_failed_before_lane_evidence_powershell_5_1_architecture_property_compatibility_fix_pending_rerun"
+      "b02_status": "diagnostic_attempts_at_7eb6e148_and_5c2bb341_exposed_then_corrected_powershell_5_1_architecture_and_windows_locale_utf8_resolver_defects; clean_corrected_commit_rerun_required"
     },
     "agent_host": {
       "platform": "Linux 6.1.158+ x86_64 with glibc 2.36",
@@ -36,7 +36,8 @@
   "amended_implementation_draft": [
     "Windows PowerShell 5.1-compatible native platform helper accepts Arm64 and X64, rejects Windows Server/domain-controller products and emulated process architecture, and exposes architecture-specific lock/Python identities",
     "installer selects cpython-3.11-windows-arm64 or cpython-3.11-windows-x86_64 and requires architecture-matched 64-bit CPython 3.11",
-    "resolver normalizes native Windows architecture, rejects OS/process architecture mismatch, and supports detached external lock/evidence paths",
+    "qualifier prefers the version-selecting py -3.11 launcher before a generic python command and records rejected interpreter identity",
+    "resolver normalizes native Windows architecture, rejects OS/process architecture mismatch, reads pip report JSON explicitly as UTF-8 rather than the Windows locale default, and supports detached external lock/evidence paths",
     "lifecycle verifier records schema-v2 architecture, toolchain, lock, authenticated readiness, repeated lifecycle, uninstall, and cleanup evidence",
     "single unattended qualifier drives exact-commit detached-worktree resolution, installation, lifecycle, Python, package, configuration, frontend, evidence, aggregation, and cleanup gates",
     "inactive owner-installable workflow template defines hosted windows-11-arm and windows-latest attempts on exact pull-request head or manual-dispatch commits plus fail-closed aggregation; the Arena credential cannot activate it under .github/workflows, no hosted run has started, and a hosted x64 server result could not replace the Windows 11 x64 laptop",
@@ -110,7 +111,7 @@
     },
     {
       "scope": "PowerShell 5.1 parsing and execution",
-      "status": "native_x64_attempt_at_7eb6e148_reached_platform_detection_then_failed_before_evidence_initialization_because_direct_RuntimeInformation_OSArchitecture_property_is_absent; compatibility_fix_implemented_and_rerun_required"
+      "status": "native_x64_attempt_at_7eb6e148_failed_before_evidence_initialization_on_missing_direct_RuntimeInformation_OSArchitecture; attempts_at_5c2bb341_proved_compatible_platform_detection_and_reached_dependency_resolution"
     },
     {
       "scope": "GitHub Actions semantic and hosted runner execution",
@@ -122,7 +123,7 @@
     },
     {
       "scope": "native Windows 11 x64 unattended laptop lane",
-      "status": "attempt_failed_before_lane_evidence_at_7eb6e148; corrected_exact_commit_rerun_required"
+      "status": "diagnostic_failures_only: 7eb6e148_powershell_architecture_property; 5c2bb341_default_python_then_global_node24_prerequisites_then_pip_utf8_report_decoded_as_cp1252; source_corrections_implemented_and_clean_exact_commit_rerun_required"
     },
     {
       "scope": "two-lane aggregate verdict",

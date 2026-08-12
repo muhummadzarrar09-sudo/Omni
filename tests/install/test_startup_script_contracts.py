@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from scripts.resolve_profiles import _read_utf8_json
+
 ROOT = Path(__file__).resolve().parents[2]
 
 
@@ -53,9 +55,11 @@ def test_windows_primary_paths_require_workstation_product_type() -> None:
     assert '"windows_product_type": _windows_product_type()' in resolver
     assert '"windows_build": _windows_build()' in resolver
     assert '"pointer_bits": _pointer_bits()' in resolver
+    assert 'path.read_text(encoding="utf-8")' in resolver
     assert "Idempotent second managed start" in verifier
 
     assert "Qualification authority has tracked changes" in qualifier
+    assert qualifier.index("Get-Command py") < qualifier.index("Get-Command python")
     assert "git worktree add --detach" in qualifier
     assert 'foreach ($profile in @("core", "voice", "vision", "desktop", "dev", "all"))' in qualifier
     assert "Repeat native dependency resolution" in qualifier
@@ -79,6 +83,14 @@ def test_windows_primary_paths_require_workstation_product_type() -> None:
     assert "types: [opened, synchronize, reopened]" in workflow
     assert "-LaneOnly" in workflow
     assert "-AggregateOnly" in workflow
+
+
+def test_profile_resolver_reads_pip_report_as_utf8(tmp_path: Path) -> None:
+    report = tmp_path / "pip-report.json"
+    metadata = "right quote \N{RIGHT DOUBLE QUOTATION MARK}"
+    report.write_bytes(f'{{"metadata": "{metadata}"}}'.encode("utf-8"))
+
+    assert _read_utf8_json(report) == {"metadata": metadata}
 
 
 def test_installers_use_corepack_managed_exact_npm() -> None:

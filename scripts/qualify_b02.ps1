@@ -578,21 +578,34 @@ try {
     if ($PythonPath) {
         $selectedPython = (Resolve-Path -LiteralPath $PythonPath -ErrorAction Stop).Path
     } else {
-        $pythonCommand = Get-Command python -ErrorAction SilentlyContinue
-        $selectedPython = if ($pythonCommand) { $pythonCommand.Source } else { $null }
-        if (-not $selectedPython) {
-            $launcher = Get-Command py -ErrorAction SilentlyContinue
-            Assert-True ($null -ne $launcher) "Native CPython 3.11 was not found on PATH and the py launcher is absent."
-            $selectedPython = (& $launcher.Source -3.11 -c "import sys; print(sys.executable)").Trim()
-            Assert-True ($LASTEXITCODE -eq 0) "The py launcher does not expose CPython 3.11."
+        # Prefer the version-selecting Python launcher. A generic `python` may
+        # legitimately point at another installed version even when 3.11 is
+        # available, as it commonly does on developer workstations.
+        $launcher = Get-Command py -ErrorAction SilentlyContinue
+        if ($null -ne $launcher) {
+            $launcherPython = ((& $launcher.Source -3.11 -c "import sys; print(sys.executable)" 2>$null) | Out-String).Trim()
+            if ($LASTEXITCODE -eq 0 -and $launcherPython -and (Test-Path -LiteralPath $launcherPython -PathType Leaf)) {
+                $selectedPython = (Resolve-Path -LiteralPath $launcherPython).Path
+            }
         }
+        if (-not $selectedPython) {
+            $pythonCommand = Get-Command python -ErrorAction SilentlyContinue
+            $selectedPython = if ($pythonCommand) { $pythonCommand.Source } else { $null }
+        }
+        Assert-True ([bool]$selectedPython) "Native CPython 3.11 was not found through py -3.11 or python on PATH."
     }
-    $pythonProbe = ((& $selectedPython -c "import json, platform, struct; print(json.dumps({'implementation': platform.python_implementation(), 'version': platform.python_version(), 'machine': platform.machine().lower(), 'bits': struct.calcsize('P') * 8}))" | Out-String) | ConvertFrom-Json)
+    $pythonProbeOutput = (& $selectedPython -c "import json, platform, struct; print(json.dumps({'implementation': platform.python_implementation(), 'version': platform.python_version(), 'machine': platform.machine().lower(), 'bits': struct.calcsize('P') * 8}))" | Out-String)
     Assert-True ($LASTEXITCODE -eq 0) "Could not inspect selected Python: $selectedPython"
+    try {
+        $pythonProbe = $pythonProbeOutput | ConvertFrom-Json
+    } catch {
+        throw "Selected Python did not emit valid identity JSON: $selectedPython ($($_.Exception.Message))"
+    }
     $pythonImplementation = [string]$pythonProbe.implementation
     $pythonVersion = [string]$pythonProbe.version
     $pythonMachine = [string]$pythonProbe.machine
-    Assert-True ($pythonImplementation -eq "CPython" -and $pythonVersion.StartsWith("3.11.") -and [int]$pythonProbe.bits -eq 64 -and $pythonMachine -in $expectedPythonMachines) "Selected Python is not native 64-bit CPython 3.11 $($windowsPlatform.Architecture)."
+    $pythonBits = [int]$pythonProbe.bits
+    Assert-True ($pythonImplementation -eq "CPython" -and $pythonVersion.StartsWith("3.11.") -and $pythonBits -eq 64 -and $pythonMachine -in $expectedPythonMachines) "Selected Python must be native 64-bit CPython 3.11 $($windowsPlatform.Architecture); found $pythonImplementation $pythonVersion, $pythonBits-bit $pythonMachine at '$selectedPython'."
 
     $nodeCommand = Get-Command node -ErrorAction Stop
     $nodeVersion = (& $nodeCommand.Source --version).Trim()
