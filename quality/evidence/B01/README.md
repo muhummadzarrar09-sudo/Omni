@@ -6,6 +6,8 @@
 
 The machine-readable decision and complete command ledger are in [`closure.json`](closure.json). This directory records B01 facts; it does not claim a release, cross-platform qualification, or whole-product readiness.
 
+A later B02 native audit exposed that the package's `setuptools>=77,<82` build constraint forced a vulnerable backend. [`build-backend-security-amendment-2026-08-12.json`](build-backend-security-amendment-2026-08-12.json) preserves the original closure as historical evidence while governing the forward correction to `setuptools>=83,<85`. The failed native run remains failed; no advisory was waived.
+
 ## Exit-gate result
 
 | Requirement | Result | Evidence |

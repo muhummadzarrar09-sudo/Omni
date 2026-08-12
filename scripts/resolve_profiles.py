@@ -106,7 +106,7 @@ def _read_utf8_json(path: Path) -> dict[str, object]:
     """Read machine-generated JSON without depending on the host locale."""
     value = json.loads(path.read_text(encoding="utf-8"))
     if not isinstance(value, dict):
-        raise ValueError(f"expected a JSON object in {path}")
+        raise TypeError(f"expected a JSON object in {path}")
     return value
 
 

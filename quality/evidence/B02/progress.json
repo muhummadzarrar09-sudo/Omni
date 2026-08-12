@@ -25,7 +25,7 @@
       "name": "Windows 11 laptop/workstation",
       "native_architecture": "x86_64",
       "role": "hardware-independent qualification and development; not a substitute for Arm64",
-      "b02_status": "diagnostic_attempts_at_7eb6e148_and_5c2bb341_exposed_then_corrected_powershell_5_1_architecture_and_windows_locale_utf8_resolver_defects; clean_corrected_commit_rerun_required"
+      "b02_status": "diagnostic_attempts_at_7eb6e148_and_5c2bb341_exposed_then_corrected_powershell_5_1_architecture, toolchain_selection, and UTF-8 resolver defects; f8908503 passed repeatable profile resolution, exact dev installation, local-source installation, and pip check, then failed closed on vulnerable setuptools 81.0.0; secure build-backend correction implemented and new-commit rerun required"
     },
     "agent_host": {
       "platform": "Linux 6.1.158+ x86_64 with glibc 2.36",
@@ -42,7 +42,8 @@
     "single unattended qualifier drives exact-commit detached-worktree resolution, installation, lifecycle, Python, package, configuration, frontend, evidence, aggregation, and cleanup gates",
     "inactive owner-installable workflow template defines hosted windows-11-arm and windows-latest attempts on exact pull-request head or manual-dispatch commits plus fail-closed aggregation; the Arena credential cannot activate it under .github/workflows, no hosted run has started, and a hosted x64 server result could not replace the Windows 11 x64 laptop",
     "preflight and static script contracts are generalized for native Arm64 and x64",
-    "package qualification builds wheel and sdist without PEP 517 isolation in the exact native dev environment and installs the sdist only after a complete hashed exact-lock bootstrap with build isolation disabled"
+    "package qualification builds wheel and sdist without PEP 517 isolation in the exact native dev environment and installs the sdist only after a complete hashed exact-lock bootstrap with build isolation disabled",
+    "build-system requires setuptools>=83,<85 after the f8908503 native audit proved that the superseded setuptools>=77,<82 range forced vulnerable 81.0.0; no advisory ignore or waiver is permitted"
   ],
   "required_lane_contract": {
     "same_exact_commit": true,
@@ -107,7 +108,7 @@
     },
     {
       "scope": "package, frontend, configuration, governance, static PowerShell, and workflow developer checks",
-      "status": "package_14_pass_and_contents_twine_pass_in_synthetic_declared-compatible_exact_dev_lock_with_no_isolation; frontend_13_proxy_pass_zero_audit_lint_build_pass; configuration_and_governance_pass; tree_sitter_parse_pass_with_two_known_nested_type_parser_limitations; basic_yaml_load_pass"
+      "status": "security-corrected Linux developer checks passed with exact dev-lock setuptools 84.0.0: current zero-finding audit, 56 install tests, no-isolation wheel/sdist build, exact-lock artifact installs, 15 package tests, package-content and Twine checks, frontend clean install/audit/proxy/lint/build, configuration, governance, static checks, changed-script Tree-sitter parse, and inactive-workflow YAML load; non-native evidence only"
     },
     {
       "scope": "PowerShell 5.1 parsing and execution",
@@ -123,7 +124,7 @@
     },
     {
       "scope": "native Windows 11 x64 unattended laptop lane",
-      "status": "diagnostic_failures_only: 7eb6e148_powershell_architecture_property; 5c2bb341_default_python_then_global_node24_prerequisites_then_pip_utf8_report_decoded_as_cp1252; source_corrections_implemented_and_clean_exact_commit_rerun_required"
+      "status": "diagnostic_failures_only: 7eb6e148_powershell_architecture_property; 5c2bb341_default_python_then_global_node24_prerequisites_then_pip_utf8_report_decoded_as_cp1252; f8908503_repeatable_six_profile_resolution_exact_dev_and_source_install_and_pip_check_passed_then_python_audit_failed_on_setuptools_81_0_0_PYSEC_2026_3447_fixed_83_0_0; new_security_corrected_exact_commit_rerun_required"
     },
     {
       "scope": "two-lane aggregate verdict",
@@ -176,7 +177,7 @@
   ],
   "current_local_results": {
     "truth_boundary": "All results are Linux x86_64 developer evidence. They do not qualify either required native Windows lane.",
-    "tests_install": "54 passed",
+    "tests_install": "56 passed",
     "fresh_resolver": {
       "core": 36,
       "voice": 90,
@@ -185,12 +186,23 @@
       "dev": 92,
       "all": 219
     },
-    "exact_dev": "hashed install, pip check, pip-audit, and complete license inventory passed; omni_v2/tests produced 655 passed, 33 skipped, and 9 OpenCV-dependent failures because dev intentionally omits optional all-runtime dependencies",
+    "exact_dev": "existing hashed Linux dev lock selects fixed setuptools 84.0.0; exact install, local-source no-isolation install, pip check, and current pip-audit passed with zero findings; historical broad suite produced 655 passed, 33 skipped, and 9 OpenCV-dependent failures because dev omits optional all-runtime dependencies",
     "exact_all": "installation did not complete because the host lacks Python/native development prerequisites for dlib, evdev, and PyAudio; no exact-all broad-suite result exists; the unattended qualifier requires this environment and layers its site-packages over the exact dev test-tool environment for the broad suite",
     "historical_augmented_all_dependency_diagnostic": "664 passed, 33 skipped after replacing the locked GUI OpenCV distribution with same-version opencv-contrib-python-headless; non-lock diagnostic regression evidence only",
-    "package": "14 tests passed with wheel/sdist built using --no-isolation and sdist build dependencies installed from a complete hashed synthetic Linux dev lock selecting declared-compatible setuptools 81.0.0; content and Twine checks passed; this validates the mechanism but is not native Windows evidence",
-    "frontend": "clean npm 12.0.2 install, install-script and dependency-tree assertions, zero-vulnerability audit, 13 proxy tests, lint, and production build passed",
-    "governance_and_static": "configuration contract, governed generation/check, governance self-test, fatal Ruff, compileall, PowerShell Tree-sitter inspection, and basic workflow YAML load passed",
+    "package": "15 package tests passed with wheel/sdist built using --no-isolation in the exact Linux dev environment selecting fixed setuptools 84.0.0; together with 56 install tests the focused suite passed 71 tests; clean artifact test environments bootstrap the complete hashed exact dev lock and disable sdist build isolation; content and Twine checks passed; developer evidence only",
+    "frontend": "clean npm 12.0.2 install of 428 audited packages, install-script and dependency-tree assertions, zero-vulnerability audit, 13 proxy tests, lint, and production build passed",
+    "governance_and_static": "configuration contract, governed generation/check, governance self-test, fatal and changed-file Ruff, compileall, local Markdown links, JSON/TOML and shell syntax, PowerShell Tree-sitter inspection, basic workflow YAML load, and git diff check passed",
     "governed_source_digest": "bb8feecb3acfa3be364b58909ee516b49b94948ee55f7d63dc382f9861488adb"
-  }
+  },
+  "native_diagnostic_history": [
+    {
+      "lane": "windows-x86_64",
+      "commit": "f8908503d0b81578f58cf4ae508ef032bcd78cd1",
+      "status": "fail_closed_python_vulnerability_audit",
+      "completed": "native identity; exact toolchains; detached exact commit; two identical six-profile resolutions; exact dev-lock install; local-source install; pip check",
+      "failure": "setuptools 81.0.0; two records for one distinct PYSEC-2026-3447 / CVE-2026-59890 advisory; fixed in 83.0.0",
+      "record": "quality/evidence/B02/native-x64-diagnostic-2026-08-12.json",
+      "disposition": "no waiver; superseded build constraint corrected to setuptools>=83,<85; rerun both lanes at one new exact commit"
+    }
+  ]
 }

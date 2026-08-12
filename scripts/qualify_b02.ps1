@@ -347,23 +347,26 @@ function Test-LaneArtifacts {
                 $auditedDependencies |
                     ForEach-Object { (([string]$_.name).ToLowerInvariant() -replace "[-_.]+", "-") }
             )
-            # pip-audit intentionally omits the packaging toolchain it uses to
-            # inspect requirements. Account for that fixed boundary explicitly;
-            # every other exact dev-lock distribution must appear exactly once.
-            $auditToolingOmissions = @("packaging", "pip", "setuptools")
-            $expectedAuditedNames = @($expectedDevNames | Where-Object { $_ -notin $auditToolingOmissions })
-            if (@($auditToolingOmissions | Where-Object { $_ -notin $expectedDevNames }).Count -ne 0) {
+            # In requirements mode pip-audit bootstraps an isolated environment
+            # with current packaging tools before dry-running the exact lock.
+            # A tool already satisfying the lock can therefore be absent from
+            # its pip report, while a differing (including vulnerable) locked
+            # version remains present. Allow either state only for that explicit
+            # bootstrap set; every other exact distribution remains mandatory.
+            $auditToolingMayBeOmitted = @("packaging", "pip", "setuptools", "wheel")
+            $requiredAuditedNames = @($expectedDevNames | Where-Object { $_ -notin $auditToolingMayBeOmitted })
+            if (@($auditToolingMayBeOmitted | Where-Object { $_ -notin $expectedDevNames }).Count -ne 0) {
                 [void]$errors.Add("Python vulnerability audit tooling-omission contract no longer matches the exact dev lock")
             }
-            $missingAuditNames = @($expectedAuditedNames | Where-Object { $_ -notin $auditedNames })
-            $unexpectedAuditNames = @($auditedNames | Where-Object { $_ -notin $expectedAuditedNames })
+            $missingAuditNames = @($requiredAuditedNames | Where-Object { $_ -notin $auditedNames })
+            $unexpectedAuditNames = @($auditedNames | Where-Object { $_ -notin $expectedDevNames })
             if (
                 $expectedDevDistributions -le 0 -or
-                $auditedNames.Count -ne $expectedAuditedNames.Count -or
+                $auditedNames.Count -lt $requiredAuditedNames.Count -or
                 $missingAuditNames.Count -ne 0 -or
                 $unexpectedAuditNames.Count -ne 0
             ) {
-                [void]$errors.Add("Python vulnerability audit coverage does not match the exact dev lock minus explicit audit-tooling omissions")
+                [void]$errors.Add("Python vulnerability audit coverage does not match the exact dev lock and explicit optional bootstrap-tool omissions")
             }
             if (@($auditedNames | Where-Object { -not $_ }).Count -ne 0 -or @($auditedNames | Select-Object -Unique).Count -ne $auditedNames.Count) {
                 [void]$errors.Add("Python vulnerability audit has missing or duplicate distributions")

@@ -54,6 +54,20 @@ def test_supported_python_and_profile_set_are_exact() -> None:
     assert metadata["tool"]["ruff"]["target-version"] == "py311"
 
 
+def test_build_backend_excludes_vulnerable_and_unreviewed_setuptools_versions() -> None:
+    requirements = [Requirement(value) for value in _metadata()["build-system"]["requires"]]
+    setuptools = next(
+        requirement
+        for requirement in requirements
+        if canonicalize_name(requirement.name) == "setuptools"
+    )
+
+    assert not setuptools.specifier.contains("82.0.1")
+    assert setuptools.specifier.contains("83.0.0")
+    assert setuptools.specifier.contains("84.0.0")
+    assert not setuptools.specifier.contains("85.0.0")
+
+
 def test_all_contains_every_runtime_profile_and_dev_contains_core() -> None:
     profiles = _metadata()["project"]["optional-dependencies"]
     normalized = {name: _profile_names(values) for name, values in profiles.items()}

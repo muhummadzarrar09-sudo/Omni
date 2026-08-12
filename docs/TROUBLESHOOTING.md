@@ -91,9 +91,14 @@ backend (`setuptools` and `wheel`); the installer then builds local source with
 `--no-build-isolation` so qualification cannot hide an unpinned build-tool
 download. The package gate likewise uses `python -m build --no-isolation`, then
 installs the sdist with build isolation disabled after bootstrapping the complete
-hashed dev lock into its clean artifact-test environment. Outside qualification,
-an absent lock produces a warning and an index resolution fallback. That fallback is never accepted by B02 and never reuses
-Linux-wheel hashes.
+hashed dev lock into its clean artifact-test environment. The declared
+`setuptools>=83,<85` range is a security boundary: the first native x64 audit
+showed that the superseded `<82` range selected vulnerable 81.0.0
+(PYSEC-2026-3447 / CVE-2026-59890, fixed in 83.0.0). Do not waive that finding
+or rerun commit `f8908503`; use the latest corrected exact commit and retain any
+failed evidence as diagnostic history. Outside qualification, an absent lock
+produces a warning and an index resolution fallback. That fallback is never
+accepted by B02 and never reuses Linux-wheel hashes.
 
 Do not manually assemble closure evidence. From a clean checkout, the single
 lane command creates an external detached worktree for the exact commit,

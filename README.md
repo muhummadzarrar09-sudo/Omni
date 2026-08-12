@@ -66,7 +66,7 @@ See the generated matrix for every capability's lifecycle, implementation realit
 | Linux | Package-development environment only; not qualified as an end-user product |
 | macOS | Unsupported and unverified |
 
-B01 establishes a reproducible **local-artifact package path**, not a qualified product installation. There is no qualified PyPI release. B02 now implements native Windows 11 Arm64/x64 source-checkout installation, centralized configuration, preflight, owned lifecycle, and a fail-closed unattended two-lane qualification path. They remain **unqualified until both native lanes pass against the same exact commit and their evidence aggregates successfully**. An x64-only pass cannot unlock B03. Physical DGX GPU/model throughput and sustained use remain later B11/B13/B15/B16 gates. Follow [installation and troubleshooting](docs/TROUBLESHOOTING.md). Do not use `pip install -e .` as package evidence, and do not call `start.bat` or `start.sh` release-qualified before the B02 gate closes.
+B01 establishes a reproducible **local-artifact package path**, not a qualified product installation. There is no qualified PyPI release. A B02 native x64 diagnostic at `f8908503` passed repeatable resolution, exact dev/source installation, and `pip check`, then correctly failed closed on vulnerable `setuptools==81.0.0`; the build authority now excludes affected versions with `setuptools>=83,<85`, and the failed run remains failed. B02 implements native Windows 11 Arm64/x64 source-checkout installation, centralized configuration, preflight, owned lifecycle, and a fail-closed unattended two-lane qualification path. They remain **unqualified until both native lanes pass against the same exact commit and their evidence aggregates successfully**. An x64-only pass cannot unlock B03. Physical DGX GPU/model throughput and sustained use remain later B11/B13/B15/B16 gates. Follow [installation and troubleshooting](docs/TROUBLESHOOTING.md). Do not use `pip install -e .` as package evidence, and do not call `start.bat` or `start.sh` release-qualified before the B02 gate closes.
 
 ## Privacy and Network Truth
 
@@ -110,6 +110,8 @@ B01 closed the dependency and package-rescue gate on 2026-08-11 for its delibera
 - Isolated wheel installation outside the checkout using the exact `core` lock; imports, CLI, package resources, backend health, clean working directory, and installed-tree immutability passed.
 - Python development-lock vulnerability audit: 87 dependencies, zero known vulnerabilities. License inventory: 91 records complete; `docutils==0.23` and `qrcode==8.2` still require review.
 - Node 22.22.3/npm 12.0.2 clean frontend install, dependency tree, audit, lint, and production build passed; the tracked npm audit has zero known vulnerabilities.
+
+The original closure remains historical evidence. Its [forward security amendment](quality/evidence/B01/build-backend-security-amendment-2026-08-12.json) records the later `setuptools` build-backend floor correction discovered by B02; it does not convert the failed native run into a pass.
 
 This is not a whole-product quality pass. The latest broad Python run measured **668 passed, 33 skipped, and 10 failed**: one wall-clock calendar boundary failure and nine optional-vision/security failures in an environment without OpenCV/face fixtures. Those failures remain visible for B03; no B01 package gate was weakened to hide them. See [`quality/evidence/B01/`](quality/evidence/B01/) for the closure record and raw summaries.
 

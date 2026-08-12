@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
+
 from scripts.resolve_profiles import _read_utf8_json
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -64,6 +66,8 @@ def test_windows_primary_paths_require_workstation_product_type() -> None:
     assert 'foreach ($profile in @("core", "voice", "vision", "desktop", "dev", "all"))' in qualifier
     assert "Repeat native dependency resolution" in qualifier
     assert "Install exact native dev lock" in qualifier
+    assert '$auditToolingMayBeOmitted = @("packaging", "pip", "setuptools", "wheel")' in qualifier
+    assert "$unexpectedAuditNames = @($auditedNames | Where-Object { $_ -notin $expectedDevNames })" in qualifier
     assert "Install exact native all-runtime lock" in qualifier
     assert "Check installed all-runtime dependency consistency" in qualifier
     assert "Run configured OMNI Python tests against exact all-runtime dependencies" in qualifier
@@ -88,9 +92,17 @@ def test_windows_primary_paths_require_workstation_product_type() -> None:
 def test_profile_resolver_reads_pip_report_as_utf8(tmp_path: Path) -> None:
     report = tmp_path / "pip-report.json"
     metadata = "right quote \N{RIGHT DOUBLE QUOTATION MARK}"
-    report.write_bytes(f'{{"metadata": "{metadata}"}}'.encode("utf-8"))
+    report.write_bytes(f'{{"metadata": "{metadata}"}}'.encode())
 
     assert _read_utf8_json(report) == {"metadata": metadata}
+
+
+def test_profile_resolver_rejects_non_object_report(tmp_path: Path) -> None:
+    report = tmp_path / "pip-report.json"
+    report.write_text("[]", encoding="utf-8")
+
+    with pytest.raises(TypeError, match="expected a JSON object"):
+        _read_utf8_json(report)
 
 
 def test_installers_use_corepack_managed_exact_npm() -> None:
