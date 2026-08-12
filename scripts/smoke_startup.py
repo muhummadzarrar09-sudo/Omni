@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """B02 managed startup/stop/restart smoke test on the current host.
 
-This is useful non-Windows evidence only. It does not qualify the Windows 11 x64
-primary path.
+This is useful non-Windows evidence only. It does not qualify either required
+native Windows 11 Arm64/x64 B02 lane or the physical DGX target.
 """
 
 from __future__ import annotations

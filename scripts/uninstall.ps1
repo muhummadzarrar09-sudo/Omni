@@ -100,7 +100,7 @@ foreach ($path in $generated) {
     if (-not (Test-Path -LiteralPath $path)) {
         continue
     }
-    Assert-NotReparsePoint $path
+    Assert-SafeDataTree $path
     if ($PSCmdlet.ShouldProcess($path, "Remove generated installation asset")) {
         Remove-Item -LiteralPath $path -Recurse -Force
         if (Test-Path -LiteralPath $path) {

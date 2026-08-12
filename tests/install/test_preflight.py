@@ -43,14 +43,17 @@ def _mock_windows_platform(
     build: int,
     product_type: int | None,
     machine: str = "AMD64",
+    native_machine: str | None = None,
 ) -> None:
     monkeypatch.setattr(preflight.platform, "system", lambda: "Windows")
     monkeypatch.setattr(preflight.platform, "machine", lambda: machine)
     monkeypatch.setattr(preflight.platform, "release", lambda: "11")
     monkeypatch.setattr(preflight, "_windows_version", lambda: (build, product_type))
+    monkeypatch.delenv("PROCESSOR_ARCHITEW6432", raising=False)
+    monkeypatch.setenv("PROCESSOR_ARCHITECTURE", native_machine or machine)
 
 
-def test_primary_platform_accepts_windows_11_x64_workstation(
+def test_primary_platform_accepts_windows_11_x64_secondary_workstation(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     _mock_windows_platform(monkeypatch, build=26100, product_type=1)
@@ -58,8 +61,41 @@ def test_primary_platform_accepts_windows_11_x64_workstation(
     result = preflight._platform_check(require_primary=True)
 
     assert result.status == "pass"
-    assert result.summary == "Windows 11 x64 workstation detected"
+    assert result.summary == "Windows 11 x86_64 secondary qualification workstation detected"
     assert "product type 1" in result.detail
+
+
+def test_primary_platform_accepts_windows_11_arm64_deployment_workstation(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _mock_windows_platform(monkeypatch, build=26100, product_type=1, machine="ARM64")
+
+    result = preflight._platform_check(require_primary=True)
+
+    assert result.status == "pass"
+    assert result.summary == "Windows 11 arm64 primary deployment workstation detected"
+    assert "native OS architecture arm64" in result.detail
+
+
+def test_primary_platform_rejects_x64_emulation_on_windows_arm(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _mock_windows_platform(
+        monkeypatch,
+        build=26100,
+        product_type=1,
+        machine="AMD64",
+        native_machine="ARM64",
+    )
+
+    platform_result = preflight._platform_check(require_primary=True)
+    python_result = preflight._python_check(require_native=True)
+
+    assert platform_result.status == "fail"
+    assert platform_result.summary == "Emulated Python architecture is not supported"
+    assert "process architecture x86_64 on native arm64" in platform_result.detail
+    assert python_result.status == "fail"
+    assert "process x86_64, native OS arm64" in python_result.detail
 
 
 def test_primary_platform_rejects_windows_server_despite_qualifying_build(

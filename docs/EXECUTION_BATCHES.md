@@ -171,12 +171,13 @@
 
 **In scope**
 
-- Unify Windows installer and launcher behavior
+- Unify native Windows 11 Arm64 and x64 installer and launcher behavior without treating emulation as native evidence
 - Repair Unix developer launcher without claiming Linux product support
 - Centralize ports, URLs, origins, paths, models, devices, offline setting, and secrets
 - Remove browser-facing localhost assumptions
 - Add preflight and actionable unavailable states
-- Verify install, start, stop, restart, second install, and uninstall/cleanup behavior
+- Run one unattended same-commit qualification covering dependency resolution, exact-lock checks, installation, repeated installation/start/uninstall, authenticated lifecycle, tests, packaging, frontend gates, evidence, and cleanup
+- Aggregate fail-closed native Windows 11 Arm64 and x64 evidence before unlocking B03
 
 **Target paths**
 
@@ -190,10 +191,15 @@
 - `backend_fastapi/`
 - `frontend_next/`
 - `tests/install/`
+- `scripts/windows_platform.ps1`
+- `scripts/verify_windows_install.ps1`
+- `scripts/qualify_b02.ps1`
+- `quality/evidence/B02/hosted-windows-qualification.workflow.yml`
+- `quality/evidence/B02/`
 
 **Verification commands**
 
-- `powershell -File scripts/verify_windows_install.ps1`
+- `.\scripts\qualify_b02.ps1 -CommitSha <exact-commit>`
 - `python -m pytest -q tests/install`
 - `python scripts/verify_config_contract.py`
 - `python scripts/smoke_startup.py --restart`
@@ -201,17 +207,21 @@
 
 **Principal risks**
 
-- Linux-only development cannot qualify Windows automation
+- Linux-only development cannot qualify native Windows automation
+- An x64 laptop cannot qualify the Arm64 DGX Station target, and emulated processes are not native evidence
+- Native dependency availability can differ between Arm64 and x64
 - Model downloads and hardware devices produce long and failure-prone first run
 - Divergent launch paths can regress configuration
 
 **Exit gate**
 
-- [ ] Fresh Windows 11 x64 machine reaches a useful first-run state from one documented path
-- [ ] Installer is idempotent and second run is safe
-- [ ] Startup, shutdown, and restart leave no orphan services
-- [ ] UI reaches backend through centralized configuration
+- [ ] The same exact commit passes the complete unattended B02 lane on fresh native Windows 11 Arm64 and Windows 11 x64 hosts
+- [ ] All six profiles resolve twice to identical exact hashed architecture-specific locks and installation uses the matching native lock
+- [ ] Installer, second installer run, startup, idempotent second startup, restart, authenticated readiness, stop, safe uninstall, explicit isolated data removal, and repeated uninstall pass
+- [ ] Python, packaging, configuration, frontend test/lint/build, evidence-generation, and cleanup gates pass in both native lanes
+- [ ] Fail-closed aggregation validates both lane attestations, architecture identities, schemas, and the same exact commit before B03 unlock
 - [ ] Missing model, microphone, browser, or optional dependency is diagnosed without mock success
+- [ ] Physical DGX GPU/model throughput and sustained-use evidence remain explicitly deferred to B11, B13, B15, and B16 rather than inferred from hosted Arm64 evidence
 
 ### B03 — Continuous Verification and Flake Elimination
 

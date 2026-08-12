@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # OMNI source-checkout developer installer for Unix-like hosts.
 # This is not B01 evidence and does not claim Linux/macOS product support.
-# The primary B02 path is Windows 11 x64. See docs/TROUBLESHOOTING.md.
+# The primary B02 target is Windows 11 Arm64; x64 is a secondary native lane. See docs/TROUBLESHOOTING.md.
 
 set -euo pipefail
 

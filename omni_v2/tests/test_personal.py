@@ -5,6 +5,7 @@ Run: python -m pytest omni_v2/tests/test_personal.py -q
 """
 import sys
 import os
+from datetime import datetime, timedelta
 from pathlib import Path
 import tempfile
 import json
@@ -57,7 +58,8 @@ def test_upcoming_events():
     with tempfile.TemporaryDirectory() as tmp:
         cal = CalendarParser(calendar_dir=Path(tmp) / "cal")
         ics = Path(tmp) / "cal.ics"
-        ics.write_text(ICS, encoding="utf-8")
+        upcoming_start = (datetime.now() + timedelta(minutes=5)).strftime("%Y%m%dT%H%M%SZ")
+        ics.write_text(ICS.replace("20260811T100000Z", upcoming_start), encoding="utf-8")
         cal.add_ics_file(ics)
         events = cal.events_today()
         assert len(events) >= 1

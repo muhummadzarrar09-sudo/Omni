@@ -71,8 +71,42 @@ def test_artifact_installs_and_cli_runs_outside_checkout(
     isolated_env = os.environ.copy()
     isolated_env.pop("PYTHONPATH", None)
     isolated_env["PYTHONNOUSERSITE"] = "1"
-    _run(
-        [
+    exact_build_lock = isolated_env.get("OMNI_EXACT_BUILD_LOCK")
+    if exact_build_lock:
+        lock = Path(exact_build_lock).resolve()
+        assert lock.is_file(), f"OMNI_EXACT_BUILD_LOCK is not a file: {lock}"
+        locked_names = {
+            line.split("==", 1)[0].strip().lower().replace("_", "-")
+            for line in lock.read_text(encoding="utf-8").splitlines()
+            if "==" in line and not line.lstrip().startswith("#")
+        }
+        assert {"setuptools", "wheel"} <= locked_names, (
+            "exact qualification lock must include the declared PEP 517 backend"
+        )
+        installer = [
+            sys.executable,
+            "-m",
+            "pip",
+            "--python",
+            str(python),
+            "install",
+            "--disable-pip-version-check",
+        ]
+        install_options = ["--no-deps"]
+        if artifact.name.endswith(".tar.gz"):
+            # Install the complete lock without dependency traversal. This
+            # includes the backend and its transitive requirements (notably
+            # wheel's packaging dependency) while forbidding hidden network
+            # resolution and requiring a hash for every installed archive.
+            _run(
+                installer + ["--no-deps", "--require-hashes", "-r", str(lock)],
+                cwd=work,
+                env=isolated_env,
+            )
+            install_options.append("--no-build-isolation")
+        install_command = installer + install_options + [str(artifact)]
+    else:
+        install_command = [
             str(python),
             "-m",
             "pip",
@@ -80,10 +114,8 @@ def test_artifact_installs_and_cli_runs_outside_checkout(
             "--disable-pip-version-check",
             "--no-deps",
             str(artifact),
-        ],
-        cwd=work,
-        env=isolated_env,
-    )
+        ]
+    _run(install_command, cwd=work, env=isolated_env)
     help_result = _run([str(omni), "--help"], cwd=work, env=isolated_env)
     assert "OMNI" in help_result.stdout
 

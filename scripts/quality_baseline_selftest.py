@@ -37,7 +37,7 @@ def main() -> int:
     b01_section = batches_doc.split("### B01", 1)[1].split("### B02", 1)[0]
     assert "- [x] Every declared profile resolves" in b01_section
     b02_section = batches_doc.split("### B02", 1)[1].split("### B03", 1)[0]
-    assert "- [ ] Fresh Windows 11 x64 machine reaches" in b02_section
+    assert "- [ ] The same exact commit passes the complete unattended B02 lane" in b02_section
 
     scorecard_doc = quality.render_scorecard_doc(scorecard)
     vision_section = scorecard_doc.split("### Product vision", 1)[1].split("### Implementation", 1)[0]

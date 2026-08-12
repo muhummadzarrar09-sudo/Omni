@@ -1,7 +1,7 @@
 @echo off
-REM OMNI Windows 11 x64 primary installer wrapper.
+REM OMNI native Windows 11 Arm64/x64 installer wrapper.
 REM This is not B01 evidence; see docs\TROUBLESHOOTING.md for exact scope.
-REM scripts\install.ps1 enforces native x64 CPython 3.11.
+REM scripts\install.ps1 enforces architecture-matched 64-bit CPython 3.11.
 setlocal
 chcp 65001 >nul
 cd /d "%~dp0"

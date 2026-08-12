@@ -3,7 +3,7 @@
 > **Generated file.** Edit `quality/scorecard.json`, then run `python scripts/quality_baseline.py generate`.
 
 **Scope:** OMNI Personal Core<br>
-**Evidence verified:** 2026-08-11<br>
+**Evidence verified:** 2026-08-12<br>
 **Current batch:** `B02`<br>
 **Next batch:** `B02`<br>
 **Feature freeze:** `enabled`
@@ -37,7 +37,7 @@ Commercial defensibility is intentionally outside the personal-core score. It re
 
 **Current evidence**
 
-- quality/capabilities.json defines the personal-core promise, primary platform, non-goals, lifecycle model, and ten workflows
+- quality/capabilities.json defines the personal-core promise, Arm64 DGX Station for Windows primary target, bounded secondary platforms, non-goals, lifecycle model, and ten workflows
 - docs/CAPABILITY_MATRIX.md is generated from that authority
 - docs/OMNI_10_OUT_OF_10_PLAN.md defines measurable release gates
 
@@ -155,14 +155,14 @@ Commercial defensibility is intentionally outside the personal-core score. It re
 - Validated 3.2.0 wheel and sdist contain all 190 required runtime files; package-content and Twine metadata gates pass
 - Exact core-lock wheel smoke passes outside the checkout for imports, CLI dispatch, package resources, backend health, clean CWD, and installed-tree immutability
 - There is no qualified PyPI release, Windows/macOS resolver run, one-click product install, or target-platform startup qualification
-- B02 still owns idempotent installation, centralized configuration/origins, and start/stop/restart qualification
+- B02 owns idempotent installation, centralized configuration/origins, and start/stop/restart qualification on the same exact commit in native Windows 11 Arm64 and x64 lanes; physical DGX performance remains a later gate
 
 **10/10 exit criteria**
 
 - [ ] Every declared install profile resolves
 - [ ] Wheel and sdist contain intended packages
 - [ ] Installed-wheel smoke tests pass outside the checkout
-- [ ] One-click startup succeeds twice on a fresh primary machine
+- [ ] One-command startup succeeds twice in native Windows 11 Arm64 and x64 qualification lanes for the same exact commit
 - [ ] Configuration and origins are centralized and documented
 
 ### Security, privacy, and safe autonomy — 3.5/10

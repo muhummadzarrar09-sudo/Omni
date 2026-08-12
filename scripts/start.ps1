@@ -1,4 +1,4 @@
-# Managed OMNI launcher for the Windows 11 x64 primary path.
+# Managed OMNI launcher for native Windows 11 X64 or Arm64.
 
 [CmdletBinding()]
 param(
@@ -12,7 +12,7 @@ Set-StrictMode -Version 3.0
 $root = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 Set-Location $root
 . (Join-Path $PSScriptRoot "windows_platform.ps1")
-$null = Assert-OmniWindows11X64
+$null = Assert-OmniWindows11
 $python = Join-Path $root ".venv\Scripts\python.exe"
 $frontendBuild = Join-Path $root "frontend_next\.next\BUILD_ID"
 

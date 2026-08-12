@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "verified_on": "2026-08-11",
+  "verified_on": "2026-08-12",
   "authority": "This file is the source of truth for OMNI capability lifecycle and scope. Generated documentation must not override it.",
   "lifecycle_definitions": {
     "stable": "Release-qualified for the declared platform with real effects, failure states, tests, documentation, and dogfood evidence.",
@@ -22,11 +22,16 @@
     "name": "OMNI Personal Core",
     "release_state": "pre-alpha recovery",
     "primary_platform": {
-      "name": "Windows 11 x64",
+      "name": "NVIDIA DGX Station for Windows (Windows 11 Arm64)",
       "status": "target_not_qualified",
-      "reason": "The dominant desktop automation implementation is Windows-specific; qualification is scheduled for later batches."
+      "reason": "The intended owner machine uses an Arm64 NVIDIA Grace Neoverse V2 CPU. Native Windows 11 Arm64 qualification is required; physical DGX GPU, model, performance, and sustained-use gates remain assigned to B11, B13, B15, and B16."
     },
     "secondary_platforms": [
+      {
+        "name": "Windows 11 x64",
+        "status": "secondary_qualification_host_not_product_target",
+        "reason": "A conventional x64 laptop may qualify hardware-independent Windows behavior, but cannot substitute for native Arm64 evidence or physical DGX hardware gates."
+      },
       {
         "name": "Linux",
         "status": "development_only_unqualified",

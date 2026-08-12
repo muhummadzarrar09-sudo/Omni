@@ -18,21 +18,21 @@
     "line_metric": "Physical split lines; nonblank lines contain at least one non-whitespace character."
   },
   "authority_sha256": {
-    "quality/capabilities.json": "1ad3dbac2487fe32a04b070535a60682547902cceb3855906844c4840698d44c",
-    "quality/scorecard.json": "35a11763ae158d195418c58ea1495b515527530910d5446ac478e029536633c0",
-    "quality/policy.json": "45a10db90f8b7b21c714af567a9794605181b966a096aa8a125c703d63c2482f",
-    "quality/batches.json": "419addb1250fafacb3857eab4599fd1bfc88313543a0d531785fd4b815f26d84"
+    "quality/capabilities.json": "c0ddd11e6fb8328c98417570f799e50c24cb93c8f1e23895de27e32a2d0caaf6",
+    "quality/scorecard.json": "c11c9001553f92617d18d6bf226eb717bafb08b309273c1966f887b5194910e2",
+    "quality/policy.json": "0243950bb973d7dae797b186a146471eae5408897f512f8b188a3b6bb95648bf",
+    "quality/batches.json": "7f2338451edab30bbc800b7a052c5fd152a6e1a272ee2d61fd284cdf87d43dab"
   },
-  "source_digest": "1ac3dbb3f59165522abfb56889df97930147b95915eb3fd03fbcc1e384d6de09",
+  "source_digest": "bb8feecb3acfa3be364b58909ee516b49b94948ee55f7d63dc382f9861488adb",
   "counts": {
     "production_files": 234,
-    "production_bytes": 1884032,
-    "production_lines": 47717,
-    "production_nonblank_lines": 41983,
+    "production_bytes": 1885956,
+    "production_lines": 47766,
+    "production_nonblank_lines": 42028,
     "test_files": 62,
-    "test_bytes": 359672,
-    "test_lines": 10466,
-    "test_nonblank_lines": 8755,
+    "test_bytes": 359849,
+    "test_lines": 10468,
+    "test_nonblank_lines": 8757,
     "capabilities": 52,
     "core_workflows": 10,
     "areas": 21,
@@ -40,7 +40,7 @@
     "declared_tool_classes": 17,
     "declared_tool_actions": 88,
     "classes": 375,
-    "functions": 3035
+    "functions": 3037
   },
   "capabilities_by_lifecycle": {
     "beta": 24,
@@ -2710,10 +2710,10 @@
       },
       {
         "path": "omni_v2/core/preflight.py",
-        "bytes": 19150,
-        "lines": 528,
-        "nonblank_lines": 475,
-        "sha256": "d93d94b982e1c111354fdd2d0ace9659cf7c0165553e0e74171fce055ffedda5"
+        "bytes": 21074,
+        "lines": 577,
+        "nonblank_lines": 520,
+        "sha256": "ac23a63febb0ad0184cecdebacbf9adbc9fe239fd9ccf72989c45ba35aaec09f"
       },
       {
         "path": "omni_v2/core/runtime_cli.py",
@@ -3818,10 +3818,10 @@
       },
       {
         "path": "omni_v2/tests/test_personal.py",
-        "bytes": 4240,
-        "lines": 136,
-        "nonblank_lines": 113,
-        "sha256": "ccea4fc79c6f999185fbd8f1e95de072629564037088f939b18847e34749f0e6"
+        "bytes": 4417,
+        "lines": 138,
+        "nonblank_lines": 115,
+        "sha256": "5f5234a022ee0383c96549bc2f8efeb91e847b817df20399f92c22acf5de1ebf"
       },
       {
         "path": "omni_v2/tests/test_personality.py",

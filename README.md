@@ -4,7 +4,7 @@
 >
 > **Execution:** B00 and B01 are closed. B02 is active but not qualified; the feature freeze remains active.
 
-OMNI is a personal, local-first assistant under active reconstruction. The intended product is deliberately narrower than the repository's historical “AGI” and “100+ tools” language: one owner, one qualified Windows 11 x64 machine, and ten safe daily desktop, file, browser, memory, scheduling, and voice workflows.
+OMNI is a personal, local-first assistant under active reconstruction. The intended product is deliberately narrower than the repository's historical “AGI” and “100+ tools” language: one owner, one NVIDIA DGX Station for Windows running Windows 11 Arm64, and ten safe daily desktop, file, browser, memory, scheduling, and voice workflows. A Windows 11 x64 laptop is a secondary hardware-independent qualification host, not the product target.
 
 The repository contains substantial working code and tests, but it also contains overlapping implementations, optional backends, demos, placeholders, stubs, unsafe successful fallbacks, unqualified startup paths, and unqualified product platforms. Those are tracked openly rather than counted as finished features.
 
@@ -60,12 +60,13 @@ See the generated matrix for every capability's lifecycle, implementation realit
 
 | Environment | Current claim |
 |---|---|
+| NVIDIA DGX Station for Windows, Windows 11 Arm64 | Primary product target, **not yet qualified**; native Arm64 B02 evidence and later physical-DGX hardware gates are absent |
+| Windows 11 x64 | Secondary hardware-independent qualification/development host, **not** a substitute for Arm64 or physical DGX evidence |
 | CPython `>=3.11,<3.12` on Linux x86_64 | B01-qualified for dependency resolution, exact-lock installation, artifact installation, package imports, lightweight CLI paths, packaged resources, and backend health smoke |
-| Windows 11 x64 | Primary product target, **not yet qualified**; B01 did not run the Windows dependency or startup gates |
 | Linux | Package-development environment only; not qualified as an end-user product |
 | macOS | Unsupported and unverified |
 
-B01 establishes a reproducible **local-artifact package path**, not a qualified product installation. There is no qualified PyPI release. B02 now implements a Windows 11 x64 source-checkout installer, centralized configuration, preflight, and owned lifecycle, but they remain **unqualified until fresh native Windows install/start/stop/restart/second-install/uninstall evidence passes**. Follow [installation and troubleshooting](docs/TROUBLESHOOTING.md). Do not use `pip install -e .` as package evidence, and do not call `start.bat` or `start.sh` release-qualified before the B02 gate closes.
+B01 establishes a reproducible **local-artifact package path**, not a qualified product installation. There is no qualified PyPI release. B02 now implements native Windows 11 Arm64/x64 source-checkout installation, centralized configuration, preflight, owned lifecycle, and a fail-closed unattended two-lane qualification path. They remain **unqualified until both native lanes pass against the same exact commit and their evidence aggregates successfully**. An x64-only pass cannot unlock B03. Physical DGX GPU/model throughput and sustained use remain later B11/B13/B15/B16 gates. Follow [installation and troubleshooting](docs/TROUBLESHOOTING.md). Do not use `pip install -e .` as package evidence, and do not call `start.bat` or `start.sh` release-qualified before the B02 gate closes.
 
 ## Privacy and Network Truth
 

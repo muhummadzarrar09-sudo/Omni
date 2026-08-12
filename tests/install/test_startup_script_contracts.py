@@ -10,34 +10,69 @@ def test_windows_primary_paths_require_workstation_product_type() -> None:
     installer = (ROOT / "scripts" / "install.ps1").read_text(encoding="utf-8")
     launcher = (ROOT / "scripts" / "start.ps1").read_text(encoding="utf-8")
     verifier = (ROOT / "scripts" / "verify_windows_install.ps1").read_text(encoding="utf-8")
+    qualifier = (ROOT / "scripts" / "qualify_b02.ps1").read_text(encoding="utf-8")
     resolver = (ROOT / "scripts" / "resolve_profiles.py").read_text(encoding="utf-8")
+    workflow = (
+        ROOT / "quality" / "evidence" / "B02" / "hosted-windows-qualification.workflow.yml"
+    ).read_text(encoding="utf-8")
 
     assert "Win32_OperatingSystem" in platform_helper
     assert "$operatingSystem.BuildNumber" in platform_helper
     assert "$platform.ProductType -ne 1" in platform_helper
+    assert 'platform.Architecture -notin @("X64", "Arm64")' in platform_helper
     assert "Windows Server" in platform_helper
     assert 'windows_platform.ps1")' in installer
-    assert "Assert-OmniWindows11X64" in installer
+    assert "Assert-OmniWindows11" in installer
+    assert "-PythonPath" in installer
+    assert "cpython-3.11-windows-$architectureSlug" in installer
     assert "--require-hashes" in installer
     assert "--no-build-isolation" in installer
     assert 'windows_platform.ps1")' in launcher
-    assert "Assert-OmniWindows11X64" in launcher
+    assert "Assert-OmniWindows11" in launcher
     assert '"preflight", "--primary"' in launcher
     assert '$needsRecovery' in launcher
     assert '"unhealthy", "unverified"' in launcher
     assert 'windows_platform.ps1")' in verifier
-    assert "Assert-OmniWindows11X64" in verifier
-    assert "windows_product_type -eq 1" in verifier
-    assert "windows_build -ge 22000" in verifier
-    assert "pointer_bits -eq 64" in verifier
+    assert "Assert-OmniWindows11" in verifier
+    assert "windows_product_type" in verifier and "-eq 1" in verifier
+    assert "windows_build" in verifier and "-ge 22000" in verifier
+    assert "pointer_bits" in verifier and "-eq 64" in verifier
     assert "build_system_requirements_included -eq $true" in verifier
+    assert "Authenticated backend readiness" in verifier
+    assert "finally" in verifier
     assert "_windows_product_type() != 1" in resolver
     assert "windows_build is None or windows_build < 22000" in resolver
-    assert "_is_windows_x64()" in resolver
+    assert "_is_supported_windows_native_64bit()" in resolver
+    assert "machine == _windows_os_machine()" in resolver
     assert '"windows_product_type": _windows_product_type()' in resolver
     assert '"windows_build": _windows_build()' in resolver
     assert '"pointer_bits": _pointer_bits()' in resolver
     assert "Idempotent second managed start" in verifier
+
+    assert "Qualification authority has tracked changes" in qualifier
+    assert "git worktree add --detach" in qualifier
+    assert 'foreach ($profile in @("core", "voice", "vision", "desktop", "dev", "all"))' in qualifier
+    assert "Repeat native dependency resolution" in qualifier
+    assert "Install exact native dev lock" in qualifier
+    assert "Install exact native all-runtime lock" in qualifier
+    assert "Check installed all-runtime dependency consistency" in qualifier
+    assert "Run configured OMNI Python tests against exact all-runtime dependencies" in qualifier
+    assert "Build wheel and source distribution without an isolated dependency resolution" in qualifier
+    assert "-m build --no-isolation" in qualifier
+    assert "OMNI_EXACT_BUILD_LOCK" in qualifier
+    assert "Run frontend proxy tests" in qualifier
+    assert "Run full install/start/readiness/restart/stop/uninstall lifecycle" in qualifier
+    assert 'required_native_lanes = @("windows-arm64", "windows-x86_64")' in qualifier
+    assert '$invalidEvidence = @($evaluated | Where-Object { $_.status -ne "pass" })' in qualifier
+    assert "$missing.Count -eq 0 -and $invalidEvidence.Count -eq 0" in qualifier
+    assert '"ALL SYSTEMS GO {0} B03 UNLOCKED" -f [char]0x2014' in qualifier
+    assert "B02 BLOCKED - B03 REMAINS LOCKED" in qualifier
+    assert "windows-11-arm" in workflow
+    assert "windows-latest" in workflow
+    assert "pull_request.head.sha" in workflow
+    assert "types: [opened, synchronize, reopened]" in workflow
+    assert "-LaneOnly" in workflow
+    assert "-AggregateOnly" in workflow
 
 
 def test_installers_use_corepack_managed_exact_npm() -> None:
@@ -99,6 +134,7 @@ def test_uninstall_is_explicit_idempotent_and_fail_closed() -> None:
     assert "$containsHome" in source
     assert "$fullData -eq $driveRoot" in source
     assert "short-name-like or tilde-containing" in source
+    assert "Assert-SafeDataTree $path" in source
     assert "Assert-SafeDataTree $fullData" in source
     assert "FileAttributes]::ReparsePoint" in source
     assert "Generated installation asset still exists after removal" in source

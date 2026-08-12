@@ -2,9 +2,9 @@
 
 > **Generated file.** Edit `quality/capabilities.json`, then run `python scripts/quality_baseline.py generate`.
 
-**Authority verified:** 2026-08-11<br>
+**Authority verified:** 2026-08-12<br>
 **Release state:** pre-alpha recovery<br>
-**Source inventory digest:** `1ac3dbb3f59165522abfb56889df97930147b95915eb3fd03fbcc1e384d6de09`
+**Source inventory digest:** `bb8feecb3acfa3be364b58909ee516b49b94948ee55f7d63dc382f9861488adb`
 
 ## Locked Product Promise
 
@@ -14,7 +14,8 @@ A local-first personal assistant for one owner that safely handles a deliberatel
 
 | Platform | Status | Reason |
 |---|---|---|
-| Windows 11 x64 (primary) | `target_not_qualified` | The dominant desktop automation implementation is Windows-specific; qualification is scheduled for later batches. |
+| NVIDIA DGX Station for Windows (Windows 11 Arm64) (primary) | `target_not_qualified` | The intended owner machine uses an Arm64 NVIDIA Grace Neoverse V2 CPU. Native Windows 11 Arm64 qualification is required; physical DGX GPU, model, performance, and sustained-use gates remain assigned to B11, B13, B15, and B16. |
+| Windows 11 x64 | `secondary_qualification_host_not_product_target` | A conventional x64 laptop may qualify hardware-independent Windows behavior, but cannot substitute for native Arm64 evidence or physical DGX hardware gates. |
 | Linux | `development_only_unqualified` | Compilation and most unit tests run on Linux, but desktop, audio, installation, and E2E product behavior are not qualified. |
 | macOS | `unsupported_unverified` | No current end-to-end installation, hardware, automation, or release evidence exists. |
 

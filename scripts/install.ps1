@@ -1,14 +1,17 @@
-# OMNI primary-platform source-checkout installer.
+# OMNI native Windows source-checkout installer.
 #
-# B02 targets Windows 11 x64. This installer is not B01 evidence: B01's exact
-# dependency lock remains CPython 3.11/Linux x86_64. See
+# B02 targets the Windows 11 Arm64 DGX Station software/control plane and also
+# exercises a Windows 11 x64 surrogate path. This installer is not B01 evidence:
+# B01's exact dependency lock remains CPython 3.11/Linux x86_64. See
 # docs/TROUBLESHOOTING.md for the qualification boundary and recovery steps.
 
 [CmdletBinding()]
 param(
     [Alias("Minimal")]
     [switch]$Core,
-    [switch]$All
+    [switch]$All,
+    [string]$LockPath,
+    [string]$PythonPath
 )
 
 $ErrorActionPreference = "Stop"
@@ -33,25 +36,37 @@ $root = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 Set-Location $root
 
 . (Join-Path $PSScriptRoot "windows_platform.ps1")
-$windowsPlatform = Assert-OmniWindows11X64
-Write-Host "Primary platform: $($windowsPlatform.Caption) build $($windowsPlatform.Build) $($windowsPlatform.Architecture)"
+$windowsPlatform = Assert-OmniWindows11
+$architectureSlug = Get-OmniWindowsArchitectureSlug $windowsPlatform
+$pythonMachines = @(Get-OmniPythonMachineNames $windowsPlatform)
+$pythonMachineLiteral = ($pythonMachines | ForEach-Object { "'$_'" }) -join ", "
+$pythonProbe = "import platform, sys; allowed={$pythonMachineLiteral}; raise SystemExit(0 if platform.python_implementation() == 'CPython' and sys.version_info[:2] == (3, 11) and sys.maxsize > 2**32 and platform.machine().lower() in allowed else 1)"
+Write-Host "Windows platform: $($windowsPlatform.Caption) build $($windowsPlatform.Build) $($windowsPlatform.Architecture)"
 
-$pythonCommand = Get-Command python -ErrorAction SilentlyContinue
-$python = if ($pythonCommand) { $pythonCommand.Source } else { $null }
 $pythonPrefix = @()
-if ($python) {
-    & $python -c "import platform, sys; raise SystemExit(0 if platform.python_implementation() == 'CPython' and sys.version_info[:2] == (3, 11) and sys.maxsize > 2**32 and platform.machine().lower() in {'amd64', 'x86_64'} else 1)"
-}
-if (-not $python -or $LASTEXITCODE -ne 0) {
-    $launcher = Get-Command py -ErrorAction SilentlyContinue
-    if (-not $launcher) {
-        throw "CPython 3.11 x64 was not found. Install it from python.org and enable the py launcher."
-    }
-    $python = $launcher.Source
-    $pythonPrefix = @("-3.11")
-    & $python @pythonPrefix -c "import platform, sys; raise SystemExit(0 if platform.python_implementation() == 'CPython' and sys.version_info[:2] == (3, 11) and sys.maxsize > 2**32 and platform.machine().lower() in {'amd64', 'x86_64'} else 1)"
+if ($PythonPath) {
+    $python = (Resolve-Path -LiteralPath $PythonPath -ErrorAction Stop).Path
+    & $python -c $pythonProbe
     if ($LASTEXITCODE -ne 0) {
-        throw "The py launcher does not provide CPython 3.11 x64."
+        throw "-PythonPath must name native CPython 3.11 $($windowsPlatform.Architecture); rejected '$python'."
+    }
+} else {
+    $pythonCommand = Get-Command python -ErrorAction SilentlyContinue
+    $python = if ($pythonCommand) { $pythonCommand.Source } else { $null }
+    if ($python) {
+        & $python -c $pythonProbe
+    }
+    if (-not $python -or $LASTEXITCODE -ne 0) {
+        $launcher = Get-Command py -ErrorAction SilentlyContinue
+        if (-not $launcher) {
+            throw "Native CPython 3.11 $($windowsPlatform.Architecture) was not found. Install the matching python.org build and enable the py launcher."
+        }
+        $python = $launcher.Source
+        $pythonPrefix = @("-3.11")
+        & $python @pythonPrefix -c $pythonProbe
+        if ($LASTEXITCODE -ne 0) {
+            throw "The py launcher does not provide native CPython 3.11 $($windowsPlatform.Architecture). Emulated cross-architecture Python does not qualify."
+        }
     }
 }
 
@@ -64,9 +79,9 @@ if (-not (Test-Path $venvPython)) {
     & $python @pythonPrefix -m venv (Join-Path $root ".venv")
     if ($LASTEXITCODE -ne 0) { throw "Could not create .venv." }
 }
-& $venvPython -c "import platform, sys; raise SystemExit(0 if platform.python_implementation() == 'CPython' and sys.version_info[:2] == (3, 11) and sys.maxsize > 2**32 and platform.machine().lower() in {'amd64', 'x86_64'} else 1)"
+& $venvPython -c $pythonProbe
 if ($LASTEXITCODE -ne 0) {
-    throw "Existing .venv is not CPython 3.11 x64. Remove it explicitly and rerun the installer."
+    throw "Existing .venv is not native CPython 3.11 $($windowsPlatform.Architecture). Remove it explicitly and rerun the installer."
 }
 
 # A second install safely stops a runtime before replacing environment files.
@@ -82,18 +97,23 @@ if ($LASTEXITCODE -eq 0) {
 }
 
 Write-Host "Installing OMNI profile '$profile' from this checkout..."
-$lockPath = Join-Path $root "requirements\locks\cpython-3.11-windows-x86_64\$profile.txt"
-if (Test-Path $lockPath) {
-    Write-Host "Using native Windows hashed lock: $lockPath"
-    Invoke-Checked $venvPython -m pip install --require-hashes -r $lockPath
+if ($LockPath) {
+    $resolvedLockPath = (Resolve-Path -LiteralPath $LockPath -ErrorAction Stop).Path
+} else {
+    $resolvedLockPath = Join-Path $root "requirements\locks\cpython-3.11-windows-$architectureSlug\$profile.txt"
+}
+if (Test-Path -LiteralPath $resolvedLockPath) {
+    Write-Host "Using native Windows hashed lock: $resolvedLockPath"
+    Invoke-Checked $venvPython -m pip install --require-hashes -r $resolvedLockPath
     # Native Windows locks include the exact pyproject build backend. Disable
     # build isolation so local-source installation cannot resolve hidden build
     # dependencies from the network.
     Invoke-Checked $venvPython -m pip install --no-build-isolation --no-deps .
 } else {
-    # Truthful fallback until native Windows resolution is generated and
-    # committed by scripts/resolve_profiles.py on Windows 11 x64.
-    Write-Warning "Native Windows lock is absent; dependencies and build tools are index-resolved. This is not B01 evidence or a reproducible Windows qualification."
+    # Truthful fallback for ordinary development installation only. The B02
+    # qualification driver always supplies a native exact lock and never enters
+    # this branch.
+    Write-Warning "Native Windows $architectureSlug lock is absent; dependencies and build tools are index-resolved. This is not reproducible Windows qualification evidence."
     Invoke-Checked $venvPython -m pip install ".[${profile}]"
 }
 Invoke-Checked $venvPython -m pip check
@@ -132,7 +152,7 @@ try {
     Pop-Location
 }
 
-Write-Host "Running primary-platform preflight..."
+Write-Host "Running native Windows qualification-platform preflight..."
 Invoke-Checked $venvPython -m omni_v2.core.runtime_cli preflight --primary --frontend --root $root
 
 Write-Host ""

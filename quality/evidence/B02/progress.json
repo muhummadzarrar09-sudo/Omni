@@ -1,133 +1,195 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "batch": "B02",
   "title": "Install, Configuration, and Startup Qualification",
-  "decision": "in_progress_blocked_on_native_windows_qualification",
+  "decision": "in_progress_blocked_pending_validation_and_two_native_lanes",
   "recorded_on": "2026-08-12",
-  "base_commit": "464915e20cdd6ea19c46bc3d9bca9c2b01b0ef25",
-  "source_digest": "1ac3dbb3f59165522abfb56889df97930147b95915eb3fd03fbcc1e384d6de09",
+  "implementation_base_commit": "5ea69fc7fbca19940c0e3d3733a4137613a02c9a",
   "authority": {
     "batch_status": "in_progress",
     "next_batch": "B03",
     "next_batch_status": "locked",
     "closure_claimed": false,
-    "closure_evidence_present": false
+    "closure_evidence_present": false,
+    "platform_amendment": "quality/evidence/B00/platform-amendment-2026-08-12.json"
   },
-  "available_host": {
-    "platform": "Linux 6.1.158+ x86_64 with glibc 2.36",
-    "qualification_role": "developer host only; not a product platform",
-    "python": "CPython 3.11.2 64-bit",
-    "node": "22.22.3",
-    "corepack": "0.34.6",
-    "npm": "12.0.2",
-    "powershell_5_1": "unavailable",
-    "native_windows_11_x64": false
+  "platform_matrix": {
+    "primary_target": {
+      "name": "NVIDIA DGX Station for Windows",
+      "operating_system": "Windows 11 workstation",
+      "native_architecture": "arm64",
+      "b02_status": "not_run_required",
+      "physical_hardware_status": "deferred_to_B11_B13_B15_B16"
+    },
+    "secondary_qualification_host": {
+      "name": "Windows 11 laptop/workstation",
+      "native_architecture": "x86_64",
+      "role": "hardware-independent qualification and development; not a substitute for Arm64",
+      "b02_status": "not_run_required"
+    },
+    "agent_host": {
+      "platform": "Linux 6.1.158+ x86_64 with glibc 2.36",
+      "role": "developer host only; not a product platform or native B02 lane",
+      "powershell_5_1": "unavailable"
+    }
   },
-  "implemented_scope": [
-    "canonical validated configuration for hosts, ports, URLs, origins, data/model/browser paths, STT/TTS models and devices, offline request state, and environment-only secrets",
-    "owned backend/frontend process lifecycle with conservative locking, process identity, readiness, stop, restart, stale-state handling, diagnostics, and CLI contracts",
-    "Windows 11 x64 workstation installer, launcher, preflight, verifier, and fail-closed uninstaller contracts",
-    "Unix developer installer and launcher without Linux product-support claims",
-    "same-origin authenticated frontend HTTP proxy and dedicated one-time-ticket WebSocket relay with exact-origin, size, timeout, and handshake controls",
-    "truthful preflight states for platform, Python, configuration, paths, ports, local model, microphone, browser, frontend, and optional dependencies",
-    "canonical local-only/cache policy projection for Faster-Whisper, Hugging Face Hub, and Transformers plus explicit cloud-TTS guards"
+  "amended_implementation_draft": [
+    "native Windows 11 workstation platform helper accepts Arm64 and X64, rejects Windows Server/domain-controller products, and exposes architecture-specific lock/Python identities",
+    "installer selects cpython-3.11-windows-arm64 or cpython-3.11-windows-x86_64 and requires architecture-matched 64-bit CPython 3.11",
+    "resolver normalizes native Windows architecture, rejects OS/process architecture mismatch, and supports detached external lock/evidence paths",
+    "lifecycle verifier records schema-v2 architecture, toolchain, lock, authenticated readiness, repeated lifecycle, uninstall, and cleanup evidence",
+    "single unattended qualifier drives exact-commit detached-worktree resolution, installation, lifecycle, Python, package, configuration, frontend, evidence, aggregation, and cleanup gates",
+    "inactive owner-installable workflow template defines hosted windows-11-arm and windows-latest attempts on exact pull-request head or manual-dispatch commits plus fail-closed aggregation; the Arena credential cannot activate it under .github/workflows, no hosted run has started, and a hosted x64 server result could not replace the Windows 11 x64 laptop",
+    "preflight and static script contracts are generalized for native Arm64 and x64",
+    "package qualification builds wheel and sdist without PEP 517 isolation in the exact native dev environment and installs the sdist only after a complete hashed exact-lock bootstrap with build isolation disabled"
   ],
-  "verification": [
+  "required_lane_contract": {
+    "same_exact_commit": true,
+    "required_native_architectures": [
+      "arm64",
+      "x86_64"
+    ],
+    "profiles_resolved_twice": [
+      "core",
+      "voice",
+      "vision",
+      "desktop",
+      "dev",
+      "all"
+    ],
+    "required_gates": [
+      "native platform and toolchain identity",
+      "repeatable exact hashed dependency locks",
+      "installation and second installation",
+      "startup and idempotent second startup",
+      "restart with process replacement",
+      "authenticated backend/frontend readiness",
+      "stop with no owned orphan services",
+      "safe data-preserving uninstall",
+      "explicit isolated data removal",
+      "repeated uninstall",
+      "Python install suite and full Python suite",
+      "fatal Ruff and Python compilation checks",
+      "configuration, exact-lock no-isolation wheel/sdist build and artifact-install, package-content, and Twine checks",
+      "frontend clean install, install-script, dependency-tree, audit, proxy-test, lint, and build checks",
+      "external evidence generation and detached-worktree cleanup"
+    ],
+    "aggregate_fail_closed_on": [
+      "missing or duplicate architecture lane",
+      "lane failure",
+      "wrong commit",
+      "wrong or emulated architecture",
+      "non-workstation or pre-Windows-11 host",
+      "wrong Python or Node architecture",
+      "malformed evidence",
+      "missing artifact",
+      "digest mismatch",
+      "invalid lifecycle evidence"
+    ]
+  },
+  "validation_status": [
     {
-      "command": ".venv/bin/python -m pytest -q tests/install",
-      "status": "pass",
-      "result": "Final staged run: 52 passed with 5 known FastAPI/Starlette deprecation warnings in 6.85s."
+      "scope": "install/lifecycle contract tests on the amended source",
+      "status": "pass_54_tests_linux_developer_host"
     },
     {
-      "command": ".venv/bin/python scripts/verify_config_contract.py",
-      "status": "pass",
-      "result": "B02 configuration contract: PASS."
+      "scope": "fresh six-profile Linux resolution and exact dev-lock installation",
+      "status": "pass_core_36_voice_90_vision_88_desktop_26_dev_92_all_219_resolved; exact_dev_pip_check_audit_and_license_inventory_passed; broad_suite_655_passed_33_skipped_9_opencv-dependent_failures_because_dev_omits_optional_all-runtime_dependencies"
     },
     {
-      "command": ".venv/bin/python scripts/smoke_startup.py --restart",
-      "status": "pass_current_host_only",
-      "result": "Managed backend/frontend startup, authenticated proxy mutation, WebSocket ticket/relay, restart, stop, state cleanup, and PID cleanup passed; script explicitly reports that this is not Windows evidence."
+      "scope": "exact Linux all-runtime lock installation and broad suite",
+      "status": "blocked_by_developer_host_native_build_prerequisites; dlib_evdev_and_pyaudio_failed_to_build; exact_all_broad_suite_not_run"
     },
     {
-      "command": "cd frontend_next && corepack npm@12.0.2 run test:proxy",
-      "status": "pass",
-      "result": "13 of 13 dedicated HTTP origin-policy and WebSocket relay tests passed."
+      "scope": "broad omni_v2 test regression in augmented dev environment",
+      "status": "pass_664_skipped_33_after_disclosed_opencv_contrib_headless_substitution; useful_regression_only_not_exact_lock_evidence"
     },
     {
-      "command": "cd frontend_next && corepack npm@12.0.2 run lint",
-      "status": "pass",
-      "result": "ESLint passed with zero warnings."
+      "scope": "package, frontend, configuration, governance, static PowerShell, and workflow developer checks",
+      "status": "package_14_pass_and_contents_twine_pass_in_synthetic_declared-compatible_exact_dev_lock_with_no_isolation; frontend_13_proxy_pass_zero_audit_lint_build_pass; configuration_and_governance_pass; tree_sitter_parse_pass_with_two_known_nested_type_parser_limitations; basic_yaml_load_pass"
     },
     {
-      "command": "cd frontend_next && OMNI_BACKEND_URL=http://127.0.0.1:8765 corepack npm@12.0.2 run build",
-      "status": "pass",
-      "result": "Optimized 24-route Next.js production build passed under the required managed backend URL contract."
+      "scope": "PowerShell 5.1 parsing and execution",
+      "status": "not_run_unavailable_on_agent_host"
     },
     {
-      "command": ".venv/bin/python -m build && .venv/bin/python -m pytest -q tests/package && .venv/bin/python -m twine check dist/*",
-      "status": "pass",
-      "result": "Fresh wheel and sdist include the new canonical runtime modules; 14 package tests and both Twine checks passed."
+      "scope": "GitHub Actions semantic and hosted runner execution",
+      "status": "not_run"
     },
     {
-      "command": ".venv/bin/ruff check --select E9,F63,F7,F82 omni backend_fastapi omni_v2 scripts tests/install tests/package",
-      "status": "pass",
-      "result": "Fatal syntax and undefined-name checks passed."
+      "scope": "native Windows 11 Arm64 unattended lane",
+      "status": "not_run_required"
     },
     {
-      "command": ".venv/bin/python -m compileall -q omni_v2 backend_fastapi tests/install scripts && bash -n start.sh scripts/install.sh && git diff --check",
-      "status": "pass",
-      "result": "Python compilation, shell parsing, and tracked-diff whitespace checks passed before final staging."
+      "scope": "native Windows 11 x64 unattended laptop lane",
+      "status": "not_run_required"
     },
     {
-      "command": ".venv/bin/python scripts/check_markdown_links.py --local-only README.md docs quality/evidence",
-      "status": "pass",
-      "result": "Final staged-content run passed 116 local targets across 28 Markdown files, including this evidence directory."
-    },
-    {
-      "command": "powershell -File scripts/verify_windows_install.ps1",
-      "status": "blocked_not_run",
-      "result": "PowerShell 5.1 and a fresh native Windows 11 x64 workstation are unavailable on this Linux host; no substitution is accepted."
+      "scope": "two-lane aggregate verdict",
+      "status": "not_run_required"
     }
   ],
-  "exit_gate_mapping": [
-    {
-      "requirement": "Fresh Windows 11 x64 machine reaches a useful first-run state from one documented path",
-      "status": "blocked",
-      "evidence_needed": "Native verifier JSON and transcript from a fresh Windows 11 x64 workstation."
-    },
-    {
-      "requirement": "Installer is idempotent and second run is safe",
-      "status": "blocked",
-      "evidence_needed": "Native second-install execution using the native exact Windows core lock."
-    },
-    {
-      "requirement": "Startup, shutdown, and restart leave no orphan services",
-      "status": "pass_current_host_blocked_primary_host",
-      "evidence_needed": "Current-host smoke passed; native Windows verifier must reproduce process replacement and cleanup."
-    },
-    {
-      "requirement": "UI reaches backend through centralized configuration",
-      "status": "pass_current_host",
-      "evidence": "Configuration contract, authenticated same-origin mutation, WebSocket relay, frontend tests, and production build passed."
-    },
-    {
-      "requirement": "Missing model, microphone, browser, or optional dependency is diagnosed without mock success",
-      "status": "pass_contract_current_host",
-      "evidence": "Preflight and frontend source/response contracts pass; native host output remains part of first-run qualification."
-    }
-  ],
+  "prior_checkpoint_results": {
+    "qualification_boundary": "Results below predate the Arm64 amendment and modified qualification driver. They remain historical developer-host evidence only and cannot validate the current draft.",
+    "tests_install": "52 passed on Linux",
+    "config_contract": "passed on Linux",
+    "managed_smoke_restart": "passed on Linux with authenticated HTTP/WebSocket lifecycle",
+    "frontend_proxy_tests": "13 passed on Linux",
+    "frontend_lint_and_build": "passed on Linux",
+    "package_tests_and_twine": "14 package tests and Twine checks passed on Linux",
+    "fatal_ruff_compile_shell_diff_links": "passed at the prior checkpoint"
+  },
   "required_absent_artifacts": [
-    "requirements/locks/cpython-3.11-windows-x86_64/core.txt",
-    "quality/evidence/B02/cpython-3.11-windows-x86_64-profile-resolution.json",
-    "quality/evidence/B02/windows-install-qualification.json",
-    "quality/evidence/B02/windows-install-qualification.log"
+    "native Arm64 lane evidence for the exact qualification commit",
+    "native x86_64 lane evidence for the same exact qualification commit",
+    "validated two-lane aggregate verdict",
+    "quality/evidence/B02/closure.json"
+  ],
+  "exit_gate_status": [
+    {
+      "requirement": "Complete unattended native Windows 11 Arm64 lane",
+      "status": "blocked_not_run"
+    },
+    {
+      "requirement": "Complete unattended native Windows 11 x64 lane for the same exact commit",
+      "status": "blocked_not_run"
+    },
+    {
+      "requirement": "Fail-closed aggregate accepts both lane attestations and artifacts",
+      "status": "blocked_not_run"
+    },
+    {
+      "requirement": "Current implementation passes local static, Python, configuration, packaging, frontend, documentation, and governance validation",
+      "status": "partial_linux_developer_validation_passed_except_exact_all_native_builds; native_windows_execution_required"
+    }
   ],
   "nonclaims": [
     "B02 is not closed.",
     "B03 has not started and remains locked.",
-    "Linux developer smoke evidence does not qualify the Windows product path.",
-    "Static PowerShell inspection does not establish PowerShell 5.1 execution correctness.",
-    "Offline configuration is not a whole-process no-egress sandbox; that release gate remains assigned to B15.",
-    "No release, broad-suite pass, cross-platform support, or 10/10 status is claimed."
-  ]
+    "Linux developer evidence does not qualify either native Windows lane.",
+    "An x64 pass cannot qualify the Arm64 product target.",
+    "Hosted Arm64 evidence cannot qualify physical DGX GPU, model, device, performance, or sustained-use behavior.",
+    "Static PowerShell or workflow inspection is not native execution evidence.",
+    "Offline configuration is not a whole-process no-egress sandbox.",
+    "No release, exact-all broad-suite qualification, cross-platform support, or 10/10 status is claimed."
+  ],
+  "current_local_results": {
+    "truth_boundary": "All results are Linux x86_64 developer evidence. They do not qualify either required native Windows lane.",
+    "tests_install": "54 passed",
+    "fresh_resolver": {
+      "core": 36,
+      "voice": 90,
+      "vision": 88,
+      "desktop": 26,
+      "dev": 92,
+      "all": 219
+    },
+    "exact_dev": "hashed install, pip check, pip-audit, and complete license inventory passed; omni_v2/tests produced 655 passed, 33 skipped, and 9 OpenCV-dependent failures because dev intentionally omits optional all-runtime dependencies",
+    "exact_all": "installation did not complete because the host lacks Python/native development prerequisites for dlib, evdev, and PyAudio; no exact-all broad-suite result exists; the unattended qualifier requires this environment and layers its site-packages over the exact dev test-tool environment for the broad suite",
+    "historical_augmented_all_dependency_diagnostic": "664 passed, 33 skipped after replacing the locked GUI OpenCV distribution with same-version opencv-contrib-python-headless; non-lock diagnostic regression evidence only",
+    "package": "14 tests passed with wheel/sdist built using --no-isolation and sdist build dependencies installed from a complete hashed synthetic Linux dev lock selecting declared-compatible setuptools 81.0.0; content and Twine checks passed; this validates the mechanism but is not native Windows evidence",
+    "frontend": "clean npm 12.0.2 install, install-script and dependency-tree assertions, zero-vulnerability audit, 13 proxy tests, lint, and production build passed",
+    "governance_and_static": "configuration contract, governed generation/check, governance self-test, fatal Ruff, compileall, PowerShell Tree-sitter inspection, and basic workflow YAML load passed",
+    "governed_source_digest": "bb8feecb3acfa3be364b58909ee516b49b94948ee55f7d63dc382f9861488adb"
+  }
 }

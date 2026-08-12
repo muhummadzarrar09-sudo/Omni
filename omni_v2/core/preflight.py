@@ -92,10 +92,34 @@ def _windows_version() -> tuple[int | None, int | None]:
         return None, None
 
 
+def _normalized_machine(value: str) -> str:
+    machine = value.lower()
+    if machine in {"amd64", "x86_64"}:
+        return "x86_64"
+    if machine in {"arm64", "aarch64"}:
+        return "arm64"
+    return machine
+
+
+def _native_windows_machine() -> str:
+    if platform.system() != "Windows":
+        return _normalized_machine(platform.machine())
+    # PROCESSOR_ARCHITEW6432 exposes the native OS architecture when an
+    # emulated process is running. Refusing that mismatch prevents x64 Python
+    # under Windows-on-Arm from being mistaken for a native Arm64 runtime.
+    value = (
+        os.environ.get("PROCESSOR_ARCHITEW6432")
+        or os.environ.get("PROCESSOR_ARCHITECTURE")
+        or platform.machine()
+    )
+    return _normalized_machine(value)
+
+
 def _platform_check(require_primary: bool) -> CheckResult:
     system = platform.system()
-    machine = platform.machine().lower()
-    is_x64 = machine in {"amd64", "x86_64"}
+    machine = _normalized_machine(platform.machine())
+    native_machine = _native_windows_machine()
+    supported_machine = machine in {"x86_64", "arm64"} and machine == native_machine
     build, product_type = _windows_version()
     is_workstation = product_type == 1
     is_windows_11 = (
@@ -104,14 +128,15 @@ def _platform_check(require_primary: bool) -> CheckResult:
         and build >= 22000
         and is_workstation
     )
-    if is_windows_11 and is_x64:
+    if is_windows_11 and supported_machine:
+        tier = "primary deployment" if machine == "arm64" else "secondary qualification"
         return _result(
             "platform.primary",
             "pass",
-            "Windows 11 x64 workstation detected",
+            f"Windows 11 {machine} {tier} workstation detected",
             (
                 f"Windows build {build}; product type {product_type} (workstation); "
-                f"architecture {platform.machine()}."
+                f"process architecture {machine}; native OS architecture {native_machine}."
             ),
         )
     status = "fail" if require_primary else "warn"
@@ -129,8 +154,20 @@ def _platform_check(require_primary: bool) -> CheckResult:
             "operating-system product type was unavailable. A build number alone cannot "
             "distinguish Windows 11 from Windows Server."
         )
+    elif system == "Windows" and machine != native_machine:
+        summary = "Emulated Python architecture is not supported"
+        detail = (
+            f"Detected process architecture {machine} on native {native_machine} Windows. "
+            "OMNI qualification requires a native interpreter."
+        )
+    elif system == "Windows":
+        summary = "Unsupported Windows workstation architecture or build"
+        detail = (
+            f"Detected Windows build {build}, architecture {machine}. Windows 11 build "
+            "22000+ with native Arm64 or x64 is required."
+        )
     else:
-        summary = "Primary product platform not detected"
+        summary = "Product qualification platform not detected"
         detail = (
             f"Detected {system} {platform.release()} ({platform.machine()}). "
             "Linux is a development environment only; macOS is unsupported and unverified."
@@ -140,19 +177,27 @@ def _platform_check(require_primary: bool) -> CheckResult:
         status,
         summary,
         detail,
-        "Run product qualification on Windows 11 x64 workstation; use this platform only for development checks.",
+        (
+            "Qualify the primary target on Windows 11 Arm64 and the secondary host on "
+            "Windows 11 x64; use this platform only for development checks."
+        ),
     )
 
 
-def _python_check(require_x64: bool) -> CheckResult:
+def _python_check(require_native: bool) -> CheckResult:
     implementation = platform.python_implementation()
-    machine = platform.machine().lower()
+    machine = _normalized_machine(platform.machine())
+    native_machine = _native_windows_machine()
     pointer_bits = 64 if sys.maxsize > 2**32 else 32
     exact_version = implementation == "CPython" and sys.version_info[:2] == (3, 11)
-    native_x64 = pointer_bits == 64 and machine in {"amd64", "x86_64"}
-    compatible = exact_version and (native_x64 or not require_x64)
+    native_supported = (
+        pointer_bits == 64
+        and machine in {"x86_64", "arm64"}
+        and machine == native_machine
+    )
+    compatible = exact_version and (native_supported or not require_native)
     if compatible:
-        summary = "CPython 3.11 x64 detected" if require_x64 else "CPython 3.11 detected"
+        summary = "Native CPython 3.11 detected" if require_native else "CPython 3.11 detected"
     else:
         summary = "Unsupported Python interpreter"
     return _result(
@@ -161,9 +206,13 @@ def _python_check(require_x64: bool) -> CheckResult:
         summary,
         (
             f"{implementation} {platform.python_version()} ({pointer_bits}-bit, "
-            f"{platform.machine()}) at {sys.executable}."
+            f"process {machine}, native OS {native_machine}) at {sys.executable}."
         ),
-        None if compatible else "Install native x64 CPython 3.11; OMNI requires >=3.11,<3.12.",
+        (
+            None
+            if compatible
+            else "Install native 64-bit Arm64 or x64 CPython 3.11; OMNI requires >=3.11,<3.12."
+        ),
     )
 
 

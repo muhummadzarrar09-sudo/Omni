@@ -1,0 +1,107 @@
+{
+  "schema_version": 1,
+  "batch": "B00",
+  "amendment": "A01",
+  "title": "Primary Windows platform architecture correction",
+  "recorded_on": "2026-08-12",
+  "decision": "approved_and_governance_revalidated",
+  "change_control": {
+    "trigger": "The intended deployment machine was clarified as the NVIDIA DGX Station for Windows, whose NVIDIA Grace CPU is Arm64 rather than x64.",
+    "necessity": "B02 cannot truthfully qualify an Arm64 product target while the B00 scope authority and B02 exit gate require only Windows 11 x64.",
+    "scope": "Narrow platform correction only. The one-owner promise, ten workflows, non-goals, B00-B16 order, feature freeze, evidence standard, post-10 queue, and commercial separation do not change.",
+    "governance_handling": "The platform portion of the 2026-08-11 B00 closure finding is superseded by this amendment. B00 is revalidated and remains closed only if the amended authorities, generated documents, links, and governance self-tests pass. B02 remains the sole active implementation batch.",
+    "original_closure": "quality/evidence/B00/closure.json"
+  },
+  "superseded_claim": {
+    "primary_platform": "Windows 11 x64",
+    "historical_evidence_location": "quality/evidence/B00/closure.json",
+    "preservation": "The original closure record remains unchanged as historical evidence; it must be read with this amendment."
+  },
+  "amended_platform_contract": {
+    "primary_product_target": {
+      "hardware": "NVIDIA DGX Station for Windows",
+      "operating_system": "Windows 11 workstation",
+      "native_architecture": "Arm64",
+      "cpu_family": "NVIDIA Grace, Arm Neoverse V2",
+      "qualification_status": "not_qualified"
+    },
+    "secondary_host": {
+      "hardware": "conventional Windows 11 laptop/workstation",
+      "native_architecture": "x86_64",
+      "role": "hardware-independent qualification and development only",
+      "qualification_status": "not_qualified"
+    },
+    "b02_required_matrix": [
+      "A complete unattended native Windows 11 Arm64 lane.",
+      "A complete unattended native Windows 11 x64 lane.",
+      "Both lanes attest the same exact source commit and architecture-specific exact locks.",
+      "Fail-closed aggregation validates both evidence bundles before B03 can unlock."
+    ],
+    "non_substitution_rules": [
+      "An x64 pass does not qualify Arm64.",
+      "An emulated x64 process on Arm64 is not native Arm64 evidence.",
+      "Static inspection is not execution evidence.",
+      "Hosted native Arm64 B02 evidence does not prove physical DGX GPU/model throughput, latency, device integration, or sustained owner use."
+    ],
+    "deferred_physical_dgx_gates": {
+      "B11": "Local voice/model and declared audio-hardware qualification.",
+      "B13": "Target-hardware performance, resource, UX, and accessibility budgets.",
+      "B15": "Thirty consecutive days of exact-candidate owner dogfooding on the recorded hardware.",
+      "B16": "Exact-artifact final audit on clean target systems and frozen hardware/configuration evidence."
+    }
+  },
+  "authoritative_sources": [
+    {
+      "url": "https://www.nvidia.com/en-us/products/workstations/dgx-station-for-windows/",
+      "supports": "DGX Station for Windows product identity, NVIDIA Grace Arm CPU, coherent-memory and AI-performance product specifications."
+    },
+    {
+      "url": "https://nvidianews.nvidia.com/news/nvidia-dgx-station-for-windows-puts-a-trillion-parameter-ai-supercomputer-on-every-enterprise-desk",
+      "supports": "NVIDIA announcement and Windows positioning."
+    },
+    {
+      "url": "https://docs.github.com/en/actions/reference/runners/github-hosted-runners",
+      "supports": "Native hosted Windows Arm64 runner label used for B02 architecture-equivalent qualification."
+    }
+  ],
+  "affected_authorities": [
+    "quality/capabilities.json",
+    "quality/policy.json",
+    "quality/batches.json",
+    "quality/scorecard.json",
+    "README.md",
+    "docs/CAPABILITY_MATRIX.md",
+    "docs/EXECUTION_BATCHES.md",
+    "docs/QUALITY_SCORECARD.md",
+    "docs/TROUBLESHOOTING.md",
+    "quality/evidence/B02/progress.json"
+  ],
+  "required_revalidation": [
+    "python scripts/quality_baseline.py generate",
+    "python scripts/quality_baseline.py check",
+    "python scripts/quality_baseline_selftest.py",
+    "python scripts/check_markdown_links.py --local-only README.md docs quality/evidence",
+    "python -m compileall -q scripts",
+    "git diff --check"
+  ],
+  "nonclaims": [
+    "The DGX Station is not qualified by this authority amendment.",
+    "Neither B02 native lane has passed.",
+    "B02 is not closed and B03 remains locked.",
+    "No GPU, model, throughput, latency, dogfood, release, or 10/10 claim is made."
+  ],
+  "validation": {
+    "status": "pass",
+    "validated_on": "2026-08-12",
+    "scope": "authority consistency and developer-host governance only; this does not qualify either B02 native Windows lane",
+    "results": [
+      "54 amended install/lifecycle contract tests passed on the Linux developer host",
+      "governed artifact generation and check passed with 52 capabilities, 10 workflows, 234 production files, 62 test files, and 192 route decorators",
+      "governance adversarial self-test passed",
+      "local Markdown link check, fatal Ruff gate, Python compilation, JSON parsing, and git diff whitespace checks passed",
+      "PowerShell Tree-sitter inspection passed except for two explicitly known nested .NET type parser limitations in uninstall.ps1",
+      "basic YAML loading passed for the inactive owner-installable GitHub workflow template; native PowerShell and GitHub Actions execution remain B02 gates"
+    ],
+    "source_digest": "bb8feecb3acfa3be364b58909ee516b49b94948ee55f7d63dc382f9861488adb"
+  }
+}
