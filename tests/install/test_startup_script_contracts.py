@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 import pytest
@@ -97,6 +98,34 @@ def test_windows_primary_paths_require_workstation_product_type() -> None:
     assert "types: [opened, synchronize, reopened]" in workflow
     assert "-LaneOnly" in workflow
     assert "-AggregateOnly" in workflow
+
+
+def test_powershell_variables_before_colons_are_delimited() -> None:
+    """PowerShell parses ``$Name:`` as a scoped variable, even in strings."""
+    scoped_names = {
+        "alias",
+        "env",
+        "function",
+        "global",
+        "local",
+        "private",
+        "script",
+        "using",
+        "variable",
+    }
+    unsafe_reference = re.compile(r"(?<!`)\$([A-Za-z_][A-Za-z0-9_]*):")
+    assert unsafe_reference.search('"$ArchitectureSlug: details"')
+    assert not unsafe_reference.search('"${ArchitectureSlug}: details"')
+    failures: list[str] = []
+
+    for path in sorted((ROOT / "scripts").glob("*.ps1")):
+        lines = path.read_text(encoding="utf-8-sig").splitlines()
+        for line_number, line in enumerate(lines, 1):
+            for match in unsafe_reference.finditer(line):
+                if match.group(1).lower() not in scoped_names:
+                    failures.append(f"{path.relative_to(ROOT)}:{line_number}: {match.group(0)}")
+
+    assert not failures, "ambiguous PowerShell variable references:\n" + "\n".join(failures)
 
 
 def test_profile_resolver_reads_pip_report_as_utf8(tmp_path: Path) -> None:

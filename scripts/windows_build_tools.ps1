@@ -62,7 +62,7 @@ function Enter-OmniWindowsNativeBuildEnvironment {
     $installationJson = (& $vswhere @vswhereArguments | Out-String)
     $installations = @($installationJson | ConvertFrom-Json)
     if ($LASTEXITCODE -ne 0 -or $installations.Count -ne 1) {
-        throw "Visual Studio Build Tools do not provide the required components for native $ArchitectureSlug: $($requiredComponents -join ', ')"
+        throw "Visual Studio Build Tools do not provide the required components for native ${ArchitectureSlug}: $($requiredComponents -join ', ')"
     }
     $installation = $installations[0]
     $installationVersion = [version][string]$installation.installationVersion
