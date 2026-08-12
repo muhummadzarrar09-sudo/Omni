@@ -512,8 +512,12 @@ Assert-True ($env:OS -eq "Windows_NT") "B02 native lane qualification must run o
 $windowsPlatform = Get-OmniWindowsPlatform
 $architectureSlug = Get-OmniWindowsArchitectureSlug $windowsPlatform
 $expectedPythonMachines = @(Get-OmniPythonMachineNames $windowsPlatform)
-$powerShellProcessArchitecture = [System.Runtime.InteropServices.RuntimeInformation]::ProcessArchitecture.ToString().ToLowerInvariant()
-if ($powerShellProcessArchitecture -eq "x64") { $powerShellProcessArchitecture = "x86_64" }
+$powerShellProcessArchitectureName = Get-OmniPowerShellProcessArchitecture
+$powerShellProcessArchitecture = switch ($powerShellProcessArchitectureName) {
+    "X64" { "x86_64" }
+    "Arm64" { "arm64" }
+    default { $powerShellProcessArchitectureName.ToLowerInvariant() }
+}
 Assert-True ($powerShellProcessArchitecture -eq $architectureSlug) "Qualification PowerShell must be native $architectureSlug; found $powerShellProcessArchitecture."
 
 $laneDirectory = Join-Path $EvidenceRoot "windows-$architectureSlug"

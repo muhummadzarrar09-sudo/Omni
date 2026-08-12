@@ -25,7 +25,7 @@
       "name": "Windows 11 laptop/workstation",
       "native_architecture": "x86_64",
       "role": "hardware-independent qualification and development; not a substitute for Arm64",
-      "b02_status": "not_run_required"
+      "b02_status": "attempt_7eb6e148_failed_before_lane_evidence_powershell_5_1_architecture_property_compatibility_fix_pending_rerun"
     },
     "agent_host": {
       "platform": "Linux 6.1.158+ x86_64 with glibc 2.36",
@@ -34,7 +34,7 @@
     }
   },
   "amended_implementation_draft": [
-    "native Windows 11 workstation platform helper accepts Arm64 and X64, rejects Windows Server/domain-controller products, and exposes architecture-specific lock/Python identities",
+    "Windows PowerShell 5.1-compatible native platform helper accepts Arm64 and X64, rejects Windows Server/domain-controller products and emulated process architecture, and exposes architecture-specific lock/Python identities",
     "installer selects cpython-3.11-windows-arm64 or cpython-3.11-windows-x86_64 and requires architecture-matched 64-bit CPython 3.11",
     "resolver normalizes native Windows architecture, rejects OS/process architecture mismatch, and supports detached external lock/evidence paths",
     "lifecycle verifier records schema-v2 architecture, toolchain, lock, authenticated readiness, repeated lifecycle, uninstall, and cleanup evidence",
@@ -110,7 +110,7 @@
     },
     {
       "scope": "PowerShell 5.1 parsing and execution",
-      "status": "not_run_unavailable_on_agent_host"
+      "status": "native_x64_attempt_at_7eb6e148_reached_platform_detection_then_failed_before_evidence_initialization_because_direct_RuntimeInformation_OSArchitecture_property_is_absent; compatibility_fix_implemented_and_rerun_required"
     },
     {
       "scope": "GitHub Actions semantic and hosted runner execution",
@@ -122,7 +122,7 @@
     },
     {
       "scope": "native Windows 11 x64 unattended laptop lane",
-      "status": "not_run_required"
+      "status": "attempt_failed_before_lane_evidence_at_7eb6e148; corrected_exact_commit_rerun_required"
     },
     {
       "scope": "two-lane aggregate verdict",

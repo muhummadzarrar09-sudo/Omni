@@ -21,6 +21,12 @@ def test_windows_primary_paths_require_workstation_product_type() -> None:
     assert "$platform.ProductType -ne 1" in platform_helper
     assert 'platform.Architecture -notin @("X64", "Arm64")' in platform_helper
     assert "Windows Server" in platform_helper
+    assert "PROCESSOR_ARCHITEW6432" in platform_helper
+    assert "Win32_Processor" in platform_helper
+    assert 'GetProperty("OSArchitecture")' in platform_helper
+    assert "::OSArchitecture" not in platform_helper
+    assert "Get-OmniPowerShellProcessArchitecture" in platform_helper
+    assert "::ProcessArchitecture" not in qualifier
     assert 'windows_platform.ps1")' in installer
     assert "Assert-OmniWindows11" in installer
     assert "-PythonPath" in installer

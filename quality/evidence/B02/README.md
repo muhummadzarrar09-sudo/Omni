@@ -13,7 +13,7 @@ The machine-readable ledger and current gate decision are in [`progress.json`](p
 | Lane | Role | Current result |
 |---|---|---|
 | Windows 11 Arm64 | Native architecture-equivalent B02 evidence for the primary target | Not run; required |
-| Windows 11 x64 | Secondary hardware-independent qualification on the available class of laptop/host | Not run; required |
+| Windows 11 x64 | Secondary hardware-independent qualification on the available class of laptop/host | First attempt at `7eb6e1481ec585b24224d130085c3b81091d3fd6` failed before lane evidence because Windows PowerShell 5.1 lacks the directly referenced `RuntimeInformation.OSArchitecture` property; compatibility fix added, clean rerun required |
 | Linux x86_64 | Development tests and lifecycle smoke only | Prior checkpoint passed selected gates; never product evidence |
 | Physical DGX Station | GPU/model/device throughput, performance, and sustained owner use | Deliberately deferred to B11, B13, B15, and B16 |
 
@@ -29,6 +29,6 @@ An x64 pass does not qualify Arm64. x64 emulation on Arm64 is not native evidenc
 
 The amended Linux developer gates now include 54 passing install/lifecycle contract tests, clean exact-dev installation/audits, passing package/frontend/configuration/governance checks, and a truthful dependency boundary for `omni_v2/tests`. Running that broad suite in the exact dev environment produced `655 passed, 33 skipped, 9 failed`: all nine failures are OpenCV-dependent security tests, while the dev profile intentionally omits OpenCV and other optional all-runtime dependencies. The unattended qualifier therefore runs the broad suite only after installing and layering the exact `all` profile over the exact dev test-tool environment; it does not silently augment the dev lock. A separate exact Linux `all` installation stopped while building `dlib`, `evdev`, and `PyAudio` because this host lacks required Python/native development prerequisites, so no exact-all broad-suite result exists. The earlier `664 passed, 33 skipped` run used a disclosed same-version headless OpenCV substitution and remains diagnostic regression evidence only, not exact-lock evidence. A synthetic Linux dev lock differing only by selecting declared-compatible `setuptools==81.0.0` was used to exercise the final no-isolation build/sdist path locally; native Windows must generate and validate its own exact locks. These Linux results do not validate Windows behavior.
 
-The architecture generalization, unattended driver, inactive workflow template, and authority amendment are not yet native-Windows validated. Static PowerShell/workflow-template inspection is not execution evidence.
+The first native Windows x64 invocation exposed and stopped on a real Windows PowerShell 5.1 compatibility defect before evidence initialization. The platform helper now obtains native/process architecture from Windows environment identities with CIM and reflection fallbacks rather than directly resolving modern-only `RuntimeInformation` properties. This correction still requires a clean exact-commit rerun; no passing native lane exists. Static PowerShell/workflow-template inspection is not execution evidence.
 
 B02 is not closed. B03 has not started. No product-platform, physical-DGX, release, exact-all broad-suite, offline no-egress, or 10/10 claim is made.
