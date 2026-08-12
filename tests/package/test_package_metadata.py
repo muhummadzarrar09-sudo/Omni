@@ -152,6 +152,15 @@ def test_windows_native_build_contract_and_architecture_locks_are_exact() -> Non
     assert contract["build_isolation"] is False
     assert contract["runtime_install_build_isolation"] is False
     assert contract["wheel_only_build_bootstrap"] is True
+    assert contract["frontend_toolchain"]["node"]["version"] == "22.22.2"
+    assert contract["frontend_toolchain"]["npm"] == {
+        "version": "12.0.2",
+        "provider": "corepack",
+    }
+    assert set(contract["frontend_toolchain"]["node"]["archives"]) == {"x86_64", "arm64"}
+    for node_archive in contract["frontend_toolchain"]["node"]["archives"].values():
+        assert re.fullmatch(r"[0-9a-f]{64}", node_archive["sha256"])
+        assert re.fullmatch(r"[0-9a-f]{64}", node_archive["node_exe_sha256"])
 
     expected_build = {
         canonicalize_name(name): version for name, version in contract["build_lock"].items()

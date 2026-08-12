@@ -28,6 +28,81 @@ function Get-FileSha256 {
     return (Get-FileHash -Algorithm SHA256 -LiteralPath $Path).Hash.ToLowerInvariant()
 }
 
+function Install-OmniExactNodeToolchain {
+    param(
+        [Parameter(Mandatory = $true)][ValidateSet("x86_64", "arm64")][string]$ArchitectureSlug,
+        [Parameter(Mandatory = $true)][string]$TemporaryRoot,
+        [Parameter(Mandatory = $true)]$BuildContract
+    )
+
+    $nodeContract = $BuildContract.frontend_toolchain.node
+    $npmContract = $BuildContract.frontend_toolchain.npm
+    Assert-True ($null -ne $nodeContract -and $null -ne $npmContract) "The native build contract omits the exact frontend toolchain."
+    $archiveProperty = $nodeContract.archives.PSObject.Properties[$ArchitectureSlug]
+    Assert-True ($null -ne $archiveProperty) "The native build contract omits a Node.js archive for $ArchitectureSlug."
+    $archiveContract = $archiveProperty.Value
+
+    $distributionArchitecture = if ($ArchitectureSlug -eq "x86_64") { "x64" } else { "arm64" }
+    $expectedFilename = "node-v$($nodeContract.version)-win-$distributionArchitecture.zip"
+    Assert-True ([string]$archiveContract.filename -eq $expectedFilename) "The governed Node.js archive filename is inconsistent for $ArchitectureSlug."
+    Assert-True ([string]$archiveContract.process_architecture -eq $distributionArchitecture) "The governed Node.js process architecture is inconsistent for $ArchitectureSlug."
+    Assert-True ([string]$archiveContract.sha256 -match "^[0-9a-f]{64}$") "The governed Node.js archive SHA-256 is invalid for $ArchitectureSlug."
+    Assert-True ([string]$archiveContract.node_exe_sha256 -match "^[0-9a-f]{64}$") "The governed node.exe SHA-256 is invalid for $ArchitectureSlug."
+
+    $baseUri = [Uri][string]$nodeContract.distribution_base_url
+    $checksumUri = [Uri][string]$nodeContract.checksum_authority
+    $expectedPath = "/dist/v$($nodeContract.version)"
+    Assert-True ($baseUri.Scheme -eq "https" -and $baseUri.Host -eq "nodejs.org" -and $baseUri.AbsolutePath.TrimEnd("/") -eq $expectedPath) "The Node.js distribution authority is not the governed official HTTPS origin."
+    Assert-True ($checksumUri.Scheme -eq "https" -and $checksumUri.Host -eq "nodejs.org" -and $checksumUri.AbsolutePath -eq "$expectedPath/SHASUMS256.txt") "The Node.js checksum authority is not the governed official HTTPS origin."
+
+    $toolchainRoot = Join-Path $TemporaryRoot "frontend-toolchain"
+    $archivePath = Join-Path $toolchainRoot ([string]$archiveContract.filename)
+    New-Item -ItemType Directory -Force -Path $toolchainRoot | Out-Null
+    $downloadUri = [Uri]::new("$($baseUri.AbsoluteUri.TrimEnd('/'))/$($archiveContract.filename)")
+    Write-Host "`n=== Download exact Node.js $($nodeContract.version) for $ArchitectureSlug ==="
+    $savedProgressPreference = $ProgressPreference
+    try {
+        $ProgressPreference = "SilentlyContinue"
+        Invoke-WebRequest -Uri $downloadUri -OutFile $archivePath -UseBasicParsing | Out-Null
+    } finally {
+        $ProgressPreference = $savedProgressPreference
+    }
+    Assert-True (Test-Path -LiteralPath $archivePath -PathType Leaf) "The governed Node.js archive download did not produce a file."
+    $archiveSha256 = Get-FileSha256 $archivePath
+    Assert-True ($archiveSha256 -ceq [string]$archiveContract.sha256) "Node.js archive SHA-256 mismatch for $ArchitectureSlug; expected $($archiveContract.sha256), found $archiveSha256."
+
+    Write-Host "`n=== Extract verified portable Node.js toolchain ==="
+    Expand-Archive -LiteralPath $archivePath -DestinationPath $toolchainRoot -Force
+    $nodeRoot = Join-Path $toolchainRoot ([IO.Path]::GetFileNameWithoutExtension([string]$archiveContract.filename))
+    $nodeExecutable = Join-Path $nodeRoot "node.exe"
+    $corepackExecutable = Join-Path $nodeRoot "corepack.cmd"
+    Assert-True (Test-Path -LiteralPath $nodeExecutable -PathType Leaf) "Verified Node.js archive omitted node.exe."
+    Assert-True (Test-Path -LiteralPath $corepackExecutable -PathType Leaf) "Verified Node.js archive omitted corepack.cmd."
+    $nodeExecutableSha256 = Get-FileSha256 $nodeExecutable
+    Assert-True ($nodeExecutableSha256 -ceq [string]$archiveContract.node_exe_sha256) "Extracted node.exe SHA-256 mismatch for $ArchitectureSlug; expected $($archiveContract.node_exe_sha256), found $nodeExecutableSha256."
+
+    $corepackHome = Join-Path $toolchainRoot "corepack-home"
+    $npmCache = Join-Path $toolchainRoot "npm-cache"
+    New-Item -ItemType Directory -Force -Path $corepackHome, $npmCache | Out-Null
+    $env:COREPACK_HOME = $corepackHome
+    $env:COREPACK_ENABLE_DOWNLOAD_PROMPT = "0"
+    $env:npm_config_cache = $npmCache
+    $env:PATH = "$nodeRoot;$env:PATH"
+
+    return [pscustomobject]@{
+        source = "official-nodejs-verified-portable-archive"
+        node_executable = $nodeExecutable
+        corepack_executable = $corepackExecutable
+        node_version = [string]$nodeContract.version
+        npm_version = [string]$npmContract.version
+        archive_filename = [string]$archiveContract.filename
+        archive_sha256 = $archiveSha256
+        node_exe_sha256 = $nodeExecutableSha256
+        corepack_home_isolated = $true
+        npm_cache_isolated = $true
+    }
+}
+
 function Invoke-NativeStep {
     param([string]$Name, [scriptblock]$Action)
     Write-Host "`n=== $Name ==="
@@ -183,6 +258,7 @@ function Test-LaneArtifacts {
     $architecture = [string]$Lane.platform.architecture_slug
     $profiles = @("core", "voice", "vision", "desktop", "dev", "all")
     $requiredChecks = @(
+        "exact_portable_node_and_npm",
         "detached_exact_commit",
         "native_build_toolchain_and_exact_build_lock",
         "all_profile_resolution",
@@ -227,8 +303,8 @@ function Test-LaneArtifacts {
     }
     try {
         $nodeVersion = [version](([string]$Lane.tools.node_version).TrimStart("v"))
-        if ($nodeVersion.Major -ne 22 -or $nodeVersion -lt [version]"22.22.2") {
-            [void]$errors.Add("Node.js is outside >=22.22.2,<23")
+        if ($nodeVersion -ne [version]"22.22.2") {
+            [void]$errors.Add("lane did not use exact Node.js 22.22.2")
         }
     } catch {
         [void]$errors.Add("Node.js version cannot be parsed")
@@ -241,6 +317,22 @@ function Test-LaneArtifacts {
         $buildContractPath = Join-Path (Resolve-Path (Join-Path $PSScriptRoot "..")).Path "quality\windows-native-build-contract.json"
         $buildContract = (Get-Content -Raw -LiteralPath $buildContractPath) | ConvertFrom-Json
         $architectureContract = $buildContract.visual_studio.architectures.$architecture
+        $frontendContract = $buildContract.frontend_toolchain
+        $nodeArchiveContract = $frontendContract.node.archives.$architecture
+        $frontendTools = $Lane.tools.frontend_toolchain
+        if (
+            [string]$Lane.tools.node_version -ne "v$($frontendContract.node.version)" -or
+            [string]$Lane.tools.npm_version -ne [string]$frontendContract.npm.version -or
+            [string]$frontendTools.source -ne "official-nodejs-verified-portable-archive" -or
+            [string]$frontendTools.contract -ne "quality/windows-native-build-contract.json" -or
+            [string]$frontendTools.node_archive_filename -ne [string]$nodeArchiveContract.filename -or
+            [string]$frontendTools.node_archive_sha256 -cne [string]$nodeArchiveContract.sha256 -or
+            [string]$frontendTools.node_exe_sha256 -cne [string]$nodeArchiveContract.node_exe_sha256 -or
+            -not [bool]$frontendTools.corepack_home_isolated -or
+            -not [bool]$frontendTools.npm_cache_isolated
+        ) {
+            [void]$errors.Add("exact portable Node.js/Corepack evidence is invalid")
+        }
         $nativeTools = $Lane.tools.native_build_tools
         if ([string]$nativeTools.architecture_slug -ne $architecture -or [string]$nativeTools.native_probe -ne "pass") {
             [void]$errors.Add("native compiler probe architecture or status is invalid")
@@ -835,6 +927,8 @@ $pythonMachine = $null
 $nodeVersion = $null
 $nodeArchitecture = $null
 $npmVersion = $null
+$corepackExecutable = $null
+$nodeToolchainEvidence = $null
 $nativeBuildTools = $null
 $cmakeVersion = $null
 $ninjaVersion = $null
@@ -935,16 +1029,31 @@ try {
     $pythonBits = [int]$pythonProbe.bits
     Assert-True ($pythonImplementation -eq "CPython" -and $pythonVersion.StartsWith("3.11.") -and $pythonBits -eq 64 -and $pythonMachine -in $expectedPythonMachines) "Selected Python must be native 64-bit CPython 3.11 $($windowsPlatform.Architecture); found $pythonImplementation $pythonVersion, $pythonBits-bit $pythonMachine at '$selectedPython'."
 
-    $nodeCommand = Get-Command node -ErrorAction Stop
-    $nodeVersion = (& $nodeCommand.Source --version).Trim()
-    $nodeArchitecture = (& $nodeCommand.Source -p "process.arch").Trim().ToLowerInvariant()
+    # Never resolve Node.js or Corepack from ambient PATH. Download the exact
+    # architecture-matched official archive, verify both archive and executable
+    # identities against the committed contract, then use explicit paths.
+    $buildContractPath = Join-Path $sourceRoot "quality\windows-native-build-contract.json"
+    $qualificationBuildContract = (Get-Content -Raw -LiteralPath $buildContractPath) | ConvertFrom-Json
+    $nodeToolchain = Install-OmniExactNodeToolchain -ArchitectureSlug $architectureSlug -TemporaryRoot $tempRoot -BuildContract $qualificationBuildContract
+    $nodeExecutable = [string]$nodeToolchain.node_executable
+    $corepackExecutable = [string]$nodeToolchain.corepack_executable
+    $nodeVersion = (& $nodeExecutable --version).Trim()
+    Assert-True ($LASTEXITCODE -eq 0 -and $nodeVersion -eq "v$($nodeToolchain.node_version)") "Exact governed Node.js $($nodeToolchain.node_version) is required; found $nodeVersion."
+    $nodeArchitecture = (& $nodeExecutable -p "process.arch").Trim().ToLowerInvariant()
     if ($nodeArchitecture -eq "x64") { $nodeArchitecture = "x86_64" }
-    Assert-True ($LASTEXITCODE -eq 0 -and $nodeArchitecture -eq $architectureSlug) "Node.js must be native $architectureSlug; found $nodeArchitecture."
-    $parsedNodeVersion = [version]$nodeVersion.TrimStart("v")
-    Assert-True ($parsedNodeVersion.Major -eq 22 -and $parsedNodeVersion -ge [version]"22.22.2") "Node.js >=22.22.2,<23 is required; found $nodeVersion."
-    $corepackCommand = Get-Command corepack -ErrorAction Stop
-    $npmVersion = (& $corepackCommand.Source "npm@12.0.2" --version).Trim()
-    Assert-True ($LASTEXITCODE -eq 0 -and $npmVersion -eq "12.0.2") "Corepack could not provide exact npm 12.0.2."
+    Assert-True ($LASTEXITCODE -eq 0 -and $nodeArchitecture -eq $architectureSlug) "Verified Node.js must be native $architectureSlug; found $nodeArchitecture."
+    $npmVersion = (& $corepackExecutable "npm@$($nodeToolchain.npm_version)" --version).Trim()
+    Assert-True ($LASTEXITCODE -eq 0 -and $npmVersion -eq [string]$nodeToolchain.npm_version) "Verified Corepack could not provide exact npm $($nodeToolchain.npm_version)."
+    $nodeToolchainEvidence = [ordered]@{
+        source = [string]$nodeToolchain.source
+        contract = "quality/windows-native-build-contract.json"
+        node_archive_filename = [string]$nodeToolchain.archive_filename
+        node_archive_sha256 = [string]$nodeToolchain.archive_sha256
+        node_exe_sha256 = [string]$nodeToolchain.node_exe_sha256
+        corepack_home_isolated = [bool]$nodeToolchain.corepack_home_isolated
+        npm_cache_isolated = [bool]$nodeToolchain.npm_cache_isolated
+    }
+    [void]$checks.Add("exact_portable_node_and_npm")
 
     Invoke-NativeStep "Create detached worktree at exact commit $CommitSha" {
         & git worktree add --detach $worktree $CommitSha
@@ -1147,24 +1256,24 @@ try {
     $frontend = Join-Path $worktree "frontend_next"
     Push-Location $frontend
     try {
-        Invoke-NativeStep "Install exact frontend lock" { & $corepackCommand.Source "npm@12.0.2" ci }
-        Invoke-NativeJsonStep "Inspect unreviewed frontend install scripts" $corepackCommand.Source @(
-            "npm@12.0.2", "install-scripts", "ls", "--json"
+        Invoke-NativeStep "Install exact frontend lock" { & $corepackExecutable "npm@$npmVersion" ci }
+        Invoke-NativeJsonStep "Inspect unreviewed frontend install scripts" $corepackExecutable @(
+            "npm@$npmVersion", "install-scripts", "ls", "--json"
         ) $frontendInstallScriptsPath
         $installScripts = (Get-Content -Raw -LiteralPath $frontendInstallScriptsPath) | ConvertFrom-Json
         Assert-True ((Test-ObjectProperty $installScripts "allowScripts") -and @($installScripts.allowScripts).Count -eq 0) "npm reports unreviewed install scripts."
-        Invoke-NativeJsonStep "Validate complete frontend dependency tree" $corepackCommand.Source @(
-            "npm@12.0.2", "ls", "--all", "--json"
+        Invoke-NativeJsonStep "Validate complete frontend dependency tree" $corepackExecutable @(
+            "npm@$npmVersion", "ls", "--all", "--json"
         ) $frontendTreePath
-        Invoke-NativeJsonStep "Audit exact frontend lock" $corepackCommand.Source @(
-            "npm@12.0.2", "audit", "--audit-level=low", "--json"
+        Invoke-NativeJsonStep "Audit exact frontend lock" $corepackExecutable @(
+            "npm@$npmVersion", "audit", "--audit-level=low", "--json"
         ) $frontendAuditPath
-        Invoke-NativeStep "Run frontend proxy tests" { & $corepackCommand.Source "npm@12.0.2" run "test:proxy" }
-        Invoke-NativeStep "Run frontend lint" { & $corepackCommand.Source "npm@12.0.2" run lint }
+        Invoke-NativeStep "Run frontend proxy tests" { & $corepackExecutable "npm@$npmVersion" run "test:proxy" }
+        Invoke-NativeStep "Run frontend lint" { & $corepackExecutable "npm@$npmVersion" run lint }
         $oldBackendUrl = $env:OMNI_BACKEND_URL
         try {
             $env:OMNI_BACKEND_URL = "http://127.0.0.1:8765"
-            Invoke-NativeStep "Build frontend production bundle" { & $corepackCommand.Source "npm@12.0.2" run build }
+            Invoke-NativeStep "Build frontend production bundle" { & $corepackExecutable "npm@$npmVersion" run build }
         } finally {
             if ($null -eq $oldBackendUrl) { Remove-Item Env:OMNI_BACKEND_URL -ErrorAction SilentlyContinue } else { $env:OMNI_BACKEND_URL = $oldBackendUrl }
         }
@@ -1372,6 +1481,7 @@ $laneEvidence = [ordered]@{
         node_version = $nodeVersion
         node_architecture = $nodeArchitecture
         npm_version = $npmVersion
+        frontend_toolchain = $nodeToolchainEvidence
         powershell_version = $PSVersionTable.PSVersion.ToString()
         native_build_tools = $nativeBuildTools
         exact_build_authority = [ordered]@{

@@ -1,6 +1,31 @@
 {
   "schema_version": 1,
-  "subject": "Exact native Windows third-party source-build contract",
+  "frontend_toolchain": {
+    "node": {
+      "version": "22.22.2",
+      "distribution_base_url": "https://nodejs.org/dist/v22.22.2",
+      "checksum_authority": "https://nodejs.org/dist/v22.22.2/SHASUMS256.txt",
+      "archives": {
+        "x86_64": {
+          "filename": "node-v22.22.2-win-x64.zip",
+          "sha256": "7c93e9d92bf68c07182b471aa187e35ee6cd08ef0f24ab060dfff605fcc1c57c",
+          "node_exe_sha256": "ae1a50511be58e987483fdbc12125407443926d2d394669ade2352776e920dd3",
+          "process_architecture": "x64"
+        },
+        "arm64": {
+          "filename": "node-v22.22.2-win-arm64.zip",
+          "sha256": "380d375cf650c5a7f2ef3ce29ac6ea9a1c9d2ec8ea8e8391e1a34fd543886ab3",
+          "node_exe_sha256": "1a338f2467a566197ed8b309240a3a372f5d72458f9c7e5c9613ad6ccae1e0c0",
+          "process_architecture": "arm64"
+        }
+      }
+    },
+    "npm": {
+      "version": "12.0.2",
+      "provider": "corepack"
+    }
+  },
+  "subject": "Exact native Windows frontend and third-party source-build contract",
   "python": "CPython 3.11, 64-bit, architecture-matched",
   "build_isolation": false,
   "runtime_install_build_isolation": false,
@@ -410,6 +435,8 @@
     ]
   },
   "hard_rules": [
+    "Select Node.js only from the architecture-matched official portable archive governed here; never accept ambient PATH as qualification authority.",
+    "Verify the Node.js archive and extracted node.exe SHA-256 values before invoking Node.js or Corepack, and isolate Corepack and npm caches inside the qualification temporary root.",
     "Install the architecture-specific hashed build lock using wheel-only and no-dependency flags before any runtime metadata resolution or installation.",
     "Run runtime resolution and installation with --no-build-isolation.",
     "Reject every selected sdist whose exact normalized name and version are absent from this contract.",

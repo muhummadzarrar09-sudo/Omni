@@ -51,13 +51,25 @@ Prerequisites:
   emulation on Arm64 is not native Arm64 evidence);
 - architecture-matched 64-bit CPython `>=3.11,<3.12` available as `py -3.11` or `python`;
 - an architecture-matched PowerShell process (PowerShell 7 `pwsh` is recommended on Arm64; the qualifier rejects an emulated shell);
-- Node.js `>=22.22.2,<23` with `corepack` on `PATH`; the installer invokes
-  exact npm `12.0.2` through Corepack (a different global npm is not used);
+- outbound HTTPS access to the official `nodejs.org` distribution endpoint and
+  the package indexes used by the governed Python/frontend locks;
 - Visual Studio 2022 Build Tools with `Microsoft.VisualStudio.Workload.VCTools`,
   `Microsoft.VisualStudio.Component.Windows11SDK.26100`, and the native target
   component: `Microsoft.VisualStudio.Component.VC.Tools.x86.x64` for x64 or
   `Microsoft.VisualStudio.Component.VC.Tools.ARM64` for Arm64;
 - a complete source checkout, not an arbitrary package from an index.
+
+The unattended `scripts/qualify_b02.ps1` path does **not** trust or require
+Node.js or Corepack on ambient `PATH`. It downloads the architecture-matched
+official portable Node.js `22.22.2` ZIP into the unique qualification temporary
+root, verifies the committed archive and `node.exe` SHA-256 values from
+`quality/windows-native-build-contract.json`, invokes that archive's explicit
+`node.exe` and `corepack.cmd` paths, and isolates Corepack/npm caches under the
+same temporary root. A global Node 24 installation can remain installed and is
+ignored. A hash or architecture mismatch fails before dependency resolution.
+The standalone installer commands below still require architecture-matched
+Node.js `>=22.22.2,<23` with Corepack on `PATH` when run outside the unattended
+qualifier.
 
 From Windows Command Prompt:
 
@@ -146,9 +158,10 @@ Run this inside an architecture-matched PowerShell session:
 The versioned template
 `quality/evidence/B02/hosted-windows-qualification.workflow.yml` defines a
 hosted `windows-11-arm`/`windows-latest` diagnostic attempt with exact CPython
-3.11.9 and Node.js 22.22.2, evidence upload on failure, and fail-closed
-aggregation. It is intentionally **inactive** at this commit: the automation
-credential cannot create `.github/workflows` files. No hosted run is claimed.
+3.11.9 plus the qualifier's hash-governed portable Node.js bootstrap, evidence
+upload on failure, and fail-closed aggregation. It is intentionally **inactive**
+at this commit: the automation credential cannot create `.github/workflows`
+files. No hosted run is claimed.
 A repository owner with GitHub workflow permission may activate the unchanged
 template in a later commit:
 

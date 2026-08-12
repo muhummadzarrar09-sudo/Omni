@@ -52,16 +52,8 @@ jobs:
           python-version: 3.11.9
           architecture: ${{ matrix.architecture }}
 
-      - name: Provision exact native Node.js
-        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
-        with:
-          node-version: 22.22.2
-          architecture: ${{ matrix.architecture }}
-
-      - name: Enable Corepack
-        shell: pwsh
-        run: corepack enable
-
+      # The qualifier obtains the governed architecture-matched Node.js archive
+      # itself; no ambient setup-node/Corepack installation is qualification input.
       - name: Run unattended native lane
         shell: ${{ matrix.shell }}
         run: >-

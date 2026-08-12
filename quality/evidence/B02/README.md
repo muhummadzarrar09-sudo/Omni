@@ -13,7 +13,7 @@ The machine-readable ledger is [`progress.json`](progress.json). This directory 
 | Lane | Role | Current result |
 |---|---|---|
 | Windows 11 Arm64 | Architecture-equivalent software/control-plane evidence for the primary target | Not run; required |
-| Windows 11 x64 | Hardware-independent qualification on the available laptop/workstation | Failed diagnostics only; latest run at `66843dd` stopped after exact-commit verification on a PowerShell interpolation parser error; cleanup passed and `d681ba8` corrects the parser defect |
+| Windows 11 x64 | Hardware-independent qualification on the available laptop/workstation | Failed diagnostics only; latest run at `73cb708` stopped before checks because ambient Node 24 was selected; cleanup passed, and the current unqualified implementation replaces ambient selection with governed portable Node 22.22.2 |
 | Linux x86_64 | Development tests only | Current exact-dev Python, package, frontend, static, and governance gates pass; never native Windows evidence |
 | Physical DGX Station | GPU/model/device throughput, performance, and sustained owner use | Deliberately deferred to B11, B13, B15, and B16 |
 
@@ -24,7 +24,7 @@ An x64 pass cannot qualify Arm64. x64 emulation on Arm64 is not native evidence.
 `scripts/qualify_b02.ps1` is the single lane and aggregate driver. Each lane must:
 
 1. verify a clean exact commit and create an external detached worktree;
-2. prove native Windows 11 workstation, PowerShell, CPython 3.11, Node 22, architecture-correct Visual Studio compiler/linker identities, explicit governed SDK `10.0.26100.0` selection, an executable probe, and its PE target;
+2. prove native Windows 11 workstation, PowerShell, and CPython 3.11 identities; download architecture-matched official portable Node.js 22.22.2; verify its governed archive and `node.exe` hashes; use only its explicit Node/Corepack paths with isolated caches; and prove architecture-correct Visual Studio compiler/linker identities, explicit governed SDK `10.0.26100.0` selection, an executable probe, and its PE target;
 3. bootstrap the architecture-specific wheel-only exact build lock with hashes, no cache, and no dependency resolution;
 4. resolve all six profiles twice without third-party build isolation and compare byte-identical exact locks;
 5. require the selected `all` sdists to equal the full reviewed architecture source-build contract (12 x64, 9 Arm64), including exact filenames and hashes;
@@ -39,13 +39,16 @@ The exact build authority is `requirements/locks/cpython-3.11-windows-{x86_64|ar
 
 ## Validation completed on the developer host
 
-The latest Linux developer validation, after the source-build and cleanup hardening, reports:
+The latest Linux developer validation, after the portable frontend-toolchain,
+source-build, and cleanup hardening, reports:
 
-- complete exact-dev Python suite: `738 passed, 36 skipped, 5 known deprecation warnings`;
+- complete exact-dev Python suite: `739 passed, 36 skipped, 5 known deprecation warnings`;
 - package suite against exactly one wheel and one sdist: `17 passed`;
-- fatal Ruff gate (`E9,F63,F7,F82`): pass;
-- frontend with Corepack npm `12.0.2`: 13 proxy tests, zero-warning lint, zero vulnerabilities, no unreviewed install scripts, and successful production build;
-- focused install/package/governance tests, JSON parsing, Python compilation, changed PowerShell Tree-sitter parsing, an explicit unsafe `$Name:` interpolation regression scan, and `git diff --check`: pass at the current review checkpoint.
+- exact hashed dev-lock audit: zero known vulnerabilities; exact 91-distribution license inventory: complete, with two declared manual-review entries and no unknown licenses;
+- fatal Ruff gate (`E9,F63,F7,F82`) and focused changed-file Ruff gate: pass;
+- frontend with Corepack npm `12.0.2`: 13 proxy tests, zero-warning lint, zero vulnerabilities, no unreviewed install scripts, a complete dependency tree, and successful production build;
+- install plus package-metadata regression suite: `70 passed`;
+- quality authority drift check, governance adversarial self-test, centralized configuration contract, local Markdown links, JSON parsing, Python compilation, changed PowerShell Tree-sitter parsing, explicit unsafe `$Name:` interpolation regression scan, package-content checks, `twine check`, and `git diff --check`: pass at the final pre-native review checkpoint.
 
 The exact Linux `all` profile still cannot be installed unchanged on this host because dlib, evdev, and PyAudio require unavailable native development prerequisites. That does not weaken or replace either required Windows lane. The broad repository Ruff scan is also not the B02 gate: it contains thousands of pre-existing style findings, while the defined fatal correctness subset passes.
 
@@ -53,8 +56,10 @@ The exact Linux `all` profile still cannot be installed unchanged on this host b
 
 Earlier x64 attempts exposed PowerShell 5.1 architecture detection, interpreter/Node selection, UTF-8 report decoding, and vulnerable setuptools authority defects. `f8908503` passed repeatable resolution and exact-dev installation before correctly failing on vulnerable `setuptools==81.0.0`. `4bc1c9d` used the corrected backend and reached full installation, where dlib and llama-cpp-python demonstrated that native source builds lacked a controlled Visual C++/CMake/Ninja contract.
 
-The operator-reported external lane JSON for `66843dd` has `status=fail`, `cleanup_passed=true`, and only `detached_exact_commit` completed. PowerShell rejected the unbraced `$ArchitectureSlug:` interpolation in `scripts/windows_build_tools.ps1` before the native toolchain probe. Commit `d681ba8` braces that variable and adds a repository-wide regression that rejects unsafe unbraced variable/colon interpolation while allowing legitimate scoped forms. None of these failed runs is lane evidence.
+The operator-reported external lane JSON for `66843dd` has `status=fail`, `cleanup_passed=true`, and only `detached_exact_commit` completed. PowerShell rejected the unbraced `$ArchitectureSlug:` interpolation in `scripts/windows_build_tools.ps1` before the native toolchain probe. Commit `d681ba8` braces that variable and adds a repository-wide regression that rejects unsafe unbraced variable/colon interpolation while allowing legitimate scoped forms.
 
-The current implementation addresses the discovered failure classes with exact architecture build locks and wheel hashes, reviewed sdist equality, native toolchain and PE probes, exact installed-environment parity, correctly scoped audits/licenses, architecture capability exclusions, strict failure cleanup, and the interpolation regression. Those controls remain **unqualified implementation** until executed natively.
+The later exact-commit x64 lane at `73cb708` also has `status=fail` and `cleanup_passed=true`. It completed no qualification checks because the qualifier resolved ambient Node.js `v24.18.0`, outside the required Node 22 engine. The unconditional green text subsequently entered at the interactive prompt is not part of the lane evidence and does not override the failing JSON. The current implementation removes ambient Node/Corepack resolution: it governs official x64 and Arm64 Node.js 22.22.2 ZIP and `node.exe` hashes, verifies both before use, invokes explicit extracted paths, isolates Corepack/npm caches, and makes archive/hash/architecture drift fail closed. None of the failed runs is lane evidence.
+
+The current implementation addresses the discovered failure classes with exact portable frontend tooling, exact architecture build locks and wheel hashes, reviewed sdist equality, native toolchain and PE probes, exact installed-environment parity, correctly scoped audits/licenses, architecture capability exclusions, strict failure cleanup, and the interpolation regression. Those controls remain **unqualified implementation** until executed natively.
 
 B02 is not closed. B03 has not started. No product-platform, physical-DGX, release, offline-no-egress, commercial-traction, or 10/10 claim is made.

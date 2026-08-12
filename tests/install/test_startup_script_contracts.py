@@ -98,6 +98,55 @@ def test_windows_primary_paths_require_workstation_product_type() -> None:
     assert "types: [opened, synchronize, reopened]" in workflow
     assert "-LaneOnly" in workflow
     assert "-AggregateOnly" in workflow
+    assert "actions/setup-node" not in workflow
+
+
+def test_b02_qualification_uses_only_governed_portable_node() -> None:
+    qualifier = (ROOT / "scripts" / "qualify_b02.ps1").read_text(encoding="utf-8")
+    contract = _read_utf8_json(ROOT / "quality" / "windows-native-build-contract.json")
+    frontend = contract["frontend_toolchain"]  # type: ignore[index]
+    node = frontend["node"]  # type: ignore[index]
+
+    assert node["version"] == "22.22.2"  # type: ignore[index]
+    assert node["distribution_base_url"] == "https://nodejs.org/dist/v22.22.2"  # type: ignore[index]
+    assert node["checksum_authority"] == (  # type: ignore[index]
+        "https://nodejs.org/dist/v22.22.2/SHASUMS256.txt"
+    )
+    assert frontend["npm"] == {"version": "12.0.2", "provider": "corepack"}  # type: ignore[index]
+    assert node["archives"] == {  # type: ignore[index]
+        "x86_64": {
+            "filename": "node-v22.22.2-win-x64.zip",
+            "sha256": "7c93e9d92bf68c07182b471aa187e35ee6cd08ef0f24ab060dfff605fcc1c57c",
+            "node_exe_sha256": "ae1a50511be58e987483fdbc12125407443926d2d394669ade2352776e920dd3",
+            "process_architecture": "x64",
+        },
+        "arm64": {
+            "filename": "node-v22.22.2-win-arm64.zip",
+            "sha256": "380d375cf650c5a7f2ef3ce29ac6ea9a1c9d2ec8ea8e8391e1a34fd543886ab3",
+            "node_exe_sha256": "1a338f2467a566197ed8b309240a3a372f5d72458f9c7e5c9613ad6ccae1e0c0",
+            "process_architecture": "arm64",
+        },
+    }
+
+    # A global Node 24 (or any ambient Corepack) cannot be selected. The archive
+    # and extracted executable must both match the architecture-specific hashes
+    # before their explicit paths are used.
+    assert "Get-Command node" not in qualifier
+    assert "Get-Command corepack" not in qualifier
+    assert 'ValidateSet("x86_64", "arm64")' in qualifier
+    assert "$nodeContract.archives.PSObject.Properties[$ArchitectureSlug]" in qualifier
+    assert "$archiveSha256 -ceq [string]$archiveContract.sha256" in qualifier
+    assert "$nodeExecutableSha256 -ceq [string]$archiveContract.node_exe_sha256" in qualifier
+    assert "$nodeArchitecture -eq $architectureSlug" in qualifier
+    assert '& $nodeExecutable --version' in qualifier
+    assert '& $corepackExecutable "npm@$($nodeToolchain.npm_version)" --version' in qualifier
+    assert "$env:COREPACK_HOME = $corepackHome" in qualifier
+    assert '$env:npm_config_cache = $npmCache' in qualifier
+    assert 'source = "official-nodejs-verified-portable-archive"' in qualifier
+    assert "exact_portable_node_and_npm" in qualifier
+    assert qualifier.index("$nodeToolchain = Install-OmniExactNodeToolchain") < qualifier.index(
+        "git worktree add --detach"
+    )
 
 
 def test_powershell_variables_before_colons_are_delimited() -> None:
