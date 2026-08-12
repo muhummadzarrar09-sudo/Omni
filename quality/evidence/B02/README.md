@@ -13,7 +13,7 @@ The machine-readable ledger is [`progress.json`](progress.json). This directory 
 | Lane | Role | Current result |
 |---|---|---|
 | Windows 11 Arm64 | Architecture-equivalent software/control-plane evidence for the primary target | Not run; required |
-| Windows 11 x64 | Hardware-independent qualification on the available laptop/workstation | Failed diagnostics only; latest run at `4bc1c9d` reached full installation and exposed missing governed native build tooling |
+| Windows 11 x64 | Hardware-independent qualification on the available laptop/workstation | Failed diagnostics only; latest run at `66843dd` stopped after exact-commit verification on a PowerShell interpolation parser error; cleanup passed and `d681ba8` corrects the parser defect |
 | Linux x86_64 | Development tests only | Current exact-dev Python, package, frontend, static, and governance gates pass; never native Windows evidence |
 | Physical DGX Station | GPU/model/device throughput, performance, and sustained owner use | Deliberately deferred to B11, B13, B15, and B16 |
 
@@ -41,18 +41,20 @@ The exact build authority is `requirements/locks/cpython-3.11-windows-{x86_64|ar
 
 The latest Linux developer validation, after the source-build and cleanup hardening, reports:
 
-- complete exact-dev Python suite: `737 passed, 36 skipped`;
+- complete exact-dev Python suite: `738 passed, 36 skipped, 5 known deprecation warnings`;
 - package suite against exactly one wheel and one sdist: `17 passed`;
 - fatal Ruff gate (`E9,F63,F7,F82`): pass;
 - frontend with Corepack npm `12.0.2`: 13 proxy tests, zero-warning lint, zero vulnerabilities, no unreviewed install scripts, and successful production build;
-- focused install/package/governance tests, JSON parsing, Python compilation, changed PowerShell Tree-sitter parsing, and `git diff --check`: pass at the current review checkpoint.
+- focused install/package/governance tests, JSON parsing, Python compilation, changed PowerShell Tree-sitter parsing, an explicit unsafe `$Name:` interpolation regression scan, and `git diff --check`: pass at the current review checkpoint.
 
 The exact Linux `all` profile still cannot be installed unchanged on this host because dlib, evdev, and PyAudio require unavailable native development prerequisites. That does not weaken or replace either required Windows lane. The broad repository Ruff scan is also not the B02 gate: it contains thousands of pre-existing style findings, while the defined fatal correctness subset passes.
 
 ## Failed native diagnostics retained as failures
 
-Earlier x64 attempts exposed PowerShell 5.1 architecture detection, interpreter/Node selection, UTF-8 report decoding, and vulnerable setuptools authority defects. `f8908503` passed repeatable resolution and exact-dev installation before correctly failing on vulnerable `setuptools==81.0.0`. `4bc1c9d` used the corrected backend and reached full installation, where dlib and llama-cpp-python demonstrated that native source builds lacked a controlled Visual C++/CMake/Ninja contract. None is lane evidence.
+Earlier x64 attempts exposed PowerShell 5.1 architecture detection, interpreter/Node selection, UTF-8 report decoding, and vulnerable setuptools authority defects. `f8908503` passed repeatable resolution and exact-dev installation before correctly failing on vulnerable `setuptools==81.0.0`. `4bc1c9d` used the corrected backend and reached full installation, where dlib and llama-cpp-python demonstrated that native source builds lacked a controlled Visual C++/CMake/Ninja contract.
 
-The current implementation addresses that failure class proactively with exact architecture build locks and wheel hashes, reviewed sdist equality, native toolchain and PE probes, exact installed-environment parity, correctly scoped audits/licenses, architecture capability exclusions, and strict failure cleanup. Those controls remain **unqualified implementation** until executed natively.
+The operator-reported external lane JSON for `66843dd` has `status=fail`, `cleanup_passed=true`, and only `detached_exact_commit` completed. PowerShell rejected the unbraced `$ArchitectureSlug:` interpolation in `scripts/windows_build_tools.ps1` before the native toolchain probe. Commit `d681ba8` braces that variable and adds a repository-wide regression that rejects unsafe unbraced variable/colon interpolation while allowing legitimate scoped forms. None of these failed runs is lane evidence.
+
+The current implementation addresses the discovered failure classes with exact architecture build locks and wheel hashes, reviewed sdist equality, native toolchain and PE probes, exact installed-environment parity, correctly scoped audits/licenses, architecture capability exclusions, strict failure cleanup, and the interpolation regression. Those controls remain **unqualified implementation** until executed natively.
 
 B02 is not closed. B03 has not started. No product-platform, physical-DGX, release, offline-no-egress, commercial-traction, or 10/10 claim is made.

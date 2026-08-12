@@ -26,7 +26,7 @@
       "name": "Windows 11 laptop/workstation",
       "native_architecture": "x86_64",
       "role": "hardware-independent qualification only; not an Arm64 substitute",
-      "b02_status": "failed_diagnostics_only_latest_4bc1c9d_missing_controlled_native_source_build_toolchain"
+      "b02_status": "failed_diagnostics_only_latest_66843dd_powershell_interpolation_parser_error_corrected_unqualified_at_d681ba8"
     },
     "agent_host": {
       "platform": "Linux x86_64",
@@ -47,7 +47,8 @@
     "Arm64 capability marker and selected-distribution enforcement",
     "exact local project version extraction before dev/all environment parity checks",
     "one unattended exact-commit lifecycle, Python, package, frontend, evidence, aggregation, and cleanup path",
-    "failure-path managed stop, identity-constrained process termination, generated-environment/frontend/data/worktree removal, invariant verification, and fail-closed cleanup evidence"
+    "failure-path managed stop, identity-constrained process termination, generated-environment/frontend/data/worktree removal, invariant verification, and fail-closed cleanup evidence",
+    "repository-wide rejection of unsafe unbraced PowerShell variable/colon interpolation with legitimate scoped forms permitted"
   ],
   "required_lane_contract": {
     "same_exact_commit": true,
@@ -107,12 +108,12 @@
     ]
   },
   "developer_validation": {
-    "complete_exact_dev_python_suite": "737_passed_36_skipped_5_warnings",
+    "complete_exact_dev_python_suite": "738_passed_36_skipped_5_known_deprecation_warnings",
     "package_suite": "17_passed_exactly_one_wheel_and_one_sdist",
     "fatal_ruff": "passed_E9_F63_F7_F82",
     "frontend": "13_proxy_tests_passed_zero_warning_lint_zero_vulnerabilities_no_unreviewed_install_scripts_build_passed_exact_npm_12_0_2",
     "focused_install_package_security_suite": "34_passed_3_skipped_at_latest_checkpoint",
-    "json_compile_powershell_diff": "passed_for_changed_governance_files_at_latest_checkpoint",
+    "json_compile_powershell_diff": "passed_including_tree_sitter_and_explicit_unsafe_variable_colon_interpolation_scan",
     "exact_linux_all": "not_available_dlib_evdev_pyaudio_native_build_prerequisites_missing",
     "qualification_value": "regression_only_not_native_windows_evidence"
   },
@@ -121,8 +122,14 @@
     "windows_x86_64": "no_passing_lane",
     "two_lane_aggregate": "not_run_required",
     "latest_x86_64_diagnostic": {
-      "commit": "4bc1c9d824c9099386f81224f2d9f95f27fb39a0",
-      "result": "failed_during_full_installation_when_native_source_builds_required_unavailable_controlled_visual_cpp_tooling",
+      "commit": "66843dd7bfe3ca5cfbbf340bb62357cebe521a8c",
+      "result": "failed_after_detached_exact_commit_before_native_toolchain_probe_due_to_unsafe_powershell_variable_colon_interpolation",
+      "cleanup_passed": true,
+      "checks_passed": [
+        "detached_exact_commit"
+      ],
+      "evidence_status": "operator_reported_external_windows_lane_json_not_committed",
+      "corrected_by_unqualified_commit": "d681ba8efe74ae18933725ad538e68c96b360a19",
       "qualifying": false
     }
   },
