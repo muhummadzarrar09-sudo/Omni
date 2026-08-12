@@ -7,8 +7,16 @@ import sys
 import tomllib
 from pathlib import Path
 
+import pytest
 from packaging.requirements import Requirement
 from packaging.utils import canonicalize_name
+
+from scripts.resolve_profiles import (
+    _parse_exact_hashed_lock,
+    _parse_exact_hashed_lock_records,
+    _validate_arm64_capability_markers,
+    _validate_arm64_capability_selection,
+)
 
 ROOT = Path(__file__).resolve().parents[2]
 EXPECTED_PROFILES = {"core", "voice", "vision", "desktop", "dev", "all"}
@@ -134,6 +142,123 @@ def test_checkout_installers_use_real_profiles_without_editable_installs() -> No
         for path, source in installers.items()
         if path.name not in {"Makefile", "install.bat"}
     )
+
+
+def test_windows_native_build_contract_and_architecture_locks_are_exact() -> None:
+    contract = json.loads(
+        (ROOT / "quality/windows-native-build-contract.json").read_text(encoding="utf-8")
+    )
+    assert contract["schema_version"] == 1
+    assert contract["build_isolation"] is False
+    assert contract["runtime_install_build_isolation"] is False
+    assert contract["wheel_only_build_bootstrap"] is True
+
+    expected_build = {
+        canonicalize_name(name): version for name, version in contract["build_lock"].items()
+    }
+    assert expected_build["setuptools"] == "84.0.0"
+    assert expected_build["pip"] == "26.2.1"
+    assert expected_build["cmake"] == "4.4.2"
+    assert expected_build["ninja"] == "1.13.0"
+    assert contract["build_tool_cli"] == {
+        "cmake": "cmake version 4.4.2",
+        "ninja": "1.13.0.git.kitware.jobserver-pipe-1",
+    }
+    for architecture in ("x86_64", "arm64"):
+        lock = (
+            ROOT
+            / "requirements/locks"
+            / f"cpython-3.11-windows-{architecture}"
+            / "build.txt"
+        )
+        assert _parse_exact_hashed_lock(lock) == expected_build
+        lock_records = _parse_exact_hashed_lock_records(lock)
+        assert {name: record["sha256"] for name, record in lock_records.items()} == {
+            canonicalize_name(name): sha256
+            for name, sha256 in contract["build_artifact_sha256"][architecture].items()
+        }
+        assert set(lock_records) == set(contract["build_artifact_sha256"][architecture])
+        assert all(
+            re.fullmatch(r"[a-f0-9]{64}", sha256)
+            for sha256 in contract["build_artifact_sha256"][architecture].values()
+        )
+        visual_studio = contract["visual_studio"]["architectures"][architecture]
+        expected_host = "Hostx64\\x64" if architecture == "x86_64" else "Hostarm64\\arm64"
+        assert visual_studio["compiler_path_fragment"] == f"{expected_host}\\cl.exe"
+        assert visual_studio["linker_path_fragment"] == f"{expected_host}\\link.exe"
+
+        records = contract["source_distributions"][architecture]
+        keys = [(canonicalize_name(record["name"]), record["version"]) for record in records]
+        assert len(keys) == len(set(keys))
+        for record in records:
+            assert re.fullmatch(r"[a-f0-9]{64}", record["sha256"])
+            assert record["filename"].endswith((".tar.gz", ".zip"))
+            assert record["kind"] in {"native", "pure_python"}
+            assert set(map(canonicalize_name, record["declared_build_requirements"])) <= set(
+                map(canonicalize_name, record["controlled_tools"])
+            )
+            assert set(map(canonicalize_name, record["controlled_tools"])) <= set(
+                expected_build
+            )
+
+    x64_sources = {
+        (canonicalize_name(record["name"]), record["version"])
+        for record in contract["source_distributions"]["x86_64"]
+    }
+    arm64_sources = {
+        (canonicalize_name(record["name"]), record["version"])
+        for record in contract["source_distributions"]["arm64"]
+    }
+    assert len(x64_sources) == 12
+    assert len(arm64_sources) == 9
+    assert ("dlib", "20.0.1") in x64_sources
+    assert ("dlib", "20.0.1") not in arm64_sources
+    assert ("llama-cpp-python", "0.3.34") in x64_sources & arm64_sources
+
+
+def test_windows_arm64_capability_contract_is_enforced_by_markers() -> None:
+    metadata = _metadata()
+    contract = json.loads(
+        (ROOT / "quality/windows-arm64-capabilities.json").read_text(encoding="utf-8")
+    )
+    _validate_arm64_capability_markers(metadata, contract)
+
+    profiles = metadata["project"]["optional-dependencies"]
+    all_requirements = [Requirement(value) for value in profiles["all"]]
+    all_names = {canonicalize_name(requirement.name) for requirement in all_requirements}
+    assert set(map(canonicalize_name, contract["required_python_distributions"])) <= all_names
+    excluded = {
+        canonicalize_name(record["distribution"]) for record in contract["marker_exclusions"]
+    }
+    assert len(excluded) == 10
+    assert excluded <= all_names
+
+    results = {
+        "all": {
+            "packages": [
+                {"name": name} for name in contract["required_python_distributions"]
+            ]
+        }
+    }
+    evidence = _validate_arm64_capability_selection(results, contract)
+    assert evidence["status"] == "pass"
+    assert evidence["selected_exclusions"] == []
+    results["all"]["packages"].append({"name": "chromadb"})
+    with pytest.raises(RuntimeError, match="selected excluded distributions"):
+        _validate_arm64_capability_selection(results, contract)
+
+    arm_cryptography = [
+        requirement
+        for requirement in all_requirements
+        if canonicalize_name(requirement.name) == "cryptography"
+        and requirement.marker
+        and requirement.marker.evaluate(
+            {"platform_system": "Windows", "platform_machine": "ARM64"}
+        )
+    ]
+    assert len(arm_cryptography) == 1
+    assert arm_cryptography[0].specifier.contains("46.0.3")
+    assert not arm_cryptography[0].specifier.contains("46.0.4")
 
 
 def test_package_discovery_covers_runtime_roots_and_excludes_source_tests() -> None:

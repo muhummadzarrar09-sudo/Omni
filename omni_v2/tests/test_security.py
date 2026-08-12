@@ -12,10 +12,11 @@ sys.path.insert(0, str(REPO))
 os.environ.setdefault("OMNI_DATA_DIR", str(tempfile.mkdtemp(prefix="omni_sec_")))
 
 import numpy as np
+import pytest
 
 from omni_v2.security.face_auth import (
     FaceAuth, VERDICT_OWNER, VERDICT_UNKNOWN, VERDICT_NO_FACE, VERDICT_UNAVAILABLE,
-    GradientVerifier, LBPHVerifier,
+    GradientVerifier, LBPHVerifier, DeepVerifier,
 )
 from omni_v2.security.lockdown import LockdownController, MachineLocker
 from omni_v2.security.guard_monitor import GuardMonitor
@@ -109,6 +110,20 @@ def test_gradient_persists():
 # ---------------------------------------------------------------------------
 # LBPH backend (trained recognizer)
 # ---------------------------------------------------------------------------
+def _has_lbph() -> bool:
+    try:
+        import cv2
+    except ImportError:
+        return False
+    return hasattr(cv2, "face")
+
+
+requires_lbph = pytest.mark.skipif(
+    not _has_lbph(), reason="requires optional opencv-contrib cv2.face support"
+)
+
+
+@requires_lbph
 def test_lbph_score_separates():
     # LOWER confidence = closer. Same-person should score far lower than an intruder.
     with tempfile.TemporaryDirectory() as tmp:
@@ -120,6 +135,7 @@ def test_lbph_score_separates():
         assert same < diff
 
 
+@requires_lbph
 def test_lbph_enroll_and_verify():
     with tempfile.TemporaryDirectory() as tmp:
         fa = FaceAuth(owner_path=Path(tmp) / "owner.json", model_path=Path(tmp) / "m.xml",
@@ -135,6 +151,7 @@ def test_lbph_enroll_and_verify():
         assert v2["verdict"] == VERDICT_UNKNOWN
 
 
+@requires_lbph
 def test_lbph_model_save_load():
     with tempfile.TemporaryDirectory() as tmp:
         mp = Path(tmp) / "m.xml"
@@ -151,12 +168,14 @@ def test_lbph_model_save_load():
 # ---------------------------------------------------------------------------
 # Backend selection
 # ---------------------------------------------------------------------------
-def test_backend_selection_prefers_lbph():
-    # with opencv-contrib present, FaceAuth should auto-select LBPH
-    fa = FaceAuth(owner_path=Path("/tmp/selection_owner.json"))
-    assert fa.backend in ("lbph", "gradient", "deep")
-    # On this test env we installed opencv-contrib-headless, so expect lbph
-    assert fa.backend == "lbph"
+def test_backend_selection_uses_highest_priority_available_backend():
+    fa = FaceAuth(owner_path=Path(tempfile.mkdtemp()) / "selection_owner.json")
+    if DeepVerifier().available:
+        assert fa.backend == "deep"
+    elif _has_lbph():
+        assert fa.backend == "lbph"
+    else:
+        assert fa.backend == "gradient"
 
 
 # ---------------------------------------------------------------------------

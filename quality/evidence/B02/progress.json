@@ -1,10 +1,11 @@
 {
-  "schema_version": 2,
+  "schema_version": 3,
   "batch": "B02",
   "title": "Install, Configuration, and Startup Qualification",
-  "decision": "in_progress_blocked_pending_validation_and_two_native_lanes",
   "recorded_on": "2026-08-12",
-  "implementation_base_commit": "5ea69fc7fbca19940c0e3d3733a4137613a02c9a",
+  "decision": "in_progress_blocked_pending_same_commit_native_arm64_and_x86_64_passes",
+  "implementation_lineage_base_commit": "4bc1c9d824c9099386f81224f2d9f95f27fb39a0",
+  "qualification_commit_rule": "the full 40-character checked-out HEAD selected at execution time",
   "authority": {
     "batch_status": "in_progress",
     "next_batch": "B03",
@@ -24,26 +25,29 @@
     "secondary_qualification_host": {
       "name": "Windows 11 laptop/workstation",
       "native_architecture": "x86_64",
-      "role": "hardware-independent qualification and development; not a substitute for Arm64",
-      "b02_status": "diagnostic_attempts_at_7eb6e148_and_5c2bb341_exposed_then_corrected_powershell_5_1_architecture, toolchain_selection, and UTF-8 resolver defects; f8908503 passed repeatable profile resolution, exact dev installation, local-source installation, and pip check, then failed closed on vulnerable setuptools 81.0.0; secure build-backend correction implemented and new-commit rerun required"
+      "role": "hardware-independent qualification only; not an Arm64 substitute",
+      "b02_status": "failed_diagnostics_only_latest_4bc1c9d_missing_controlled_native_source_build_toolchain"
     },
     "agent_host": {
-      "platform": "Linux 6.1.158+ x86_64 with glibc 2.36",
-      "role": "developer host only; not a product platform or native B02 lane",
-      "powershell_5_1": "unavailable"
+      "platform": "Linux x86_64",
+      "role": "developer validation only; not a native B02 lane"
     }
   },
-  "amended_implementation_draft": [
-    "Windows PowerShell 5.1-compatible native platform helper accepts Arm64 and X64, rejects Windows Server/domain-controller products and emulated process architecture, and exposes architecture-specific lock/Python identities",
-    "installer selects cpython-3.11-windows-arm64 or cpython-3.11-windows-x86_64 and requires architecture-matched 64-bit CPython 3.11",
-    "qualifier prefers the version-selecting py -3.11 launcher before a generic python command and records rejected interpreter identity",
-    "resolver normalizes native Windows architecture, rejects OS/process architecture mismatch, reads pip report JSON explicitly as UTF-8 rather than the Windows locale default, and supports detached external lock/evidence paths",
-    "lifecycle verifier records schema-v2 architecture, toolchain, lock, authenticated readiness, repeated lifecycle, uninstall, and cleanup evidence",
-    "single unattended qualifier drives exact-commit detached-worktree resolution, installation, lifecycle, Python, package, configuration, frontend, evidence, aggregation, and cleanup gates",
-    "inactive owner-installable workflow template defines hosted windows-11-arm and windows-latest attempts on exact pull-request head or manual-dispatch commits plus fail-closed aggregation; the Arena credential cannot activate it under .github/workflows, no hosted run has started, and a hosted x64 server result could not replace the Windows 11 x64 laptop",
-    "preflight and static script contracts are generalized for native Arm64 and x64",
-    "package qualification builds wheel and sdist without PEP 517 isolation in the exact native dev environment and installs the sdist only after a complete hashed exact-lock bootstrap with build isolation disabled",
-    "build-system requires setuptools>=83,<85 after the f8908503 native audit proved that the superseded setuptools>=77,<82 range forced vulnerable 81.0.0; no advisory ignore or waiver is permitted"
+  "implemented_controls": [
+    "native Windows 11 workstation, process, OS, CPython, Node, and PowerShell architecture gates",
+    "architecture-specific exact hashed runtime locks and wheel-only exact hashed build locks",
+    "build-lock version and architecture-specific wheel-hash equality with quality/windows-native-build-contract.json",
+    "exact CMake and Ninja package and CLI identities",
+    "Visual Studio 2022 component, native compiler/linker path, explicit governed SDK 10.0.26100.0 selection, executable compilation, and PE-target verification",
+    "approved source distributions pinned by architecture, name, version, filename, SHA-256, backend, and controlled build tools",
+    "all-profile selected-sdist equality with the complete architecture source contract",
+    "cache-free resolution and installation with third-party build isolation disabled",
+    "exact installed-environment parity for isolated build, dev, and all-runtime authorities",
+    "hash-required vulnerability audits and interpreter-scoped exact license inventories for build, dev, and all",
+    "Arm64 capability marker and selected-distribution enforcement",
+    "exact local project version extraction before dev/all environment parity checks",
+    "one unattended exact-commit lifecycle, Python, package, frontend, evidence, aggregation, and cleanup path",
+    "failure-path managed stop, identity-constrained process termination, generated-environment/frontend/data/worktree removal, invariant verification, and fail-closed cleanup evidence"
   ],
   "required_lane_contract": {
     "same_exact_commit": true,
@@ -59,91 +63,72 @@
       "dev",
       "all"
     ],
+    "source_distribution_contract_counts": {
+      "x86_64": 12,
+      "arm64": 9
+    },
+    "build_authority": {
+      "wheel_only": true,
+      "require_hashes": true,
+      "cache_used": false,
+      "third_party_build_isolation": false,
+      "versions_and_artifact_hashes_governed": true,
+      "native_toolchain_probe_required": true
+    },
     "required_gates": [
-      "native platform and toolchain identity",
-      "repeatable exact hashed dependency locks",
+      "exact commit and detached clean worktree",
+      "native Windows 11 workstation and architecture identities",
+      "native Visual Studio compiler linker SDK executable and PE probe",
+      "exact wheel-only build bootstrap and CLI identities",
+      "repeatable exact hashed six-profile dependency locks",
+      "complete exact architecture source-contract equality",
+      "exact dev and all installation parity, pip check, vulnerability audit, and license inventory",
       "installation and second installation",
       "startup and idempotent second startup",
       "restart with process replacement",
-      "authenticated backend/frontend readiness",
+      "authenticated backend and frontend readiness",
       "stop with no owned orphan services",
       "safe data-preserving uninstall",
-      "explicit isolated data removal",
-      "repeated uninstall",
-      "Python install suite and full Python suite",
-      "fatal Ruff and Python compilation checks",
-      "configuration, exact-lock no-isolation wheel/sdist build and artifact-install, package-content, and Twine checks",
-      "frontend clean install, install-script, dependency-tree, audit, proxy-test, lint, and build checks",
-      "external evidence generation and detached-worktree cleanup"
+      "explicit isolated data removal and repeated uninstall",
+      "configured Python suite, fatal Ruff, and compilation",
+      "no-isolation exact-lock wheel and sdist build and artifact tests",
+      "frontend clean install, script/tree/audit/proxy/lint/build",
+      "external evidence generation and strict failure-path cleanup"
     ],
     "aggregate_fail_closed_on": [
       "missing or duplicate architecture lane",
-      "lane failure",
-      "wrong commit",
-      "wrong or emulated architecture",
-      "non-workstation or pre-Windows-11 host",
-      "wrong Python or Node architecture",
-      "malformed evidence",
-      "missing artifact",
-      "digest mismatch",
-      "invalid lifecycle evidence"
+      "lane or cleanup failure",
+      "wrong commit, architecture, OS product, or interpreter/tool architecture",
+      "emulated or wrong-target native build tools",
+      "build authority version, artifact-hash, or CLI drift",
+      "source-contract or capability-selection drift",
+      "installed-environment, audit, or license-scope drift",
+      "malformed, absent, unlisted, or digest-mismatched evidence"
     ]
   },
-  "validation_status": [
-    {
-      "scope": "install/lifecycle contract tests on the amended source",
-      "status": "pass_54_tests_linux_developer_host"
-    },
-    {
-      "scope": "fresh six-profile Linux resolution and exact dev-lock installation",
-      "status": "pass_core_36_voice_90_vision_88_desktop_26_dev_92_all_219_resolved; exact_dev_pip_check_audit_and_license_inventory_passed; broad_suite_655_passed_33_skipped_9_opencv-dependent_failures_because_dev_omits_optional_all-runtime_dependencies"
-    },
-    {
-      "scope": "exact Linux all-runtime lock installation and broad suite",
-      "status": "blocked_by_developer_host_native_build_prerequisites; dlib_evdev_and_pyaudio_failed_to_build; exact_all_broad_suite_not_run"
-    },
-    {
-      "scope": "broad omni_v2 test regression in augmented dev environment",
-      "status": "pass_664_skipped_33_after_disclosed_opencv_contrib_headless_substitution; useful_regression_only_not_exact_lock_evidence"
-    },
-    {
-      "scope": "package, frontend, configuration, governance, static PowerShell, and workflow developer checks",
-      "status": "security-corrected Linux developer checks passed with exact dev-lock setuptools 84.0.0: current zero-finding audit, 56 install tests, no-isolation wheel/sdist build, exact-lock artifact installs, 15 package tests, package-content and Twine checks, frontend clean install/audit/proxy/lint/build, configuration, governance, static checks, changed-script Tree-sitter parse, and inactive-workflow YAML load; non-native evidence only"
-    },
-    {
-      "scope": "PowerShell 5.1 parsing and execution",
-      "status": "native_x64_attempt_at_7eb6e148_failed_before_evidence_initialization_on_missing_direct_RuntimeInformation_OSArchitecture; attempts_at_5c2bb341_proved_compatible_platform_detection_and_reached_dependency_resolution"
-    },
-    {
-      "scope": "GitHub Actions semantic and hosted runner execution",
-      "status": "not_run"
-    },
-    {
-      "scope": "native Windows 11 Arm64 unattended lane",
-      "status": "not_run_required"
-    },
-    {
-      "scope": "native Windows 11 x64 unattended laptop lane",
-      "status": "diagnostic_failures_only: 7eb6e148_powershell_architecture_property; 5c2bb341_default_python_then_global_node24_prerequisites_then_pip_utf8_report_decoded_as_cp1252; f8908503_repeatable_six_profile_resolution_exact_dev_and_source_install_and_pip_check_passed_then_python_audit_failed_on_setuptools_81_0_0_PYSEC_2026_3447_fixed_83_0_0; new_security_corrected_exact_commit_rerun_required"
-    },
-    {
-      "scope": "two-lane aggregate verdict",
-      "status": "not_run_required"
+  "developer_validation": {
+    "complete_exact_dev_python_suite": "737_passed_36_skipped_5_warnings",
+    "package_suite": "17_passed_exactly_one_wheel_and_one_sdist",
+    "fatal_ruff": "passed_E9_F63_F7_F82",
+    "frontend": "13_proxy_tests_passed_zero_warning_lint_zero_vulnerabilities_no_unreviewed_install_scripts_build_passed_exact_npm_12_0_2",
+    "focused_install_package_security_suite": "34_passed_3_skipped_at_latest_checkpoint",
+    "json_compile_powershell_diff": "passed_for_changed_governance_files_at_latest_checkpoint",
+    "exact_linux_all": "not_available_dlib_evdev_pyaudio_native_build_prerequisites_missing",
+    "qualification_value": "regression_only_not_native_windows_evidence"
+  },
+  "native_execution_status": {
+    "windows_arm64": "not_run_required",
+    "windows_x86_64": "no_passing_lane",
+    "two_lane_aggregate": "not_run_required",
+    "latest_x86_64_diagnostic": {
+      "commit": "4bc1c9d824c9099386f81224f2d9f95f27fb39a0",
+      "result": "failed_during_full_installation_when_native_source_builds_required_unavailable_controlled_visual_cpp_tooling",
+      "qualifying": false
     }
-  ],
-  "prior_checkpoint_results": {
-    "qualification_boundary": "Results below predate the Arm64 amendment and modified qualification driver. They remain historical developer-host evidence only and cannot validate the current draft.",
-    "tests_install": "52 passed on Linux",
-    "config_contract": "passed on Linux",
-    "managed_smoke_restart": "passed on Linux with authenticated HTTP/WebSocket lifecycle",
-    "frontend_proxy_tests": "13 passed on Linux",
-    "frontend_lint_and_build": "passed on Linux",
-    "package_tests_and_twine": "14 package tests and Twine checks passed on Linux",
-    "fatal_ruff_compile_shell_diff_links": "passed at the prior checkpoint"
   },
   "required_absent_artifacts": [
-    "native Arm64 lane evidence for the exact qualification commit",
-    "native x86_64 lane evidence for the same exact qualification commit",
+    "passing native Arm64 lane evidence for the selected exact commit",
+    "passing native x86_64 lane evidence for the same exact commit",
     "validated two-lane aggregate verdict",
     "quality/evidence/B02/closure.json"
   ],
@@ -153,56 +138,25 @@
       "status": "blocked_not_run"
     },
     {
-      "requirement": "Complete unattended native Windows 11 x64 lane for the same exact commit",
-      "status": "blocked_not_run"
+      "requirement": "Complete unattended native Windows 11 x64 lane on the same commit",
+      "status": "blocked_no_passing_lane"
     },
     {
       "requirement": "Fail-closed aggregate accepts both lane attestations and artifacts",
       "status": "blocked_not_run"
     },
     {
-      "requirement": "Current implementation passes local static, Python, configuration, packaging, frontend, documentation, and governance validation",
-      "status": "partial_linux_developer_validation_passed_except_exact_all_native_builds; native_windows_execution_required"
+      "requirement": "Developer-host implementation, tests, audits, docs, and governance review",
+      "status": "pass_at_current_checkpoint_non_native_only"
     }
   ],
   "nonclaims": [
     "B02 is not closed.",
     "B03 has not started and remains locked.",
-    "Linux developer evidence does not qualify either native Windows lane.",
-    "An x64 pass cannot qualify the Arm64 product target.",
-    "Hosted Arm64 evidence cannot qualify physical DGX GPU, model, device, performance, or sustained-use behavior.",
-    "Static PowerShell or workflow inspection is not native execution evidence.",
-    "Offline configuration is not a whole-process no-egress sandbox.",
-    "No release, exact-all broad-suite qualification, cross-platform support, or 10/10 status is claimed."
-  ],
-  "current_local_results": {
-    "truth_boundary": "All results are Linux x86_64 developer evidence. They do not qualify either required native Windows lane.",
-    "tests_install": "56 passed",
-    "fresh_resolver": {
-      "core": 36,
-      "voice": 90,
-      "vision": 88,
-      "desktop": 26,
-      "dev": 92,
-      "all": 219
-    },
-    "exact_dev": "existing hashed Linux dev lock selects fixed setuptools 84.0.0; exact install, local-source no-isolation install, pip check, and current pip-audit passed with zero findings; historical broad suite produced 655 passed, 33 skipped, and 9 OpenCV-dependent failures because dev omits optional all-runtime dependencies",
-    "exact_all": "installation did not complete because the host lacks Python/native development prerequisites for dlib, evdev, and PyAudio; no exact-all broad-suite result exists; the unattended qualifier requires this environment and layers its site-packages over the exact dev test-tool environment for the broad suite",
-    "historical_augmented_all_dependency_diagnostic": "664 passed, 33 skipped after replacing the locked GUI OpenCV distribution with same-version opencv-contrib-python-headless; non-lock diagnostic regression evidence only",
-    "package": "15 package tests passed with wheel/sdist built using --no-isolation in the exact Linux dev environment selecting fixed setuptools 84.0.0; together with 56 install tests the focused suite passed 71 tests; clean artifact test environments bootstrap the complete hashed exact dev lock and disable sdist build isolation; content and Twine checks passed; developer evidence only",
-    "frontend": "clean npm 12.0.2 install of 428 audited packages, install-script and dependency-tree assertions, zero-vulnerability audit, 13 proxy tests, lint, and production build passed",
-    "governance_and_static": "configuration contract, governed generation/check, governance self-test, fatal and changed-file Ruff, compileall, local Markdown links, JSON/TOML and shell syntax, PowerShell Tree-sitter inspection, basic workflow YAML load, and git diff check passed",
-    "governed_source_digest": "bb8feecb3acfa3be364b58909ee516b49b94948ee55f7d63dc382f9861488adb"
-  },
-  "native_diagnostic_history": [
-    {
-      "lane": "windows-x86_64",
-      "commit": "f8908503d0b81578f58cf4ae508ef032bcd78cd1",
-      "status": "fail_closed_python_vulnerability_audit",
-      "completed": "native identity; exact toolchains; detached exact commit; two identical six-profile resolutions; exact dev-lock install; local-source install; pip check",
-      "failure": "setuptools 81.0.0; two records for one distinct PYSEC-2026-3447 / CVE-2026-59890 advisory; fixed in 83.0.0",
-      "record": "quality/evidence/B02/native-x64-diagnostic-2026-08-12.json",
-      "disposition": "no waiver; superseded build constraint corrected to setuptools>=83,<85; rerun both lanes at one new exact commit"
-    }
+    "No native Windows lane has passed.",
+    "Linux developer checks and static PowerShell parsing do not qualify a Windows lane.",
+    "An x64 pass cannot qualify the Arm64 target.",
+    "Hosted Arm64 cannot qualify physical DGX GPU, model, device, performance, or sustained-use behavior.",
+    "No product-platform, release, commercial-traction, offline-no-egress, or 10/10 claim is made."
   ]
 }

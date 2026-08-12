@@ -23,16 +23,16 @@
     "quality/policy.json": "0243950bb973d7dae797b186a146471eae5408897f512f8b188a3b6bb95648bf",
     "quality/batches.json": "7f2338451edab30bbc800b7a052c5fd152a6e1a272ee2d61fd284cdf87d43dab"
   },
-  "source_digest": "bb8feecb3acfa3be364b58909ee516b49b94948ee55f7d63dc382f9861488adb",
+  "source_digest": "d1cb6174e4a8a4c45548d5f5f15bb276ba27e2fa7005ec213bcbbd306f4d719e",
   "counts": {
     "production_files": 234,
-    "production_bytes": 1885956,
-    "production_lines": 47766,
-    "production_nonblank_lines": 42028,
+    "production_bytes": 1887502,
+    "production_lines": 47801,
+    "production_nonblank_lines": 42060,
     "test_files": 62,
-    "test_bytes": 359849,
-    "test_lines": 10468,
-    "test_nonblank_lines": 8757,
+    "test_bytes": 360164,
+    "test_lines": 10487,
+    "test_nonblank_lines": 8772,
     "capabilities": 52,
     "core_workflows": 10,
     "areas": 21,
@@ -40,7 +40,7 @@
     "declared_tool_classes": 17,
     "declared_tool_actions": 88,
     "classes": 375,
-    "functions": 3037
+    "functions": 3038
   },
   "capabilities_by_lifecycle": {
     "beta": 24,
@@ -3088,10 +3088,10 @@
       },
       {
         "path": "omni_v2/security/face_auth.py",
-        "bytes": 19999,
-        "lines": 555,
-        "nonblank_lines": 474,
-        "sha256": "163e72bfb5e7a15a8daa851889864601e55a93b5caf513555a1c7091417b2835"
+        "bytes": 21545,
+        "lines": 590,
+        "nonblank_lines": 506,
+        "sha256": "f7567867a1179007f63925d732500fda374119b2b9b6cf9b16ab7b43beac81eb"
       },
       {
         "path": "omni_v2/security/guard_monitor.py",
@@ -3888,10 +3888,10 @@
       },
       {
         "path": "omni_v2/tests/test_security.py",
-        "bytes": 10453,
-        "lines": 269,
-        "nonblank_lines": 218,
-        "sha256": "68cdd022756c64b562f555cfa18063fc2c1d4f864c6993d9c313e4acbaf54d64"
+        "bytes": 10768,
+        "lines": 288,
+        "nonblank_lines": 233,
+        "sha256": "c90ac4dcb97b79c7049ffd458330c64a28a05d99335025d06eedf0eb5f9dd311"
       },
       {
         "path": "omni_v2/tests/test_security_guardrails.py",

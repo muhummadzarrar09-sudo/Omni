@@ -4,7 +4,7 @@
 
 **Authority verified:** 2026-08-12<br>
 **Release state:** pre-alpha recovery<br>
-**Source inventory digest:** `bb8feecb3acfa3be364b58909ee516b49b94948ee55f7d63dc382f9861488adb`
+**Source inventory digest:** `d1cb6174e4a8a4c45548d5f5f15bb276ba27e2fa7005ec213bcbbd306f4d719e`
 
 ## Locked Product Promise
 

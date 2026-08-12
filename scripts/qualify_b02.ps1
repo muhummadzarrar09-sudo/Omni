@@ -77,6 +77,104 @@ function Test-ObjectProperty {
     return $null -ne $Value -and $null -ne $Value.PSObject.Properties[$Name]
 }
 
+function Assert-InstalledBuildAuthority {
+    param(
+        [Parameter(Mandatory = $true)][string]$Python,
+        [Parameter(Mandatory = $true)]$Contract,
+        [Parameter(Mandatory = $true)][string]$Label
+    )
+    $inventoryText = (& $Python -m pip list --format json --disable-pip-version-check | Out-String)
+    Assert-True ($LASTEXITCODE -eq 0) "Could not inventory the $Label build authority."
+    try {
+        $inventory = $inventoryText | ConvertFrom-Json
+    } catch {
+        throw "$Label build authority did not emit valid package JSON: $($_.Exception.Message)"
+    }
+    $installed = @{}
+    foreach ($distribution in @($inventory)) {
+        $name = (([string]$distribution.name).ToLowerInvariant() -replace "[-_.]+", "-")
+        if ($installed.ContainsKey($name)) { throw "$Label build authority contains duplicate distribution: $name" }
+        $installed[$name] = [string]$distribution.version
+    }
+    foreach ($property in $Contract.build_lock.PSObject.Properties) {
+        $name = (([string]$property.Name).ToLowerInvariant() -replace "[-_.]+", "-")
+        if (-not $installed.ContainsKey($name) -or $installed[$name] -ne [string]$property.Value) {
+            throw "$Label build authority drifted for $name; expected $($property.Value), found $($installed[$name])."
+        }
+    }
+}
+
+function Get-ExactHashedLockRecords {
+    param([Parameter(Mandatory = $true)][string]$Path)
+
+    $records = @{}
+    $lineNumber = 0
+    foreach ($rawLine in Get-Content -LiteralPath $Path) {
+        $lineNumber += 1
+        $line = $rawLine.Trim()
+        if (-not $line -or $line.StartsWith("#")) { continue }
+        if ($line -notmatch "^([A-Za-z0-9_.-]+)==([^\s]+)\s+--hash=sha256:([a-f0-9]{64})$") {
+            throw "Invalid exact hashed lock entry at ${Path}:$lineNumber"
+        }
+        $name = (([string]$Matches[1]).ToLowerInvariant() -replace "[-_.]+", "-")
+        if ($records.ContainsKey($name)) { throw "Duplicate exact lock distribution at ${Path}: $name" }
+        $records[$name] = [pscustomobject]@{
+            version = [string]$Matches[2]
+            sha256 = [string]$Matches[3]
+        }
+    }
+    if ($records.Count -eq 0) { throw "Exact hashed lock is empty: $Path" }
+    return $records
+}
+
+function Assert-ExactInstalledEnvironment {
+    param(
+        [Parameter(Mandatory = $true)][string]$Python,
+        [Parameter(Mandatory = $true)][string[]]$Locks,
+        [Parameter(Mandatory = $true)][hashtable]$Additional,
+        [Parameter(Mandatory = $true)][string]$Label
+    )
+    $expected = @{}
+    foreach ($lock in $Locks) {
+        foreach ($record in (Get-ExactHashedLockRecords $lock).GetEnumerator()) {
+            $name = [string]$record.Key
+            $version = [string]$record.Value.version
+            if ($expected.ContainsKey($name) -and $expected[$name] -ne $version) {
+                throw "$Label exact locks conflict for ${name}: $($expected[$name]) and $version."
+            }
+            $expected[$name] = $version
+        }
+    }
+    foreach ($entry in $Additional.GetEnumerator()) {
+        $name = (([string]$entry.Key).ToLowerInvariant() -replace "[-_.]+", "-")
+        if ($expected.ContainsKey($name) -and $expected[$name] -ne [string]$entry.Value) {
+            throw "$Label additional distribution conflicts with exact locks for $name."
+        }
+        $expected[$name] = [string]$entry.Value
+    }
+    Assert-True ($expected.Count -gt 0) "$Label expected distribution set is empty."
+
+    $inventoryText = (& $Python -m pip list --format json --disable-pip-version-check | Out-String)
+    Assert-True ($LASTEXITCODE -eq 0) "Could not inventory the $Label environment."
+    try {
+        $inventory = $inventoryText | ConvertFrom-Json
+    } catch {
+        throw "$Label environment did not emit valid package JSON: $($_.Exception.Message)"
+    }
+    $installed = @{}
+    foreach ($distribution in @($inventory)) {
+        $name = (([string]$distribution.name).ToLowerInvariant() -replace "[-_.]+", "-")
+        if ($installed.ContainsKey($name)) { throw "$Label environment contains duplicate distribution: $name" }
+        $installed[$name] = [string]$distribution.version
+    }
+    $missing = @($expected.Keys | Where-Object { -not $installed.ContainsKey($_) })
+    $unexpected = @($installed.Keys | Where-Object { -not $expected.ContainsKey($_) })
+    $mismatched = @($expected.Keys | Where-Object { $installed.ContainsKey($_) -and $installed[$_] -ne $expected[$_] })
+    if ($missing.Count -ne 0 -or $unexpected.Count -ne 0 -or $mismatched.Count -ne 0) {
+        throw "$Label installed distributions differ from the exact authority (missing=$($missing -join ','), unexpected=$($unexpected -join ','), mismatched=$($mismatched -join ','))."
+    }
+}
+
 function Test-LaneArtifacts {
     param($Lane, [string]$LaneJsonPath, [string]$ExpectedCommit)
 
@@ -86,10 +184,11 @@ function Test-LaneArtifacts {
     $profiles = @("core", "voice", "vision", "desktop", "dev", "all")
     $requiredChecks = @(
         "detached_exact_commit",
+        "native_build_toolchain_and_exact_build_lock",
         "all_profile_resolution",
         "repeatable_exact_hashed_locks",
-        "isolated_exact_dev_install_pip_check_and_audits",
-        "isolated_exact_all_install_pip_check",
+        "isolated_exact_dev_and_build_install_pip_check_and_audits",
+        "isolated_exact_all_install_pip_check_and_audits",
         "configured_python_suite_configuration_governance_ruff_compile",
         "wheel_sdist_package_tests_contents_and_metadata",
         "frontend_ci_install_script_tree_audit_proxy_lint_build",
@@ -137,6 +236,77 @@ function Test-LaneArtifacts {
     if ([string]$Lane.tools.npm_version -ne "12.0.2") {
         [void]$errors.Add("lane did not use exact npm 12.0.2")
     }
+
+    try {
+        $buildContractPath = Join-Path (Resolve-Path (Join-Path $PSScriptRoot "..")).Path "quality\windows-native-build-contract.json"
+        $buildContract = (Get-Content -Raw -LiteralPath $buildContractPath) | ConvertFrom-Json
+        $architectureContract = $buildContract.visual_studio.architectures.$architecture
+        $nativeTools = $Lane.tools.native_build_tools
+        if ([string]$nativeTools.architecture_slug -ne $architecture -or [string]$nativeTools.native_probe -ne "pass") {
+            [void]$errors.Add("native compiler probe architecture or status is invalid")
+        }
+        if (-not ([string]$nativeTools.compiler).EndsWith([string]$architectureContract.compiler_path_fragment, [StringComparison]::OrdinalIgnoreCase)) {
+            [void]$errors.Add("native compiler host/target path is invalid")
+        }
+        if (-not ([string]$nativeTools.linker).EndsWith([string]$architectureContract.linker_path_fragment, [StringComparison]::OrdinalIgnoreCase)) {
+            [void]$errors.Add("native linker host/target path is invalid")
+        }
+        if ([string]$nativeTools.compiler_sha256 -notmatch "^[0-9a-f]{64}$" -or [string]$nativeTools.linker_sha256 -notmatch "^[0-9a-f]{64}$") {
+            [void]$errors.Add("native compiler or linker digest is invalid")
+        }
+        if ([string]$nativeTools.pe_machine -ne ("0x{0}" -f ([string]$architectureContract.target_machine).ToUpperInvariant())) {
+            [void]$errors.Add("native compiler probe PE machine is invalid")
+        }
+        if ([string]$nativeTools.windows_sdk_version -ne [string]$buildContract.visual_studio.windows_sdk_version) {
+            [void]$errors.Add("selected Windows SDK identity does not match the build contract")
+        }
+        try {
+            if (([version][string]$nativeTools.visual_studio_installation_version).Major -ne 17) {
+                [void]$errors.Add("Visual Studio installation is not 2022 (17.x)")
+            }
+        } catch {
+            [void]$errors.Add("Visual Studio installation version is invalid")
+        }
+        $expectedComponents = @(
+            [string]$buildContract.visual_studio.workload_component,
+            [string]$architectureContract.msvc_component,
+            [string]$buildContract.visual_studio.windows_sdk_component
+        ) | Sort-Object
+        $actualComponents = @($nativeTools.required_components | ForEach-Object { [string]$_ }) | Sort-Object
+        if (($expectedComponents -join "`n") -ne ($actualComponents -join "`n")) {
+            [void]$errors.Add("Visual Studio required-component evidence is invalid")
+        }
+        $buildAuthority = $Lane.tools.exact_build_authority
+        if (
+            [string]$buildAuthority.lock -ne "locks/cpython-3.11-windows-$architecture/build.txt" -or
+            [string]$buildAuthority.lock_sha256 -notmatch "^[0-9a-f]{64}$" -or
+            [string]$buildAuthority.cmake -ne [string]$buildContract.build_tool_cli.cmake -or
+            [string]$buildAuthority.ninja -ne [string]$buildContract.build_tool_cli.ninja -or
+            [bool]$buildAuthority.build_isolation -or
+            [bool]$buildAuthority.cache_used
+        ) {
+            [void]$errors.Add("exact build-authority evidence is invalid")
+        }
+        $laneBuildRecords = Get-ExactHashedLockRecords (Join-Path $laneDirectory ([string]$buildAuthority.lock).Replace("/", "\"))
+        $contractBuildHashes = $buildContract.build_artifact_sha256.$architecture
+        if ($laneBuildRecords.Count -ne @($buildContract.build_lock.PSObject.Properties).Count) {
+            [void]$errors.Add("exact build-lock cardinality does not match the contract")
+        }
+        foreach ($property in $buildContract.build_lock.PSObject.Properties) {
+            $name = (([string]$property.Name).ToLowerInvariant() -replace "[-_.]+", "-")
+            $expectedHashProperty = $contractBuildHashes.PSObject.Properties[$name]
+            if (
+                -not $laneBuildRecords.ContainsKey($name) -or
+                -not $expectedHashProperty -or
+                [string]$laneBuildRecords[$name].version -ne [string]$property.Value -or
+                [string]$laneBuildRecords[$name].sha256 -ne [string]$expectedHashProperty.Value
+            ) {
+                [void]$errors.Add("exact build-lock version or artifact hash is invalid for $name")
+            }
+        }
+    } catch {
+        [void]$errors.Add("native build-tool evidence cannot be validated: $($_.Exception.Message)")
+    }
     if (-not [bool]$Lane.cleanup_passed) { [void]$errors.Add("lane cleanup did not pass") }
 
     $actualChecks = @($Lane.checks_passed | ForEach-Object { [string]$_ })
@@ -164,9 +334,14 @@ function Test-LaneArtifacts {
     foreach ($profile in $profiles) {
         [void]$expectedArtifactPaths.Add("locks/cpython-3.11-windows-$architecture/$profile.txt")
     }
+    [void]$expectedArtifactPaths.Add("locks/cpython-3.11-windows-$architecture/build.txt")
     foreach ($path in @(
         "python-vulnerability-audit.json",
         "python-license-inventory.json",
+        "build-vulnerability-audit.json",
+        "build-license-inventory.json",
+        "all-vulnerability-audit.json",
+        "all-license-inventory.json",
         "frontend-install-scripts.json",
         "frontend-dependency-tree.json",
         "frontend-vulnerability-audit.json",
@@ -220,6 +395,10 @@ function Test-LaneArtifacts {
             }
         }
     }
+    $buildLockRelative = "locks/cpython-3.11-windows-$architecture/build.txt"
+    if ($artifactByPath.ContainsKey($buildLockRelative) -and [string]$Lane.tools.exact_build_authority.lock_sha256 -ne [string]$artifactByPath[$buildLockRelative].sha256) {
+        [void]$errors.Add("build-authority digest does not match build-lock artifact")
+    }
 
     $lifecycleRelative = "windows-$architecture-install-qualification.json"
     $lifecyclePath = Join-Path $laneDirectory $lifecycleRelative
@@ -244,12 +423,21 @@ function Test-LaneArtifacts {
             if ([string]$lifecycle.artifacts.core_lock_sha256 -ne [string]$Lane.core_lock_sha256) {
                 [void]$errors.Add("lifecycle core-lock digest does not match lane evidence")
             }
+            if ([string]$lifecycle.artifacts.build_lock_sha256 -ne [string]$Lane.tools.exact_build_authority.lock_sha256) {
+                [void]$errors.Add("lifecycle build-lock digest does not match lane evidence")
+            }
             $resolutionRelative = "cpython-3.11-windows-$architecture-profile-resolution.json"
             if ($artifactByPath.ContainsKey($resolutionRelative) -and [string]$lifecycle.artifacts.resolver_evidence_sha256 -ne [string]$artifactByPath[$resolutionRelative].sha256) {
                 [void]$errors.Add("lifecycle resolver digest does not match lane evidence")
             }
-            if (-not [bool]$lifecycle.qualification_data_removed) {
-                [void]$errors.Add("lifecycle did not remove isolated qualification data")
+            if (-not [bool]$lifecycle.qualification_data_removed -or -not [bool]$lifecycle.cleanup_passed) {
+                [void]$errors.Add("lifecycle did not prove isolated data and failure-path cleanup")
+            }
+            if (
+                [int]$lifecycle.recorded_process_count -ne 6 -or
+                [int]$lifecycle.recorded_process_observations -ne 8
+            ) {
+                [void]$errors.Add("lifecycle did not prove three distinct two-service generations across four observations")
             }
         } catch {
             [void]$errors.Add("lifecycle evidence cannot be parsed: $($_.Exception.Message)")
@@ -268,9 +456,11 @@ function Test-LaneArtifacts {
             if (
                 [string]$resolution.python.implementation -ne "CPython" -or
                 -not ([string]$resolution.python.version).StartsWith("3.11.") -or
-                -not [bool]$resolution.build_system_requirements_included
+                [bool]$resolution.third_party_build_isolation -or
+                [string]$resolution.source_build_contract -ne "quality/windows-native-build-contract.json" -or
+                [string]$resolution.build_lock -ne "requirements\locks\cpython-3.11-windows-$architecture\build.txt"
             ) {
-                [void]$errors.Add("resolver interpreter or local-build contract is invalid")
+                [void]$errors.Add("resolver interpreter, build lock, or no-isolation contract is invalid")
             }
             if ([string]$resolution.platform.system -ne "Windows" -or [string]$resolution.platform.normalized_machine -ne $architecture) {
                 [void]$errors.Add("resolver evidence platform does not match the lane")
@@ -283,10 +473,86 @@ function Test-LaneArtifacts {
             ) {
                 [void]$errors.Add("resolver evidence was not generated by native 64-bit Python on Windows 11 workstation")
             }
-            foreach ($profile in $profiles) {
-                if ($resolution.profiles.PSObject.Properties[$profile].Value.status -ne "pass") {
-                    [void]$errors.Add("resolver profile is not pass: $profile")
+            $expectedBuildAuthority = @{}
+            foreach ($property in $buildContract.build_lock.PSObject.Properties) {
+                $expectedBuildAuthority[$property.Name.ToLowerInvariant()] = [string]$property.Value
+            }
+            $actualBuildAuthority = @{}
+            foreach ($property in $resolution.installed_build_authority.PSObject.Properties) {
+                $actualBuildAuthority[$property.Name.ToLowerInvariant()] = [string]$property.Value
+            }
+            if (($expectedBuildAuthority | ConvertTo-Json -Compress) -ne ($actualBuildAuthority | ConvertTo-Json -Compress)) {
+                # Hashtable JSON ordering is not stable, so compare keys and values explicitly too.
+                if (
+                    $expectedBuildAuthority.Count -ne $actualBuildAuthority.Count -or
+                    @($expectedBuildAuthority.Keys | Where-Object { -not $actualBuildAuthority.ContainsKey($_) -or $actualBuildAuthority[$_] -ne $expectedBuildAuthority[$_] }).Count -ne 0
+                ) {
+                    [void]$errors.Add("resolver installed build authority does not match the contract")
                 }
+            }
+            $contractSources = @{}
+            foreach ($record in @($buildContract.source_distributions.$architecture)) {
+                $sourceName = (([string]$record.name).ToLowerInvariant() -replace "[-_.]+", "-")
+                $contractSources["$sourceName==$([string]$record.version)"] = $record
+            }
+            foreach ($profile in $profiles) {
+                $profileEvidence = $resolution.profiles.PSObject.Properties[$profile].Value
+                if ($profileEvidence.status -ne "pass" -or [int]$profileEvidence.resolved_count -ne @($profileEvidence.packages).Count) {
+                    [void]$errors.Add("resolver profile is not a complete pass: $profile")
+                }
+                $reportedSources = @{}
+                foreach ($source in @($profileEvidence.selected_source_distributions)) {
+                    $sourceName = (([string]$source.name).ToLowerInvariant() -replace "[-_.]+", "-")
+                    $sourceKey = "$sourceName==$([string]$source.version)"
+                    if ($reportedSources.ContainsKey($sourceKey) -or -not $contractSources.ContainsKey($sourceKey)) {
+                        [void]$errors.Add("resolver profile has duplicate or unapproved source evidence: $profile/$sourceKey")
+                    } else {
+                        $reportedSources[$sourceKey] = $source
+                        $sourceContract = $contractSources[$sourceKey]
+                        if (
+                            [string]$source.backend -ne [string]$sourceContract.backend -or
+                            [string]$source.kind -ne [string]$sourceContract.kind -or
+                            [string]$source.filename -ne [string]$sourceContract.filename -or
+                            [string]$source.sha256 -ne [string]$sourceContract.sha256
+                        ) {
+                            [void]$errors.Add("resolver source artifact, backend, or build kind drifted: $profile/$sourceKey")
+                        }
+                    }
+                }
+                $packageSources = @{}
+                foreach ($package in @($profileEvidence.packages)) {
+                    $packageName = (([string]$package.name).ToLowerInvariant() -replace "[-_.]+", "-")
+                    if ($packageName -ne "omni-agi" -and [string]$package.sha256 -notmatch "^[0-9a-f]{64}$") {
+                        [void]$errors.Add("resolver package hash is absent or malformed: $profile/$packageName")
+                    }
+                    if ($packageName -ne "omni-agi" -and [string]$package.artifact_kind -notin @("wheel", "sdist")) {
+                        [void]$errors.Add("resolver package artifact kind is invalid: $profile/$packageName")
+                    }
+                    if ([string]$package.artifact_kind -eq "sdist") {
+                        $sourceKey = "$packageName==$([string]$package.version)"
+                        $packageSources[$sourceKey] = $true
+                        if (-not $contractSources.ContainsKey($sourceKey) -or -not $reportedSources.ContainsKey($sourceKey)) {
+                            [void]$errors.Add("resolver selected an unapproved or unreported sdist: $profile/$sourceKey")
+                        }
+                    }
+                }
+                if (@($reportedSources.Keys | Where-Object { -not $packageSources.ContainsKey($_) }).Count -ne 0) {
+                    [void]$errors.Add("resolver source summary does not match selected artifacts: $profile")
+                }
+                if ($profile -eq "all" -and @($contractSources.Keys | Where-Object { -not $reportedSources.ContainsKey($_) }).Count -ne 0) {
+                    [void]$errors.Add("all profile does not exercise every architecture-approved source distribution")
+                }
+            }
+            if ($architecture -eq "arm64") {
+                if (
+                    $resolution.arm64_capability_contract.status -ne "pass" -or
+                    [string]$resolution.arm64_capability_contract.contract -ne "quality/windows-arm64-capabilities.json" -or
+                    @($resolution.arm64_capability_contract.selected_exclusions).Count -ne 0
+                ) {
+                    [void]$errors.Add("Windows Arm64 capability contract did not pass")
+                }
+            } elseif ($null -ne $resolution.arm64_capability_contract) {
+                [void]$errors.Add("x64 resolver evidence unexpectedly claims the Arm64 capability contract")
             }
         } catch {
             [void]$errors.Add("resolver evidence cannot be parsed: $($_.Exception.Message)")
@@ -324,79 +590,79 @@ function Test-LaneArtifacts {
     } catch {
         [void]$errors.Add("frontend vulnerability evidence cannot be parsed: $($_.Exception.Message)")
     }
-    $devLockPath = Join-Path $laneDirectory "locks\cpython-3.11-windows-$architecture\dev.txt"
-    $expectedDevNames = @()
-    if (Test-Path -LiteralPath $devLockPath -PathType Leaf) {
-        $expectedDevNames = @(
-            Get-Content -LiteralPath $devLockPath |
-                ForEach-Object {
-                    if ($_ -match "^([A-Za-z0-9_.-]+)==") {
-                        ([string]$Matches[1]).ToLowerInvariant() -replace "[-_.]+", "-"
+    $pythonAuditScopes = @(
+        [ordered]@{ label = "dev"; lock = "dev.txt"; audit = "python-vulnerability-audit.json"; licenses = "python-license-inventory.json" },
+        [ordered]@{ label = "build"; lock = "build.txt"; audit = "build-vulnerability-audit.json"; licenses = "build-license-inventory.json" },
+        [ordered]@{ label = "all"; lock = "all.txt"; audit = "all-vulnerability-audit.json"; licenses = "all-license-inventory.json" }
+    )
+    foreach ($scope in $pythonAuditScopes) {
+        $lockPath = Join-Path $laneDirectory "locks\cpython-3.11-windows-$architecture\$($scope.lock)"
+        $expectedNames = @()
+        if (Test-Path -LiteralPath $lockPath -PathType Leaf) {
+            $expectedNames = @(
+                Get-Content -LiteralPath $lockPath |
+                    ForEach-Object {
+                        if ($_ -match "^([A-Za-z0-9_.-]+)==") {
+                            ([string]$Matches[1]).ToLowerInvariant() -replace "[-_.]+", "-"
+                        }
+                    }
+            )
+        }
+        $expectedDistributions = $expectedNames.Count
+        try {
+            $pythonAudit = (Get-Content -Raw -LiteralPath (Join-Path $laneDirectory ([string]$scope.audit))) | ConvertFrom-Json
+            if (-not (Test-ObjectProperty $pythonAudit "dependencies") -or -not (Test-ObjectProperty $pythonAudit "fixes")) {
+                [void]$errors.Add("$($scope.label) Python vulnerability audit schema is incomplete")
+            } else {
+                $auditedDependencies = @($pythonAudit.dependencies)
+                $auditedNames = @(
+                    $auditedDependencies |
+                        ForEach-Object { (([string]$_.name).ToLowerInvariant() -replace "[-_.]+", "-") }
+                )
+                # --disable-pip audits the exact hashed records directly and
+                # must neither resolve nor omit bootstrap/build distributions.
+                $missingAuditNames = @($expectedNames | Where-Object { $_ -notin $auditedNames })
+                $unexpectedAuditNames = @($auditedNames | Where-Object { $_ -notin $expectedNames })
+                if (
+                    $expectedDistributions -le 0 -or
+                    $auditedNames.Count -ne $expectedDistributions -or
+                    $missingAuditNames.Count -ne 0 -or
+                    $unexpectedAuditNames.Count -ne 0
+                ) {
+                    [void]$errors.Add("$($scope.label) Python vulnerability audit coverage does not match its exact lock")
+                }
+                if (@($auditedNames | Where-Object { -not $_ }).Count -ne 0 -or @($auditedNames | Select-Object -Unique).Count -ne $auditedNames.Count) {
+                    [void]$errors.Add("$($scope.label) Python vulnerability audit has missing or duplicate distributions")
+                }
+                foreach ($dependency in $auditedDependencies) {
+                    if (-not (Test-ObjectProperty $dependency "vulns")) {
+                        [void]$errors.Add("$($scope.label) Python vulnerability audit dependency schema is incomplete")
+                    } elseif (@($dependency.vulns).Count -ne 0) {
+                        [void]$errors.Add("$($scope.label) Python vulnerability audit reports a finding")
                     }
                 }
-        )
-    }
-    $expectedDevDistributions = $expectedDevNames.Count
-    try {
-        $pythonAudit = (Get-Content -Raw -LiteralPath (Join-Path $laneDirectory "python-vulnerability-audit.json")) | ConvertFrom-Json
-        if (-not (Test-ObjectProperty $pythonAudit "dependencies") -or -not (Test-ObjectProperty $pythonAudit "fixes")) {
-            [void]$errors.Add("Python vulnerability audit schema is incomplete")
-        } else {
-            $auditedDependencies = @($pythonAudit.dependencies)
-            $auditedNames = @(
-                $auditedDependencies |
-                    ForEach-Object { (([string]$_.name).ToLowerInvariant() -replace "[-_.]+", "-") }
-            )
-            # In requirements mode pip-audit bootstraps an isolated environment
-            # with current packaging tools before dry-running the exact lock.
-            # A tool already satisfying the lock can therefore be absent from
-            # its pip report, while a differing (including vulnerable) locked
-            # version remains present. Allow either state only for that explicit
-            # bootstrap set; every other exact distribution remains mandatory.
-            $auditToolingMayBeOmitted = @("packaging", "pip", "setuptools", "wheel")
-            $requiredAuditedNames = @($expectedDevNames | Where-Object { $_ -notin $auditToolingMayBeOmitted })
-            if (@($auditToolingMayBeOmitted | Where-Object { $_ -notin $expectedDevNames }).Count -ne 0) {
-                [void]$errors.Add("Python vulnerability audit tooling-omission contract no longer matches the exact dev lock")
-            }
-            $missingAuditNames = @($requiredAuditedNames | Where-Object { $_ -notin $auditedNames })
-            $unexpectedAuditNames = @($auditedNames | Where-Object { $_ -notin $expectedDevNames })
-            if (
-                $expectedDevDistributions -le 0 -or
-                $auditedNames.Count -lt $requiredAuditedNames.Count -or
-                $missingAuditNames.Count -ne 0 -or
-                $unexpectedAuditNames.Count -ne 0
-            ) {
-                [void]$errors.Add("Python vulnerability audit coverage does not match the exact dev lock and explicit optional bootstrap-tool omissions")
-            }
-            if (@($auditedNames | Where-Object { -not $_ }).Count -ne 0 -or @($auditedNames | Select-Object -Unique).Count -ne $auditedNames.Count) {
-                [void]$errors.Add("Python vulnerability audit has missing or duplicate distributions")
-            }
-            foreach ($dependency in $auditedDependencies) {
-                if (-not (Test-ObjectProperty $dependency "vulns")) {
-                    [void]$errors.Add("Python vulnerability audit dependency schema is incomplete")
-                } elseif (@($dependency.vulns).Count -ne 0) {
-                    [void]$errors.Add("Python vulnerability audit reports a finding")
+                if (@($pythonAudit.fixes).Count -ne 0) {
+                    [void]$errors.Add("$($scope.label) Python vulnerability audit reports pending fixes")
                 }
             }
-            if (@($pythonAudit.fixes).Count -ne 0) { [void]$errors.Add("Python vulnerability audit reports pending fixes") }
+        } catch {
+            [void]$errors.Add("$($scope.label) Python vulnerability evidence cannot be parsed: $($_.Exception.Message)")
         }
-    } catch {
-        [void]$errors.Add("Python vulnerability evidence cannot be parsed: $($_.Exception.Message)")
-    }
-    try {
-        $licenseInventory = (Get-Content -Raw -LiteralPath (Join-Path $laneDirectory "python-license-inventory.json")) | ConvertFrom-Json
-        if (
-            $licenseInventory.status -ne "pass" -or
-            [int]$licenseInventory.expected_distribution_count -ne $expectedDevDistributions -or
-            [int]$licenseInventory.inventoried_distribution_count -ne $expectedDevDistributions -or
-            @($licenseInventory.missing).Count -ne 0 -or
-            @($licenseInventory.version_mismatches).Count -ne 0 -or
-            @($licenseInventory.unknown_licenses).Count -ne 0
-        ) {
-            [void]$errors.Add("Python license inventory is incomplete or does not match the exact dev lock")
+        try {
+            $licenseInventory = (Get-Content -Raw -LiteralPath (Join-Path $laneDirectory ([string]$scope.licenses))) | ConvertFrom-Json
+            if (
+                $licenseInventory.status -ne "pass" -or
+                [int]$licenseInventory.expected_distribution_count -ne $expectedDistributions -or
+                [int]$licenseInventory.inventoried_distribution_count -ne $expectedDistributions -or
+                @($licenseInventory.missing).Count -ne 0 -or
+                @($licenseInventory.version_mismatches).Count -ne 0 -or
+                @($licenseInventory.unknown_licenses).Count -ne 0
+            ) {
+                [void]$errors.Add("$($scope.label) Python license inventory is incomplete or does not match its exact lock")
+            }
+        } catch {
+            [void]$errors.Add("$($scope.label) Python license evidence cannot be parsed: $($_.Exception.Message)")
         }
-    } catch {
-        [void]$errors.Add("Python license evidence cannot be parsed: $($_.Exception.Message)")
     }
 
     return @($errors)
@@ -530,6 +796,7 @@ if (Test-Path -LiteralPath $laneDirectory) {
 New-Item -ItemType Directory -Force -Path $laneDirectory | Out-Null
 $tempRoot = Join-Path ([IO.Path]::GetTempPath()) "omni-b02-$architectureSlug-$PID-$([Guid]::NewGuid().ToString('N'))"
 $worktree = Join-Path $tempRoot "source"
+$buildVenv = Join-Path $tempRoot "build-venv"
 $devVenv = Join-Path $tempRoot "dev-venv"
 $allVenv = Join-Path $tempRoot "all-venv"
 $repeatRoot = Join-Path $tempRoot "repeat-resolution"
@@ -554,6 +821,10 @@ $lifecycleEvidenceName = "windows-$architectureSlug-install-qualification.json"
 $lifecycleEvidencePath = Join-Path $laneDirectory $lifecycleEvidenceName
 $pythonAuditPath = Join-Path $laneDirectory "python-vulnerability-audit.json"
 $licenseInventoryPath = Join-Path $laneDirectory "python-license-inventory.json"
+$buildAuditPath = Join-Path $laneDirectory "build-vulnerability-audit.json"
+$buildLicenseInventoryPath = Join-Path $laneDirectory "build-license-inventory.json"
+$allAuditPath = Join-Path $laneDirectory "all-vulnerability-audit.json"
+$allLicenseInventoryPath = Join-Path $laneDirectory "all-license-inventory.json"
 $frontendInstallScriptsPath = Join-Path $laneDirectory "frontend-install-scripts.json"
 $frontendTreePath = Join-Path $laneDirectory "frontend-dependency-tree.json"
 $frontendAuditPath = Join-Path $laneDirectory "frontend-vulnerability-audit.json"
@@ -564,7 +835,61 @@ $pythonMachine = $null
 $nodeVersion = $null
 $nodeArchitecture = $null
 $npmVersion = $null
+$nativeBuildTools = $null
+$cmakeVersion = $null
+$ninjaVersion = $null
+$buildLockHash = $null
+$projectVersion = $null
 $powerShellExecutable = (Get-Process -Id $PID).Path
+$cleanupErrors = [System.Collections.Generic.List[string]]::new()
+$cleanupOriginalDataDir = $env:OMNI_DATA_DIR
+
+function Add-CleanupError {
+    param([Parameter(Mandatory = $true)][string]$Message)
+    [void]$cleanupErrors.Add($Message)
+    Write-Error $Message -ErrorAction Continue
+}
+
+function Remove-CleanupPath {
+    param([Parameter(Mandatory = $true)][string]$Path, [Parameter(Mandatory = $true)][string]$Label)
+
+    if (-not (Test-Path -LiteralPath $Path)) { return }
+    $lastError = $null
+    for ($attempt = 1; $attempt -le 3; $attempt += 1) {
+        try {
+            Remove-Item -LiteralPath $Path -Recurse -Force -ErrorAction Stop
+            if (-not (Test-Path -LiteralPath $Path)) { return }
+        } catch {
+            $lastError = $_.Exception.Message
+        }
+        Start-Sleep -Milliseconds (250 * $attempt)
+    }
+    $suffix = if ($lastError) { ": $lastError" } else { "" }
+    Add-CleanupError "$Label remains at $Path$suffix"
+}
+
+function Get-QualificationProcesses {
+    $matches = @()
+    try {
+        foreach ($process in @(Get-CimInstance -ClassName Win32_Process -ErrorAction Stop)) {
+            $commandLine = [string]$process.CommandLine
+            if (
+                [int]$process.ProcessId -ne $PID -and
+                $commandLine -and
+                (
+                    $commandLine.IndexOf($worktree, [StringComparison]::OrdinalIgnoreCase) -ge 0 -or
+                    $commandLine.IndexOf($qualificationData, [StringComparison]::OrdinalIgnoreCase) -ge 0 -or
+                    $commandLine.IndexOf($tempRoot, [StringComparison]::OrdinalIgnoreCase) -ge 0
+                )
+            ) {
+                $matches += $process
+            }
+        }
+    } catch {
+        Add-CleanupError "could not inventory qualification processes: $($_.Exception.Message)"
+    }
+    return @($matches)
+}
 
 try {
     Start-Transcript -Path $transcriptPath -Force | Out-Null
@@ -627,18 +952,50 @@ try {
     $worktreeAdded = $true
     $worktreeCommit = (& git -C $worktree rev-parse HEAD).Trim()
     Assert-True ($worktreeCommit -eq $CommitSha) "Detached worktree commit drifted."
+    $projectVersion = (& $selectedPython -c "import pathlib, sys, tomllib; print(tomllib.loads(pathlib.Path(sys.argv[1]).read_text(encoding='utf-8'))['project']['version'])" (Join-Path $worktree "pyproject.toml")).Trim()
+    Assert-True ($LASTEXITCODE -eq 0 -and $projectVersion -match "^[0-9]+([.][0-9]+)+$") "Could not read the exact OMNI project version."
     [void]$checks.Add("detached_exact_commit")
 
+    # Fail before dependency resolution or source compilation unless the host
+    # proves an architecture-matched MSVC host, target, linker, and Windows SDK.
+    . (Join-Path $worktree "scripts\windows_build_tools.ps1")
+    Write-Host "`n=== Prove native Visual Studio compiler, linker, and SDK ==="
+    $nativeBuildContract = Get-OmniBuildContract
+    $nativeBuildTools = Enter-OmniWindowsNativeBuildEnvironment -ArchitectureSlug $architectureSlug
+
+    $sourceBuildLock = Join-Path $worktree "requirements\locks\cpython-3.11-windows-$architectureSlug\build.txt"
+    Assert-True (Test-Path -LiteralPath $sourceBuildLock -PathType Leaf) "Exact native build lock is absent: $sourceBuildLock"
+    Invoke-NativeStep "Create isolated resolver build environment" { & $selectedPython -m venv $buildVenv }
+    $buildPython = Join-Path $buildVenv "Scripts\python.exe"
+    Invoke-NativeStep "Bootstrap exact wheel-only native build authority" {
+        & $buildPython -m pip install --disable-pip-version-check --no-cache-dir "--only-binary=:all:" --no-deps --require-hashes -r $sourceBuildLock
+    }
+    Invoke-NativeStep "Check exact native build authority consistency" { & $buildPython -m pip check }
+    Assert-InstalledBuildAuthority $buildPython $nativeBuildContract "resolver"
+    Assert-ExactInstalledEnvironment -Python $buildPython -Locks @($sourceBuildLock) -Additional @{} -Label "resolver build"
+    # pip's --no-build-isolation does not activate the invoking environment for
+    # backend subprocesses. Make the exact authority discoverable before any
+    # metadata or source build can accidentally select ambient CMake or Ninja.
+    $env:PATH = "$(Join-Path $buildVenv 'Scripts');$env:PATH"
+    $cmakeExecutable = Join-Path $buildVenv "Scripts\cmake.exe"
+    $ninjaExecutable = Join-Path $buildVenv "Scripts\ninja.exe"
+    $cmakeVersion = ((& $cmakeExecutable --version | Select-Object -First 1) | Out-String).Trim()
+    Assert-True ($LASTEXITCODE -eq 0 -and $cmakeVersion -eq [string]$nativeBuildContract.build_tool_cli.cmake) "Exact CMake 4.4.2 is unavailable in the build authority."
+    $ninjaVersion = ((& $ninjaExecutable --version) | Out-String).Trim()
+    Assert-True ($LASTEXITCODE -eq 0 -and $ninjaVersion -eq [string]$nativeBuildContract.build_tool_cli.ninja) "Exact Ninja 1.13.0 is unavailable in the build authority."
+    $buildLockHash = Get-FileSha256 $sourceBuildLock
+    [void]$checks.Add("native_build_toolchain_and_exact_build_lock")
+
     $resolver = Join-Path $worktree "scripts\resolve_profiles.py"
-    Invoke-NativeStep "Resolve all six native dependency profiles" {
-        & $selectedPython $resolver --output $resolutionPath --lock-dir $lockDirectory
+    Invoke-NativeStep "Resolve all six native dependency profiles without build isolation" {
+        & $buildPython $resolver --output $resolutionPath --lock-dir $lockDirectory --build-lock $sourceBuildLock
     }
     [void]$checks.Add("all_profile_resolution")
 
     $repeatOutput = Join-Path $repeatRoot "profile-resolution.json"
     $repeatLocks = Join-Path $repeatRoot "locks"
-    Invoke-NativeStep "Repeat native dependency resolution" {
-        & $selectedPython $resolver --output $repeatOutput --lock-dir $repeatLocks
+    Invoke-NativeStep "Repeat native dependency resolution without build isolation" {
+        & $buildPython $resolver --output $repeatOutput --lock-dir $repeatLocks --build-lock $sourceBuildLock
     }
     $firstResolution = (Get-Content -Raw -LiteralPath $resolutionPath) | ConvertFrom-Json
     $repeatResolution = (Get-Content -Raw -LiteralPath $repeatOutput) | ConvertFrom-Json
@@ -649,39 +1006,64 @@ try {
         Assert-True ((Get-FileSha256 $firstLock) -eq (Get-FileSha256 $secondLock)) "Repeated $profile lock bytes drifted."
         $profileHashes[$profile] = Get-FileSha256 $firstLock
     }
+    Assert-True ((Get-FileSha256 (Join-Path $lockDirectory "build.txt")) -eq (Get-FileSha256 (Join-Path $repeatLocks "build.txt"))) "Repeated build-lock bytes drifted."
     [void]$checks.Add("repeatable_exact_hashed_locks")
 
     Invoke-NativeStep "Create isolated dev environment" { & $selectedPython -m venv $devVenv }
     $devPython = Join-Path $devVenv "Scripts\python.exe"
     $devLock = Join-Path $lockDirectory "dev.txt"
-    Invoke-NativeStep "Install exact native dev lock" {
-        & $devPython -m pip install --disable-pip-version-check --require-hashes -r $devLock
+    Invoke-NativeStep "Bootstrap exact build authority into dev environment" {
+        & $devPython -m pip install --disable-pip-version-check --no-cache-dir "--only-binary=:all:" --no-deps --require-hashes -r $sourceBuildLock
     }
+    $env:PATH = "$(Join-Path $devVenv 'Scripts');$env:PATH"
+    Invoke-NativeStep "Install exact native dev lock without cache or build isolation" {
+        & $devPython -m pip install --disable-pip-version-check --no-cache-dir --no-build-isolation --require-hashes -r $devLock
+    }
+    Assert-InstalledBuildAuthority $devPython $nativeBuildContract "dev"
     Invoke-NativeStep "Install exact local source without dependency resolution" {
-        & $devPython -m pip install --disable-pip-version-check --no-build-isolation --no-deps $worktree
+        & $devPython -m pip install --disable-pip-version-check --no-cache-dir --no-build-isolation --no-deps $worktree
     }
     Invoke-NativeStep "Check installed dependency consistency" { & $devPython -m pip check }
+    Assert-ExactInstalledEnvironment -Python $devPython -Locks @($sourceBuildLock, $devLock) -Additional @{ "omni-agi" = $projectVersion } -Label "dev"
     Invoke-NativeJsonStep "Audit exact native Python dev lock" $devPython @(
-        "-m", "pip_audit", "--require-hashes", "-r", $devLock, "--format", "json"
+        "-m", "pip_audit", "--disable-pip", "--require-hashes", "-r", $devLock, "--format", "json"
     ) $pythonAuditPath
     Invoke-NativeStep "Inventory exact native Python dev-lock licenses" {
         & $devPython (Join-Path $worktree "scripts\audit_python_licenses.py") $devLock --output $licenseInventoryPath | Out-Null
     }
-    [void]$checks.Add("isolated_exact_dev_install_pip_check_and_audits")
+    Invoke-NativeJsonStep "Audit exact native build-tool lock" $devPython @(
+        "-m", "pip_audit", "--disable-pip", "--require-hashes", "-r", $sourceBuildLock, "--format", "json"
+    ) $buildAuditPath
+    Invoke-NativeStep "Inventory exact native build-tool licenses" {
+        & $devPython (Join-Path $worktree "scripts\audit_python_licenses.py") $sourceBuildLock --inventory-python $buildPython --output $buildLicenseInventoryPath | Out-Null
+    }
+    [void]$checks.Add("isolated_exact_dev_and_build_install_pip_check_and_audits")
 
     Invoke-NativeStep "Create isolated all-runtime environment" { & $selectedPython -m venv $allVenv }
     $allPython = Join-Path $allVenv "Scripts\python.exe"
     $allLock = Join-Path $lockDirectory "all.txt"
-    Invoke-NativeStep "Install exact native all-runtime lock" {
-        & $allPython -m pip install --disable-pip-version-check --require-hashes -r $allLock
+    Invoke-NativeStep "Bootstrap exact build authority into all-runtime environment" {
+        & $allPython -m pip install --disable-pip-version-check --no-cache-dir "--only-binary=:all:" --no-deps --require-hashes -r $sourceBuildLock
     }
+    $env:PATH = "$(Join-Path $allVenv 'Scripts');$env:PATH"
+    Invoke-NativeStep "Install exact native all-runtime lock without cache or build isolation" {
+        & $allPython -m pip install --disable-pip-version-check --no-cache-dir --no-build-isolation --require-hashes -r $allLock
+    }
+    Assert-InstalledBuildAuthority $allPython $nativeBuildContract "all-runtime"
     Invoke-NativeStep "Install exact local source in all-runtime environment without dependency resolution" {
-        & $allPython -m pip install --disable-pip-version-check --no-build-isolation --no-deps $worktree
+        & $allPython -m pip install --disable-pip-version-check --no-cache-dir --no-build-isolation --no-deps $worktree
     }
     Invoke-NativeStep "Check installed all-runtime dependency consistency" { & $allPython -m pip check }
+    Assert-ExactInstalledEnvironment -Python $allPython -Locks @($sourceBuildLock, $allLock) -Additional @{ "omni-agi" = $projectVersion } -Label "all-runtime"
+    Invoke-NativeJsonStep "Audit exact native all-runtime lock" $devPython @(
+        "-m", "pip_audit", "--disable-pip", "--require-hashes", "-r", $allLock, "--format", "json"
+    ) $allAuditPath
+    Invoke-NativeStep "Inventory exact native all-runtime licenses" {
+        & $devPython (Join-Path $worktree "scripts\audit_python_licenses.py") $allLock --inventory-python $allPython --output $allLicenseInventoryPath | Out-Null
+    }
     $allSitePackages = (& $allPython -c "import sysconfig; print(sysconfig.get_paths()['purelib'])").Trim()
     Assert-True ($LASTEXITCODE -eq 0 -and (Test-Path -LiteralPath $allSitePackages -PathType Container)) "Could not locate the exact all-runtime environment's site-packages directory."
-    [void]$checks.Add("isolated_exact_all_install_pip_check")
+    [void]$checks.Add("isolated_exact_all_install_pip_check_and_audits")
 
     Invoke-NativeStep "Run B02 install and lifecycle Python tests" {
         Push-Location $worktree
@@ -741,7 +1123,7 @@ try {
     Invoke-NativeStep "Run package tests against built artifacts and the exact build backend" {
         $oldExactBuildLock = $env:OMNI_EXACT_BUILD_LOCK
         try {
-            $env:OMNI_EXACT_BUILD_LOCK = $devLock
+            $env:OMNI_EXACT_BUILD_LOCK = $sourceBuildLock
             Push-Location $worktree
             try { & $devPython -m pytest -q (Join-Path $worktree "tests\package") }
             finally { Pop-Location }
@@ -806,6 +1188,14 @@ try {
         & $powerShellExecutable @verifierArguments
     }
     Assert-True (Test-Path -LiteralPath $lifecycleEvidencePath -PathType Leaf) "Lifecycle verifier did not emit passing evidence."
+    $lifecycleEvidence = (Get-Content -Raw -LiteralPath $lifecycleEvidencePath) | ConvertFrom-Json
+    Assert-True (
+        $lifecycleEvidence.status -eq "pass" -and
+        [bool]$lifecycleEvidence.qualification_data_removed -and
+        [bool]$lifecycleEvidence.cleanup_passed -and
+        [int]$lifecycleEvidence.recorded_process_count -eq 6 -and
+        [int]$lifecycleEvidence.recorded_process_observations -eq 8
+    ) "Lifecycle verifier did not prove strict data/process/generated-asset cleanup."
     [void]$checks.Add("native_install_lifecycle_uninstall")
 
     & git -C $worktree diff --quiet HEAD "--"
@@ -816,62 +1206,109 @@ try {
     $failureMessage = $_.Exception.Message
     Write-Error "B02 Windows $architectureSlug lane failed: $failureMessage" -ErrorAction Continue
 } finally {
-    try {
-        $managedPython = Join-Path $worktree ".venv\Scripts\python.exe"
-        if (Test-Path -LiteralPath $managedPython) {
-            & $managedPython -m omni_v2.core.runtime_cli stop 2>$null | Out-Null
-        }
-        $statePath = Join-Path $qualificationData "run\runtime.json"
-        if (Test-Path -LiteralPath $statePath) {
+    # The cleanup phase is fail-closed and attempts every invariant even if an
+    # earlier cleanup action fails. Point managed stop at the isolated lane data,
+    # never at the operator's normal OMNI data root.
+    $env:OMNI_DATA_DIR = $qualificationData
+    $managedPython = Join-Path $worktree ".venv\Scripts\python.exe"
+    $statePath = Join-Path $qualificationData "run\runtime.json"
+    if (Test-Path -LiteralPath $statePath) {
+        if (Test-Path -LiteralPath $managedPython -PathType Leaf) {
             try {
-                $state = (Get-Content -Raw -LiteralPath $statePath) | ConvertFrom-Json
-                foreach ($service in @($state.services)) {
-                    if ($service.pid) { & taskkill.exe /PID ([string]$service.pid) /T /F 2>$null | Out-Null }
+                & $managedPython -m omni_v2.core.runtime_cli --json stop 2>$null | Out-Null
+                if ($LASTEXITCODE -ne 0) {
+                    Add-CleanupError "managed runtime stop failed with exit code $LASTEXITCODE"
                 }
-            } catch { }
-        }
-        foreach ($process in @(Get-CimInstance -ClassName Win32_Process -ErrorAction SilentlyContinue)) {
-            $name = ([string]$process.Name).ToLowerInvariant()
-            $commandLine = [string]$process.CommandLine
-            if (
-                [int]$process.ProcessId -ne $PID -and
-                $name -in @("node.exe", "python.exe", "pythonw.exe") -and
-                $commandLine -and
-                (
-                    $commandLine.IndexOf($worktree, [StringComparison]::OrdinalIgnoreCase) -ge 0 -or
-                    $commandLine.IndexOf($qualificationData, [StringComparison]::OrdinalIgnoreCase) -ge 0
-                )
-            ) {
-                & taskkill.exe /PID ([string]$process.ProcessId) /T /F 2>$null | Out-Null
+            } catch {
+                Add-CleanupError "managed runtime stop raised an error: $($_.Exception.Message)"
             }
+        } else {
+            Add-CleanupError "runtime state exists but the managed Python interpreter is absent"
         }
-        foreach ($generated in @(
-            (Join-Path $worktree ".venv"),
-            (Join-Path $worktree "frontend_next\node_modules"),
-            (Join-Path $worktree "frontend_next\.next"),
-            $qualificationData
-        )) {
-            if (Test-Path -LiteralPath $generated) { Remove-Item -LiteralPath $generated -Recurse -Force }
+    }
+
+    # Kill only processes whose command line is anchored in this lane's unique
+    # random temporary root. taskkill /T handles descendants; a second inventory
+    # proves that no matching process survived.
+    foreach ($process in @(Get-QualificationProcesses)) {
+        try {
+            & taskkill.exe /PID ([string]$process.ProcessId) /T /F 2>$null | Out-Null
+        } catch {
+            Add-CleanupError "could not force-stop qualification PID $($process.ProcessId): $($_.Exception.Message)"
         }
-        if ($worktreeAdded) {
+    }
+    Start-Sleep -Milliseconds 250
+    foreach ($process in @(Get-QualificationProcesses)) {
+        Add-CleanupError "qualification PID $($process.ProcessId) survived cleanup"
+    }
+
+    foreach ($generated in @(
+        [pscustomobject]@{ path = (Join-Path $worktree ".venv"); label = "worktree Python environment" },
+        [pscustomobject]@{ path = (Join-Path $worktree "frontend_next\node_modules"); label = "frontend dependency tree" },
+        [pscustomobject]@{ path = (Join-Path $worktree "frontend_next\.next"); label = "frontend production build" },
+        [pscustomobject]@{ path = (Join-Path $worktree "frontend_next\out"); label = "frontend export" },
+        [pscustomobject]@{ path = $buildVenv; label = "resolver/build environment" },
+        [pscustomobject]@{ path = $devVenv; label = "exact dev environment" },
+        [pscustomobject]@{ path = $allVenv; label = "exact all-runtime environment" },
+        [pscustomobject]@{ path = $repeatRoot; label = "repeated-resolution output" },
+        [pscustomobject]@{ path = $qualificationData; label = "isolated qualification data" }
+    )) {
+        Remove-CleanupPath ([string]$generated.path) ([string]$generated.label)
+    }
+
+    if ($worktreeAdded) {
+        try {
             & git worktree remove --force $worktree 2>$null
-            if ($LASTEXITCODE -ne 0) { throw "git worktree remove failed with exit code $LASTEXITCODE" }
+            if ($LASTEXITCODE -ne 0) {
+                Add-CleanupError "git worktree remove failed with exit code $LASTEXITCODE"
+            }
+        } catch {
+            Add-CleanupError "git worktree remove raised an error: $($_.Exception.Message)"
         }
+    }
+    try {
         & git worktree prune
-        if ($LASTEXITCODE -ne 0) { throw "git worktree prune failed with exit code $LASTEXITCODE" }
-        if (Test-Path -LiteralPath $tempRoot) { Remove-Item -LiteralPath $tempRoot -Recurse -Force }
+        if ($LASTEXITCODE -ne 0) { Add-CleanupError "git worktree prune failed with exit code $LASTEXITCODE" }
     } catch {
-        $cleanupPassed = $false
-        $cleanupFailure = $_.Exception.Message
-        if ($failureMessage) { $failureMessage = "$failureMessage; cleanup failed: $cleanupFailure" } else { $failureMessage = "cleanup failed: $cleanupFailure" }
-        Write-Error $cleanupFailure -ErrorAction Continue
+        Add-CleanupError "git worktree prune raised an error: $($_.Exception.Message)"
+    }
+    Remove-CleanupPath $tempRoot "qualification temporary root"
+
+    foreach ($generated in @($buildVenv, $devVenv, $allVenv, $repeatRoot, $qualificationData, $tempRoot)) {
+        if (Test-Path -LiteralPath $generated) {
+            Add-CleanupError "cleanup invariant failed; path still exists: $generated"
+        }
+    }
+    try {
+        $registeredWorktrees = (& git worktree list --porcelain | Out-String)
+        if ($LASTEXITCODE -ne 0) {
+            Add-CleanupError "could not verify registered worktrees after cleanup"
+        } elseif ($registeredWorktrees.IndexOf($worktree, [StringComparison]::OrdinalIgnoreCase) -ge 0) {
+            Add-CleanupError "detached qualification worktree remains registered: $worktree"
+        }
+    } catch {
+        Add-CleanupError "worktree cleanup verification raised an error: $($_.Exception.Message)"
+    }
+
+    if ($null -eq $cleanupOriginalDataDir) {
+        Remove-Item Env:OMNI_DATA_DIR -ErrorAction SilentlyContinue
+    } else {
+        $env:OMNI_DATA_DIR = $cleanupOriginalDataDir
     }
     if ($transcriptStarted) {
         try {
             Stop-Transcript | Out-Null
         } catch {
-            $cleanupPassed = $false
-            if ($failureMessage) { $failureMessage = "$failureMessage; transcript finalization failed: $($_.Exception.Message)" } else { $failureMessage = "transcript finalization failed: $($_.Exception.Message)" }
+            Add-CleanupError "transcript finalization failed: $($_.Exception.Message)"
+        }
+    }
+    if ($cleanupErrors.Count -gt 0) {
+        $cleanupPassed = $false
+        $cleanupFailure = $cleanupErrors -join "; "
+        if ($failureMessage) {
+            $failureMessage = "$failureMessage; cleanup failed: $cleanupFailure"
+        } else {
+            $failureMessage = "cleanup failed: $cleanupFailure"
         }
     }
 }
@@ -881,6 +1318,10 @@ foreach ($artifactPath in @(
     $resolutionPath,
     $pythonAuditPath,
     $licenseInventoryPath,
+    $buildAuditPath,
+    $buildLicenseInventoryPath,
+    $allAuditPath,
+    $allLicenseInventoryPath,
     $frontendInstallScriptsPath,
     $frontendTreePath,
     $frontendAuditPath,
@@ -894,10 +1335,10 @@ foreach ($artifactPath in @(
     }
 }
 if (Test-Path -LiteralPath $lockDirectory) {
-    foreach ($profile in @("core", "voice", "vision", "desktop", "dev", "all")) {
-        $lockPath = Join-Path $lockDirectory "$profile.txt"
+    foreach ($lockName in @("build", "core", "voice", "vision", "desktop", "dev", "all")) {
+        $lockPath = Join-Path $lockDirectory "$lockName.txt"
         if (Test-Path -LiteralPath $lockPath -PathType Leaf) {
-            [void]$artifacts.Add([ordered]@{ path = "locks/cpython-3.11-windows-$architectureSlug/$profile.txt"; sha256 = Get-FileSha256 $lockPath })
+            [void]$artifacts.Add([ordered]@{ path = "locks/cpython-3.11-windows-$architectureSlug/$lockName.txt"; sha256 = Get-FileSha256 $lockPath })
         }
     }
 }
@@ -932,6 +1373,15 @@ $laneEvidence = [ordered]@{
         node_architecture = $nodeArchitecture
         npm_version = $npmVersion
         powershell_version = $PSVersionTable.PSVersion.ToString()
+        native_build_tools = $nativeBuildTools
+        exact_build_authority = [ordered]@{
+            lock = "locks/cpython-3.11-windows-$architectureSlug/build.txt"
+            lock_sha256 = $buildLockHash
+            cmake = $cmakeVersion
+            ninja = $ninjaVersion
+            build_isolation = $false
+            cache_used = $false
+        }
     }
     checks_passed = @($checks)
     repeated_lock_sha256 = $profileHashes

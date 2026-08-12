@@ -1,38 +1,58 @@
 # B02 — Install, Configuration, and Startup Qualification progress
 
-**Decision:** amended implementation draft; batch remains `in_progress` and fail-closed<br>
+**Decision:** implementation hardened; batch remains `in_progress` and fail-closed<br>
 **Primary target:** NVIDIA DGX Station for Windows, native Windows 11 Arm64<br>
 **Secondary qualification host:** native Windows 11 x64 laptop/workstation<br>
 **Available agent host:** Linux x86_64, developer evidence only<br>
 **Next authority:** B03 remains locked
 
-The machine-readable ledger and current gate decision are in [`progress.json`](progress.json). This directory deliberately does **not** contain `closure.json`. B02 cannot close unless complete native Arm64 and x64 unattended lanes pass for the same exact commit and the aggregate verifier accepts both evidence bundles.
+The machine-readable ledger is [`progress.json`](progress.json). This directory deliberately has no `closure.json`. B02 can close only after complete native Arm64 and x64 unattended lanes pass on the same exact commit and the aggregate verifier accepts both evidence bundles.
 
-## Amended evidence matrix
+## Required evidence matrix
 
 | Lane | Role | Current result |
 |---|---|---|
-| Windows 11 Arm64 | Native architecture-equivalent B02 evidence for the primary target | Not run; required |
-| Windows 11 x64 | Secondary hardware-independent qualification on the available class of laptop/host | Diagnostic attempts only: `7eb6e1481ec585b24224d130085c3b81091d3fd6` exposed incompatible PowerShell architecture detection; `5c2bb341226ca655624d5bef1e31bc7ae3a7803c` exposed toolchain-selection and UTF-8 resolver defects; `f8908503d0b81578f58cf4ae508ef032bcd78cd1` cleared repeatable six-profile resolution, exact dev installation, local-source installation, and `pip check`, then correctly failed closed because its exact lock selected vulnerable `setuptools==81.0.0` |
-| Linux x86_64 | Development tests and lifecycle smoke only | Prior checkpoint passed selected gates; never product evidence |
+| Windows 11 Arm64 | Architecture-equivalent software/control-plane evidence for the primary target | Not run; required |
+| Windows 11 x64 | Hardware-independent qualification on the available laptop/workstation | Failed diagnostics only; latest run at `4bc1c9d` reached full installation and exposed missing governed native build tooling |
+| Linux x86_64 | Development tests only | Current exact-dev Python, package, frontend, static, and governance gates pass; never native Windows evidence |
 | Physical DGX Station | GPU/model/device throughput, performance, and sustained owner use | Deliberately deferred to B11, B13, B15, and B16 |
 
-An x64 pass does not qualify Arm64. x64 emulation on Arm64 is not native evidence. Hosted Arm64 evidence does not qualify physical DGX hardware behavior.
+An x64 pass cannot qualify Arm64. x64 emulation on Arm64 is not native evidence. Hosted Arm64 can be architecture-equivalent B02 evidence, but cannot qualify physical-DGX GPU, model, or sustained-use behavior.
 
-## Unattended path
+## Current unattended contract
 
-`scripts/qualify_b02.ps1` is the single B02 driver. For each native lane it is intended to create a detached worktree for an exact commit, resolve all six dependency profiles twice, compare exact architecture-specific locks, install twice, start twice, restart, perform authenticated readiness, stop, safely uninstall, explicitly remove isolated data, repeat uninstall, run Python/configuration/package/frontend gates, preserve evidence externally, and clean up. Package qualification builds with `python -m build --no-isolation` inside the exact dev environment; the sdist install test preinstalls that same hashed lock and disables build isolation, so no hidden package-build dependency resolution can count as evidence.
+`scripts/qualify_b02.ps1` is the single lane and aggregate driver. Each lane must:
 
-`hosted-windows-qualification.workflow.yml` is an inactive, owner-installable workflow template for hosted `windows-11-arm` and `windows-latest` attempts with exact CPython 3.11.9 and Node.js 22.22.2. The Arena credential cannot add `.github/workflows`, so this commit makes no hosted-run claim. If a repository owner activates the unchanged template, the standard hosted x64 image may be Windows Server; its ProductType then fails closed and it is diagnostic evidence only, never a replacement for the required Windows 11 x64 laptop run. The aggregate rejects missing, malformed, duplicate, wrong-commit, wrong-architecture, non-workstation, failed, or digest-mismatched lane evidence. Combine a same-commit native Arm64 result with the laptop result for the authoritative aggregate. Only a valid two-lane aggregate may print `ALL SYSTEMS GO — B03 UNLOCKED`.
+1. verify a clean exact commit and create an external detached worktree;
+2. prove native Windows 11 workstation, PowerShell, CPython 3.11, Node 22, architecture-correct Visual Studio compiler/linker identities, explicit governed SDK `10.0.26100.0` selection, an executable probe, and its PE target;
+3. bootstrap the architecture-specific wheel-only exact build lock with hashes, no cache, and no dependency resolution;
+4. resolve all six profiles twice without third-party build isolation and compare byte-identical exact locks;
+5. require the selected `all` sdists to equal the full reviewed architecture source-build contract (12 x64, 9 Arm64), including exact filenames and hashes;
+6. audit and license-inventory the isolated build, exact dev, and exact all-runtime authorities, then reject missing, unexpected, conflicting, or version-drifted installed distributions;
+7. run the configured Python suite, fatal Ruff gate, compilation, wheel/sdist build, artifact installation/content/metadata checks, and frontend clean-install/install-script/tree/audit/proxy/lint/build gates;
+8. run installation, second installation, startup, idempotent second startup, restart, authenticated readiness, stop, preserving uninstall, explicit isolated-data removal, and repeated uninstall; and
+9. attempt managed stop on every exit path, terminate only identity-recorded or unique-lane-owned survivors, remove generated environments/frontend outputs/data/worktree state, verify every cleanup invariant, and fail if cleanup is incomplete.
 
-## Current truth boundary
+The exact build authority is `requirements/locks/cpython-3.11-windows-{x86_64|arm64}/build.txt` plus `quality/windows-native-build-contract.json`. Both versions and architecture-specific wheel hashes must agree. CMake and Ninja CLI identities are separately governed. Runtime/source builds use `--no-build-isolation --no-cache-dir`; default PEP 517 isolation and cached wheels cannot count as evidence.
 
-The amended Linux developer gates now include install/lifecycle contract tests, clean exact-dev installation/audits, passing package/frontend/configuration/governance checks, and a truthful dependency boundary for `omni_v2/tests`. Running that broad suite in the exact dev environment produced `655 passed, 33 skipped, 9 failed`: all nine failures are OpenCV-dependent security tests, while the dev profile intentionally omits OpenCV and other optional all-runtime dependencies. The unattended qualifier therefore runs the broad suite only after installing and layering the exact `all` profile over the exact dev test-tool environment; it does not silently augment the dev lock. A separate exact Linux `all` installation stopped while building `dlib`, `evdev`, and `PyAudio` because this host lacks required Python/native development prerequisites, so no exact-all broad-suite result exists. The earlier `664 passed, 33 skipped` run used a disclosed same-version headless OpenCV substitution and remains diagnostic regression evidence only, not exact-lock evidence.
+`hosted-windows-qualification.workflow.yml` remains an inactive, owner-installable template because the Arena GitHub credential cannot add active workflow files. No hosted execution is claimed. A standard hosted x64 image may be Windows Server and will correctly fail the workstation gate; it cannot replace the required Windows 11 x64 laptop lane.
 
-The native x64 audit invalidated the earlier synthetic `setuptools==81.0.0` package-build diagnostic: that backend is affected by PYSEC-2026-3447 / CVE-2026-59890 and must not be reused. The build-system authority now requires `setuptools>=83,<85`; the existing Linux exact dev lock selects fixed `84.0.0`. Local developer revalidation passed current exact-lock audit, no-isolation wheel/sdist construction, exact-lock artifact installation, 56 install tests, 15 package tests, package-content checks, and strict Twine metadata. Native Windows must still generate and validate its own exact locks. These Linux results do not validate Windows behavior.
+## Validation completed on the developer host
 
-The first native Windows x64 invocation exposed and stopped on a real Windows PowerShell 5.1 compatibility defect before evidence initialization. The platform helper now obtains native/process architecture from Windows environment identities with CIM and reflection fallbacks rather than directly resolving modern-only `RuntimeInformation` properties. Subsequent exact-commit attempts proved that correction on the x64 laptop, then failed closed on an unqualified default Python, global Node 24, and finally a real resolver defect after explicitly selecting native CPython 3.11.9 and portable Node 22.22.2. The resolver had decoded pip's UTF-8 JSON report with Windows' cp1252 locale default; it now reads machine-generated JSON explicitly as UTF-8, and the qualifier prefers `py -3.11` over an unrelated default `python`.
+The latest Linux developer validation, after the source-build and cleanup hardening, reports:
 
-The corrected `f8908503` run then resolved all six profiles twice with byte-identical locks (core 40, voice 95, vision 71, desktop 29, dev 93, all 202), installed the exact dev lock and local source, and passed `pip check`. It stopped at the required vulnerability audit: two report records identified one distinct setuptools 81.0.0 advisory, PYSEC-2026-3447 with CVE-2026-59890/GHSA-h35f-9h28-mq5c aliases, fixed in 83.0.0. [`native-x64-diagnostic-2026-08-12.json`](native-x64-diagnostic-2026-08-12.json) records the operator-reported diagnostic boundary. No ignore or waiver is permitted. These are failed diagnostics, not lane evidence. A clean new-commit rerun is required; no passing native lane exists. Static PowerShell/workflow-template inspection is not execution evidence.
+- complete exact-dev Python suite: `737 passed, 36 skipped`;
+- package suite against exactly one wheel and one sdist: `17 passed`;
+- fatal Ruff gate (`E9,F63,F7,F82`): pass;
+- frontend with Corepack npm `12.0.2`: 13 proxy tests, zero-warning lint, zero vulnerabilities, no unreviewed install scripts, and successful production build;
+- focused install/package/governance tests, JSON parsing, Python compilation, changed PowerShell Tree-sitter parsing, and `git diff --check`: pass at the current review checkpoint.
 
-B02 is not closed. B03 has not started. No product-platform, physical-DGX, release, exact-all broad-suite, offline no-egress, or 10/10 claim is made.
+The exact Linux `all` profile still cannot be installed unchanged on this host because dlib, evdev, and PyAudio require unavailable native development prerequisites. That does not weaken or replace either required Windows lane. The broad repository Ruff scan is also not the B02 gate: it contains thousands of pre-existing style findings, while the defined fatal correctness subset passes.
+
+## Failed native diagnostics retained as failures
+
+Earlier x64 attempts exposed PowerShell 5.1 architecture detection, interpreter/Node selection, UTF-8 report decoding, and vulnerable setuptools authority defects. `f8908503` passed repeatable resolution and exact-dev installation before correctly failing on vulnerable `setuptools==81.0.0`. `4bc1c9d` used the corrected backend and reached full installation, where dlib and llama-cpp-python demonstrated that native source builds lacked a controlled Visual C++/CMake/Ninja contract. None is lane evidence.
+
+The current implementation addresses that failure class proactively with exact architecture build locks and wheel hashes, reviewed sdist equality, native toolchain and PE probes, exact installed-environment parity, correctly scoped audits/licenses, architecture capability exclusions, and strict failure cleanup. Those controls remain **unqualified implementation** until executed natively.
+
+B02 is not closed. B03 has not started. No product-platform, physical-DGX, release, offline-no-egress, commercial-traction, or 10/10 claim is made.

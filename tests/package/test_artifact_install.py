@@ -91,6 +91,7 @@ def test_artifact_installs_and_cli_runs_outside_checkout(
             str(python),
             "install",
             "--disable-pip-version-check",
+            "--no-cache-dir",
         ]
         install_options = ["--no-deps"]
         if artifact.name.endswith(".tar.gz"):
@@ -99,7 +100,8 @@ def test_artifact_installs_and_cli_runs_outside_checkout(
             # wheel's packaging dependency) while forbidding hidden network
             # resolution and requiring a hash for every installed archive.
             _run(
-                installer + ["--no-deps", "--require-hashes", "-r", str(lock)],
+                installer
+                + ["--only-binary=:all:", "--no-deps", "--require-hashes", "-r", str(lock)],
                 cwd=work,
                 env=isolated_env,
             )

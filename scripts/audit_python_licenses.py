@@ -40,6 +40,11 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("lock", type=Path)
     parser.add_argument("--output", type=Path)
+    parser.add_argument(
+        "--inventory-python",
+        type=Path,
+        help="inspect distributions visible to this interpreter instead of the auditor environment",
+    )
     args = parser.parse_args()
     lock = args.lock.resolve()
     expected = load_lock(lock)
@@ -51,6 +56,7 @@ def main() -> int:
             "-m",
             "piplicenses",
             "--with-system",
+            *(["--python", str(args.inventory_python.resolve())] if args.inventory_python else []),
             "--format=json",
             "--packages",
             *[item[0] for item in expected.values()],

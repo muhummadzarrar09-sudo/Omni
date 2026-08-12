@@ -6,17 +6,17 @@ Purpose: confirm "is it me at the laptop?" when OMNI is in away/guard mode.
 This is the **hardened** version that addresses the "basic biometrics" caveat.
 It now uses a pluggable verifier backend, in priority order:
 
-  1. LBPH  (OpenCV contrib, `cv2.face.LBPHFaceRecognizer`)
+  1. Deep embeddings (optional, via `face_recognition`/dlib)
+     If dlib is installed, this backend auto-activates; otherwise OMNI falls
+     back gracefully.
+  2. LBPH  (OpenCV contrib, `cv2.face.LBPHFaceRecognizer`)
      A *trained* local recognizer: you enroll several images of your face and
      it learns a model. At verification time it scores the live face against
-     that model. Fully offline, no model download. Reliably rejects a clearly
-     different person under good lighting/angle. << DEFAULT when available
-  2. Gradient + color descriptor (zero-dep fallback)
-     The original lightweight descriptor, kept as a graceful fallback when
-     OpenCV contrib is unavailable.
-  3. Deep embeddings (optional, via `face_recognition`/dlib)
-     If dlib is installed you get state-of-the-art accuracy. It auto-activates;
-     otherwise OMNI falls back gracefully.
+     that model. Fully offline, with no model download.
+  3. Gradient + color descriptor (NumPy-only scoring fallback)
+     The original lightweight descriptor can score caller-supplied face crops
+     when OpenCV contrib is unavailable. Camera capture/detection still needs a
+     separate provider, so this alone is not end-to-end camera authentication.
 
 Robustness upgrades (the actual caveat-fixes):
   * MULTI-SAMPLE ENROLLMENT - you enroll several frames; all become the model,
@@ -105,7 +105,7 @@ class BaseVerifier:
 
 
 class GradientVerifier(BaseVerifier):
-    """Fallback: gradient-magnitude + HSV histogram descriptor, cosine distance."""
+    """Fallback: NumPy gradient-magnitude + hue histogram descriptor."""
 
     name = "gradient"
     default_threshold = 0.30
@@ -117,18 +117,53 @@ class GradientVerifier(BaseVerifier):
 
     @staticmethod
     def _descriptor(crop_bgr: Any) -> Optional[Dict[str, Any]]:
+        """Build a deterministic descriptor without depending on optional OpenCV."""
         try:
-            cv2 = _lazy_cv()
-            gray = cv2.cvtColor(crop_bgr, cv2.COLOR_BGR2GRAY)
-            resized = cv2.resize(gray, (48, 48))
-            gx = cv2.Sobel(resized, cv2.CV_32F, 1, 0, ksize=3)
-            gy = cv2.Sobel(resized, cv2.CV_32F, 0, 1, ksize=3)
-            mag = cv2.magnitude(gx, gy).flatten()
-            hsv = cv2.cvtColor(crop_bgr, cv2.COLOR_BGR2HSV)
-            hist = cv2.calcHist([hsv], [0], None, [32], [0, 180]).flatten()
-            desc = list(mag.astype(float) / (mag.max() + 1e-6)) + list(hist / (hist.sum() + 1e-6))
-            norm = math.sqrt(sum(v * v for v in desc)) or 1.0
-            return {"vec": [float(v) / norm for v in desc], "n": len(desc)}
+            np = _lazy_np()
+            image = np.asarray(crop_bgr)
+            if image.ndim != 3 or image.shape[2] < 3 or image.shape[0] < 2 or image.shape[1] < 2:
+                return None
+            bgr = image[..., :3].astype(np.float32, copy=False)
+            if not np.isfinite(bgr).all():
+                return None
+
+            gray = bgr[..., 0] * 0.114 + bgr[..., 1] * 0.587 + bgr[..., 2] * 0.299
+            rows = np.linspace(0, gray.shape[0] - 1, 48).round().astype(int)
+            columns = np.linspace(0, gray.shape[1] - 1, 48).round().astype(int)
+            resized = gray[np.ix_(rows, columns)]
+            gy, gx = np.gradient(resized)
+            magnitude = np.hypot(gx, gy).ravel()
+            magnitude /= float(magnitude.max()) + 1e-6
+
+            # Calculate OpenCV-compatible hue values in [0, 180) from BGR channels.
+            scaled = np.clip(bgr / 255.0, 0.0, 1.0)
+            blue, green, red = (scaled[..., channel] for channel in range(3))
+            maximum = scaled.max(axis=2)
+            minimum = scaled.min(axis=2)
+            delta = maximum - minimum
+            hue = np.zeros_like(maximum)
+            chromatic = delta > 1e-7
+            red_max = chromatic & (maximum == red)
+            green_max = chromatic & (maximum == green)
+            blue_max = chromatic & (maximum == blue)
+            hue[red_max] = np.mod(
+                (green[red_max] - blue[red_max]) / delta[red_max], 6.0
+            )
+            hue[green_max] = (
+                (blue[green_max] - red[green_max]) / delta[green_max] + 2.0
+            )
+            hue[blue_max] = (
+                (red[blue_max] - green[blue_max]) / delta[blue_max] + 4.0
+            )
+            hue *= 30.0
+            histogram, _ = np.histogram(hue, bins=32, range=(0.0, 180.0))
+            histogram = histogram.astype(np.float32)
+            histogram /= float(histogram.sum()) + 1e-6
+
+            descriptor = np.concatenate((magnitude, histogram))
+            norm = float(np.linalg.norm(descriptor)) or 1.0
+            vector = (descriptor / norm).astype(float).tolist()
+            return {"vec": vector, "n": len(vector)}
         except Exception:
             return None
 

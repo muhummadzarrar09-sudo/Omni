@@ -11,6 +11,7 @@ param(
     [switch]$Core,
     [switch]$All,
     [string]$LockPath,
+    [string]$ResolutionPath,
     [string]$PythonPath
 )
 
@@ -25,6 +26,64 @@ function Invoke-Checked {
     & $FilePath @Arguments
     if ($LASTEXITCODE -ne 0) {
         throw "Command failed with exit code ${LASTEXITCODE}: $FilePath $($Arguments -join ' ')"
+    }
+}
+
+function Get-ExactHashedLockRecords {
+    param([Parameter(Mandatory = $true)][string]$Path)
+
+    $records = @{}
+    $lineNumber = 0
+    foreach ($rawLine in Get-Content -LiteralPath $Path) {
+        $lineNumber += 1
+        $line = $rawLine.Trim()
+        if (-not $line -or $line.StartsWith("#")) { continue }
+        if ($line -notmatch "^([A-Za-z0-9_.-]+)==([^\s]+)\s+--hash=sha256:([a-f0-9]{64})$") {
+            throw "Invalid exact hashed lock entry at ${Path}:$lineNumber"
+        }
+        $name = ([string]$Matches[1]).ToLowerInvariant() -replace "[-_.]+", "-"
+        if ($records.ContainsKey($name)) { throw "Duplicate exact lock distribution: $name" }
+        $records[$name] = [pscustomobject]@{ version = [string]$Matches[2]; sha256 = [string]$Matches[3] }
+    }
+    if ($records.Count -eq 0) { throw "Exact hashed lock is empty: $Path" }
+    return $records
+}
+
+function Assert-ExactInstalledEnvironment {
+    param(
+        [Parameter(Mandatory = $true)][string]$Python,
+        [Parameter(Mandatory = $true)][hashtable]$BuildRecords,
+        [Parameter(Mandatory = $true)][hashtable]$RuntimeRecords,
+        [Parameter(Mandatory = $true)][string]$ProjectVersion
+    )
+
+    $expected = @{}
+    foreach ($authority in @($BuildRecords, $RuntimeRecords)) {
+        foreach ($entry in $authority.GetEnumerator()) {
+            $name = [string]$entry.Key
+            $version = [string]$entry.Value.version
+            if ($expected.ContainsKey($name) -and $expected[$name] -ne $version) {
+                throw "Exact build and runtime locks conflict for ${name}: $($expected[$name]) and $version."
+            }
+            $expected[$name] = $version
+        }
+    }
+    $expected["omni-agi"] = $ProjectVersion
+
+    $inventoryText = (& $Python -m pip list --format json --disable-pip-version-check | Out-String)
+    if ($LASTEXITCODE -ne 0) { throw "Could not inventory the managed environment." }
+    $inventory = $inventoryText | ConvertFrom-Json
+    $installed = @{}
+    foreach ($distribution in @($inventory)) {
+        $name = ([string]$distribution.name).ToLowerInvariant() -replace "[-_.]+", "-"
+        if ($installed.ContainsKey($name)) { throw "Managed environment contains duplicate distribution: $name" }
+        $installed[$name] = [string]$distribution.version
+    }
+    $missing = @($expected.Keys | Where-Object { -not $installed.ContainsKey($_) })
+    $unexpected = @($installed.Keys | Where-Object { -not $expected.ContainsKey($_) })
+    $mismatched = @($expected.Keys | Where-Object { $installed.ContainsKey($_) -and $installed[$_] -ne $expected[$_] })
+    if ($missing.Count -ne 0 -or $unexpected.Count -ne 0 -or $mismatched.Count -ne 0) {
+        throw "Managed distributions differ from the exact authority (missing=$($missing -join ','), unexpected=$($unexpected -join ','), mismatched=$($mismatched -join ',')). Remove .venv and retry."
     }
 }
 
@@ -70,6 +129,55 @@ if ($PythonPath) {
     }
 }
 
+if ($LockPath) {
+    $resolvedLockPath = (Resolve-Path -LiteralPath $LockPath -ErrorAction Stop).Path
+    $resolvedBuildLockPath = Join-Path (Split-Path -Parent $resolvedLockPath) "build.txt"
+} else {
+    $lockRoot = Join-Path $root "requirements\locks\cpython-3.11-windows-$architectureSlug"
+    $resolvedLockPath = Join-Path $lockRoot "$profile.txt"
+    $resolvedBuildLockPath = Join-Path $lockRoot "build.txt"
+}
+if (-not (Test-Path -LiteralPath $resolvedBuildLockPath -PathType Leaf)) {
+    throw "Exact wheel-only native build lock is absent: $resolvedBuildLockPath"
+}
+$resolvedResolutionPath = if ($ResolutionPath) {
+    (Resolve-Path -LiteralPath $ResolutionPath -ErrorAction Stop).Path
+} else {
+    $null
+}
+
+# Prove the native compiler/linker/SDK before any dependency metadata
+# preparation. This rejects x64 tools and outputs on Arm64 (and vice versa).
+. (Join-Path $PSScriptRoot "windows_build_tools.ps1")
+$buildContract = Get-OmniBuildContract
+$buildRecords = Get-ExactHashedLockRecords $resolvedBuildLockPath
+$expectedBuildRecords = @{}
+$contractBuildHashes = $buildContract.build_artifact_sha256.$architectureSlug
+foreach ($property in $buildContract.build_lock.PSObject.Properties) {
+    $name = $property.Name.ToLowerInvariant()
+    $hashProperty = $contractBuildHashes.PSObject.Properties[$name]
+    if (-not $hashProperty) {
+        throw "Native build contract has no $architectureSlug artifact hash for $name."
+    }
+    $expectedBuildRecords[$name] = [pscustomobject]@{
+        version = [string]$property.Value
+        sha256 = [string]$hashProperty.Value
+    }
+}
+if (
+    $buildRecords.Count -ne $expectedBuildRecords.Count -or
+    @($expectedBuildRecords.Keys | Where-Object {
+        -not $buildRecords.ContainsKey($_) -or
+        [string]$buildRecords[$_].version -ne [string]$expectedBuildRecords[$_].version -or
+        [string]$buildRecords[$_].sha256 -ne [string]$expectedBuildRecords[$_].sha256
+    }).Count -ne 0
+) {
+    throw "Exact build lock versions or artifact hashes do not match quality/windows-native-build-contract.json."
+}
+Write-Host "Validating native Visual Studio 2022 compiler, linker, and Windows SDK..."
+$nativeBuildTools = Enter-OmniWindowsNativeBuildEnvironment -ArchitectureSlug $architectureSlug
+Write-Host "Native toolchain: $($nativeBuildTools.compiler) -> PE $($nativeBuildTools.pe_machine)"
+
 $venvPython = Join-Path $root ".venv\Scripts\python.exe"
 if (-not (Test-Path $venvPython)) {
     if (Test-Path (Join-Path $root ".venv")) {
@@ -97,26 +205,92 @@ if ($LASTEXITCODE -eq 0) {
 }
 
 Write-Host "Installing OMNI profile '$profile' from this checkout..."
-if ($LockPath) {
-    $resolvedLockPath = (Resolve-Path -LiteralPath $LockPath -ErrorAction Stop).Path
-} else {
-    $resolvedLockPath = Join-Path $root "requirements\locks\cpython-3.11-windows-$architectureSlug\$profile.txt"
+Write-Host "Bootstrapping exact wheel-only build authority: $resolvedBuildLockPath"
+Invoke-Checked $venvPython -m pip install --disable-pip-version-check --no-cache-dir "--only-binary=:all:" --no-deps --require-hashes -r $resolvedBuildLockPath
+Invoke-Checked $venvPython -m pip check
+# --no-build-isolation does not activate the invoking virtual environment for
+# backend subprocesses. Put its exact Scripts directory first so setup.py,
+# CMake backends, and compiler probes cannot select an ambient CMake or Ninja.
+$venvScripts = Split-Path -Parent $venvPython
+$env:PATH = "$venvScripts;$env:PATH"
+$cmakeVersion = ((& (Join-Path $venvScripts "cmake.exe") --version | Select-Object -First 1) | Out-String).Trim()
+if ($LASTEXITCODE -ne 0 -or $cmakeVersion -ne [string]$buildContract.build_tool_cli.cmake) {
+    throw "The installed CMake CLI identity does not match the native build contract: '$cmakeVersion'."
 }
-if (Test-Path -LiteralPath $resolvedLockPath) {
+$ninjaVersion = ((& (Join-Path $venvScripts "ninja.exe") --version) | Out-String).Trim()
+if ($LASTEXITCODE -ne 0 -or $ninjaVersion -ne [string]$buildContract.build_tool_cli.ninja) {
+    throw "The installed Ninja CLI identity does not match the native build contract: '$ninjaVersion'."
+}
+$runtimeRecords = $null
+if (Test-Path -LiteralPath $resolvedLockPath -PathType Leaf) {
+    $runtimeRecords = Get-ExactHashedLockRecords $resolvedLockPath
+    if ($resolvedResolutionPath) {
+        $resolution = (Get-Content -Raw -LiteralPath $resolvedResolutionPath) | ConvertFrom-Json
+        if (
+            $resolution.status -ne "pass" -or
+            [string]$resolution.platform.system -ne "Windows" -or
+            [string]$resolution.platform.normalized_machine -ne $architectureSlug -or
+            $resolution.third_party_build_isolation -ne $false -or
+            [string]$resolution.source_build_contract -ne "quality/windows-native-build-contract.json" -or
+            $resolution.profiles.$profile.status -ne "pass"
+        ) {
+            throw "Resolver evidence does not authorize this native Windows $architectureSlug $profile installation."
+        }
+        $resolvedRecords = @{}
+        foreach ($package in @($resolution.profiles.$profile.packages)) {
+            $name = ([string]$package.name).ToLowerInvariant() -replace "[-_.]+", "-"
+            if ($name -eq "omni-agi") { continue }
+            $resolvedRecords[$name] = [pscustomobject]@{ version = [string]$package.version; sha256 = [string]$package.sha256 }
+        }
+        if (
+            $runtimeRecords.Count -ne $resolvedRecords.Count -or
+            @($resolvedRecords.Keys | Where-Object {
+                -not $runtimeRecords.ContainsKey($_) -or
+                [string]$runtimeRecords[$_].version -ne [string]$resolvedRecords[$_].version -or
+                [string]$runtimeRecords[$_].sha256 -ne [string]$resolvedRecords[$_].sha256
+            }).Count -ne 0
+        ) {
+            throw "Runtime lock bytes do not match the supplied resolver artifact evidence."
+        }
+        $approvedSources = @{}
+        foreach ($record in @($buildContract.source_distributions.$architectureSlug)) {
+            $name = ([string]$record.name).ToLowerInvariant() -replace "[-_.]+", "-"
+            $approvedSources["$name==$([string]$record.version)"] = $record
+        }
+        foreach ($package in @($resolution.profiles.$profile.packages | Where-Object { [string]$_.artifact_kind -eq "sdist" })) {
+            $name = ([string]$package.name).ToLowerInvariant() -replace "[-_.]+", "-"
+            $key = "$name==$([string]$package.version)"
+            if (
+                -not $approvedSources.ContainsKey($key) -or
+                [string]$package.sha256 -ne [string]$approvedSources[$key].sha256
+            ) {
+                throw "Resolver evidence selected an unapproved native source artifact: $key"
+            }
+        }
+    } else {
+        Write-Warning "No -ResolutionPath was supplied; this exact-lock installation is not B02 qualification evidence."
+    }
     Write-Host "Using native Windows hashed lock: $resolvedLockPath"
-    Invoke-Checked $venvPython -m pip install --require-hashes -r $resolvedLockPath
-    # Native Windows locks include the exact pyproject build backend. Disable
-    # build isolation so local-source installation cannot resolve hidden build
-    # dependencies from the network.
-    Invoke-Checked $venvPython -m pip install --no-build-isolation --no-deps .
+    Invoke-Checked $venvPython -m pip install --disable-pip-version-check --no-cache-dir --no-build-isolation --require-hashes -r $resolvedLockPath
+    # Every third-party source distribution must build with the preinstalled
+    # authority above. PEP 517 isolation and pip's local wheel cache are both
+    # forbidden because either can hide undeclared build inputs.
+    Invoke-Checked $venvPython -m pip install --disable-pip-version-check --no-cache-dir --no-build-isolation --no-deps .
 } else {
     # Truthful fallback for ordinary development installation only. The B02
-    # qualification driver always supplies a native exact lock and never enters
-    # this branch.
-    Write-Warning "Native Windows $architectureSlug lock is absent; dependencies and build tools are index-resolved. This is not reproducible Windows qualification evidence."
-    Invoke-Checked $venvPython -m pip install ".[${profile}]"
+    # qualification driver always supplies a native exact runtime lock and
+    # never enters this branch. The build authority remains exact even here.
+    Write-Warning "Native Windows $architectureSlug runtime lock is absent; runtime dependencies are index-resolved. This is not reproducible Windows qualification evidence."
+    Invoke-Checked $venvPython -m pip install --disable-pip-version-check --no-cache-dir --no-build-isolation ".[${profile}]"
 }
 Invoke-Checked $venvPython -m pip check
+if ($null -ne $runtimeRecords) {
+    $projectVersion = ((& $venvPython -c "import pathlib, sys, tomllib; print(tomllib.loads(pathlib.Path(sys.argv[1]).read_text(encoding='utf-8'))['project']['version'])" (Join-Path $root "pyproject.toml")) | Out-String).Trim()
+    if ($LASTEXITCODE -ne 0 -or -not $projectVersion) {
+        throw "Could not identify the expected OMNI project version."
+    }
+    Assert-ExactInstalledEnvironment -Python $venvPython -BuildRecords $buildRecords -RuntimeRecords $runtimeRecords -ProjectVersion $projectVersion
+}
 Invoke-Checked $venvPython -m omni_v2.core.runtime_cli --json config init | Out-Null
 
 $nodeCommand = Get-Command node -ErrorAction SilentlyContinue
