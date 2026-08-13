@@ -20,8 +20,8 @@
   "authority_sha256": {
     "quality/capabilities.json": "c0ddd11e6fb8328c98417570f799e50c24cb93c8f1e23895de27e32a2d0caaf6",
     "quality/scorecard.json": "c11c9001553f92617d18d6bf226eb717bafb08b309273c1966f887b5194910e2",
-    "quality/policy.json": "0243950bb973d7dae797b186a146471eae5408897f512f8b188a3b6bb95648bf",
-    "quality/batches.json": "7f2338451edab30bbc800b7a052c5fd152a6e1a272ee2d61fd284cdf87d43dab"
+    "quality/policy.json": "78c36e7224cbe059560a5743f5bab3e8c505b0d44c6090d9deecea1c782fa7f0",
+    "quality/batches.json": "680e1a35b5aa1760cf4169a1a4ecda733f043e7dae6464585e4e9f1e05e3d5c3"
   },
   "source_digest": "d1cb6174e4a8a4c45548d5f5f15bb276ba27e2fa7005ec213bcbbd306f4d719e",
   "counts": {

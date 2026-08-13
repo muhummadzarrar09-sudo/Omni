@@ -560,7 +560,36 @@ def validate_authorities(
                 else:
                     if closure.get("batch") != row.get("id") or closure.get("decision") != "closed":
                         errors.append(f"{prefix}.closure_evidence does not approve this batch")
+    # A formal dependency exception may permit exactly one bounded preparation
+    # track without laundering closure of the blocked dependency or unlocking a
+    # further batch. It is deliberately narrow so ordinary batch execution
+    # remains strictly sequential.
+    dependency_exception = execution.get("dependency_exception")
+    permitted_parallel_batch = None
+    if dependency_exception is not None:
+        if not isinstance(dependency_exception, dict):
+            errors.append("policy.json: execution.dependency_exception must be an object")
+        else:
+            required_exception = {
+                "id": "B02-B03-preparation-exception-2026-08-13",
+                "blocked_dependency": "B02",
+                "permitted_batch": "B03",
+                "mode": "preparation_and_implementation_only",
+            }
+            for field, expected in required_exception.items():
+                if dependency_exception.get(field) != expected:
+                    errors.append(f"policy.json: dependency exception {field} must be {expected!r}")
+            evidence = dependency_exception.get("evidence")
+            if not isinstance(evidence, str) or not (ROOT / evidence).is_file():
+                errors.append("policy.json: dependency exception evidence must exist")
+            elif len(batch_rows) <= 2 or batch_rows[2].get("status") == "closed":
+                errors.append("policy.json: B02 must remain unclosed while its dependency exception is active")
+            else:
+                permitted_parallel_batch = "B03"
+
     expected_active = [current_batch] if current_batch is not None else []
+    if permitted_parallel_batch:
+        expected_active.append(permitted_parallel_batch)
     expected_ready = [] if current_batch is not None or next_batch is None else [next_batch]
     if active_batches != expected_active:
         errors.append(f"batches.json: in_progress batches must be {expected_active}; found {active_batches}")
@@ -569,7 +598,11 @@ def validate_authorities(
     if [row.get("status") for row in batch_rows[: len(closed_batches)]] != ["closed"] * len(closed_batches):
         errors.append("batches.json: policy closed_batches must have status=closed")
     for row in batch_rows[len(closed_batches) + (1 if next_batch is not None else 0) :]:
-        if row.get("status") != "locked":
+        if row.get("id") == permitted_parallel_batch:
+            exception = row.get("dependency_exception")
+            if not isinstance(exception, dict) or exception.get("id") != dependency_exception.get("id"):
+                errors.append("batches.json: permitted parallel batch must record the matching dependency exception")
+        elif row.get("status") != "locked":
             errors.append(f"batches.json: downstream batch {row.get('id')} must be locked")
 
     expansion_rows = batches.get("post_10_expansions")
@@ -855,8 +888,18 @@ def render_batches_doc(batches: dict[str, Any], policy: dict[str, Any]) -> str:
         f"**Current batch:** `{policy['execution']['current_batch'] or 'none'}`<br>",
         f"**Next batch:** `{policy['execution']['next_batch'] or 'none'}`<br>",
         f"**Feature freeze:** `{'enabled' if policy['feature_freeze']['enabled'] else 'disabled'}`<br>",
-        "**Execution rule:** one batch at a time; implementation, tests, audit, documentation, evidence, and the complete exit gate must pass before the next batch starts.",
+        "**Execution rule:** one batch at a time unless a recorded dependency exception permits a bounded preparation track; an exception cannot close a blocked dependency or unlock a later batch.",
         "",
+    ]
+    dependency_exception = policy["execution"].get("dependency_exception")
+    if dependency_exception:
+        result += [
+            "## Active Dependency Exception",
+            "",
+            f"`{dependency_exception['id']}` permits `{dependency_exception['permitted_batch']}` as a `{dependency_exception['mode']}` track while `{dependency_exception['blocked_dependency']}` remains open. Evidence: `{dependency_exception['evidence']}`.",
+            "",
+        ]
+    result += [
         "## Sequence",
         "",
         "| Batch | Title | Status | Dependency | Solo estimate |",

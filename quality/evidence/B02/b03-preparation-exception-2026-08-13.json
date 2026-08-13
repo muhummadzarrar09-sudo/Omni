@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "recorded_on": "2026-08-13",
+  "decision": "approved_limited_b03_preparation_and_implementation_track_while_b02_remains_blocked",
+  "authority": "Owner-approved formal amendment to the sequential batch policy.",
+  "blocked_batch": "B02",
+  "permitted_batch": "B03",
+  "blocked_b02_state": {
+    "status": "in_progress",
+    "closure_claimed": false,
+    "current_x86_64_attempt": {
+      "commit_sha": "25439e68ef0a9dd3dbbf03d4e1bd4ee9d0be8961",
+      "result": "failed during exact all-profile installation",
+      "blocking_dependency": "dlib 20.0.1 source build entered CUDA configuration and CMake reported no CUDA toolset for the Visual Studio generator",
+      "operator_evidence_root": "C:\\B02-Evidence",
+      "evidence_import_status": "external operator evidence not imported into this repository"
+    },
+    "arm64_lane": "not_run",
+    "two_lane_aggregate": "not_run"
+  },
+  "permission": {
+    "mode": "preparation_and_implementation_only",
+    "permitted_work": [
+      "Implement B03 deterministic verification, CI, test, and flake-elimination work.",
+      "Add B03 tests, documentation, and inspectable evidence.",
+      "Repair verified B03 defects within the existing feature freeze."
+    ],
+    "prohibitions": [
+      "Do not claim B02 is closed or qualified.",
+      "Do not claim B03 is closed, release-qualified, or complete while B02 remains open.",
+      "Do not unlock or start B04 from this exception.",
+      "Do not waive the native Windows 11 Arm64/x64 same-commit B02 matrix or its fail-closed aggregate."
+    ]
+  },
+  "reclosure_requirements": [
+    "B02 must produce passing native Windows 11 Arm64 and x86_64 lane attestations at one exact commit.",
+    "The B02 aggregate verdict must pass.",
+    "B03 must independently pass every declared B03 exit gate before its closure can be considered."
+  ]
+}
