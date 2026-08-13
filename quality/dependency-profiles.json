@@ -1,0 +1,89 @@
+{
+  "schema_version": 1,
+  "subject": "OMNI Python distribution and imported runtime modules",
+  "supported_python": {
+    "specifier": ">=3.11,<3.12",
+    "tested_interpreter": "CPython 3.11.2",
+    "qualification_scope": "Only the available CPython 3.11 interpreter is claimed. Python 3.10, 3.12+, PyPy, Windows, and macOS resolution are not claimed by B01 evidence."
+  },
+  "package_scope": {
+    "included": [
+      "omni",
+      "omni_v2 excluding omni_v2.tests",
+      "backend_fastapi"
+    ],
+    "package_data": [
+      "omni_v2/ui/orb_threejs.html",
+      "omni_v2/web_ui/index.html"
+    ],
+    "excluded": [
+      "model weights",
+      "user data and databases",
+      "logs and environment files",
+      "Python source tests",
+      "Next.js source and node_modules",
+      "archived implementations"
+    ]
+  },
+  "profiles": {
+    "core": "Orchestration, scheduling, vault, and FastAPI backend dependencies.",
+    "voice": "Speech, microphone, audio, TTS, STT, and wake-word dependencies.",
+    "vision": "Capture, OCR, face-security, and visual-model dependencies.",
+    "desktop": "Native GUI, input automation, and browser automation dependencies.",
+    "dev": "Core plus build, test, lint, lock, vulnerability-audit, and license-inventory tools.",
+    "all": "Every runtime profile plus optional LLM, vector-memory, MCP, notification, and messenger adapters; development tools are intentionally excluded."
+  },
+  "import_map": {
+    "PIL": {"distribution": "Pillow", "profiles": ["vision", "all"]},
+    "PyQt5": {"distribution": "PyQt5", "profiles": ["desktop", "all"]},
+    "apscheduler": {"distribution": "APScheduler", "profiles": ["core", "dev", "all"]},
+    "chromadb": {"distribution": "chromadb", "profiles": ["all"]},
+    "cryptography": {"distribution": "cryptography", "profiles": ["core", "dev", "all"]},
+    "cv2": {"distribution": "opencv-contrib-python", "profiles": ["vision", "all"], "note": "Contrib, not base OpenCV, is required for cv2.face.LBPHFaceRecognizer_create."},
+    "duckdb": {"distribution": "duckdb", "profiles": ["all"]},
+    "edge_tts": {"distribution": "edge-tts", "profiles": ["voice", "all"]},
+    "espeakng_loader": {"distribution": "espeakng-loader", "profiles": ["voice", "all"]},
+    "face_recognition": {"distribution": "face-recognition", "profiles": ["vision", "all"]},
+    "fastapi": {"distribution": "fastapi", "profiles": ["core", "dev", "all"]},
+    "faster_whisper": {"distribution": "faster-whisper", "profiles": ["voice", "all"]},
+    "gtts": {"distribution": "gTTS", "profiles": ["voice", "all"]},
+    "huggingface_hub": {"distribution": "huggingface-hub", "profiles": ["all"]},
+    "keyboard": {"distribution": "keyboard", "profiles": ["desktop", "all"]},
+    "kokoro_onnx": {"distribution": "kokoro-onnx", "profiles": ["voice", "all"]},
+    "llama_cpp": {"distribution": "llama-cpp-python", "profiles": ["all"]},
+    "loguru": {"distribution": "loguru", "profiles": ["core", "voice", "vision", "desktop", "dev", "all"]},
+    "mcp": {"distribution": "mcp", "profiles": ["all"]},
+    "moondream": {"distribution": "moondream", "profiles": ["vision", "all"]},
+    "mss": {"distribution": "mss", "profiles": ["vision", "all"]},
+    "numpy": {"distribution": "numpy", "profiles": ["core", "voice", "vision", "dev", "all"]},
+    "ollama": {"distribution": "ollama", "profiles": ["vision", "all"]},
+    "openwakeword": {"distribution": "openwakeword", "profiles": ["voice", "all"]},
+    "pdfplumber": {"distribution": "pdfplumber", "profiles": ["vision", "all"]},
+    "piper": {"distribution": "piper-tts", "profiles": ["voice", "all"]},
+    "playsound": {"distribution": "playsound", "profiles": ["voice", "all"]},
+    "playwright": {"distribution": "playwright", "profiles": ["desktop", "all"]},
+    "psutil": {"distribution": "psutil", "profiles": ["core", "desktop", "dev", "all"]},
+    "pvporcupine": {"distribution": "pvporcupine", "profiles": ["voice", "all"]},
+    "pyaudio": {"distribution": "PyAudio", "profiles": ["voice", "all"]},
+    "pyautogui": {"distribution": "pyautogui", "profiles": ["vision", "desktop", "all"]},
+    "pydantic": {"distribution": "pydantic", "profiles": ["core", "dev", "all"]},
+    "pydub": {"distribution": "pydub", "profiles": ["voice", "all"]},
+    "pygetwindow": {"distribution": "PyGetWindow", "profiles": ["desktop", "all"]},
+    "pytest": {"distribution": "pytest", "profiles": ["dev"], "note": "Imported only by the packaged manual microphone diagnostic; it is not a runtime dependency."},
+    "pytesseract": {"distribution": "pytesseract", "profiles": ["vision", "all"]},
+    "pythoncom": {"distribution": "pywin32", "profiles": ["desktop", "all"], "note": "Windows-only declaration guarded by a platform marker."},
+    "pyttsx3": {"distribution": "pyttsx3", "profiles": ["voice", "all"]},
+    "pywebpush": {"distribution": "pywebpush", "profiles": ["all"]},
+    "pywhatkit": {"distribution": "pywhatkit", "profiles": ["all"]},
+    "qrcode": {"distribution": "qrcode", "profiles": ["core", "dev", "all"]},
+    "requests": {"distribution": "requests", "profiles": ["core", "voice", "dev", "all"]},
+    "sentence_transformers": {"distribution": "sentence-transformers", "profiles": ["all"]},
+    "sounddevice": {"distribution": "sounddevice", "profiles": ["voice", "all"]},
+    "soundfile": {"distribution": "soundfile", "profiles": ["voice", "all"]},
+    "speech_recognition": {"distribution": "SpeechRecognition", "profiles": ["voice", "all"]},
+    "telegram": {"distribution": "python-telegram-bot", "profiles": ["all"]},
+    "transformers": {"distribution": "transformers", "profiles": ["vision", "all"]},
+    "uvicorn": {"distribution": "uvicorn", "profiles": ["core", "dev", "all"]},
+    "vosk": {"distribution": "vosk", "profiles": ["voice", "all"]}
+  }
+}

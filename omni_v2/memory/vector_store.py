@@ -1,4 +1,4 @@
-"""Vector Store V2 - Phase 2 Hardened - Data Inside Project Root"""
+"""Vector memory persisted under OMNI's canonical writable data directory."""
 import json
 import time
 from pathlib import Path
@@ -10,14 +10,10 @@ except ImportError:
     import logging
     logger = logging.getLogger("VectorStore")
 
-try:
-    from omni_v2.core.paths import VECTOR_DB_PATH, VECTOR_FALLBACK_PATH
-except ImportError:
-    VECTOR_DB_PATH = Path.home() / ".omni_v2" / "chroma"
-    VECTOR_FALLBACK_PATH = Path.home() / ".omni_v2" / "vector_fallback.json"
+from omni_v2.core.paths import VECTOR_DB_PATH, VECTOR_FALLBACK_PATH
 
 class VectorMemoryStore:
-    """Vector store for semantic memory - ChromaDB if available, now inside project/data/"""
+    """Vector store using ChromaDB when available, with a local JSON fallback."""
 
     def __init__(self, persist_dir: Optional[Path] = None):
         self.persist_dir = persist_dir or VECTOR_DB_PATH
@@ -49,7 +45,7 @@ class VectorMemoryStore:
                 metadata={"hnsw:space": "cosine"}
             )
             self.chroma_available = True
-            logger.info(f"ChromaDB initialized at {self.persist_dir} (project data/) - vector search enabled")
+            logger.info(f"ChromaDB initialized at {self.persist_dir} - vector search enabled")
         except ImportError:
             logger.warning("ChromaDB not installed - using JSON fallback. pip install chromadb")
             self.chroma_available = False
@@ -62,7 +58,7 @@ class VectorMemoryStore:
             try:
                 with open(self.fallback_file, 'r') as f:
                     self.fallback_memory = json.load(f)
-                logger.info(f"Loaded {len(self.fallback_memory)} fallback vector memories from project data/")
+                logger.info(f"Loaded {len(self.fallback_memory)} fallback vector memories from {self.fallback_file}")
             except Exception as e:
                 logger.warning(f"Failed to load fallback vector memory: {e}")
                 self.fallback_memory = []

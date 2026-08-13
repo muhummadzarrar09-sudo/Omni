@@ -1,0 +1,57 @@
+{
+  "backend_health": {
+    "audio": "No mic",
+    "brain_ready": true,
+    "data_root": "/tmp/omni-b01-installed-dpp1fded/data",
+    "package_root": "/tmp/omni-b01-installed-dpp1fded/venv/lib/python3.11/site-packages",
+    "proactive_active": true,
+    "qualification": "experimental_not_release_qualified",
+    "status": "ok",
+    "stt": {
+      "available": false,
+      "compute": "int8",
+      "device": "cpu",
+      "init_status": "faster_whisper_missing",
+      "last_error": "No module named 'faster_whisper'",
+      "model": "base.en",
+      "recordings_dir": "/tmp/omni-b01-installed-dpp1fded/data/recordings",
+      "transcribe_count": 0,
+      "transcribe_success_count": 0
+    },
+    "tts": {
+      "engine": null,
+      "init_status": "no_engine_print_only",
+      "kokoro_available": false,
+      "last_error": "pyttsx3 not installed: No module named 'pyttsx3'",
+      "sapi_available": false,
+      "spoken_count": 0
+    },
+    "version": "3.2.0"
+  },
+  "cli_engine_info": "pass",
+  "cli_help": "pass",
+  "cli_install_guidance": "pass",
+  "data_root": "/tmp/omni-b01-installed-dpp1fded/data",
+  "dependency_install_completed": true,
+  "hashed_lock_install": "pass",
+  "imports": [
+    "/tmp/omni-b01-installed-dpp1fded/venv/lib/python3.11/site-packages/omni/__init__.py",
+    "/tmp/omni-b01-installed-dpp1fded/venv/lib/python3.11/site-packages/omni_v2/__init__.py",
+    "/tmp/omni-b01-installed-dpp1fded/venv/lib/python3.11/site-packages/backend_fastapi/__init__.py"
+  ],
+  "installed_package_file_count": 388,
+  "installed_package_tree": "/tmp/omni-b01-installed-dpp1fded/venv/lib/python3.11/site-packages",
+  "installed_package_tree_immutable": true,
+  "lock": "core.txt",
+  "package_resources": [
+    "orb_threejs.html",
+    "index.html"
+  ],
+  "profile": "core",
+  "schema_version": 1,
+  "status": "pass",
+  "version": "3.2.0",
+  "wheel": "omni_agi-3.2.0-py3-none-any.whl",
+  "working_directory_entries": [],
+  "working_directory_outside_checkout": true
+}

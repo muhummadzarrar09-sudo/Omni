@@ -1,5 +1,8 @@
 # 🚀 OMNI V3 — The JARVIS + AGI Flex Roadmap (FULL SPEC)
 
+> **Document status (2026-08-11): historical or unqualified reference.** This file records earlier intent, implementation, audit, or setup work. Its completion, test-count, performance, privacy, platform, and production-readiness statements are **not current release claims**. Use the generated [Capability Matrix](CAPABILITY_MATRIX.md) and [Quality Scorecard](QUALITY_SCORECARD.md) for current truth.
+
+
 > **The AIM:** *"Make a user say 'holy sh*t it's actually an AGI' within 2 minutes."*
 > **The Vibe:** JARVIS (the butler that knows you) + AGI showcase (you SEE it think)
 > **The Goal:** 10/10 AIM features. Each one makes OMNI noticeably more "AGI."

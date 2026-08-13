@@ -25,10 +25,6 @@ except ImportError:
     import logging
     logger = logging.getLogger("KnowledgeGraph")
 
-try:
-    from omni_v2.core.paths import DATA_DIR
-except Exception:
-    DATA_DIR = Path.cwd() / "data"
 
 
 class KnowledgeGraphBuilder:

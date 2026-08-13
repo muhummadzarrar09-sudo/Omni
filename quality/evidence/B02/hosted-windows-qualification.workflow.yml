@@ -1,0 +1,178 @@
+name: B02 Windows qualification
+
+on:
+  workflow_dispatch:
+    inputs:
+      commit_sha:
+        description: Exact commit to qualify (defaults to the dispatched ref SHA)
+        required: false
+        type: string
+  # A workflow_dispatch file is not dispatchable until it exists on the default
+  # branch. This bounded PR trigger permits the pre-merge B02 architecture
+  # attempt while still checking out and attesting the exact head commit rather
+  # than GitHub's synthetic pull-request merge commit.
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: b02-windows-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  native-lane:
+    name: Native Windows ${{ matrix.architecture }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: windows-latest
+            architecture: x64
+            slug: x86_64
+            shell: powershell
+          - runner: windows-11-arm
+            architecture: arm64
+            slug: arm64
+            shell: pwsh
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 360
+    steps:
+      - name: Check out exact requested source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ inputs.commit_sha || github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+
+      - name: Provision exact native CPython
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: 3.11.9
+          architecture: ${{ matrix.architecture }}
+
+      # The qualifier obtains the governed architecture-matched Node.js archive
+      # itself; no ambient setup-node/Corepack installation is qualification input.
+      - name: Run unattended native lane
+        shell: ${{ matrix.shell }}
+        run: >-
+          .\scripts\qualify_b02.ps1
+          -LaneOnly
+          -CommitSha '${{ inputs.commit_sha || github.event.pull_request.head.sha || github.sha }}'
+          -PythonPath "$env:pythonLocation\python.exe"
+          -EvidenceRoot "$env:RUNNER_TEMP\b02-evidence"
+
+      - name: Preserve lane workflow context
+        if: always()
+        shell: pwsh
+        env:
+          QUALIFIED_COMMIT: ${{ inputs.commit_sha || github.event.pull_request.head.sha || github.sha }}
+          LANE_JOB_STATUS: ${{ job.status }}
+          LANE_ARCHITECTURE: ${{ matrix.slug }}
+          LANE_RUNNER: ${{ matrix.runner }}
+        run: |
+          $directory = Join-Path $env:RUNNER_TEMP "b02-evidence\windows-$env:LANE_ARCHITECTURE"
+          New-Item -ItemType Directory -Force -Path $directory | Out-Null
+          [ordered]@{
+            schema_version = 1
+            batch = "B02"
+            commit_sha = $env:QUALIFIED_COMMIT
+            architecture = $env:LANE_ARCHITECTURE
+            runner = $env:LANE_RUNNER
+            job_status_before_context_step = $env:LANE_JOB_STATUS
+            recorded_at_utc = [DateTime]::UtcNow.ToString("o")
+            authority = "workflow context only; never substitutes for a passing lane JSON"
+          } | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath (Join-Path $directory "workflow-context.json") -Encoding UTF8
+
+      - name: Upload native lane evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: b02-lane-${{ matrix.slug }}
+          path: ${{ runner.temp }}\b02-evidence\windows-${{ matrix.slug }}
+          if-no-files-found: error
+          retention-days: 30
+
+  aggregate:
+    name: Fail-closed B02 matrix verdict
+    if: always()
+    needs: native-lane
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out aggregate authority
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ inputs.commit_sha || github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+
+      - name: Prepare aggregate evidence root
+        if: always()
+        shell: powershell
+        run: New-Item -ItemType Directory -Force -Path "$env:RUNNER_TEMP\b02-matrix" | Out-Null
+
+      - name: Download all native lane evidence
+        if: always()
+        continue-on-error: true
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          pattern: b02-lane-*
+          path: ${{ runner.temp }}\b02-matrix
+
+      - name: Evaluate exact-commit matrix
+        if: always()
+        shell: powershell
+        env:
+          QUALIFIED_COMMIT: ${{ inputs.commit_sha || github.event.pull_request.head.sha || github.sha }}
+        run: |
+          $script = Join-Path $PWD "scripts\qualify_b02.ps1"
+          if (-not (Test-Path -LiteralPath $script -PathType Leaf)) {
+            [ordered]@{
+              schema_version = 2
+              batch = "B02"
+              status = "blocked"
+              commit_sha = $env:QUALIFIED_COMMIT
+              evaluated_at_utc = [DateTime]::UtcNow.ToString("o")
+              required_native_lanes = @("windows-arm64", "windows-x86_64")
+              missing_or_ambiguous_lanes = @("aggregate authority checkout is absent")
+              invalid_lane_evidence_count = 0
+              lanes = @()
+              b03_unlocked = $false
+              nonclaims = @("B02 is not closed.", "B03 remains locked.")
+            } | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath "$env:RUNNER_TEMP\b02-matrix\b02-aggregate-verdict.json" -Encoding UTF8
+            throw "Aggregate authority script is absent; wrote a blocked fallback verdict."
+          }
+          & $script -AggregateOnly -CommitSha $env:QUALIFIED_COMMIT -EvidenceRoot "$env:RUNNER_TEMP\b02-matrix"
+          exit $LASTEXITCODE
+
+      - name: Preserve aggregate workflow context
+        if: always()
+        shell: pwsh
+        env:
+          QUALIFIED_COMMIT: ${{ inputs.commit_sha || github.event.pull_request.head.sha || github.sha }}
+          AGGREGATE_JOB_STATUS: ${{ job.status }}
+          NATIVE_NEEDS_RESULT: ${{ needs.native-lane.result }}
+        run: |
+          $root = Join-Path $env:RUNNER_TEMP "b02-matrix"
+          New-Item -ItemType Directory -Force -Path $root | Out-Null
+          [ordered]@{
+            schema_version = 1
+            batch = "B02"
+            commit_sha = $env:QUALIFIED_COMMIT
+            native_lane_job_result = $env:NATIVE_NEEDS_RESULT
+            aggregate_job_status_before_context_step = $env:AGGREGATE_JOB_STATUS
+            recorded_at_utc = [DateTime]::UtcNow.ToString("o")
+            authority = "workflow context only; never substitutes for aggregate verdict evidence"
+          } | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath (Join-Path $root "aggregate-workflow-context.json") -Encoding UTF8
+
+      - name: Upload aggregate verdict
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: b02-aggregate-verdict
+          path: |
+            ${{ runner.temp }}\b02-matrix\b02-aggregate-verdict.json
+            ${{ runner.temp }}\b02-matrix\aggregate-workflow-context.json
+          if-no-files-found: error
+          retention-days: 30

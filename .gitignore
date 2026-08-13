@@ -175,6 +175,9 @@ chroma.sqlite3
 *.sqlite
 *.sqlite3
 
+# Local quality-baseline output (tracked summaries live in quality/evidence/)
+quality/.local/
+
 # Logs
 logs/
 data/logs/

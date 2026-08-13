@@ -1,0 +1,73 @@
+{
+  "schema_version": 1,
+  "batch": "B02",
+  "recorded_on": "2026-08-12",
+  "evidence_class": "operator-reported_native_diagnostic_not_a_passing_lane",
+  "source_commit": "f8908503d0b81578f58cf4ae508ef032bcd78cd1",
+  "lane": "windows-x86_64",
+  "host": {
+    "operating_system": "Windows 11 workstation",
+    "python": "CPython 3.11.9 AMD64 64-bit",
+    "python_executable": "C:\\Program Files\\Python311\\python.exe",
+    "node": "official portable Node.js 22.22.2 x64 with checksum verified by the operator"
+  },
+  "stages_completed_before_failure": [
+    "native Windows 11 x64 and exact toolchain identity",
+    "detached worktree at the exact source commit",
+    "two byte-identical resolutions of all six architecture-specific profiles",
+    "exact hashed dev-lock installation",
+    "exact local-source installation without dependency resolution",
+    "pip dependency consistency check"
+  ],
+  "profile_resolution_counts": {
+    "core": 40,
+    "voice": 95,
+    "vision": 71,
+    "desktop": 29,
+    "dev": 93,
+    "all": 202
+  },
+  "failure": {
+    "stage": "Python vulnerability audit",
+    "result": "fail_closed",
+    "package": "setuptools",
+    "locked_version": "81.0.0",
+    "reported_finding_count": 2,
+    "distinct_advisory_count": 1,
+    "primary_id": "PYSEC-2026-3447",
+    "aliases": [
+      "CVE-2026-59890",
+      "GHSA-h35f-9h28-mq5c",
+      "BIT-setuptools-2026-59890"
+    ],
+    "fix_versions": [
+      "83.0.0"
+    ],
+    "duplicate_explanation": "The JSON contains two records with different description detail for the same advisory and aliases. Duplicate reporting does not make the vulnerable package acceptable.",
+    "impact_summary": "Setuptools through 82.0.1 can fail to apply MANIFEST.in exclusions across NFC/NFD filename forms when producing source distributions on normalization-preserving macOS filesystems, risking unintended file disclosure.",
+    "policy_decision": "No ignore, suppression, or waiver. The declared build-backend range must exclude the affected versions."
+  },
+  "root_cause": {
+    "declared_requirement_at_source_commit": "setuptools>=77,<82",
+    "effect": "Every compliant build-backend resolution was forced below the first fixed release, so the exact Windows dev lock selected setuptools 81.0.0."
+  },
+  "remediation": {
+    "declared_requirement": "setuptools>=83,<85",
+    "minimum_fixed_version": "83.0.0",
+    "reviewed_upper_boundary": "85.0.0 is excluded pending a later explicit compatibility review",
+    "existing_linux_exact_dev_version": "84.0.0",
+    "qualification_requirement": "Rebuild, install, audit, and rerun both native Windows lanes at one new exact commit; the failed commit must not be reused."
+  },
+  "raw_external_artifacts": [
+    "C:\\b02-evidence\\windows-x86_64\\profile-resolution.json",
+    "C:\\b02-evidence\\windows-x86_64\\locks\\cpython-3.11-windows-x86_64\\",
+    "C:\\b02-evidence\\windows-x86_64\\python-vulnerability-audit.json",
+    "C:\\b02-evidence\\windows-x86_64\\windows-x86_64-lane.json"
+  ],
+  "limitations": [
+    "This checked-in record summarizes operator-reported external artifacts; it is not a substitute for those raw files.",
+    "The lane failed before lifecycle, all-runtime installation, broad Python, package, frontend, uninstall, cleanup, and aggregate gates.",
+    "No passing native Windows lane exists.",
+    "B02 remains open and B03 remains locked."
+  ]
+}

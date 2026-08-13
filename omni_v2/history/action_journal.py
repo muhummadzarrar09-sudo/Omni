@@ -38,10 +38,7 @@ except ImportError:
     import logging
     logger = logging.getLogger("ActionJournal")
 
-try:
-    from omni_v2.core.paths import DATA_DIR
-except Exception:
-    DATA_DIR = Path.cwd() / "data"
+from omni_v2.core.paths import DATA_DIR
 
 JOURNAL_PATH = DATA_DIR / "brain" / "action_journal.json"
 UNDO_DIR = DATA_DIR / "brain" / "undo"

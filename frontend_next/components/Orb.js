@@ -16,6 +16,16 @@ export default function Orb({ state = 'idle', rms = 0 }) {
   const rendererRef = useRef(null)
   const particlesRef = useRef(null)
   const animationRef = useRef(null)
+  const stateRef = useRef(state)
+  const rmsRef = useRef(rms)
+
+  useEffect(() => {
+    stateRef.current = state
+  }, [state])
+
+  useEffect(() => {
+    rmsRef.current = rms
+  }, [rms])
   
   useEffect(() => {
     if (!canvasRef.current) return
@@ -67,12 +77,12 @@ export default function Orb({ state = 'idle', rms = 0 }) {
     const animate = () => {
       animationRef.current = requestAnimationFrame(animate)
       if (particlesRef.current) {
-        const cfg = stateConfig[state] || stateConfig.idle
+        const cfg = stateConfig[stateRef.current] || stateConfig.idle
         particlesRef.current.rotation.y += cfg.speed
         particlesRef.current.rotation.x += cfg.speed * 0.3
         if (particlesRef.current.material) {
           particlesRef.current.material.color.setHex(cfg.color)
-          particlesRef.current.material.size = cfg.size + Math.sin(Date.now()*0.003) * 0.01 + rms * 2
+          particlesRef.current.material.size = cfg.size + Math.sin(Date.now()*0.003) * 0.01 + rmsRef.current * 2
         }
       }
       renderer.render(scene, camera)

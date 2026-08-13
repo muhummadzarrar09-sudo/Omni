@@ -1,0 +1,447 @@
+{
+  "schema_version": 1,
+  "frontend_toolchain": {
+    "node": {
+      "version": "22.22.2",
+      "distribution_base_url": "https://nodejs.org/dist/v22.22.2",
+      "checksum_authority": "https://nodejs.org/dist/v22.22.2/SHASUMS256.txt",
+      "archives": {
+        "x86_64": {
+          "filename": "node-v22.22.2-win-x64.zip",
+          "sha256": "7c93e9d92bf68c07182b471aa187e35ee6cd08ef0f24ab060dfff605fcc1c57c",
+          "node_exe_sha256": "ae1a50511be58e987483fdbc12125407443926d2d394669ade2352776e920dd3",
+          "process_architecture": "x64"
+        },
+        "arm64": {
+          "filename": "node-v22.22.2-win-arm64.zip",
+          "sha256": "380d375cf650c5a7f2ef3ce29ac6ea9a1c9d2ec8ea8e8391e1a34fd543886ab3",
+          "node_exe_sha256": "1a338f2467a566197ed8b309240a3a372f5d72458f9c7e5c9613ad6ccae1e0c0",
+          "process_architecture": "arm64"
+        }
+      }
+    },
+    "npm": {
+      "version": "12.0.2",
+      "provider": "corepack"
+    }
+  },
+  "subject": "Exact native Windows frontend and third-party source-build contract",
+  "python": "CPython 3.11, 64-bit, architecture-matched",
+  "build_isolation": false,
+  "runtime_install_build_isolation": false,
+  "wheel_only_build_bootstrap": true,
+  "build_lock": {
+    "cmake": "4.4.2",
+    "ninja": "1.13.0",
+    "packaging": "26.3",
+    "pathspec": "0.12.1",
+    "pip": "26.2.1",
+    "scikit-build-core": "0.11.6",
+    "setuptools": "84.0.0",
+    "wheel": "0.48.0"
+  },
+  "build_artifact_sha256": {
+    "x86_64": {
+      "cmake": "c28388fe95298486169c45c0ec8bdf067aabcb59273b98a4cdae8be5cd9c74f3",
+      "ninja": "fb8ee8719f8af47fed145cced4a85f0755dd55d45b2bddaf7431fa89803c5f3e",
+      "packaging": "d7193f7c8e4e93f444fde0262bf90af30e16fa0ad0ad44cb553c87339b23cd1c",
+      "pathspec": "a0d503e138a4c123b27490a4f7beda6a01c6f288df0e4a8b79c7eb0dc7b4cc08",
+      "pip": "71138adf1f4ca900cdb7d289c21b7494329f2332b6d85f0e1c42108c0384ed3e",
+      "scikit-build-core": "ce6d8fe64e6b4c759ea0fb95d2f8a68f60d2df31c2989838633b8ec930736360",
+      "setuptools": "51a52592b3b99e102b609654876bd65f19f999935166d1352678931132b0c670",
+      "wheel": "3217dcc807155e45db462d7ef2431f5ddda0d7273b700d05a67b271ceb1287ab"
+    },
+    "arm64": {
+      "cmake": "1358f355578d19397f87955d4204f737bb399ba36cce59be5853976912836b32",
+      "ninja": "3c0b40b1f0bba764644385319028650087b4c1b18cdfa6f45cb39a3669b81aa9",
+      "packaging": "d7193f7c8e4e93f444fde0262bf90af30e16fa0ad0ad44cb553c87339b23cd1c",
+      "pathspec": "a0d503e138a4c123b27490a4f7beda6a01c6f288df0e4a8b79c7eb0dc7b4cc08",
+      "pip": "71138adf1f4ca900cdb7d289c21b7494329f2332b6d85f0e1c42108c0384ed3e",
+      "scikit-build-core": "ce6d8fe64e6b4c759ea0fb95d2f8a68f60d2df31c2989838633b8ec930736360",
+      "setuptools": "51a52592b3b99e102b609654876bd65f19f999935166d1352678931132b0c670",
+      "wheel": "3217dcc807155e45db462d7ef2431f5ddda0d7273b700d05a67b271ceb1287ab"
+    }
+  },
+  "build_tool_cli": {
+    "cmake": "cmake version 4.4.2",
+    "ninja": "1.13.0.git.kitware.jobserver-pipe-1"
+  },
+  "visual_studio": {
+    "product": "Visual Studio 2022 Build Tools",
+    "workload_component": "Microsoft.VisualStudio.Workload.VCTools",
+    "windows_sdk_component": "Microsoft.VisualStudio.Component.Windows11SDK.26100",
+    "windows_sdk_version": "10.0.26100.0",
+    "architectures": {
+      "x86_64": {
+        "msvc_component": "Microsoft.VisualStudio.Component.VC.Tools.x86.x64",
+        "compiler_path_fragment": "Hostx64\\x64\\cl.exe",
+        "linker_path_fragment": "Hostx64\\x64\\link.exe",
+        "target_machine": "8664"
+      },
+      "arm64": {
+        "msvc_component": "Microsoft.VisualStudio.Component.VC.Tools.ARM64",
+        "compiler_path_fragment": "Hostarm64\\arm64\\cl.exe",
+        "linker_path_fragment": "Hostarm64\\arm64\\link.exe",
+        "target_machine": "AA64"
+      }
+    }
+  },
+  "source_distributions": {
+    "x86_64": [
+      {
+        "name": "dlib",
+        "version": "20.0.1",
+        "filename": "dlib-20.0.1.tar.gz",
+        "sha256": "7cb2a09467de032332c743bc967007f016598c66c9c9ebc54a5b66d3d9e46d54",
+        "kind": "native",
+        "backend": "setuptools.build_meta",
+        "declared_build_requirements": [
+          "setuptools",
+          "wheel"
+        ],
+        "controlled_tools": [
+          "setuptools",
+          "wheel",
+          "packaging",
+          "cmake"
+        ]
+      },
+      {
+        "name": "llama-cpp-python",
+        "version": "0.3.34",
+        "filename": "llama_cpp_python-0.3.34.tar.gz",
+        "sha256": "d849d286d808284f1d3ec1bd6875572430d29d1f9574a010232caa4e9cef0e35",
+        "kind": "native",
+        "backend": "scikit_build_core.build",
+        "declared_build_requirements": [
+          "scikit-build-core"
+        ],
+        "controlled_tools": [
+          "scikit-build-core",
+          "packaging",
+          "pathspec",
+          "cmake",
+          "ninja"
+        ]
+      },
+      {
+        "name": "face-recognition-models",
+        "version": "0.3.0",
+        "filename": "face_recognition_models-0.3.0.tar.gz",
+        "sha256": "b79bd200a88c87c9a9d446c990ae71c5a626d1f3730174e6d570157ff1d896cf",
+        "kind": "pure_python",
+        "backend": "setuptools.build_meta:__legacy__",
+        "declared_build_requirements": [
+          "setuptools",
+          "wheel"
+        ],
+        "controlled_tools": [
+          "setuptools",
+          "wheel"
+        ]
+      },
+      {
+        "name": "http-ece",
+        "version": "1.2.1",
+        "filename": "http_ece-1.2.1.tar.gz",
+        "sha256": "8c6ab23116bbf6affda894acfd5f2ca0fb8facbcbb72121c11c75c33e7ce8cff",
+        "kind": "pure_python",
+        "backend": "setuptools.build_meta:__legacy__",
+        "declared_build_requirements": [
+          "setuptools",
+          "wheel"
+        ],
+        "controlled_tools": [
+          "setuptools",
+          "wheel"
+        ]
+      },
+      {
+        "name": "srt",
+        "version": "3.5.3",
+        "filename": "srt-3.5.3.tar.gz",
+        "sha256": "4884315043a4f0740fd1f878ed6caa376ac06d70e135f306a6dc44632eed0cc0",
+        "kind": "pure_python",
+        "backend": "setuptools.build_meta:__legacy__",
+        "declared_build_requirements": [
+          "setuptools",
+          "wheel"
+        ],
+        "controlled_tools": [
+          "setuptools",
+          "wheel"
+        ]
+      },
+      {
+        "name": "wikipedia",
+        "version": "1.4.0",
+        "filename": "wikipedia-1.4.0.tar.gz",
+        "sha256": "db0fad1829fdd441b1852306e9856398204dc0786d2996dd2e0c8bb8e26133b2",
+        "kind": "pure_python",
+        "backend": "setuptools.build_meta:__legacy__",
+        "declared_build_requirements": [
+          "setuptools",
+          "wheel"
+        ],
+        "controlled_tools": [
+          "setuptools",
+          "wheel"
+        ]
+      },
+      {
+        "name": "mouseinfo",
+        "version": "0.1.3",
+        "filename": "MouseInfo-0.1.3.tar.gz",
+        "sha256": "2c62fb8885062b8e520a3cce0a297c657adcc08c60952eb05bc8256ef6f7f6e7",
+        "kind": "pure_python",
+        "backend": "setuptools.build_meta:__legacy__",
+        "declared_build_requirements": [
+          "setuptools",
+          "wheel"
+        ],
+        "controlled_tools": [
+          "setuptools",
+          "wheel"
+        ]
+      },
+      {
+        "name": "pyautogui",
+        "version": "0.9.54",
+        "filename": "PyAutoGUI-0.9.54.tar.gz",
+        "sha256": "dd1d29e8fd118941cb193f74df57e5c6ff8e9253b99c7b04f39cfc69f3ae04b2",
+        "kind": "pure_python",
+        "backend": "setuptools.build_meta:__legacy__",
+        "declared_build_requirements": [
+          "setuptools",
+          "wheel"
+        ],
+        "controlled_tools": [
+          "setuptools",
+          "wheel"
+        ]
+      },
+      {
+        "name": "pygetwindow",
+        "version": "0.0.9",
+        "filename": "PyGetWindow-0.0.9.tar.gz",
+        "sha256": "17894355e7d2b305cd832d717708384017c1698a90ce24f6f7fbf0242dd0a688",
+        "kind": "pure_python",
+        "backend": "setuptools.build_meta:__legacy__",
+        "declared_build_requirements": [
+          "setuptools",
+          "wheel"
+        ],
+        "controlled_tools": [
+          "setuptools",
+          "wheel"
+        ]
+      },
+      {
+        "name": "pyrect",
+        "version": "0.2.0",
+        "filename": "PyRect-0.2.0.tar.gz",
+        "sha256": "f65155f6df9b929b67caffbd57c0947c5ae5449d3b580d178074bffb47a09b78",
+        "kind": "pure_python",
+        "backend": "setuptools.build_meta:__legacy__",
+        "declared_build_requirements": [
+          "setuptools",
+          "wheel"
+        ],
+        "controlled_tools": [
+          "setuptools",
+          "wheel"
+        ]
+      },
+      {
+        "name": "pyscreeze",
+        "version": "1.0.1",
+        "filename": "pyscreeze-1.0.1.tar.gz",
+        "sha256": "cf1662710f1b46aa5ff229ee23f367da9e20af4a78e6e365bee973cad0ead4be",
+        "kind": "pure_python",
+        "backend": "setuptools.build_meta:__legacy__",
+        "declared_build_requirements": [
+          "setuptools",
+          "wheel"
+        ],
+        "controlled_tools": [
+          "setuptools",
+          "wheel"
+        ]
+      },
+      {
+        "name": "pytweening",
+        "version": "1.2.0",
+        "filename": "pytweening-1.2.0.tar.gz",
+        "sha256": "243318b7736698066c5f362ec5c2b6434ecf4297c3c8e7caa8abfe6af4cac71b",
+        "kind": "pure_python",
+        "backend": "setuptools.build_meta:__legacy__",
+        "declared_build_requirements": [
+          "setuptools",
+          "wheel"
+        ],
+        "controlled_tools": [
+          "setuptools",
+          "wheel"
+        ]
+      }
+    ],
+    "arm64": [
+      {
+        "name": "llama-cpp-python",
+        "version": "0.3.34",
+        "filename": "llama_cpp_python-0.3.34.tar.gz",
+        "sha256": "d849d286d808284f1d3ec1bd6875572430d29d1f9574a010232caa4e9cef0e35",
+        "kind": "native",
+        "backend": "scikit_build_core.build",
+        "declared_build_requirements": [
+          "scikit-build-core"
+        ],
+        "controlled_tools": [
+          "scikit-build-core",
+          "packaging",
+          "pathspec",
+          "cmake",
+          "ninja"
+        ]
+      },
+      {
+        "name": "http-ece",
+        "version": "1.2.1",
+        "filename": "http_ece-1.2.1.tar.gz",
+        "sha256": "8c6ab23116bbf6affda894acfd5f2ca0fb8facbcbb72121c11c75c33e7ce8cff",
+        "kind": "pure_python",
+        "backend": "setuptools.build_meta:__legacy__",
+        "declared_build_requirements": [
+          "setuptools",
+          "wheel"
+        ],
+        "controlled_tools": [
+          "setuptools",
+          "wheel"
+        ]
+      },
+      {
+        "name": "mouseinfo",
+        "version": "0.1.3",
+        "filename": "MouseInfo-0.1.3.tar.gz",
+        "sha256": "2c62fb8885062b8e520a3cce0a297c657adcc08c60952eb05bc8256ef6f7f6e7",
+        "kind": "pure_python",
+        "backend": "setuptools.build_meta:__legacy__",
+        "declared_build_requirements": [
+          "setuptools",
+          "wheel"
+        ],
+        "controlled_tools": [
+          "setuptools",
+          "wheel"
+        ]
+      },
+      {
+        "name": "pyautogui",
+        "version": "0.9.54",
+        "filename": "PyAutoGUI-0.9.54.tar.gz",
+        "sha256": "dd1d29e8fd118941cb193f74df57e5c6ff8e9253b99c7b04f39cfc69f3ae04b2",
+        "kind": "pure_python",
+        "backend": "setuptools.build_meta:__legacy__",
+        "declared_build_requirements": [
+          "setuptools",
+          "wheel"
+        ],
+        "controlled_tools": [
+          "setuptools",
+          "wheel"
+        ]
+      },
+      {
+        "name": "pygetwindow",
+        "version": "0.0.9",
+        "filename": "PyGetWindow-0.0.9.tar.gz",
+        "sha256": "17894355e7d2b305cd832d717708384017c1698a90ce24f6f7fbf0242dd0a688",
+        "kind": "pure_python",
+        "backend": "setuptools.build_meta:__legacy__",
+        "declared_build_requirements": [
+          "setuptools",
+          "wheel"
+        ],
+        "controlled_tools": [
+          "setuptools",
+          "wheel"
+        ]
+      },
+      {
+        "name": "pyrect",
+        "version": "0.2.0",
+        "filename": "PyRect-0.2.0.tar.gz",
+        "sha256": "f65155f6df9b929b67caffbd57c0947c5ae5449d3b580d178074bffb47a09b78",
+        "kind": "pure_python",
+        "backend": "setuptools.build_meta:__legacy__",
+        "declared_build_requirements": [
+          "setuptools",
+          "wheel"
+        ],
+        "controlled_tools": [
+          "setuptools",
+          "wheel"
+        ]
+      },
+      {
+        "name": "pyscreeze",
+        "version": "1.0.1",
+        "filename": "pyscreeze-1.0.1.tar.gz",
+        "sha256": "cf1662710f1b46aa5ff229ee23f367da9e20af4a78e6e365bee973cad0ead4be",
+        "kind": "pure_python",
+        "backend": "setuptools.build_meta:__legacy__",
+        "declared_build_requirements": [
+          "setuptools",
+          "wheel"
+        ],
+        "controlled_tools": [
+          "setuptools",
+          "wheel"
+        ]
+      },
+      {
+        "name": "pytweening",
+        "version": "1.2.0",
+        "filename": "pytweening-1.2.0.tar.gz",
+        "sha256": "243318b7736698066c5f362ec5c2b6434ecf4297c3c8e7caa8abfe6af4cac71b",
+        "kind": "pure_python",
+        "backend": "setuptools.build_meta:__legacy__",
+        "declared_build_requirements": [
+          "setuptools",
+          "wheel"
+        ],
+        "controlled_tools": [
+          "setuptools",
+          "wheel"
+        ]
+      },
+      {
+        "name": "wikipedia",
+        "version": "1.4.0",
+        "filename": "wikipedia-1.4.0.tar.gz",
+        "sha256": "db0fad1829fdd441b1852306e9856398204dc0786d2996dd2e0c8bb8e26133b2",
+        "kind": "pure_python",
+        "backend": "setuptools.build_meta:__legacy__",
+        "declared_build_requirements": [
+          "setuptools",
+          "wheel"
+        ],
+        "controlled_tools": [
+          "setuptools",
+          "wheel"
+        ]
+      }
+    ]
+  },
+  "hard_rules": [
+    "Select Node.js only from the architecture-matched official portable archive governed here; never accept ambient PATH as qualification authority.",
+    "Verify the Node.js archive and extracted node.exe SHA-256 values before invoking Node.js or Corepack, and isolate Corepack and npm caches inside the qualification temporary root.",
+    "Install the architecture-specific hashed build lock using wheel-only and no-dependency flags before any runtime metadata resolution or installation.",
+    "Run runtime resolution and installation with --no-build-isolation.",
+    "Reject every selected sdist whose exact normalized name and version are absent from this contract.",
+    "Reject every controlled tool absent from the exact build lock.",
+    "Reject an x64-targeting compiler or produced binary in the Arm64 lane, and reject an Arm64-targeting compiler or produced binary in the x64 lane.",
+    "Do not satisfy OpenCV's setuptools==59.2.0 declaration by weakening the secure setuptools>=83 authority."
+  ]
+}

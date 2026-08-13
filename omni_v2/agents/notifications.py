@@ -169,11 +169,9 @@ class NotificationCenter:
     def __init__(self, data_dir: Optional[Path] = None, vapid_subject: str = "mailto:[email protected]"):
         if self._initialized:
             return
-        try:
-            from omni_v2.core.paths import DATA_DIR
-            base = Path(DATA_DIR) if not isinstance(DATA_DIR, str) else Path(DATA_DIR)
-        except Exception:
-            base = Path.cwd() / "data"
+        from omni_v2.core.paths import get_data_dir
+
+        base = get_data_dir()
         self.data_dir = (data_dir or (base / "notifications"))
         self.data_dir.mkdir(parents=True, exist_ok=True)
         self.notif_file = self.data_dir / "notifications.json"

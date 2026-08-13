@@ -1,0 +1,133 @@
+{
+  "schema_version": 1,
+  "subject": "Native Windows 11 Arm64 dependency and capability contract",
+  "status": "reviewed_b02_installation_scope",
+  "native_only": true,
+  "emulation_accepted": false,
+  "scope_boundary": "B02 proves native dependency resolution, installation, lifecycle, and hardware-independent behavior. Physical DGX GPU/model/device performance remains owned by B11, B13, B15, and B16.",
+  "required_python_distributions": [
+    "llama-cpp-python",
+    "kokoro-onnx",
+    "openwakeword",
+    "sounddevice",
+    "mss",
+    "Pillow",
+    "pytesseract"
+  ],
+  "available_native_paths": [
+    {
+      "capability": "local_llm_gguf",
+      "distribution": "llama-cpp-python",
+      "strategy": "controlled native Arm64 source build with the exact build lock and MSVC Arm64 toolchain"
+    },
+    {
+      "capability": "offline_tts",
+      "distribution": "kokoro-onnx",
+      "strategy": "native Windows Arm64 wheel path; Piper is not required"
+    },
+    {
+      "capability": "wake_word",
+      "distribution": "openwakeword",
+      "strategy": "ONNX Runtime path; tflite-runtime is Linux-only and is not part of the Windows graph"
+    },
+    {
+      "capability": "audio_capture",
+      "distribution": "sounddevice",
+      "strategy": "primary audio backend; PyAudio is an optional fallback"
+    },
+    {
+      "capability": "screen_capture_and_ocr",
+      "distribution": "mss, Pillow, pytesseract",
+      "strategy": "native/pure-Python packages without OpenCV"
+    },
+    {
+      "capability": "primary_ui",
+      "distribution": "Next.js frontend",
+      "strategy": "browser UI and CLI; the legacy PyQt5 shell is not required"
+    },
+    {
+      "capability": "memory",
+      "distribution": "first-party SQLite and JSON stores",
+      "strategy": "local fallback paths; ChromaDB is not required"
+    }
+  ],
+  "marker_exclusions": [
+    {
+      "distribution": "chromadb",
+      "reason": "No win_arm64 wheel in the reviewed release; its graph adds native grpc/Rust build surface for an optional vector store.",
+      "runtime_behavior": "Use the existing local JSON/SQLite fallback.",
+      "future_owner": "B08 memory qualification"
+    },
+    {
+      "distribution": "faster-whisper",
+      "reason": "Its required CTranslate2 distribution publishes win_amd64 wheels but no win_arm64 wheel or sdist.",
+      "runtime_behavior": "The STT manager reports Faster Whisper unavailable; online SpeechRecognition remains available. No native offline STT claim is made in B02.",
+      "future_owner": "B11 voice workflow qualification"
+    },
+    {
+      "distribution": "vosk",
+      "reason": "Vosk publishes win_amd64 and Linux Arm64 wheels but no win_arm64 wheel or sdist.",
+      "runtime_behavior": "The STT manager reports Vosk unavailable. No native offline STT claim is made in B02.",
+      "future_owner": "B11 voice workflow qualification"
+    },
+    {
+      "distribution": "piper-tts",
+      "reason": "The reviewed release has no win_arm64 wheel; adopting an independent native library build is outside the B02 installation contract.",
+      "runtime_behavior": "Use the native kokoro-onnx offline TTS path or another explicitly configured engine.",
+      "future_owner": "B11 voice workflow qualification"
+    },
+    {
+      "distribution": "PyAudio",
+      "reason": "No win_arm64 wheel is published and a source build requires a separately governed PortAudio SDK/library contract.",
+      "runtime_behavior": "Use sounddevice, which is the primary audio backend; PyAudio remains only a fallback.",
+      "future_owner": "B11 voice workflow qualification"
+    },
+    {
+      "distribution": "face-recognition",
+      "reason": "dlib 20.0.1 unconditionally passes CMake -A x64 on every 64-bit Windows interpreter and therefore cannot produce a truthful native Arm64 build.",
+      "runtime_behavior": "Only the NumPy gradient descriptor remains available for caller-supplied face crops; camera acquisition/detection still requires an unavailable provider, so native Arm64 end-to-end face authentication is not claimed.",
+      "future_owner": "B09 security qualification"
+    },
+    {
+      "distribution": "opencv-contrib-python",
+      "reason": "No win_arm64 wheel is published and the sdist declares setuptools==59.2.0 for Python 3.11, conflicting with OMNI's mandatory secure setuptools>=83 build authority.",
+      "runtime_behavior": "Use mss/Pillow for screen-capture/OCR paths. OpenCV camera face detection and LBPH are unavailable; the NumPy gradient descriptor accepts only caller-supplied face crops, so no end-to-end native Arm64 face-auth claim is made.",
+      "future_owner": "B09 security and B13 model/device qualification"
+    },
+    {
+      "distribution": "moondream",
+      "reason": "Its Kestrel native dependencies publish win_amd64 but no win_arm64 wheels or sdists; its PyTorch path also has no PyPI win_arm64 artifact.",
+      "runtime_behavior": "Use the Ollama or llama.cpp/GGUF integration when explicitly configured; no Moondream model claim is made in B02.",
+      "future_owner": "B13 model workflow qualification"
+    },
+    {
+      "distribution": "sentence-transformers",
+      "reason": "It requires PyTorch, which publishes no PyPI win_arm64 artifact for the reviewed graph.",
+      "runtime_behavior": "Intent mapping uses its existing lexical fallback; no embedding-model claim is made in B02.",
+      "future_owner": "B08 memory and B13 model qualification"
+    },
+    {
+      "distribution": "PyQt5",
+      "reason": "No win_arm64 wheel is published and a source build requires a separately governed native Qt/qmake toolchain.",
+      "runtime_behavior": "Use the primary Next.js browser interface or CLI; the legacy PyQt shell reports unavailable.",
+      "future_owner": "B10 interface qualification"
+    }
+  ],
+  "transitive_classification": {
+    "ctranslate2": "intentionally excluded with faster-whisper; no native artifact or sdist",
+    "cuda-bindings": "intentionally excluded with unsupported PyTorch/model graphs; no B02 GPU claim",
+    "kestrel-kernels": "intentionally excluded with moondream; no win_arm64 artifact or sdist",
+    "kestrel-native": "intentionally excluded with moondream; no win_arm64 artifact or sdist",
+    "tflite-runtime": "not applicable because openwakeword declares it only for Linux",
+    "torch": "intentionally excluded with moondream and sentence-transformers; no PyPI win_arm64 artifact",
+    "torch-c-dlpack-ext": "intentionally excluded with moondream; no win_arm64 artifact or sdist",
+    "triton": "intentionally excluded with unsupported model/CUDA graphs; no B02 GPU claim",
+    "uvloop": "not applicable on Windows"
+  },
+  "hard_rules": [
+    "An excluded distribution must remain guarded by an explicit Windows Arm64 environment marker in pyproject.toml.",
+    "An exclusion is a disclosed capability boundary, not evidence that the package or capability passed.",
+    "No x64 wheel, emulated Python process, emulated compiler host, or x64 CMake target can count as Arm64 evidence.",
+    "A newly available native artifact requires review and contract amendment before its marker is removed."
+  ]
+}

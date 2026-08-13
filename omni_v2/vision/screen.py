@@ -8,10 +8,7 @@ except ImportError:
     import logging
     logger = logging.getLogger("ScreenV2")
 
-try:
-    from omni_v2.core.paths import SCREENSHOTS_DIR
-except ImportError:
-    SCREENSHOTS_DIR = Path.home() / ".omni_v2" / "screenshots"
+from omni_v2.core.paths import SCREENSHOTS_DIR
 
 class ScreenCapture:
     """Fast screen capture via mss - Phase 3"""

@@ -1,5 +1,8 @@
 # OMNI Away Mode — Research, Reports & RAG+CAG Memory (Phase 7)
 
+> **Document status (2026-08-11): historical or unqualified reference.** This file records earlier intent, implementation, audit, or setup work. Its completion, test-count, performance, privacy, platform, and production-readiness statements are **not current release claims**. Use the generated [Capability Matrix](CAPABILITY_MATRIX.md) and [Quality Scorecard](QUALITY_SCORECARD.md) for current truth.
+
+
 OMNI can now **take over while you're away**: queue autonomous research, monitor
 and digest what happened, save everything into a local knowledge base, and
 **send you reports** to your phone. Everything runs on your machine — no cloud.
@@ -40,8 +43,9 @@ omni report list                  # saved reports
 omni report digest                # build a digest
 ```
 
-> Note: if the `omni` command is installed via `pip install -e .`, run these as
-> `omni ...`. Without install, use `python -m omni.cli ...`.
+> Install the local wheel and a declared dependency profile using the current
+> workflow in [TROUBLESHOOTING.md](TROUBLESHOOTING.md), then run these as
+> `omni ...`. From a checkout environment, `python -m omni.cli ...` is equivalent.
 
 ### API (FastAPI :8765)
 Mounted at `/api/away` — see `backend_fastapi/away_routes.py`:

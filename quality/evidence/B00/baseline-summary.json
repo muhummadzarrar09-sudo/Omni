@@ -1,0 +1,284 @@
+{
+  "schema_version": 1,
+  "captured_at": "2026-08-11T13:50:35.004625+00:00",
+  "host": {
+    "platform": "Linux-6.1.158+-x86_64-with-glibc2.36",
+    "machine": "x86_64",
+    "python_executable": ".venv/bin/python"
+  },
+  "source_digest": "12c045db881c35936ce758e59b160b507c5525db648a948925d526a76261e240",
+  "authority_sha256": {
+    "quality/capabilities.json": "a948ea6cbd3b1acbf9670695dfa24bad652423a68b0081e4279ed3df3585e6e8",
+    "quality/scorecard.json": "5b81be7ba023b4a1b89b5d3f1e690434b5911599e0a19f991ba447828a0f9567",
+    "quality/policy.json": "64192fede30fd6b758238ca4602c0aba96ef17d768e72f3ca50b21deeccfaa19",
+    "quality/batches.json": "c5e70f6fe69fdd56507438a9874aad4675317f7efa3008e29eb73a7d215b7476"
+  },
+  "inventory_counts": {
+    "production_files": 225,
+    "production_bytes": 1820104,
+    "production_lines": 45981,
+    "production_nonblank_lines": 40571,
+    "test_files": 62,
+    "test_bytes": 359588,
+    "test_lines": 10464,
+    "test_nonblank_lines": 8753,
+    "capabilities": 52,
+    "core_workflows": 10,
+    "areas": 21,
+    "fastapi_route_decorators": 191,
+    "declared_tool_classes": 17,
+    "declared_tool_actions": 94,
+    "classes": 365,
+    "functions": 2942
+  },
+  "probe_status": {
+    "python_version": "pass",
+    "node_version": "pass",
+    "npm_version": "pass",
+    "dependency_resolution": "fail",
+    "wheel_build_and_contents": "pass",
+    "python_compile": "pass",
+    "python_tests": "fail",
+    "backend_live_tests": "partial",
+    "runtime_tool_inventory": "pass",
+    "frontend_lint": "fail",
+    "frontend_tests": "not_configured",
+    "frontend_build": "pass",
+    "frontend_dependency_audit": "fail"
+  },
+  "python_test_summary": {
+    "failed": 1,
+    "passed": 663,
+    "skipped": 35
+  },
+  "backend_live_test_summary": {
+    "passed": 49,
+    "skipped": 6
+  },
+  "frontend_audit_summary": {
+    "vulnerabilities": {
+      "info": 0,
+      "low": 0,
+      "moderate": 0,
+      "high": 10,
+      "critical": 1,
+      "total": 11
+    },
+    "dependencies": {
+      "prod": 28,
+      "dev": 418,
+      "optional": 38,
+      "peer": 0,
+      "peerOptional": 0,
+      "total": 454
+    }
+  },
+  "wheel_summary": {
+    "filename": "omni_agi-3.2.0-py3-none-any.whl",
+    "bytes": 37726,
+    "member_count": 11,
+    "python_file_count": 4,
+    "top_level_packages": [
+      "omni",
+      "omni_v2"
+    ],
+    "python_members": [
+      "omni/__init__.py",
+      "omni/cli.py",
+      "omni_v2/__init__.py",
+      "omni_v2/app.py"
+    ]
+  },
+  "tool_inventory": {
+    "class_counts": {
+      "AITool": 1,
+      "AccessibilityTool": 1,
+      "BrowserToolV3": 1,
+      "CalendarTool": 1,
+      "FilesTool": 1,
+      "GmailTool": 1,
+      "MediaTool": 1,
+      "OmniTool": 1,
+      "PerformanceTool": 1,
+      "SendToPhonePlugin": 1,
+      "SmartHomeTool": 1,
+      "SnoozePlugin": 1,
+      "SystemTool": 2,
+      "VSCodeTool": 1,
+      "WindowsTool": 1
+    },
+    "declared_action_count": 75,
+    "duplicate_actions": [
+      "system_battery",
+      "system_brightness",
+      "system_clean_temp",
+      "system_copy",
+      "system_paste",
+      "system_screenshot",
+      "system_volume"
+    ],
+    "duplicate_classes": [
+      "SystemTool"
+    ],
+    "instance_count": 16,
+    "tools": [
+      {
+        "actions": [
+          "browser_navigate",
+          "browser_search",
+          "browser_new_tab",
+          "browser_github",
+          "browser_youtube",
+          "browser_google"
+        ],
+        "class": "BrowserToolV3"
+      },
+      {
+        "actions": [
+          "windows_launch",
+          "windows_close",
+          "windows_minimize",
+          "windows_maximize",
+          "windows_move",
+          "windows_resize",
+          "windows_focus",
+          "windows_switch",
+          "windows_kill",
+          "windows_lock",
+          "windows_sleep"
+        ],
+        "class": "WindowsTool"
+      },
+      {
+        "actions": [
+          "system_screenshot",
+          "system_copy",
+          "system_paste",
+          "system_volume",
+          "system_brightness",
+          "system_clean_temp",
+          "system_battery"
+        ],
+        "class": "SystemTool"
+      },
+      {
+        "actions": [
+          "omni_help",
+          "omni_settings",
+          "omni_status",
+          "omni_repeat"
+        ],
+        "class": "OmniTool"
+      },
+      {
+        "actions": [
+          "vscode_open",
+          "vscode_terminal",
+          "vscode_save",
+          "vscode_create"
+        ],
+        "class": "VSCodeTool"
+      },
+      {
+        "actions": [
+          "files_create_folder",
+          "files_delete",
+          "files_list_dir",
+          "files_search_files",
+          "files_write",
+          "files_read"
+        ],
+        "class": "FilesTool"
+      },
+      {
+        "actions": [
+          "alpha_screen_desc",
+          "alpha_show_hints",
+          "accessibility_mode"
+        ],
+        "class": "AccessibilityTool"
+      },
+      {
+        "actions": [
+          "send_to_phone",
+          "notify_phone",
+          "ping_phone",
+          "text_me",
+          "alert_phone"
+        ],
+        "class": "SendToPhonePlugin"
+      },
+      {
+        "actions": [
+          "snooze_notifications",
+          "unsnooze",
+          "dnd",
+          "mute_notifications"
+        ],
+        "class": "SnoozePlugin"
+      },
+      {
+        "actions": [
+          "system_screenshot",
+          "system_copy",
+          "system_paste",
+          "system_volume",
+          "system_brightness",
+          "system_clean_temp",
+          "system_battery"
+        ],
+        "class": "SystemTool"
+      },
+      {
+        "actions": [
+          "media_play_music",
+          "media_pause",
+          "media_next",
+          "media_prev",
+          "media_youtube_play",
+          "media_spotify_control"
+        ],
+        "class": "MediaTool"
+      },
+      {
+        "actions": [
+          "ai_chat",
+          "ai_summarize",
+          "ai_translate",
+          "ai_code_generate"
+        ],
+        "class": "AITool"
+      },
+      {
+        "actions": [
+          "integrations_performance",
+          "integrations_weather",
+          "integrations_timer"
+        ],
+        "class": "PerformanceTool"
+      },
+      {
+        "actions": [
+          "integrations_send_email"
+        ],
+        "class": "GmailTool"
+      },
+      {
+        "actions": [
+          "integrations_show_calendar"
+        ],
+        "class": "CalendarTool"
+      },
+      {
+        "actions": [
+          "integrations_lights_on",
+          "integrations_lights_off",
+          "integrations_set_temperature"
+        ],
+        "class": "SmartHomeTool"
+      }
+    ],
+    "unique_declared_action_count": 68
+  },
+  "full_local_result": "quality/.local/baseline-results.json"
+}

@@ -1,6 +1,8 @@
 # OMNI V3 - Makefile
-# Convenience targets for common workflows.
-# For the full Python CLI, see `omni` (after `pip install -e .`).
+# Convenience targets for source-checkout workflows.
+# These index-resolved installs are not B01 qualification evidence. For the
+# qualified hash-lock + local-wheel workflow, use docs/TROUBLESHOOTING.md.
+# For the core Python CLI, see `omni` after `pip install '.[core]'`.
 
 .PHONY: help install install-minimal install-all install-dev \
         test test-verbose test-fast test-hermes test-skills \
@@ -13,10 +15,12 @@ PY := $(shell which python3 || which python)
 PIP := $(PY) -m pip
 
 help:
-	@echo "OMNI V3 - Common tasks:"
-	@echo "  make install-minimal  - Just the brain (LLM + types)"
-	@echo "  make install-all      - Brain + voice + vision + UI + API"
-	@echo "  make install-dev      - Add pytest + black + mypy"
+	@echo "OMNI V3 - Source-checkout convenience tasks:"
+	@echo "  Install targets resolve ranges from an index; they are not B01 evidence."
+	@echo "  See docs/TROUBLESHOOTING.md for the qualified lock + wheel workflow."
+	@echo "  make install-minimal  - Build from source with the core profile"
+	@echo "  make install-all      - Build from source with all runtime capabilities"
+	@echo "  make install-dev      - Build from source with core development tools"
 	@echo ""
 	@echo "  make test             - Run all 4 test suites"
 	@echo "  make test-fast        - Just the 10-command multi-agent test"
@@ -33,13 +37,13 @@ help:
 	@echo "  make clean            - Remove __pycache__ and build artifacts"
 
 install-minimal:
-	$(PIP) install -e .[brain]
+	$(PIP) install ".[core]"
 
 install-all:
-	$(PIP) install -e .[all]
+	$(PIP) install ".[all]"
 
 install-dev:
-	$(PIP) install -e .[all,dev]
+	$(PIP) install ".[dev]"
 
 install: install-all
 
@@ -94,9 +98,7 @@ clean:
 	@echo "  ✅ Cleaned"
 
 clean-data:
-	rm -rf data/ .omni_v2/
-	@echo "  ✅ Removed all data (memory, chroma, recordings, skills)"
+	$(PY) -c 'from pathlib import Path; import shutil; from omni_v2.core.paths import get_data_dir; p=get_data_dir(create=False); shutil.rmtree(p) if p.exists() else None; print(f"  Removed OMNI user data: {p}")'
 
 clean-models:
-	rm -rf data/models/
-	@echo "  ✅ Removed downloaded GGUF models (run 'make model-download' to re-fetch)"
+	$(PY) -c 'import shutil; from omni_v2.core.paths import get_data_dir; p=get_data_dir(create=False) / "models"; shutil.rmtree(p) if p.exists() else None; print(f"  Removed OMNI models: {p}")'

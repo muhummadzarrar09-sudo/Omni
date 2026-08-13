@@ -1,597 +1,162 @@
-# 🤖 OMNI V3 — A Local, Private AGI Butler
+# OMNI Personal Core
 
-> **"A butler that thinks. Not a chatbot. Not a wrapper. A JARVIS that actually does stuff."**
+> **Status: pre-alpha recovery. Not release-ready. No capability is currently qualified as stable.**
 >
-> Multi-agent local AGI powered by Qwen2.5-1.5B. Voice I/O. Multi-modal vision. Memory that remembers. Personality that has opinions. **All private. All offline. All yours.**
+> **Execution:** B00 and B01 are closed. B02 is active but not qualified; the feature freeze remains active.
 
-[![AIM Score](https://img.shields.io/badge/AIM-10%2F10-brightgreen)](docs/AIM.md)
-[![Tests](https://img.shields.io/badge/tests-140%2B%20passing-brightgreen)](docs/CHANGELOG.md)
-[![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue)]()
-[![License: MIT](https://img.shields.io/badge/license-MIT-green)]()
+OMNI is a personal, local-first assistant under active reconstruction. The intended product is deliberately narrower than the repository's historical “AGI” and “100+ tools” language: one owner, one NVIDIA DGX Station for Windows running Windows 11 Arm64, and ten safe daily desktop, file, browser, memory, scheduling, and voice workflows. A Windows 11 x64 laptop is a secondary hardware-independent qualification host, not the product target.
 
----
+The repository contains substantial working code and tests, but it also contains overlapping implementations, optional backends, demos, placeholders, stubs, unsafe successful fallbacks, unqualified startup paths, and unqualified product platforms. Those are tracked openly rather than counted as finished features.
 
-## What is OMNI?
+## Current Source of Truth
 
-OMNI is a **local AGI assistant** that runs entirely on your laptop. It's not a chatbot — it's a butler that:
+| Question | Authoritative answer |
+|---|---|
+| What is in scope? | [Capability matrix](docs/CAPABILITY_MATRIX.md) generated from [`quality/capabilities.json`](quality/capabilities.json) |
+| How good is it now? | [Quality scorecard](docs/QUALITY_SCORECARD.md) generated from [`quality/scorecard.json`](quality/scorecard.json) |
+| What is the execution plan? | [Locked B00–B16 batches](docs/EXECUTION_BATCHES.md) and the [10/10 quality plan](docs/OMNI_10_OUT_OF_10_PLAN.md) |
+| What changes are allowed? | Feature-freeze and post-10 policy in [`quality/policy.json`](quality/policy.json) |
+| What does the repository contain? | Reproducible [`quality/inventory.json`](quality/inventory.json) |
 
-- **Thinks** with a real 1.5B-parameter LLM brain (Qwen2.5 via llama.cpp)
-- **Hears** you with Whisper voice recognition
-- **Speaks** with Microsoft Edge natural voices (6 personas)
-- **Sees** screenshots, images, PDFs (Moondream2 + Tesseract)
-- **Acts** with 100+ tools (browser, files, code, calendar, smart home, etc.)
-- **Remembers** what you did yesterday, this morning, last week
-- **Has opinions** — "You've opened Twitter 3 times today. Working or procrastinating?"
-- **Self-heals** when tools fail
-- **Clones your voice** — record 30 seconds, OMNI speaks like you
-- **Defends** against 16+ attack vectors (path traversal, shell injection, etc.)
-- **Extends itself** — 1-click install community skills
+Historical phase reports, architecture diagrams, API references, audit snapshots, and changelogs describe earlier intent or implementation snapshots. They do **not** override the files above and are not release evidence.
 
-**No cloud. No API keys. No data leaves your machine. Ever.**
+## Locked Personal-Core Promise
 
----
+OMNI aims to become:
 
-## ⚡ Quickstart
+> A local-first personal assistant for one owner that safely handles a deliberately limited set of daily desktop, file, browser, memory, scheduling, and voice workflows, and reports unavailable or failed work truthfully.
 
-### Windows (one-click)
+The ten locked workflows are:
 
-```powershell
-# Double-click start.bat — that's it.
-start.bat
-```
+1. Real daily briefing from explicitly configured sources.
+2. Persistent reminder lifecycle.
+3. Local document retrieval with source paths.
+4. Safe file creation/editing with preview and verification.
+5. Browser navigation/search in an isolated profile.
+6. Approved application and window control.
+7. Timed focus session with state restoration.
+8. Inspectable personal session recall.
+9. Push-to-talk local voice task with verified local TTS.
+10. Truthful degraded behavior when an optional component is absent.
 
-It auto-installs everything, downloads the 1.1GB model, opens the browser.
+All ten are currently **not qualified**. Their measurable outcomes and qualification batches are in the [capability matrix](docs/CAPABILITY_MATRIX.md).
 
-### Windows (manual)
+## What Exists Today
 
-```powershell
-git clone https://github.com/muhummadzarrar09-sudo/Omni.git
-cd Omni
-.\install.ps1
-omni model download
-omni test
-omni start
-# Open http://localhost:8765/docs
-```
+The source tree includes real or partial implementations for local model loading, planning and execution, memory stores, profile/session persistence, local calendar and contacts, scheduling, file and Windows actions, browser automation, voice capture/STT/TTS, guardrails, a credential vault, FastAPI, Next.js, desktop UI variants, backup/restore, and other experimental subsystems.
 
-### Linux / macOS
+That implementation breadth is not the same as release readiness:
+
+- The runtime plugin loader currently creates 16 wrapper instances and includes a duplicate; aliases are not independent tools.
+- Gmail, calendar, smart-home, weather, and related connectors in `omni_v2/tools/integrations.py` include canned/demo behavior.
+- Voice cloning records samples and metadata but does not train or run a cloned voice model.
+- End-to-end encrypted sync is a disabled stub.
+- MCP, mobile, marketplace, autonomous generation, vision, wake word, remote access, and similar surfaces remain experimental or unavailable until their gates pass.
+- A fallback must not report success unless it performed and verified the requested effect. Existing violations are blockers.
+
+See the generated matrix for every capability's lifecycle, implementation reality, source ownership, and known gaps.
+
+## Platform and Installation Status
+
+| Environment | Current claim |
+|---|---|
+| NVIDIA DGX Station for Windows, Windows 11 Arm64 | Primary product target, **not yet qualified**; native Arm64 B02 evidence and later physical-DGX hardware gates are absent |
+| Windows 11 x64 | Secondary hardware-independent qualification/development host, **not** a substitute for Arm64 or physical DGX evidence |
+| CPython `>=3.11,<3.12` on Linux x86_64 | B01-qualified for dependency resolution, exact-lock installation, artifact installation, package imports, lightweight CLI paths, packaged resources, and backend health smoke |
+| Linux | Package-development environment only; not qualified as an end-user product |
+| macOS | Unsupported and unverified |
+
+B01 establishes a reproducible **local-artifact package path**, not a qualified product installation. There is no qualified PyPI release. Native B02 x64 diagnostics remain failures: `f8908503` exposed vulnerable `setuptools==81.0.0`, and `4bc1c9d` then cleared resolution/exact-dev gates but stopped when full installation reached native source builds without the contracted Visual C++ toolchain. The corrected path now uses architecture-specific, hash-governed wheel-only build locks; exact approved sdist sets; native compiler/linker/SDK and PE-target probes; no build isolation or cache; exact installed-environment parity; and strict failure-path cleanup. None of that is a passing Windows run. B02 remains **unqualified until native Windows 11 Arm64 and x64 lanes pass against the same exact commit and their evidence aggregates successfully**. An x64-only pass cannot unlock B03. Physical DGX GPU/model throughput and sustained use remain later B11/B13/B15/B16 gates. Follow [installation and troubleshooting](docs/TROUBLESHOOTING.md). Do not use `pip install -e .` as package evidence, and do not call `start.bat` or `start.sh` release-qualified before the B02 gate closes.
+
+## Privacy and Network Truth
+
+“Local-first” does not currently mean “no network traffic under every configuration.”
+
+| Surface | Current behavior |
+|---|---|
+| Local stores, profile, memory, calendar, contacts, and many core actions | Designed to operate on local data |
+| Local LLM/STT/TTS backends | Can be local when installed and explicitly selected |
+| Edge TTS | Online service; text leaves the machine when selected |
+| Model/package/browser downloads | Require network access |
+| Web research, remote access, messaging, mobile/LAN, marketplace, MCP, and external integrations | Network-capable, optional, experimental, or demo depending on the subsystem |
+| Enforced offline mode | Not yet implemented and no no-egress release test currently passes |
+
+Do not provide sensitive data to an unreviewed build. API authentication, consent enforcement, dependency vulnerabilities, logging/redaction, and remote exposure remain open security work.
+
+## Reproducible Quality Inventory
+
+The B00 generator uses only Python's standard library for deterministic inventory and documentation generation:
 
 ```bash
-git clone https://github.com/muhummadzarrar09-sudo/Omni.git
-cd Omni
-./install.sh
-omni model download
-omni test
-omni start
+python scripts/quality_baseline.py generate
+python scripts/quality_baseline.py check
 ```
 
-### With the cinematic UI
+To capture environment-dependent baseline probes (dependency resolution, wheel contents, Python tests, backend-live checks, frontend lint/build/audit, and runtime tool inventory):
 
 ```bash
-# In one terminal
-omni start
-
-# In another
-cd frontend_next
-npm install
-npm run dev
-# Open http://localhost:3000
+python scripts/quality_baseline.py capture
 ```
 
----
+Full probe output is written to ignored `quality/.local/`. A concise reviewed result may be published explicitly with `--publish <path>`. A failing probe is expected at this stage and must remain visible; baseline capture is not a claim that the build passes.
 
-## 🎯 The AIM — 10/10 Achieved
+## B01 Package Evidence
 
-Every AGI demo has the same problem: it's a chatbot in disguise. OMNI hits all 10 AIM features:
+B01 closed the dependency and package-rescue gate on 2026-08-11 for its deliberately narrow environment:
 
-| # | Feature | What it does | Docs |
-|---|---------|--------------|------|
-| 1 | 🗣️ **Wake word** | Always-listening "Hey OMNI" | [Phase 0](docs/PHASE_4_DONE.md#4b-voice-cloning) |
-| 2 | 👋 **Greets by name** | "Good morning Zarrar" + yesterday recap | [Phase 1](docs/PHASE_1_DONE.md) |
-| 3 | 🧠 **Shows thinking** | Live LLM token stream on screen | Phase 0 |
-| 4 | 🛠️ **Shows tools** | Cards appear as it acts | Phase 0 |
-| 5 | 🔁 **Shows recovery** | Self-heals visibly | Phase 0 |
-| 6 | 💡 **Speaks first** | 9 proactive rules (battery, breaks, etc.) | Phase 0 |
-| 7 | 🎭 **Has a voice** | 6 natural personas | Phase 0 |
-| 8 | 🧠 **Remembers** | "Yesterday you worked on github" | [Phase 1](docs/PHASE_1_DONE.md) |
-| 9 | 😏 **Has opinions** | "That's 3 commits today. You good. 🚀" | [Phase 2](docs/PHASE_2_DONE.md) |
-| 10 | ⚡ **Cinematic** | Orb animations, live states, onboarding | [Phase 3](docs/PHASE_3_DONE.md) |
+- CPython 3.11.2 on Linux x86_64; Python 3.10, Python 3.12+, PyPy, Windows, and macOS are not claimed.
+- Six resolver profiles (`core`, `voice`, `vision`, `desktop`, `dev`, and `all`) with exact hash-locked Linux files.
+- One wheel and one sdist containing all 190 required runtime files, with metadata validation and no forbidden runtime-data payload.
+- Isolated wheel installation outside the checkout using the exact `core` lock; imports, CLI, package resources, backend health, clean working directory, and installed-tree immutability passed.
+- Python development-lock vulnerability audit: 87 dependencies, zero known vulnerabilities. License inventory: 91 records complete; `docutils==0.23` and `qrcode==8.2` still require review.
+- Node 22.22.3/npm 12.0.2 clean frontend install, dependency tree, audit, lint, and production build passed; the tracked npm audit has zero known vulnerabilities.
 
-**Plus (beyond AIM):**
-- 👁️ **Multi-modal vision** — drag screenshot → OMNI explains ([Phase 4](docs/PHASE_4_DONE.md))
-- 🎤 **Voice cloning** — record 30s → custom voice
-- 📦 **Skill marketplace** — 1-click install community skills
-- 🛠️ **Plugin SDK** — build your own skills in 50 lines
+The original closure remains historical evidence. Its [forward security amendment](quality/evidence/B01/build-backend-security-amendment-2026-08-12.json) records the later `setuptools` build-backend floor correction discovered by B02; it does not convert the failed native run into a pass.
 
-See [docs/AIM.md](docs/AIM.md) for the full spec.
+This is not a whole-product quality pass. The latest broad Python run measured **668 passed, 33 skipped, and 10 failed**: one wall-clock calendar boundary failure and nine optional-vision/security failures in an environment without OpenCV/face fixtures. Those failures remain visible for B03; no B01 package gate was weakened to hide them. See [`quality/evidence/B01/`](quality/evidence/B01/) for the closure record and raw summaries.
 
----
+## Reproducible Development Environment
 
-## 🏗️ Architecture
-
-```
-┌────────────────────────────────────────────────────────────────┐
-│  Frontend (Next.js 14, :3000) — Cinematic UI                  │
-│  Live thought stream · Tool call cards · Brain state orb     │
-└────────────────────────────────────────────────────────────────┘
-                              ↑ WebSocket + SSE
-                              ↓
-┌────────────────────────────────────────────────────────────────┐
-│  FastAPI backend (:8765) — 65+ endpoints                       │
-│  /api/execute · /api/memory/* · /api/personality · /api/vision │
-└────────────────────────────────────────────────────────────────┘
-                              ↓
-┌────────────────────────────────────────────────────────────────┐
-│  OMNIBrain — Multi-agent ReAct loop                            │
-│                                                                  │
-│  ┌──────────┐   ┌────────┐   ┌─────────┐   ┌───────────┐        │
-│  │ Planner  │ → │Executor│ → │ Monitor │ → │ Evaluator │        │
-│  └──────────┘   └────────┘   └─────────┘   └───────────┘        │
-│       ↑                                              │            │
-│       └────────── self-heal on failure ─────────────┘            │
-│                                                                  │
-│  Plus: Proactive (V2) · Memory · Personality · Opinion         │
-│        Onboarding · Demo Mode · Stats · Vision · Voice Clone   │
-└────────────────────────────────────────────────────────────────┘
-                              ↓
-┌────────────────────────────────────────────────────────────────┐
-│  LLM Brain (Qwen2.5-1.5B GGUF, llama.cpp)                       │
-│  + 100+ Tools · Voice (Whisper/edge-tts) · Vision · Wake Word  │
-└────────────────────────────────────────────────────────────────┘
-```
-
-See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the full picture.
-
----
-
-## 🎮 CLI Reference
-
-After `pip install -e .[all]`:
-
-| Command | What it does |
-|---------|--------------|
-| `omni install` | Print install instructions |
-| `omni status` | Health check |
-| `omni model download` | Fetch Qwen2.5-1.5B GGUF (~1.1GB) |
-| `omni model info` | Show loaded model info |
-| `omni test` | Run all 140+ tests |
-| `omni start` | Start FastAPI backend on :8765 |
-| `omni ui` | Start Next.js UI on :3000 |
-| `omni dev` | Start backend + UI + open browser |
-| `omni shell` | Interactive brain REPL |
-| `omni kb add <path\|url>` | Ingest files/folders/URLs into the local knowledge base (RAG+CAG) |
-| `omni kb query "q"` | Ask the knowledge base (long-term RAG + short-term CAG fused) |
-| `omni research "topic"` | Run autonomous research → save a report |
-| `omni away start\|status\|add\|run` | Unattended away-mode task queue |
-| `omni report list\|digest` | Browse reports / build a digest |
-| `omni app` | Launch the full Python desktop app (Away Mode + Security) |
-| `omni security enroll\|arm\|disarm\|snapshot\|lock` | Local camera guard & lockdown |
-| `omni messenger setup-whatsapp\|whatsapp-set\|test\|status` | WhatsApp/Telegram report setup |
-| `./scripts/setup_hardware.sh` | One-shot real-hardware setup (models + offline TTS + WhatsApp) |
-| `omni voice start\|stop\|status\|respond` | Hands-free "Hey OMNI" voice loop |
-| `omni guardian start\|stop\|scan\|recent\|status` | Proactive machine watcher (apps/health) |
-| `omni graph build\|json\|view` | Visualize your RAG+CAG memory as a knowledge graph |
-| `omni briefing build\|deliver` | Personal morning briefing (goals + recap + research) |
-| `omni add-skill install\|list` | Install a community skill (verified, auto-wired) |
-| `omni harness status\|list\|refine\|rollback\|context` | Continual harness: self-refining skills/memory/lessons |
-| `omni mcp status\|add-demo\|list\|add` | Connect to the MCP ecosystem (Model Context Protocol) |
-| `omni skill-verify status\|run\|history` | Auto skill verification (test skills, roll back failures) |
-| `omni compaction status` | Context auto-compaction (token/memory efficiency) |
-| `omni delegate goal\|status` | Sub-agent delegation (run goal steps in parallel) |
-| `omni automation status\|add\|fire\|list` | Webhook/schedule/file triggers that wake OMNI |
-| `omni router status\|route` | LLM router v2: cost-aware model selection (DGX-ready) |
-| `omni daemon enable\|disable\|status\|start\|stop` | Always-on resident agent + auto-start on boot |
-| `omni benchmark run\|report` | Self-improvement benchmark (faster/cheaper over time) |
-| `omni sandbox status\|run` | Skill sandbox: run untrusted skill code isolated |
-| `omni vault list\|set\|get\|delete\|stats` | Credential vault: encrypted local secrets |
-| `omni personal calendar\|contacts\|cite\|status` | Local calendar/contacts + KB answers with citations |
-| `omni wake run\|status` | Wake routine: "Good morning Zarrar" scripted flow |
-| `omni leaderboard report\|record` | Harness leaderboard: prioritize what to improve |
-| `omni schedule list\|add\|remove\|fire` | Recurring scheduler: OMNI actions on cron/interval |
-| `omni history list\|replay\|undo` | Action journal: session replay + safe undo |
-| `omni photo caption\|dir\|search` | Photo memory: caption images into the KB |
-| `omni backup create\|restore\|list` | Backup & restore the whole OMNI state |
-| `omni file run <cmd>` | NL file manager: safe file operations from natural language |
-| `omni remote info` | LAN remote control (token-authed, from another device) |
-| `omni engine\|metaharness\|mesh\|gui info` | Big subsystems: agentic runtime, self-improving harness, multi-machine sync, vision GUI agent |
-| `omni brain status\|user\|set-name\|set-mood\|reflect` | Jarvis Identity core + user model |
-| `omni goal new\|list\|status\|advance\|fail\|follow-up` | Jarvis persistent goal stack (decompose → progress → replan) |
-| `omni meta evaluate\|history\|stats` | Jarvis metacognition (evaluate outcome → replan/ask/escalate) |
-| `omni reflect today\|patterns\|episodes` | Jarvis episodic reflection + pattern awareness |
-
----
-
-## 🔌 API Surface (65+ endpoints)
-
-Open http://localhost:8765/docs for the full interactive Swagger UI.
-
-**Core:**
-- `POST /api/execute` — run a command through the brain
-- `WS /ws` — live events (wake word, brain thoughts)
-
-**User (Phase 1):**
-- `GET/POST/DELETE /api/user/profile` — persistent profile
-- `GET /api/user/greeting` — "Good morning Zarrar"
-- `GET /api/user/stats` — behavioral stats
-- `GET /api/memory/sessions?days=7` — list recent
-- `GET /api/memory/search?q=...` — search history
-- `GET /api/memory/today|yesterday|weekly` — digests
-
-**Personality (Phase 2):**
-- `GET/POST /api/personality` — formality, warmth, wit, verbosity
-- `POST /api/personality/mood` — set mood
-- `POST /api/personality/test` — sample phrases
-
-**Proactive:**
-- `GET /api/proactive/suggestions` — pending nudges
-- `POST /api/proactive/action` — dismiss/act
-
-**Onboarding (Phase 3):**
-- `GET /api/onboarding` — state
-- `POST /api/onboarding/advance|skip|reset`
-
-**Demo (Phase 3):**
-- `POST /api/demo` — start/stop/pause/resume
-- `GET /api/demo/status` — current state
-- `GET /api/demo/script` — full script
-
-**Stats (Phase 3):**
-- `GET /api/stats` — full dashboard
-- `GET /api/stats/today|lifetime|time-saved`
-
-**Vision (Phase 4):**
-- `POST /api/vision` — process file or capture screen
-- `GET /api/vision/status` — dependencies
-
-**Voice Clone (Phase 4):**
-- `POST /api/voice/clone/{start,stop,train}` — record + train
-- `GET /api/voice/clone/{samples,voices,status}`
-
-**Skill Marketplace (Phase 4):**
-- `GET /api/skills/marketplace` — browse
-- `POST /api/skills/{install,uninstall}` — manage
-- `GET /api/skills/{installed,updates,marketplace/status}`
-
-**Voice (Phase 0):**
-- `POST /api/voice/set` — set persona (jarvis/friday/aria/etc.)
-- `GET /api/voice/personas`
-
-**Scheduler:**
-- `POST /api/scheduler/{cron,interval,once}` — schedule tasks
-
-**Plugin SDK (Phase 4):**
-- `GET /api/sdk` — SDK info
-
-See [docs/API.md](docs/API.md) for the full reference.
-
----
-
-## 🛠️ Build Your Own Skill (50 lines)
-
-```python
-from omni_v2.sdk import skill, command, reply
-
-@skill(
-    name="my_skill",
-    category="custom",
-    description="What my skill does",
-)
-class MySkill:
-    async def execute(self, entities, context):
-        return reply(f"Hello! You said: {context.get('original', '')}")
-```
-
-Save to `data/skills/custom/my_skill.py`. OMNI auto-loads it. See [omni_v2/sdk/__init__.py](omni_v2/sdk/__init__.py) for the full SDK.
-
----
-
-## 🔒 Security
-
-OMNI has 10 security defenses, tested against 16 attack vectors:
-
-1. **Path traversal blocked** — writes sandboxed to `data/output/`
-2. **Shell injection blocked** — 25 forbidden patterns + base-command allowlist
-3. **JSON DoS protected** — 100KB input cap
-4. **ReDoS resistant** — bounded regex + size caps
-5. **Rate limited** — 60 req/min per client
-6. **Prompt injection detected** — 6 patterns logged
-7. **URL guard** — blocks `javascript:`, `vbscript:`, `file:///C:/Windows`
-8. **Loop bound** — max 3 retries on self-heal
-9. **Atomic writes** — temp file + rename, no partial corruption
-10. **No tool crashes the executor** — `safe_execute` wrapper + 30s timeout
-
-**0 successful breaches** across all attack tests. See [omni_v2/core/guardrails.py](omni_v2/core/guardrails.py).
-
----
-
-## 📊 Performance
-
-| Hardware | Speed | Notes |
-|----------|-------|-------|
-| GTX 1050 Ti 4GB | 8.6 tok/s, 1-2s/turn | Target hardware |
-| 16GB RAM, no GPU | 0.9 tok/s, 5-10s/turn | CPU fallback |
-| RTX 3090 | 50+ tok/s, <500ms/turn | Overkill |
-| Apple M1/M2 | 2-4s/turn | Native ARM |
-
-**Model:** Qwen2.5-1.5B Q4_K_M (1.1GB). Winner over Qwen-3B (10x slower), Llama-3.2-3B (wrong format), Gemma-2-2B (no system role). See [docs/MODEL_BENCHMARK.md](_archive/v1_docs/MODEL_BENCHMARK.md) for details.
-
----
-
-## 🧪 Tests
-
-**14 test suites, 140+ tests, 100% pass, 0 failures.**
+Use the exact B01 Linux development lock rather than repairing an environment package by package:
 
 ```bash
-omni test    # runs all 14 suites
+python3.11 -m venv .venv
+.venv/bin/python -m pip install --require-hashes \
+  -r requirements/locks/cpython-3.11-linux-x86_64/dev.txt
+.venv/bin/python -m pip check
+.venv/bin/python -m pytest -q tests/package
 ```
 
-| Suite | Tests | Coverage |
-|-------|-------|----------|
-| `test_security_guardrails` | 10 | 16 attack vectors |
-| `test_fast_af_db` | 5 | Sub-ms vector lookup |
-| `test_hermes_refinement` | 5 | Self-healing loop |
-| `test_skill_synthesis` | 6 | LLM skill generation |
-| `test_user_profile` | 12 | Persistent profile |
-| `test_session_memory` | 15 | Sessions + digests |
-| `test_personality` | 16 | Personality engine |
-| `test_opinion` | 11 | Opinion engine |
-| `test_onboarding` | 10 | First-run flow |
-| `test_demo_mode` | 10 | 8-scene demo |
-| `test_stats` | 10 | Dashboard |
-| `test_vision` | 8 | Multi-modal vision |
-| `test_voice_clone` | 8 | Voice cloning |
-| `test_marketplace` | 14 | Skill marketplace |
+Frontend commands require Node `>=22.22.2 <23`; exact npm `12.0.2` is invoked through Corepack, so a different global npm is ignored. The complete reviewed sequence is in [installation and troubleshooting](docs/TROUBLESHOOTING.md). Results outside the qualified interpreter, operating system, architecture, lock, or exact local artifacts are not B01 evidence. Optional models, services, native libraries, and hardware remain separately unqualified.
 
----
+## Repository Map
 
-## 📁 Project Structure
-
-```
-Omni/
-├── pyproject.toml              # Modern Python package
-├── install.sh / install.ps1    # One-shot installers
-├── start.bat / start.sh        # One-click launchers
-├── README.md                   # ← You are here
-├── LICENSE                     # MIT
-│
-├── omni/                       # Top-level package
-│   ├── cli.py                  # `omni` command
-│   └── __init__.py
-│
-├── omni_v2/                    # Core codebase
-│   ├── llm/brain.py            # Qwen brain
-│   ├── agents/                 # Planner, Executor, Monitor, Evaluator
-│   │   ├── personality.py      # 4 dims, 5 moods (Phase 2)
-│   │   ├── opinion.py          # 7 opinion rules (Phase 2)
-│   │   ├── onboarding.py       # 5-step first run (Phase 3)
-│   │   ├── demo_mode.py        # 8-scene demo (Phase 3)
-│   │   ├── stats.py            # dashboard data (Phase 3)
-│   │   ├── user_profile.py     # persistent profile (Phase 1)
-│   │   ├── session_memory.py   # sessions + digests (Phase 1)
-│   │   ├── scheduler.py        # APScheduler
-│   │   ├── proactive_v2.py     # 9 rules
-│   │   └── ...
-│   ├── voice/                  # STT, TTS, mic, PTT, wake word
-│   │   ├── tts_best.py         # edge-tts natural voices
-│   │   ├── wake_word_best.py   # openWakeWord + Whisper
-│   │   ├── voice_clone.py      # voice cloning (Phase 4)
-│   │   └── ...
-│   ├── vision/                 # Screen capture, Moondream2
-│   │   ├── multimodal.py       # drag-and-drop vision (Phase 4)
-│   │   └── ...
-│   ├── tools/                  # 100+ tool plugins
-│   │   ├── browser_playwright.py
-│   │   ├── files.py
-│   │   └── ...
-│   ├── memory/                 # SQLite, ChromaDB, session_memory
-│   ├── core/                   # registry, paths, safe_execute, guardrails
-│   │   ├── guardrails.py       # 10 security defenses
-│   │   ├── safe_execute.py     # never-crash tool wrapper
-│   │   └── ...
-│   ├── skills/                 # AST verifier, SkillMaker, marketplace (Phase 4)
-│   │   ├── marketplace.py
-│   │   └── ...
-│   ├── sdk/                    # Plugin SDK (Phase 4)
-│   ├── sync/                   # E2E sync (Phase 4 stub)
-│   ├── tests/                  # 14 test suites
-│   └── ...
-│
-├── backend_fastapi/            # FastAPI server
-│   ├── main.py                 # 65+ endpoints
-│   └── core/brain.py
-│
-├── frontend_next/              # Next.js 14 UI
-│   └── app/page.js             # Cinematic command center
-│
-├── scripts/                    # install scripts
-├── docs/                       # Documentation
-│   ├── AIM.md                  # The AIM
-│   ├── ROADMAP.md              # Full Phase 1-4 spec
-│   ├── ARCHITECTURE.md         # Architecture diagram
-│   ├── API.md                  # API reference
-│   ├── CHANGELOG.md            # Version history
-│   ├── PHASE_1_DONE.md         # It Remembers You
-│   ├── PHASE_2_DONE.md         # It Has Opinions
-│   ├── PHASE_3_DONE.md         # Demo Polish
-│   └── PHASE_4_DONE.md         # Product Grade
-│
-├── data/                       # Runtime data (auto-created)
-│   ├── profiles/               # user profile
-│   ├── personality/            # personality
-│   ├── memory/                 # sessions + digests
-│   ├── onboarding/             # onboarding state
-│   ├── stats/                  # stats cache
-│   ├── voice_clone/            # voice samples + models
-│   ├── vision/                 # uploaded images
-│   ├── models/                 # GGUF models
-│   └── ...
-│
-├── _archive/                   # V1 cruft, archived
-│
-└── diagnostic/                 # 60-bug audit + fix log
+```text
+omni_v2/             Principal Python implementation and tests
+backend_fastapi/     HTTP/WebSocket API surface
+frontend_next/       Next.js interface
+mobile/              Experimental PWA companion
+omni/                 CLI package
+quality/              Scope, scorecard, policy, inventory, and evidence
+docs/                 Current quality docs plus labeled historical material
+scripts/              Installers and quality tooling
+_archive/             Excluded legacy/hackathon material
 ```
 
----
+## Release Standard
 
-## 📚 Documentation
+OMNI Personal Core is not “10/10” until all batch gates B00–B16 close in order. Final qualification requires, among other gates:
 
-- **[docs/AIM.md](docs/AIM.md)** — The AIM (10 things that make it feel like an AGI)
-- **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** — System architecture
-- **[docs/API.md](docs/API.md)** — Full API reference
-- **[docs/CHANGELOG.md](docs/CHANGELOG.md)** — Version history
-- **[docs/ROADMAP.md](docs/ROADMAP.md)** — Full Phase 1-4 spec
-- **[docs/PHASE_1_DONE.md](docs/PHASE_1_DONE.md)** — "It Remembers You"
-- **[docs/PHASE_2_DONE.md](docs/PHASE_2_DONE.md)** — "It Has Opinions"
-- **[docs/PHASE_3_DONE.md](docs/PHASE_3_DONE.md)** — "Demo Polish"
-- **[docs/PHASE_4_DONE.md](docs/PHASE_4_DONE.md)** — "Product Grade"
-- **[diagnostic/](diagnostic/)** — 60-bug audit + fixes
+- Exact release artifacts installed and tested outside the checkout.
+- Every locked workflow completed at least 20 times with at least 95% success.
+- Zero unsafe false successes and zero data-loss incidents.
+- Enforced offline mode passing a no-egress test.
+- Backup/restore and degraded recovery proven.
+- Thirty consecutive days of genuine owner dogfooding.
+- Exact-artifact final audit and evidence freeze.
 
----
-
-## 🎯 Use Cases
-
-- **Personal butler:** "Good morning Zarrar. Your standup is in 10 min."
-- **Productivity:** "Open github, search for my open PRs, summarize them"
-- **Code review:** "What did I do yesterday?" → "You committed the auth fix, opened 2 PRs, replied to 3 reviews"
-- **Focus mode:** "I've been coding 2 hours. Want a break? Queue up lo-fi."
-- **Memory:** "Last time I was working on Omni, what was the next step?"
-- **Self-healing demo:** "Open this_doesnt_exist.exe" → tries chrome, msedge, gives graceful error
-- **Voice clone:** Record 30s → OMNI speaks in your voice
-- **Vision:** "What's on my screen?" → describes it
-- **Skills:** `omni skills install morning_briefing` → installs community skill
-- **Away Mode (Phase 7):** runs autonomous research while you're away, stores
-  everything in a **hybrid RAG+CAG knowledge base** (long-term semantic recall +
-  short-term fast cache), and sends you reports to your phone (WhatsApp /
-  Telegram / local file). See [docs/AWAY_MODE.md](docs/AWAY_MODE.md).
-- **Desktop app (Phase 8):** a full Python control panel (`omni app`) with tabs
-  for Dashboard, Knowledge Base, Research, Away Tasks, Reports, Messenger and
-  **Security**.
-- **Camera security (Phase 8):** enroll your face locally, arm a guard that
-  watches the camera, and if someone unrecognized is at the machine it **alerts
-  you first, then locks the laptop**. See [docs/DESKTOP_SECURITY.md](docs/DESKTOP_SECURITY.md).
-- **Jarvis Brain (Phase 9):** a persistent **Identity core** (name, persona, mood,
-  values) + **user model** (likes, tone, prefs) injected into every prompt, plus a
-  **goal stack** that decomposes big intents into steps and tracks progress across
-  sessions, **model tiering** (auto-swaps to a 3B deep model for hard reasoning), and a
-  **metacognition loop** (the evaluator's verdict feeds back into goals to replan / ask
-  / escalate), **episodic reflection** (daily recaps + pattern awareness so OMNI notices
-  things on its own), **visible plan-before-acting**, and **offline-first TTS** (piper
-  local, edge-tts cloud only if opted in). See [docs/JARVIS_BRAIN.md](docs/JARVIS_BRAIN.md).
-- **Offline voice (Phase 8.2):** wake word defaults to **openwakeword** (free, offline,
-  no key) — Picovoice is demoted to an explicit opt-in that needs a key. STT is
-  faster-whisper (fully offline).
-- **Voice Loop (Phase 10):** a continuous hands-free conversation cycle — always-on
-  "Hey OMNI" → hear you → think → speak back — with voice-driven goals ("research X and
-  report back" becomes an away-mode goal).
-- **Proactive Guardian (Phase 10):** a background watcher that checks processes, system
-  health (battery/disk/CPU) and files, surfacing observations and notifying you (via
-  messenger) about anomalies — "Jarvis watches your back."
-- **Knowledge Graph (Phase 11):** visualize your RAG+CAG memory as an interactive
-  node/edge graph (`omni graph`, web viewer at `/knowledge-graph`) — topics, files,
-  tools, commands and how they connect.
-- **Morning Briefing (Phase 11):** a scheduled digest of your open goals + yesterday's
-  recap + fresh research, delivered to WhatsApp/Telegram/file (`omni briefing deliver`).
-- **Skill Installer (Phase 11):** `omni add-skill <url>` pulls a community skill,
-  verifies it with the AST safety checker, and auto-wires it into the brain's tools.
-- **Continual Harness (Phase 12):** a Prime-Agent-style self-refining loop — OMNI
-  distills finished goal trajectories into versioned **skills / memory / lessons**
-  (snapshot + rollback, never touches the base prompt), auto-creates skills on
-  repeated success, and self-improves them when metacog flags a misfire. Works on
-  CPU today; auto-upgrades on the DGX Station. An **auto post-goal flow** fires this
-  automatically whenever a goal completes or fails — no manual command needed.
-- **Sub-Agent Delegation (Phase 13 #4):** the RLM-style "sub-agents as calls" — a goal's
-  steps run as **parallel sub-agents** that each report back **compactly** to a parent
-  that stays small and focused. `omni delegate goal <id>`, `/api/goals/{id}/delegate`.
-- **Automation Triggers (Phase 13 #5):** external events wake OMNI — **webhook**
-  (`POST /api/automation/webhook/<name>`), **schedule**, or **file** triggers fire
-  automations that start a goal / run research / send a message / queue an away task.
-  `omni automation add/fire/list`.
-- **LLM Router V2 (Phase 13 #6, DGX-ready):** a cost-aware model router that picks the
-  **cheapest capable model per task** (fast/balanced/deep/reasoning/local tiers).
-  On the 1050 Ti it uses 1.5B/3B; on the DGX it automatically uses 14B/72B+ reasoning
-  tiers. `omni router status/route`.
-- **Daemon + Auto-start (Phase 14 #1):** OMNI becomes an **always-on resident agent** —
-  `omni daemon enable` registers it to start on boot (systemd / XDG autostart), and a
-  DaemonController keeps guardian + automation + away services running persistently.
-- **Self-Improvement Benchmark (Phase 14 #2):** measures whether OMNI gets **faster /
-  cheaper** on repeated task types as the Continual Harness accumulates skills —
-  compares the "early" (no skill) vs "late" (skill present) cohort. `omni benchmark`.
-- **Skill Sandbox (Phase 14 #3):** run untrusted / harness-created skills in an **isolated
-  subprocess** with OS-level guardrails — hard timeout, memory limit (RLIMIT_AS), network
-  blocked, clean env. `omni sandbox status/run`.
-- **Credential Vault (Phase 14 #4):** local, **Fernet-encrypted** store for secrets with a
-  **permission gate** (allow-list + optional human-approval hook) before tools use them.
-  `omni vault set/get/list`.
-- **Personal Context (Phase 14 #5):** parse **local `.ics` calendar** files + **.vcf/JSON
-  contacts** so the briefing & guardian reference your real schedule and people.
-- **RAG-with-Citations (Phase 14 #6):** ask the knowledge base and get answers **grounded
-  in sources** — every retrieved chunk links back to its file/URL. `omni personal cite`.
-- **Wake Routine (Phase 14 #7):** "Good morning Zarrar" — a scripted flow that greets you
-  by name, reports today's events + open goals, and can speak/push it. `omni wake`.
-- **Harness Leaderboard (Phase 14 #8b):** tracks which skills/automations work best so OMNI
-  **prioritizes** what to refine or retire. `omni leaderboard`.
-- **Recurring Scheduler (Phase 15 #1):** run OMNI actions (briefing, guardian, digests,
-  notify, research, away) on **cron/interval** schedules so it acts automatically.
-  `omni schedule add --cron "0 8 * * *" briefing`.
-- **Action Journal (Phase 15 #2):** a persistent record of every OMNI action you can
-  **replay** and **safely undo** (snapshot-based file undo). `omni history list/replay/undo`.
-- **Photo Memory (Phase 15 #3):** captions local images with the vision module and stores
-  them in RAG memory — "what did I take pictures of?" `omni photo caption/dir/search`.
-- **Backup & Restore (Phase 15 #4):** export/import the whole OMNI state (brain, harness,
-  KB, goals, config, calendar, etc.) to a folder or zip. `omni backup create/restore/list`.
-- **NL File Manager (Phase 15 #5):** "move all PDFs from Downloads to Documents" — safe,
-  sandboxed (allowed-root), journal-backed file operations. `omni file run <cmd>`.
-- **LAN Remote Control (Phase 15 #6):** control OMNI from another device on your local
-  network via the token-authed API (`/api/remote/status|command|goal`).
-- **QueryEngine (Phase 16 #1):** an OpenHarness-style **agentic tool-calling runtime** —
-  brain + tool registry + permission gate + pre/post hooks + cost metering + compaction.
-- **Meta-Harness (Phase 16 #2):** the **self-improvement outer loop** — mines failure
-  traces, proposes harness edits, validates via regression, keeps only improvements.
-- **OMNI Mesh (Phase 16 #3):** multi-machine state sync (export/import/reconcile brain,
-  harness, KB, goals, identity) between your laptop and the DGX.
-- **GUI Agent (Phase 16 #4):** vision-driven, **sandboxed** screen automation
-  (screenshot → vision → click/type), journaled for undo.
-- **Real MCP servers (Phase 14 #8a):** persistent stdio MCP sessions so real server tools
-  can actually be called, not just registered.
-  (6,000+ servers/tools). MCP tools register as native OMNI plugins the brain can call
-  like built-ins. `omni mcp add-demo`, `/api/mcp/*`, desktop "MCP" tab.
-- **Auto Skill Verification (Phase 13 #2):** whenever the Continual Harness creates or
-  refines a skill, it's run through a tester — kept if it passes, **rolled back** (or
-  dropped) if it fails. Closes the "is this skill actually good?" loop automatically.
-  `omni skill-verify status/run/history`.
-- **Context Auto-Compaction (Phase 13 #3):** when a conversation outgrows the token
-  budget, the Brain summarizes the older middle into a compact note while preserving the
-  task + recent turns — the token/memory efficiency win for the small brain.
-  `omni compaction status`.
-- **Full feature rundown:** see [docs/PR_SUMMARY.md](docs/PR_SUMMARY.md) for the
-  complete map of Away Mode, Desktop + Security, the Jarvis Brain, Voice Loop and
-  the Proactive Guardian.
-
----
-
-## 🛠️ Hardware Targets
-
-| Hardware | Expected speed |
-|----------|----------------|
-| 1050 Ti 4GB | 1-2s/turn |
-| 16GB RAM, no GPU | 5-10s/turn |
-| 32GB RAM, RTX 3090 | <500ms/turn |
-| Apple M1/M2 | 2-4s/turn |
-
----
+New end-user features remain frozen until that foundation closes. Commercial validation is a separate optional post-10 track and is not implied by this personal build.
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
-
----
-
-## Credits
-
-Built by **Zarrar** with the help of an agent (Claude / Arena AI).
-
-The model is Qwen2.5-1.5B by Alibaba. The voice is Whisper by OpenAI + edge-tts by Microsoft. The browser is Playwright. The wake word is openWakeWord. The OCR is Tesseract. The vision is Moondream2. The TTS cloning is Piper.
-
-**All open source. All local. All yours.**
-
-🤖 **OMNI V3 — A local, private, cinematic AGI.**
+[MIT](LICENSE). The license permits use; it does not certify security, fitness, privacy, or production readiness.

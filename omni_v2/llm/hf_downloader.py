@@ -7,8 +7,6 @@ Fixes:
 - Provides prebuilt llama-cpp-python install fix
 """
 
-import os
-import sys
 from pathlib import Path
 from typing import Optional
 
@@ -18,13 +16,8 @@ except ImportError:
     import logging
     logger = logging.getLogger("HFDownloader")
 
-try:
-    from omni_v2.core.paths import DATA_DIR
-except ImportError:
-    DATA_DIR = Path.home() / ".omni_v2"
-
-MODELS_DIR = DATA_DIR / "models"
-MODELS_DIR.mkdir(parents=True, exist_ok=True)
+from omni_v2.core.config import load_config
+from omni_v2.core.model_policy import huggingface_download_kwargs
 
 # FIXED MODEL MAP - Correct repos from HF Hub research
 MODEL_MAP = {
@@ -81,30 +74,24 @@ MODEL_MAP = {
 }
 
 class HFDownloader:
-    def __init__(self, token: str = None):
-        self.token = token or os.environ.get("HF_TOKEN") or os.environ.get("HUGGINGFACE_TOKEN")
-        self.authenticated = False
+    def __init__(self):
+        self.runtime_config = load_config()
+        self.models_dir = self.runtime_config.models_dir
+        self.models_dir.mkdir(parents=True, exist_ok=True)
+        self.token = self.runtime_config.hf_token
 
+        # Pass an environment-only token directly to each request. Calling
+        # huggingface_hub.login() would persist the secret in another config store.
         if self.token:
-            # Validate token is not placeholder
-            if self.token in ["hf_xxx", "hf_xxx", "xxx", ""] or len(self.token) < 10:
-                logger.warning(f"HF_TOKEN looks like placeholder '{self.token}' - ignoring, will try unauthenticated (public models only)")
-                self.token = None
-            else:
-                try:
-                    from huggingface_hub import login
-                    login(token=self.token)
-                    self.authenticated = True
-                    logger.info(f"HF_TOKEN found (length {len(self.token)}) - logged in, gated models accessible")
-                except Exception as e:
-                    logger.warning(f"HF login failed: {e} - trying unauthenticated for public models")
-                    # Don't fail, try unauthenticated for public models
-                    self.token = None
+            logger.info("Hugging Face token configured for gated model requests")
         else:
-            logger.info("No HF_TOKEN - can download public models, gated models (Llama 3.1) need token. Set HF_TOKEN env var from https://huggingface.co/settings/tokens")
+            logger.info(
+                "No HF_TOKEN configured; public downloads remain available and "
+                "gated models require an environment-only token"
+            )
 
     def download(self, repo_id: str, filename: str, local_dir: Path = None) -> Optional[Path]:
-        local_dir = local_dir or MODELS_DIR
+        local_dir = local_dir or self.models_dir
         local_dir.mkdir(parents=True, exist_ok=True)
 
         try:
@@ -116,10 +103,7 @@ class HFDownloader:
             path = hf_hub_download(
                 repo_id=repo_id,
                 filename=filename,
-                local_dir=str(local_dir),
-                token=self.token,
-                # resume_download is deprecated and ignored - downloads always resume
-                # local_dir_use_symlinks is deprecated - not needed
+                **huggingface_download_kwargs(self.runtime_config, local_dir),
             )
             p = Path(path)
             size_mb = p.stat().st_size / (1024*1024)
@@ -180,22 +164,22 @@ class HFDownloader:
 
         logger.error(f"Failed to download {model_name} from all repos")
         logger.info(f"Try manual download from https://huggingface.co/{info['repo_id']}/tree/main")
-        logger.info(f"Place file in {MODELS_DIR}/")
+        logger.info(f"Place file in {self.models_dir}/")
         return None
 
     def list_downloaded(self):
-        if not MODELS_DIR.exists():
-            print(f"No models dir: {MODELS_DIR}")
+        if not self.models_dir.exists():
+            print(f"No models dir: {self.models_dir}")
             return
 
-        print(f"\nDownloaded models in {MODELS_DIR}:")
+        print(f"\nDownloaded models in {self.models_dir}:")
         found = False
-        for f in MODELS_DIR.glob("*.gguf"):
+        for f in self.models_dir.glob("*.gguf"):
             size_mb = f.stat().st_size / (1024*1024)
             print(f"  ✓ {f.name} ({size_mb:.1f} MB)")
             found = True
 
-        for f in MODELS_DIR.glob("*.bin"):
+        for f in self.models_dir.glob("*.bin"):
             size_mb = f.stat().st_size / (1024*1024)
             print(f"  ✓ {f.name} ({size_mb:.1f} MB)")
             found = True
@@ -204,7 +188,7 @@ class HFDownloader:
             print("  (none yet)")
 
         print(f"\nFor llama.cpp direct (WAY FASTER than Ollama):")
-        print(f"  python -m omni_v2.llm.llama_cpp --model {MODELS_DIR}/<model>.gguf --prompt 'Hello'")
+        print(f"  python -m omni_v2.llm.llama_cpp --model {self.models_dir}/<model>.gguf --prompt 'Hello'")
 
 if __name__ == "__main__":
     import argparse
@@ -215,11 +199,10 @@ if __name__ == "__main__":
     parser.add_argument("--file", type=str, help="Custom filename")
     parser.add_argument("--quant", type=str, default="Q4_K_M", help="Quant: Q4_K_M, Q5_K_M, Q8_0, etc.")
     parser.add_argument("--list", action="store_true", help="List downloaded models")
-    parser.add_argument("--token", type=str, help="HF token (or set HF_TOKEN env)")
 
     args = parser.parse_args()
 
-    downloader = HFDownloader(token=args.token)
+    downloader = HFDownloader()
 
     if args.list:
         downloader.list_downloaded()
@@ -246,5 +229,5 @@ if __name__ == "__main__":
     print("   pip install transformers qwen-vl-utils  # For Qwen2-VL")
     print("")
     print("3. Test turbo:")
-    print("   python -m omni_v2.llm.llama_cpp --model data/models/<model>.gguf --prompt 'Hello' --benchmark")
+    print("   python -m omni_v2.llm.llama_cpp --model <configured-models-dir>/<model>.gguf --prompt 'Hello' --benchmark")
     print("   python -m omni_v2.vision.turbovlm --model moondream2 --benchmark")

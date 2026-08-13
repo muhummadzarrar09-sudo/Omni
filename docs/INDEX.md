@@ -1,222 +1,92 @@
-# 📚 OMNI V3 — Documentation Index
+# OMNI Documentation Index
 
-> Every doc, every test, every command.
+> **Current product status: pre-alpha recovery.** This index separates authoritative quality state from historical or unqualified material. No document may override the machine-readable authorities in `quality/`.
 
-## 🚀 Start Here
+## Start Here — Current and Authoritative
 
-- **[README.md](../README.md)** — Top-level overview, quickstart, AIM checklist
-- **[AIM.md](AIM.md)** — The 10 features that make it feel like an AGI
-- **[QUICKSTART.md](QUICKSTART.md)** — 5-minute setup guide
+1. **[README](../README.md)** — Truthful project overview, boundaries, and current developer warnings.
+2. **[Capability Matrix](CAPABILITY_MATRIX.md)** — Generated lifecycle, implementation-reality, workflow, platform, ownership, entry-point, requirements, test-type, data/network, interface-audit, and known-gap matrix.
+3. **[Quality Scorecard](QUALITY_SCORECARD.md)** — Generated current scores, evidence, and 10/10 exit criteria.
+4. **[OMNI 10/10 Plan](OMNI_10_OUT_OF_10_PLAN.md)** — Detailed sequential quality and release plan.
 
-## 📐 Architecture & Design
+Machine-readable authorities:
 
-- **[ARCHITECTURE.md](ARCHITECTURE.md)** — System architecture, request flow, module graph
-- **[ROADMAP.md](ROADMAP.md)** — Full Phase 1-4 spec, build order
-- **[CHANGELOG.md](CHANGELOG.md)** — Version history, what changed when
+- [`quality/capabilities.json`](../quality/capabilities.json) — Product promise, non-goals, platforms, workflows, lifecycle definitions, and capability status.
+- [`quality/scorecard.json`](../quality/scorecard.json) — Evidence-backed category scores and closure gates.
+- [`quality/policy.json`](../quality/policy.json) — Active feature freeze, claim rules, and post-10 protocol.
+- [`quality/batches.json`](../quality/batches.json) — Locked B00–B16 and E01–E10 executable manifest.
+- [`quality/inventory.json`](../quality/inventory.json) — Generated source, endpoint, tool-declaration, and code inventory.
 
-## 🔌 API & Reference
+Regenerate and validate the human-readable artifacts with:
 
-- **[API.md](API.md)** — Full HTTP API reference (65+ endpoints)
-- **[PERFORMANCE.md](PERFORMANCE.md)** — Benchmarks, model selection, hardware scaling
-- **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)** — Common issues and fixes
+```bash
+python scripts/quality_baseline.py generate
+python scripts/quality_baseline.py check
+```
 
-## 📋 Phase Reports (what we built)
+## Documentation Status Rules
 
-- **[PHASE_1_DONE.md](PHASE_1_DONE.md)** — "It Remembers You" (Profile, Memory, Greeting)
-- **[PHASE_2_DONE.md](PHASE_2_DONE.md)** — "It Has Opinions" (Personality, Opinion Engine)
-- **[PHASE_3_DONE.md](PHASE_3_DONE.md)** — "Demo Polish" (Onboarding, Demo Mode, Stats)
-- **[PHASE_4_DONE.md](PHASE_4_DONE.md)** — "Product Grade" (Vision, Voice Clone, Marketplace, SDK)
-- **[PHASE_5_MOBILE.md](PHASE_5_MOBILE.md)** — "Mobile-First" (mDNS + Phone PWA companion)
-- **[PHASE_6_VISUAL.md](PHASE_6_VISUAL.md)** — "Visual-First" (screen watching + context)
+- **Authoritative:** Defines current scope, status, policy, or quality gates.
+- **Reference, unqualified:** May explain implementation but has not passed current command, API, architecture, privacy, or platform drift checks.
+- **Historical:** Records prior intent, milestones, audits, or pull-request narratives. “Done,” “complete,” “product-grade,” performance, test-count, privacy, and readiness language in these files is not a current claim.
+- **Generated:** Must be changed through its machine-readable source, not edited directly.
 
-## 🛠️ Per-Module Docs
+## Reference Material — Not Release-Qualified
 
-Each major module has a detailed docstring at the top of its file:
-
-| Module | File | What it does |
+| Document | Status | Use |
 |---|---|---|
-| Brain | `omni_v2/llm/brain.py` | Qwen2.5-1.5B via llama.cpp |
-| Executor | `omni_v2/agents/executor.py` | Tool dispatch + safe wrapper |
-| Evaluator | `omni_v2/agents/evaluator.py` | Self-healing rules |
-| Proactive V2 | `omni_v2/agents/proactive_v2.py` | 9 proactive rules |
-| User Profile | `omni_v2/agents/user_profile.py` | Persistent profile |
-| Session Memory | `omni_v2/memory/session_memory.py` | Sessions + digests |
-| Personality | `omni_v2/agents/personality.py` | 4 dims, 5 moods |
-| Opinion | `omni_v2/agents/opinion.py` | 7 opinion rules |
-| Onboarding | `omni_v2/agents/onboarding.py` | 5-step first run |
-| Demo Mode | `omni_v2/agents/demo_mode.py` | 8-scene auto-demo |
-| Stats | `omni_v2/agents/stats.py` | Dashboard data |
-| Vision | `omni_v2/vision/multimodal.py` | Drag image/PDF/screenshot |
-| Voice Clone | `omni_v2/voice/voice_clone.py` | Record 30s → custom voice |
-| Marketplace | `omni_v2/skills/marketplace.py` | 1-click install skills |
-| Plugin SDK | `omni_v2/sdk/__init__.py` | Build your own skill |
-| Guardrails | `omni_v2/core/guardrails.py` | 10 security defenses |
-| Safe Execute | `omni_v2/core/safe_execute.py` | Never-crash tool wrapper |
-| Edge TTS | `omni_v2/voice/tts_best.py` | 6 natural personas |
-| Wake Word | `omni_v2/voice/wake_word_best.py` | "Hey OMNI" detection |
-| Browser V3 | `omni_v2/tools/browser_v3.py` | Chrome isolated profile |
-| Playwright | `omni_v2/tools/browser_playwright.py` | Real headless browser |
-| mDNS Discovery | `omni_v2/network/mdns.py` | UDP broadcast, zero deps |
-| Geofence Engine | `omni_v2/agents/geofence.py` | Places + rules + Haversine |
-| Screen Watcher | `omni_v2/agents/screen_watcher.py` | Periodically watches screen + classifies activity |
-| Mobile WebSocket | `backend_fastapi/main.py` | /ws/mobile + /api/voice/transcribe |
-| Mobile PWA | `mobile/index.html` | Phone browser companion |
+| [API.md](API.md) | Reference snapshot, unqualified | Earlier HTTP API descriptions; use `quality/inventory.json` for the generated route inventory until B06/B14 drift gates close. |
+| [ARCHITECTURE.md](ARCHITECTURE.md) | Reference snapshot, unqualified | Earlier architecture narrative; several overlapping runtimes remain unresolved. |
+| [AWAY_MODE.md](AWAY_MODE.md) | Experimental subsystem reference | Away/remote behavior is outside the locked personal core and has not passed security or autonomy qualification. |
+| [DESKTOP_SECURITY.md](DESKTOP_SECURITY.md) | Experimental subsystem reference | Face/lockdown behavior and dependencies are not release-qualified. |
+| [PERFORMANCE.md](PERFORMANCE.md) | Historical benchmark snapshot | Performance claims are not current target-hardware evidence. |
+| [TROUBLESHOOTING.md](TROUBLESHOOTING.md) | Reference snapshot, unverified | Commands and remedies require fresh-install validation in B01–B02/B14. |
+| [JARVIS_BRAIN.md](JARVIS_BRAIN.md) | Historical/aspirational design | Does not establish production autonomy or human-level intelligence. |
 
-## 🧪 Tests
+## Historical Product and Milestone Documents
 
-20 test suites, 320+ tests, 100% pass:
+These files are retained for provenance only:
 
-```bash
-omni test    # runs all 19 suites
-```
+- [AIM.md](AIM.md) — Earlier demo-oriented AIM criteria.
+- [ROADMAP.md](ROADMAP.md) — Earlier feature-focused roadmap, superseded by the quality plan for execution order.
+- [CHANGELOG.md](CHANGELOG.md) — Earlier version narrative; not a release ledger for qualified artifacts.
+- [PHASE_1_DONE.md](PHASE_1_DONE.md) — Profile/memory/greeting milestone narrative.
+- [PHASE_2_DONE.md](PHASE_2_DONE.md) — Personality/opinion milestone narrative.
+- [PHASE_3_DONE.md](PHASE_3_DONE.md) — Demo/onboarding/stats milestone narrative.
+- [PHASE_4_DONE.md](PHASE_4_DONE.md) — Vision/voice-clone/marketplace/SDK milestone narrative; its “product-grade” wording is superseded.
+- [PHASE_5_MOBILE.md](PHASE_5_MOBILE.md) — Mobile companion milestone narrative.
+- [PHASE_6_VISUAL.md](PHASE_6_VISUAL.md) — Screen-context milestone narrative.
+- [PR_SUMMARY.md](PR_SUMMARY.md), [FINAL_PR_DESCRIPTION.md](FINAL_PR_DESCRIPTION.md), and [FINAL_PR_DESCRIPTION_V16.md](FINAL_PR_DESCRIPTION_V16.md) — Historical change descriptions, not release evidence.
+- [`FINAL_AUDIT_STATUS.md`](../FINAL_AUDIT_STATUS.md), [`AUDIT_TRACKER.md`](../AUDIT_TRACKER.md), and [`AUDIT_CHANGELOG.md`](../AUDIT_CHANGELOG.md) — Earlier audit snapshots; current blockers and scores live in the quality authorities.
+- [`diagnostic/`](../diagnostic/) — Earlier diagnostic and remediation snapshots.
 
-| Test file | Tests | Coverage |
+## Implementation Map
+
+This is a navigation aid, not a statement that each module works end to end.
+
+| Area | Primary paths | Current authority |
 |---|---|---|
-| `omni_v2/tests/test_security_guardrails.py` | 10 | 16 attack vectors |
-| `omni_v2/tests/test_fast_af_db.py` | 5 | Sub-ms vector lookup |
-| `omni_v2/tests/test_hermes_refinement.py` | 5 | Self-healing loop |
-| `omni_v2/tests/test_skill_synthesis.py` | 6 | LLM skill generation |
-| `omni_v2/tests/test_user_profile.py` | 12 | Persistent profile |
-| `omni_v2/tests/test_session_memory.py` | 15 | Sessions + digests |
-| `omni_v2/tests/test_personality.py` | 16 | Personality engine |
-| `omni_v2/tests/test_opinion.py` | 11 | Opinion engine |
-| `omni_v2/tests/test_onboarding.py` | 10 | First-run flow |
-| `omni_v2/tests/test_demo_mode.py` | 10 | 8-scene demo |
-| `omni_v2/tests/test_stats.py` | 10 | Dashboard |
-| `omni_v2/tests/test_vision.py` | 8 | Multi-modal vision |
-| `omni_v2/tests/test_voice_clone.py` | 8 | Voice cloning |
-| `omni_v2/tests/test_marketplace.py` | 14 | Skill marketplace |
-| `omni_v2/tests/test_network.py` | 13 | mDNS discovery |
-| `omni_v2/tests/test_mobile.py` | 55 | PWA + location + endpoints |
-| `omni_v2/tests/test_geofence.py` | 50 | Geofence + backend |
-| `omni_v2/tests/test_notifications.py` | 40 | Notification center |
-| `omni_v2/tests/test_notification_prefs.py` | 37 | Prefs + snooze |
-| `omni_v2/tests/test_screen_watcher.py` | 31 | Screen watcher + context |
+| Runtime and CLI | `omni_v2/app.py`, `omni_v2/core/`, `omni/` | `runtime.*` capabilities |
+| Brain and agents | `omni_v2/llm/`, `omni_v2/agents/`, `omni_v2/engine/` | `brain.*` capabilities |
+| Memory and personal data | `omni_v2/memory/`, `omni_v2/personal/` | `memory.*`, `personal.*` |
+| Tools and automation | `omni_v2/tools/`, `omni_v2/automation/`, `omni_v2/schedule/` | `tools.*`, `automation.*`, `integrations.*` |
+| Voice and vision | `omni_v2/voice/`, `omni_v2/vision/` | `voice.*`, `vision.*` |
+| Security and vault | `omni_v2/security/`, `omni_v2/vault/`, guardrails | `security.*` |
+| API | `backend_fastapi/` | `api.fastapi` plus generated endpoint inventory |
+| Web/desktop UI | `frontend_next/`, `omni_v2/ui/`, `omni_v2/gui/` | `ui.*` |
+| Mobile/network/sync | `mobile/`, `omni_v2/network/`, `omni_v2/sync/`, `omni_v2/mesh/` | Experimental/unavailable capability entries |
+| Tests | `omni_v2/tests/` | Generated inventory and captured baseline; test presence is not release qualification |
 
-To run an individual test:
-```bash
-python -m omni_v2.tests.test_personality
-```
+## Current Test and Command Policy
 
-## 🎮 CLI Commands
-
-After `pip install -e .[all]`:
+Do not copy historical pass counts into current documentation. A test claim must identify the exact command, environment, result, and date. The current B00 baseline command is:
 
 ```bash
-omni install          # Print install instructions
-omni status           # Health check
-omni model download   # Fetch Qwen2.5-1.5B GGUF (~1.1GB)
-omni model info       # Show loaded model info
-omni test             # Run all 20 test suites (320+ tests)
-omni start            # Start FastAPI backend on :8765
-omni start --no-browser  # Don't auto-open browser
-omni start --reload   # Hot-reload on code changes
-omni ui               # Start Next.js UI on :3000
-omni dev              # Start backend + UI + open browser
-omni shell            # Interactive brain REPL
+python scripts/quality_baseline.py capture
 ```
 
-## 🔌 Quick API Reference
+It records dependency resolution, wheel contents, Python compilation/tests, backend-live checks, frontend lint/build/audit, endpoint inventory, and runtime tool inventory. Non-passing probes remain blockers rather than being hidden behind aggregate counts.
 
-```bash
-# Health check
-curl http://localhost:8765/api/health
+## Missing Quickstart Is Intentional
 
-# Run a command
-curl -X POST http://localhost:8765/api/execute \
-  -H "Content-Type: application/json" \
-  -d '{"command":"open github"}'
-
-# Set your name
-curl -X POST http://localhost:8765/api/user/profile \
-  -H "Content-Type: application/json" \
-  -d '{"name":"Zarrar"}'
-
-# Get today's digest
-curl http://localhost:8765/api/memory/today
-
-# Get stats dashboard
-curl http://localhost:8765/api/stats
-
-# Start the 2-min cinematic demo
-curl -X POST http://localhost:8765/api/demo \
-  -H "Content-Type: application/json" \
-  -d '{"action":"start"}'
-```
-
-See [API.md](API.md) for the full reference.
-
-## 📁 Project Structure
-
-```
-Omni/
-├── README.md                   # Top-level
-├── pyproject.toml              # Package config
-├── install.sh / install.ps1    # One-shot installers
-├── start.bat / start.sh        # One-click launchers
-├── LICENSE                     # MIT
-│
-├── omni/                       # Top-level package
-│   ├── cli.py                  # `omni` command
-│   └── __init__.py
-│
-├── omni_v2/                    # Core codebase
-│   ├── llm/                    # Qwen brain
-│   ├── agents/                 # 12+ agents (planner, executor, ..., onboarding)
-│   ├── voice/                  # STT, TTS, wake word, voice clone
-│   ├── vision/                 # Screen capture, multi-modal vision
-│   ├── tools/                  # 100+ tool plugins
-│   ├── memory/                 # SQLite, ChromaDB, session memory
-│   ├── core/                   # Registry, paths, guardrails, safe_execute
-│   ├── skills/                 # AST verifier, marketplace
-│   ├── sdk/                    # Plugin SDK
-│   ├── sync/                   # E2E sync stub
-│   ├── network/                # mDNS discovery (Phase 5)
-│   ├── tests/                  # 16 test suites
-│   └── ...
-│
-├── mobile/                     # Phone PWA (Phase 5B)
-│   ├── index.html              # PWA shell
-│   ├── app.js                  # Discovery + WS + PTT + QR
-│   ├── style.css               # Dark cinematic theme
-│   ├── manifest.json           # PWA manifest
-│   ├── sw.js                   # Service worker
-│   └── qr.html                 # QR generator (laptop-side)
-│
-├── backend_fastapi/            # FastAPI server (75+ endpoints)
-│
-├── frontend_next/              # Next.js 14 UI
-│
-├── docs/                       # All documentation
-│   ├── INDEX.md                # ← You are here
-│   ├── AIM.md
-│   ├── ROADMAP.md
-│   ├── ARCHITECTURE.md
-│   ├── API.md
-│   ├── CHANGELOG.md
-│   ├── PERFORMANCE.md
-│   ├── TROUBLESHOOTING.md
-│   ├── PHASE_1_DONE.md
-│   ├── PHASE_2_DONE.md
-│   ├── PHASE_3_DONE.md
-│   └── PHASE_4_DONE.md
-│
-├── scripts/                    # install.sh, install.ps1
-├── data/                       # Runtime data (auto-created)
-├── _archive/                   # V1 cruft (archived)
-└── diagnostic/                 # 60-bug audit + fix log
-```
-
-## 🆘 Getting Help
-
-1. **Search the docs** with Ctrl+F
-2. **Check [TROUBLESHOOTING.md](TROUBLESHOOTING.md)** for common issues
-3. **Run the tests** to verify your install: `omni test`
-4. **Read the code** — everything is well-commented
-5. **File an issue** on GitHub
-
----
-
-**Last updated:** 2026-07-15
-**Version:** 3.2.0 (Product Grade)
-**Status:** All systems go. 🟢
+The previous index linked to a nonexistent `QUICKSTART.md` and described unverified one-click setup. A release quickstart will be written only after B01–B02 prove clean installation, package contents, startup, restart, model handling, and primary-platform behavior.

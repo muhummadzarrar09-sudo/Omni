@@ -15,7 +15,6 @@ Bagillion Percent = 4 STT tiers * 4 attempts each = 16 tries STT + 3 TTS tiers *
 
 import time
 import threading
-from pathlib import Path
 from typing import Callable, Optional
 import numpy as np
 
@@ -25,10 +24,8 @@ except ImportError:
     import logging
     logger = logging.getLogger("BagillionLoop")
 
-try:
-    from omni_v2.core.paths import DATA_DIR
-except ImportError:
-    DATA_DIR = Path.home() / ".omni_v2"
+from omni_v2.core.config import load_config
+from omni_v2.core.model_policy import faster_whisper_kwargs, require_cloud_tts
 
 class BagillionLoop:
     """Bagillion Percent Loop - STT + Thinking + TTS - Never Fails"""
@@ -52,6 +49,7 @@ class BagillionLoop:
         self.monitor = monitor
         self.evaluator = evaluator
         self.memory = memory
+        self.runtime_config = load_config()
 
         self.on_status = on_status
         self.on_transcription = on_transcription
@@ -102,13 +100,14 @@ class BagillionLoop:
         except Exception as e:
             logger.debug(f"pyttsx3 TTS failed: {e}")
 
-        # Fallback 2: gTTS + playsound (needs internet)
+        # Fallback 2: gTTS is cloud-only and requires explicit canonical opt-in.
         try:
+            require_cloud_tts(self.runtime_config, "gTTS synthesis")
             from gtts import gTTS
             import os
             import tempfile
             tts = gTTS(text=text[:200], lang='en')
-            temp_path = DATA_DIR / "temp_tts.mp3"
+            temp_path = self.runtime_config.data_dir / "temp_tts.mp3"
             tts.save(str(temp_path))
 
             # Try to play via playsound or sounddevice
@@ -164,10 +163,15 @@ class BagillionLoop:
 
             # Find best model
             model = None
-            for device, compute in [("cuda", "float32"), ("cuda", "int8"), ("cpu", "int8")]:
+            for device, compute in self.runtime_config.stt_device_attempts:
                 try:
-                    model = WhisperModel("base.en", device=device, compute_type=compute)
-                    logger.info(f"Whisper fallback: base.en on {device} {compute}")
+                    model = WhisperModel(
+                        self.runtime_config.stt_model,
+                        device=device,
+                        compute_type=compute,
+                        **faster_whisper_kwargs(self.runtime_config),
+                    )
+                    logger.info(f"Whisper fallback: {self.runtime_config.stt_model} on {device} {compute}")
                     break
                 except Exception as ex:
                     logger.debug(f"Whisper {device} {compute} failed: {ex}")

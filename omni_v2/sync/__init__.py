@@ -17,7 +17,6 @@ import time
 import json
 import hashlib
 import threading
-from pathlib import Path
 from typing import Optional, Dict, Any, List
 from datetime import datetime
 
@@ -27,10 +26,7 @@ except ImportError:
     import logging
     logger = logging.getLogger("E2ESync")
 
-try:
-    from omni_v2.core.paths import DATA_DIR
-except Exception:
-    DATA_DIR = Path(__file__).resolve().parents[2] / "data"
+from omni_v2.core.paths import DATA_DIR
 
 
 class E2ESyncService:

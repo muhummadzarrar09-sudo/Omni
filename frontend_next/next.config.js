@@ -1,13 +1,13 @@
 /** @type {import('next').NextConfig} */
-const nextConfig = {
-  async rewrites() {
-    return [
-      {
-        source: '/api/python/:path*',
-        destination: 'http://localhost:8765/api/:path*', // Proxy to FastAPI
-      },
-    ];
-  },
-};
+const configuredBackendUrl = process.env.OMNI_BACKEND_URL
+if (!configuredBackendUrl) {
+  throw new Error('OMNI_BACKEND_URL is required; use the managed OMNI installer or launcher')
+}
 
-module.exports = nextConfig;
+const nextConfig = {
+  turbopack: {
+    root: __dirname,
+  },
+}
+
+module.exports = nextConfig

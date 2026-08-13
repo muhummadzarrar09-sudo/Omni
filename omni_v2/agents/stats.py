@@ -17,7 +17,6 @@ import json
 import time
 import threading
 import tempfile
-from pathlib import Path
 from typing import Optional, Dict, List, Any, Tuple
 from collections import Counter
 from datetime import datetime, timedelta
@@ -28,10 +27,6 @@ except ImportError:
     import logging
     logger = logging.getLogger("Stats")
 
-try:
-    from omni_v2.core.paths import DATA_DIR
-except Exception:
-    DATA_DIR = Path(__file__).resolve().parents[2] / "data"
 
 
 class StatsEngine:

@@ -1,7 +1,7 @@
 """
-OMNI V3 - Browser Tool FIXED - Profile Isolation Magic (Your Ace)
-Opens Chrome in data/chrome_profile/OMNI-Profile without your email = privacy-first
-This is your killer feature - keep, document, make it bulletproof
+OMNI V3 browser tool with an isolated profile.
+Keeps browser state under OMNI's per-user data directory rather than the
+checkout or installed package.
 """
 from pathlib import Path
 from typing import Dict, Any
@@ -43,25 +43,22 @@ class BrowserToolV3(CommandPlugin):
     ]
     
     def __init__(self):
-        # Profile isolated dir - privacy-first - PORTABLE, not D:/Omni hardcoded
-        # Works wherever judges clone: C:/Users/Judge/Downloads/Omni, /home/user/Omni, etc.
-        try:
-            # Relative to this file: omni_v2/tools/browser_v3.py -> parent.parent = omni_v2 -> parent.parent.parent = repo root
-            OMNI_ROOT = Path(__file__).resolve().parent.parent.parent
-            if not (OMNI_ROOT / "omni_v2").exists():
-                # Fallback to cwd if run from weird location
-                OMNI_ROOT = Path.cwd()
-        except Exception:
-            OMNI_ROOT = Path.cwd()
-        
-        self.profile_dir = OMNI_ROOT / "data" / "chrome_profile"
+        from omni_v2.core.config import load_config
+
+        self.runtime_config = load_config()
+        # Keep browser state at the canonical configured profile path.
+        self.profile_dir = self.runtime_config.browser_profile_dir
         self.profile_dir.mkdir(parents=True, exist_ok=True)
         self.profile_name = "OMNI-Profile"
-        logger.info(f"Browser V3 - Profile isolated: {self.profile_dir.absolute()} / {self.profile_name} (portable, works for judges anywhere)")
+        logger.info(
+            f"Browser V3 - isolated profile: {self.profile_dir.absolute()} / "
+            f"{self.profile_name}"
+        )
     
     def _find_chrome(self) -> str:
         """Find chrome.exe path"""
         possible = [
+            *([self.runtime_config.browser_path] if self.runtime_config.browser_path else []),
             r"C:\Program Files\Google\Chrome\Application\chrome.exe",
             r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe",
             os.path.expandvars(r"%LocalAppData%\Google\Chrome\Application\chrome.exe"),
@@ -89,7 +86,7 @@ class BrowserToolV3(CommandPlugin):
                 "--no-first-run",
                 "--no-default-browser-check",
                 "--disable-features=Translate",
-                "--remote-debugging-port=9222",  # For future Selenium/CDP
+                f"--remote-debugging-port={self.runtime_config.browser_debug_port}",
                 url
             ]
             

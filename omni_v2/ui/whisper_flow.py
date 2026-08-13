@@ -19,10 +19,9 @@ except ImportError:
     import logging
     logger = logging.getLogger("WhisperFlow")
 
-try:
-    from omni_v2.core.paths import DATA_DIR
-except ImportError:
-    DATA_DIR = Path.home() / ".omni_v2"
+from omni_v2.core.config import load_config
+from omni_v2.core.model_policy import faster_whisper_kwargs
+
 
 class TranscriptionWorker(QThread):
     progress = pyqtSignal(int)
@@ -30,18 +29,35 @@ class TranscriptionWorker(QThread):
     error = pyqtSignal(str)
     log = pyqtSignal(str)
 
-    def __init__(self, file_path, model_name="base.en", language="en"):
+    def __init__(self, file_path, model_name=None, language="en", device_attempts=None):
         super().__init__()
+        self.runtime_config = load_config()
         self.file_path = file_path
-        self.model_name = model_name
+        self.model_name = model_name or self.runtime_config.stt_model
+        self.device_attempts = device_attempts or self.runtime_config.stt_device_attempts
         self.language = language
 
     def run(self):
         try:
             self.log.emit(f"Loading model {self.model_name}...")
             from faster_whisper import WhisperModel
-            model = WhisperModel(self.model_name, device="cpu", compute_type="int8")
-            
+            model = None
+            errors = []
+            for device, compute in self.device_attempts:
+                try:
+                    model = WhisperModel(
+                        self.model_name,
+                        device=device,
+                        compute_type=compute,
+                        **faster_whisper_kwargs(self.runtime_config),
+                    )
+                    self.log.emit(f"Loaded on {device} with {compute} compute")
+                    break
+                except Exception as exc:
+                    errors.append(f"{device}/{compute}: {exc}")
+            if model is None:
+                raise RuntimeError("No configured STT device succeeded: " + "; ".join(errors))
+
             self.log.emit(f"Transcribing {self.file_path}...")
             self.progress.emit(10)
             
@@ -78,7 +94,8 @@ class WhisperFlowDesktopApp(QWidget):
         self.setGeometry(100, 100, 900, 700)
         self.setAcceptDrops(True)
 
-        self.model_name = "base.en"
+        self.runtime_config = load_config()
+        self.model_name = self.runtime_config.stt_model
         self.language = "en"
         self.output_format = "txt"
         self.transcribed_text = ""
@@ -105,8 +122,11 @@ class WhisperFlowDesktopApp(QWidget):
 
         top_controls.addWidget(QLabel("Model:"))
         self.model_combo = QComboBox()
-        self.model_combo.addItems(["tiny.en", "base.en", "small.en", "medium.en", "large-v3", "large-v3-turbo"])
-        self.model_combo.setCurrentText("base.en")
+        model_choices = ["tiny.en", "base.en", "small.en", "medium.en", "large-v3", "large-v3-turbo"]
+        if self.model_name not in model_choices:
+            model_choices.insert(0, self.model_name)
+        self.model_combo.addItems(model_choices)
+        self.model_combo.setCurrentText(self.model_name)
         self.model_combo.currentTextChanged.connect(self.on_model_changed)
         top_controls.addWidget(self.model_combo)
 
@@ -355,7 +375,8 @@ class WhisperFlowDesktopApp(QWidget):
         self.worker = TranscriptionWorker(
             file_path=file_to_transcribe,
             model_name=self.model_name,
-            language=self.lang_combo.currentText()
+            language=self.lang_combo.currentText(),
+            device_attempts=self.runtime_config.stt_device_attempts,
         )
         self.worker.progress.connect(self.progress_bar.setValue)
         self.worker.log.connect(self.log_to_console)

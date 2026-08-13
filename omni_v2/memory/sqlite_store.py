@@ -1,4 +1,4 @@
-"""SQLite Store V2 - Phase 2 Hardened - Data Inside Project Root"""
+"""SQLite memory persisted under OMNI's canonical writable data directory."""
 import sqlite3
 import json
 import time
@@ -11,20 +11,17 @@ except ImportError:
     import logging
     logger = logging.getLogger("SQLiteStore")
 
-try:
-    from omni_v2.core.paths import MEMORY_DB_PATH
-except ImportError:
-    MEMORY_DB_PATH = Path.home() / ".omni_v2" / "memory.db"
+from omni_v2.core.paths import MEMORY_DB_PATH
 
 class SQLiteMemoryStore:
-    """Persistent memory via SQLite - now inside project/data/ for unanimous portability"""
+    """Persistent memory backed by a SQLite database in writable runtime data."""
 
     def __init__(self, db_path: Optional[Path] = None):
         self.db_path = db_path or MEMORY_DB_PATH
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
         self.conn = None
         self._init_db()
-        logger.info(f"SQLiteMemoryStore V2 at {self.db_path} (project data/)")
+        logger.info(f"SQLiteMemoryStore V2 at {self.db_path}")
 
     def _init_db(self):
         try:

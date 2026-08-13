@@ -1,11 +1,20 @@
+"""Principal implementation package for the experimental OMNI personal build.
+
+Capability status is governed by ``quality/capabilities.json`` in the source
+repository; module availability alone does not mean a capability is stable.
 """
-OMNI V2 - JARVIS KILLER - Phase 1 Complete
-Clean workspace, multi-agent skeleton, 100+ tools, chain commands, context memory
-"""
-__version__ = "2.0.0-phase1"
-__author__ = "OMNI Team - V2"
+
+from omni import __version__
+
+__author__ = "OMNI contributors"
 
 __all__ = [
-    'PluginManager', 'CommandRegistry',
-    'PlannerAgent', 'ExecutorAgent', 'MonitorAgent', 'EvaluatorAgent', 'MemoryAgent'
+    "CommandRegistry",
+    "EvaluatorAgent",
+    "ExecutorAgent",
+    "MemoryAgent",
+    "MonitorAgent",
+    "PlannerAgent",
+    "PluginManager",
+    "__version__",
 ]

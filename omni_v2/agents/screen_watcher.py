@@ -118,11 +118,9 @@ class ScreenWatcher:
             return
         self.interval_sec = interval_sec
         self.save_screenshots = save_screenshots
-        try:
-            from omni_v2.core.paths import DATA_DIR
-            base = Path(DATA_DIR) if not isinstance(DATA_DIR, str) else Path(DATA_DIR)
-        except Exception:
-            base = Path.cwd() / "data"
+        from omni_v2.core.paths import get_data_dir
+
+        base = get_data_dir()
         self.data_dir = (data_dir or (base / "screen_watcher"))
         self.data_dir.mkdir(parents=True, exist_ok=True)
         self.history_file = self.data_dir / "history.json"
@@ -301,6 +299,8 @@ class ScreenWatcher:
         if scene is None:
             return
         with self._lock_data:
+            # Preserve the prior scene for both comparison and the change callback.
+            prev = self._current_scene
             # Determine if it's a new scene
             is_new = self._is_new_scene(scene)
             scene.is_new_scene = is_new

@@ -14,7 +14,6 @@ from __future__ import annotations
 import threading
 import time
 import queue
-from pathlib import Path
 from typing import Callable, Optional
 
 try:
@@ -23,10 +22,8 @@ except ImportError:
     import logging
     logger = logging.getLogger("WakeWordBest")
 
-try:
-    from omni_v2.core.paths import DATA_DIR
-except Exception:
-    DATA_DIR = Path(__file__).resolve().parents[2] / "data"
+from omni_v2.core.config import load_config
+from omni_v2.core.model_policy import faster_whisper_kwargs
 
 
 # === Backend 1: openWakeWord (best free option) ===
@@ -77,8 +74,7 @@ class PorcupineWakeBackend:
         self.backend_name = "porcupine"
         try:
             import pvporcupine
-            import os
-            access_key = os.environ.get("PICOVOICE_ACCESS_KEY")
+            access_key = load_config().picovoice_key
             if access_key:
                 self.detector = pvporcupine.create(
                     access_key=access_key,
@@ -126,7 +122,13 @@ class WhisperWakeBackend:
         self.model = None
         try:
             from faster_whisper import WhisperModel
-            self.model = WhisperModel("tiny.en", device="cpu", compute_type="int8")
+            runtime_config = load_config()
+            self.model = WhisperModel(
+                "tiny.en",
+                device="cpu",
+                compute_type="int8",
+                **faster_whisper_kwargs(runtime_config),
+            )
             logger.info("WakeWord Best: Whisper-tiny loaded")
         except Exception as e:
             logger.warning(f"Whisper wake backend init failed: {e}")
@@ -310,10 +312,19 @@ class WakeWordServiceBest:
             try:
                 from faster_whisper import WhisperModel
                 if not hasattr(self, '_whisper'):
-                    try:
-                        self._whisper = WhisperModel("base.en", device="cpu", compute_type="int8")
-                    except Exception:
-                        self._whisper = None
+                    runtime_config = load_config()
+                    self._whisper = None
+                    for device, compute in runtime_config.stt_device_attempts:
+                        try:
+                            self._whisper = WhisperModel(
+                                runtime_config.stt_model,
+                                device=device,
+                                compute_type=compute,
+                                **faster_whisper_kwargs(runtime_config),
+                            )
+                            break
+                        except Exception:
+                            continue
                 if self._whisper:
                     segments, _ = self._whisper.transcribe(
                         audio, language="en", without_timestamps=True, beam_size=1

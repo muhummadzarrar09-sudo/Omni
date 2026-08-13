@@ -1,0 +1,127 @@
+{
+  "schema_version": 1,
+  "batch": "B01",
+  "amendment": "A01",
+  "title": "Secure setuptools build-backend floor",
+  "recorded_on": "2026-08-12",
+  "decision": "implemented_local_revalidation_passed_native_windows_pending",
+  "change_control": {
+    "trigger": "The B02 native Windows x64 qualifier failed closed because its exact lock selected setuptools 81.0.0 and pip-audit reported PYSEC-2026-3447 / CVE-2026-59890.",
+    "necessity": "The project requirement setuptools>=77,<82 forced every compliant build environment below the first fixed release. Suppressing or waiving the advisory was rejected.",
+    "scope": "Narrow build-backend security and compatibility correction only. Runtime dependency profiles, supported Python, package contents, batch order, feature freeze, and B01's historical Linux-only qualification boundary do not change.",
+    "governance_handling": "The original B01 closure remains immutable historical evidence for its exact Linux x86_64 environment. This amendment governs builds after its change commit and must pass package, audit, documentation, and governance revalidation before the corrected B02 commit is offered for native rerun.",
+    "original_closure": "quality/evidence/B01/closure.json",
+    "b02_diagnostic": "quality/evidence/B02/native-x64-diagnostic-2026-08-12.json"
+  },
+  "superseded_requirement": {
+    "value": "setuptools>=77,<82",
+    "security_result": "affected versions only; native Windows resolution selected 81.0.0",
+    "preservation": "The old value remains visible in historical commits and the B02 failed-diagnostic record, not in the current package authority."
+  },
+  "amended_requirement": {
+    "value": "setuptools>=83,<85",
+    "minimum": {
+      "version": "83.0.0",
+      "reason": "first fix version reported by the native pip-audit evidence for PYSEC-2026-3447 / CVE-2026-59890"
+    },
+    "upper_bound": {
+      "version": "85.0.0",
+      "included": false,
+      "reason": "preserves a narrow reviewed major/minor window; later versions require explicit compatibility review"
+    },
+    "known_compatible_exact_version": "84.0.0 from the existing CPython 3.11 Linux x86_64 dev lock",
+    "runtime_import_check": "No production source imports pkg_resources or setuptools APIs."
+  },
+  "advisory": {
+    "primary_id": "PYSEC-2026-3447",
+    "aliases": [
+      "CVE-2026-59890",
+      "GHSA-h35f-9h28-mq5c",
+      "BIT-setuptools-2026-59890"
+    ],
+    "affected": "setuptools through 82.0.1",
+    "fixed": "83.0.0",
+    "summary": "Unicode-normalization collisions can bypass MANIFEST.in exclusions while building source distributions on normalization-preserving macOS filesystems.",
+    "disposition": "remediated_in_source_constraint_without_waiver"
+  },
+  "authoritative_sources": [
+    {
+      "url": "https://github.com/pypa/setuptools/security/advisories/GHSA-h35f-9h28-mq5c",
+      "supports": "Vendor advisory, affected range, impact, and technical details."
+    },
+    {
+      "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-59890",
+      "supports": "CVE identity and external vulnerability record."
+    },
+    {
+      "url": "https://github.com/pypa/setuptools/releases/tag/v83.0.0",
+      "supports": "Upstream 83.0.0 release identity."
+    }
+  ],
+  "required_revalidation": [
+    "install the exact Linux dev lock containing setuptools 84.0.0 and install OMNI locally with no build isolation or dependency resolution",
+    "run pip check and a current exact-lock pip-audit",
+    "build wheel and sdist with no isolated dependency resolution",
+    "run install and package contract tests with exact-lock sdist bootstrapping",
+    "run package-content and Twine metadata checks",
+    "run configuration, static, documentation-link, and governed-authority checks",
+    "rerun both native Windows B02 lanes against the same new exact commit"
+  ],
+  "nonclaims": [
+    "The failed f8908503 native x64 lane is not converted into a pass.",
+    "Linux build compatibility does not qualify either native Windows lane.",
+    "No Arm64 or physical DGX behavior is established by this amendment.",
+    "B02 remains open and B03 remains locked."
+  ],
+  "validation": {
+    "status": "linux_developer_revalidation_passed_native_windows_pending",
+    "validated_on": "2026-08-12",
+    "scope": "The corrected source, exact Linux developer environment, artifacts, security reports, frontend, configuration, documentation, and governance passed local revalidation. This remains non-native evidence; both native Windows B02 lanes must rerun against one new exact commit before the amendment or B02 can receive a fully qualified outcome.",
+    "results": [
+      {
+        "gate": "declared build-backend boundary",
+        "status": "pass",
+        "result": "setuptools>=83,<85; regression tests accept 83.0.0 and 84.0.0 and reject 82.0.1 and 85.0.0"
+      },
+      {
+        "gate": "exact Linux developer installation",
+        "status": "pass",
+        "result": "exact hashed dev lock installed setuptools 84.0.0; local OMNI 3.2.0 installation used --no-build-isolation --no-deps; pip check passed"
+      },
+      {
+        "gate": "Python vulnerability and license inventory",
+        "status": "pass",
+        "result": "current pip-audit inspected 88 of 91 exact-lock distributions, conditionally omitting packaging, pip, and setuptools, and reported zero findings; license inventory covered all 91 with no missing, unknown, or version-mismatched distributions and retained two metadata review entries"
+      },
+      {
+        "gate": "wheel and source distribution",
+        "status": "pass",
+        "result": "one wheel and one sdist built with --no-isolation; 195 required runtime files validated; strict Twine metadata passed",
+        "artifacts": {
+          "omni_agi-3.2.0-py3-none-any.whl": "sha256:1286206f76dc42eee1b59af7771a3e704e4ea468a971a097765d09bf19bf7cd0",
+          "omni_agi-3.2.0.tar.gz": "sha256:759daa11c94e1df46c90d50022942a2b839d3868f0bbea1b405b436b36412e5b"
+        }
+      },
+      {
+        "gate": "install and package contracts",
+        "status": "pass",
+        "result": "71 passed: 56 install/lifecycle/startup contracts plus 15 package/metadata/outside-checkout artifact contracts; exact-lock bootstrapping and no-isolation sdist installation were enabled"
+      },
+      {
+        "gate": "frontend",
+        "status": "pass",
+        "result": "npm 12.0.2 clean installation audited 428 packages with zero vulnerabilities; install-script and dependency-tree reports, 13 proxy tests, lint, and production build passed"
+      },
+      {
+        "gate": "configuration, static, documentation, and governance",
+        "status": "pass",
+        "result": "configuration contract, fatal and changed-file Ruff, compileall, JSON/TOML and shell syntax, local Markdown links, governed generation/check, adversarial governance self-test, and git diff check passed"
+      },
+      {
+        "gate": "native Windows B02 matrix",
+        "status": "pending",
+        "result": "no corrected-commit native result exists yet; Windows 11 x64 and native Windows 11 Arm64 must both pass on the same exact commit"
+      }
+    ]
+  }
+}

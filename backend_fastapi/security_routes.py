@@ -7,14 +7,7 @@ Exposes the local camera guard + lockdown so the web UI / desktop can drive it:
 """
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-from pathlib import Path
-import sys
 from typing import Any, Dict, Optional
-
-THIS_FILE = Path(__file__).resolve()
-REPO_ROOT = THIS_FILE.parent.parent
-if str(REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(REPO_ROOT))
 
 from omni_v2.security.face_auth import FaceAuth
 from omni_v2.security.guard_monitor import GuardMonitor

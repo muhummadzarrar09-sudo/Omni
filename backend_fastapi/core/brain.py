@@ -1,17 +1,11 @@
-"""
-OMNI Brain Wrapper for FastAPI - Portable, no hardcoded D:/Omni
-Imports existing omni_v2 brain (planner, executor, etc.) and exposes simple API
-Works wherever judges clone: Path(__file__).resolve()...
-"""
-from pathlib import Path
-import sys
+"""Adapter between the FastAPI surface and OMNI implementation packages."""
 
-# Ensure repo root is in sys.path for omni_v2 imports
-# backend_fastapi/core/brain.py -> parent.parent.parent = repo root (D:\Omni or C:\Users\Judge\...)
+from pathlib import Path
+
+# Used only for diagnostics. Normal package imports must work without injecting
+# checkout-relative directories into ``sys.path``.
 THIS_FILE = Path(__file__).resolve()
 REPO_ROOT = THIS_FILE.parent.parent.parent
-if str(REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(REPO_ROOT))
 
 try:
     from loguru import logger
@@ -37,7 +31,7 @@ try:
         logger.debug(f"LLM router import failed: {_e}")
         LLMRouter = None
     BRAIN_AVAILABLE = True
-    logger.info(f"✅ Brain import OK - REPO_ROOT: {REPO_ROOT} (portable, not hardcoded D:/Omni)")
+    logger.info(f"Brain implementation imports available; package root: {REPO_ROOT}")
 except Exception as e:
     BRAIN_AVAILABLE = False
     logger.warning(f"Brain import failed: {e} - will run in mock mode")
@@ -119,7 +113,7 @@ class OMNIBrain:
                     self.llm_router = None
             
             self.ready = True
-            logger.info(f"✅ OMNIBrain ready - portable REPO_ROOT: {REPO_ROOT}")
+            logger.info(f"OMNIBrain initialized from package root: {REPO_ROOT}")
             
         except Exception as e:
             logger.error(f"OMNIBrain init failed: {e}")
@@ -201,8 +195,9 @@ class OMNIBrain:
                 )
             else:
                 content = "# Built by OMNI\nprint('Hello from OMNI')\n"
-            # Portable output dir: use the project's data/output (no D:/Omni hardcode)
-            out_dir = REPO_ROOT / "data" / "output"
+            # Runtime output must remain writable when code is installed read-only.
+            from omni_v2.core.paths import get_data_dir
+            out_dir = get_data_dir() / "output"
             out_dir.mkdir(parents=True, exist_ok=True)
             path = str(out_dir / filename)
             from omni_v2.core.command_registry import ActionStep

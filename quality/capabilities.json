@@ -1,0 +1,3638 @@
+{
+  "schema_version": 1,
+  "verified_on": "2026-08-12",
+  "authority": "This file is the source of truth for OMNI capability lifecycle and scope. Generated documentation must not override it.",
+  "lifecycle_definitions": {
+    "stable": "Release-qualified for the declared platform with real effects, failure states, tests, documentation, and dogfood evidence.",
+    "beta": "A real implementation exists and has meaningful tests, but one or more release gates remain open.",
+    "experimental": "Incomplete, shallow, unqualified, or likely to change; off by default in the target product.",
+    "demo": "Canned or simulated behavior intended only for an explicitly labeled demo mode.",
+    "unavailable": "Concept or interface exists but no usable implementation is present.",
+    "removed": "Legacy implementation retained temporarily for migration or deletion and not part of product scope."
+  },
+  "implementation_definitions": {
+    "real": "Performs the represented effect through a concrete local or configured external backend.",
+    "partial": "Some concrete behavior exists, but important actions, verification, or integrations are incomplete.",
+    "demo": "Primarily canned or simulated output.",
+    "placeholder": "Creates metadata or presentation state without performing the headline capability.",
+    "stub": "Interface exists but is intentionally disabled or not implemented.",
+    "infrastructure": "Internal support code rather than a direct user capability."
+  },
+  "target_product": {
+    "name": "OMNI Personal Core",
+    "release_state": "pre-alpha recovery",
+    "primary_platform": {
+      "name": "NVIDIA DGX Station for Windows (Windows 11 Arm64)",
+      "status": "target_not_qualified",
+      "reason": "The intended owner machine uses an Arm64 NVIDIA Grace Neoverse V2 CPU. Native Windows 11 Arm64 qualification is required; physical DGX GPU, model, performance, and sustained-use gates remain assigned to B11, B13, B15, and B16."
+    },
+    "secondary_platforms": [
+      {
+        "name": "Windows 11 x64",
+        "status": "secondary_qualification_host_not_product_target",
+        "reason": "A conventional x64 laptop may qualify hardware-independent Windows behavior, but cannot substitute for native Arm64 evidence or physical DGX hardware gates."
+      },
+      {
+        "name": "Linux",
+        "status": "development_only_unqualified",
+        "reason": "Compilation and most unit tests run on Linux, but desktop, audio, installation, and E2E product behavior are not qualified."
+      },
+      {
+        "name": "macOS",
+        "status": "unsupported_unverified",
+        "reason": "No current end-to-end installation, hardware, automation, or release evidence exists."
+      }
+    ],
+    "promise": "A local-first personal assistant for one owner that safely handles a deliberately limited set of daily desktop, file, browser, memory, scheduling, and voice workflows, and reports unavailable or failed work truthfully.",
+    "pre_10_non_goals": [
+      "General artificial intelligence or human-level general reasoning",
+      "One hundred independent production-grade tools",
+      "Unsupervised high-risk or irreversible autonomy",
+      "Production support for every desktop operating system",
+      "Cloud sync, marketplace, or mobile parity before their security and reliability gates pass",
+      "Commercial traction or business defensibility",
+      "A guarantee that no network traffic occurs unless enforceable offline mode is enabled and verified"
+    ]
+  },
+  "core_workflows": [
+    {
+      "id": "W01",
+      "name": "Real daily briefing",
+      "outcome": "Summarize the owner's real local calendar, tasks, reminders, and explicitly configured sources with provenance and honest unavailable states.",
+      "current_status": "not_qualified",
+      "qualification_batch": "B10"
+    },
+    {
+      "id": "W02",
+      "name": "Reminder lifecycle",
+      "outcome": "Create, inspect, update, trigger, and cancel a reminder with persistence across restart.",
+      "current_status": "not_qualified",
+      "qualification_batch": "B09"
+    },
+    {
+      "id": "W03",
+      "name": "Local document retrieval",
+      "outcome": "Find an approved local document, extract relevant content, summarize it with source paths, and respect access boundaries.",
+      "current_status": "not_qualified",
+      "qualification_batch": "B09"
+    },
+    {
+      "id": "W04",
+      "name": "Safe file creation and editing",
+      "outcome": "Preview, create or modify a file in an approved workspace, verify contents, and offer rollback where applicable.",
+      "current_status": "not_qualified",
+      "qualification_batch": "B09"
+    },
+    {
+      "id": "W05",
+      "name": "Isolated browser task",
+      "outcome": "Open the isolated browser profile, navigate or search, verify the resulting page state, and recover from browser absence.",
+      "current_status": "not_qualified",
+      "qualification_batch": "B09"
+    },
+    {
+      "id": "W06",
+      "name": "Application and window control",
+      "outcome": "Launch, focus, minimize, maximize, and close approved applications on the primary platform with visible verification.",
+      "current_status": "not_qualified",
+      "qualification_batch": "B09"
+    },
+    {
+      "id": "W07",
+      "name": "Focus session",
+      "outcome": "Start a timed focus session, apply configured notification quieting, report status, and restore state at completion or cancellation.",
+      "current_status": "not_qualified",
+      "qualification_batch": "B09"
+    },
+    {
+      "id": "W08",
+      "name": "Personal session recall",
+      "outcome": "Answer what the owner did yesterday from inspectable stored sessions, with timestamps, provenance, uncertainty, and delete controls.",
+      "current_status": "not_qualified",
+      "qualification_batch": "B10"
+    },
+    {
+      "id": "W09",
+      "name": "Local voice task",
+      "outcome": "Accept a push-to-talk command, execute one safe core workflow, and speak the verified result through a local TTS backend.",
+      "current_status": "not_qualified",
+      "qualification_batch": "B11"
+    },
+    {
+      "id": "W10",
+      "name": "Truthful degraded recovery",
+      "outcome": "When the model, browser, microphone, integration, or optional dependency is absent, report the exact unavailable state and provide a tested recovery path without mock success.",
+      "current_status": "not_qualified",
+      "qualification_batch": "B04"
+    }
+  ],
+  "capabilities": [
+    {
+      "id": "runtime.application",
+      "name": "Application runtime, configuration, events, and paths",
+      "area": "core",
+      "lifecycle": "beta",
+      "implementation": "infrastructure",
+      "target_scope": "personal_core",
+      "summary": "Core application composition, workspace paths, configuration, event bus, intent mapping, guardrails, and utility setup exist.",
+      "known_gaps": [
+        "Configuration is fragmented across modules and environment variables",
+        "Installed artifact import, CLI, resource, and backend-health smoke passes, but whole-product startup is not qualified",
+        "Several broad fallbacks obscure component availability"
+      ],
+      "paths": [
+        "omni_v2/app.py",
+        "omni_v2/core/*.py",
+        "omni_v2/utils/*.py",
+        "omni_v2/__init__.py"
+      ],
+      "owner": "personal_repository_owner",
+      "requirements": {
+        "audit_status": "production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified",
+        "packages": [],
+        "models": [],
+        "accounts_or_keys": [],
+        "hardware": []
+      },
+      "tests": {
+        "unit_or_contract": [
+          "omni_v2/tests/test_brain_polish.py",
+          "omni_v2/tests/test_router_v2.py"
+        ],
+        "integration": [],
+        "end_to_end": [],
+        "hardware": [],
+        "qualification": "not_qualified",
+        "note": "Mapped files are presence only; skips, mocks, and broad baseline failures prevent a release claim.",
+        "required_types_for_stable": [
+          "unit_or_contract",
+          "integration",
+          "end_to_end"
+        ]
+      },
+      "verified_platforms": [],
+      "platform_note": "No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.",
+      "data_access": [
+        "configuration",
+        "process state",
+        "events",
+        "logs"
+      ],
+      "network": {
+        "mode": "mixed",
+        "destinations": [
+          "destinations selected by composed adapters"
+        ],
+        "disclosure": "Inventory only: destination enforcement, consent, offline no-egress, and exact privacy behavior remain unqualified until B08/B11.",
+        "privacy_qualification": "not_qualified"
+      },
+      "entry_points": [
+        "omni_v2/app.py"
+      ],
+      "interface_audit": {
+        "scope": "not_applicable",
+        "qualification": "not_applicable",
+        "evidence": []
+      }
+    },
+    {
+      "id": "runtime.cli_launchers",
+      "name": "CLI and launchers",
+      "area": "core",
+      "lifecycle": "experimental",
+      "implementation": "partial",
+      "target_scope": "personal_core",
+      "summary": "Package discovery, artifacts, profile locks, and selected installed CLI paths are repaired; one-click product startup remains unqualified.",
+      "known_gaps": [
+        "Windows and Unix launchers have not passed target-platform install/start/stop/restart gates",
+        "CLI paths that depend on checkout-only frontend or root scripts are not installed-artifact qualified",
+        "Centralized configuration and process lifecycle remain B02 work"
+      ],
+      "paths": [
+        "omni/*.py",
+        "omni.py",
+        "omni_daemon.py",
+        "omni_desktop.py",
+        "start.sh",
+        "start.bat",
+        "install.bat",
+        "scripts/install.sh",
+        "scripts/install.ps1"
+      ],
+      "owner": "personal_repository_owner",
+      "requirements": {
+        "audit_status": "production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified",
+        "packages": [],
+        "models": [],
+        "accounts_or_keys": [],
+        "hardware": []
+      },
+      "tests": {
+        "unit_or_contract": [],
+        "integration": [],
+        "end_to_end": [],
+        "hardware": [],
+        "qualification": "not_qualified",
+        "note": "Mapped files are presence only; skips, mocks, and broad baseline failures prevent a release claim.",
+        "required_types_for_stable": [
+          "unit_or_contract",
+          "integration",
+          "end_to_end"
+        ]
+      },
+      "verified_platforms": [],
+      "platform_note": "No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.",
+      "data_access": [
+        "configuration",
+        "process state",
+        "events",
+        "logs"
+      ],
+      "network": {
+        "mode": "optional",
+        "destinations": [
+          "package indexes",
+          "model download hosts",
+          "configured service endpoints"
+        ],
+        "disclosure": "Inventory only: destination enforcement, consent, offline no-egress, and exact privacy behavior remain unqualified until B08/B11.",
+        "privacy_qualification": "not_qualified"
+      },
+      "entry_points": [
+        "omni/*.py"
+      ],
+      "interface_audit": {
+        "scope": "not_applicable",
+        "qualification": "not_applicable",
+        "evidence": []
+      }
+    },
+    {
+      "id": "brain.local_llm",
+      "name": "Local LLM loading and routing",
+      "area": "brain",
+      "lifecycle": "beta",
+      "implementation": "partial",
+      "target_scope": "personal_core",
+      "summary": "Local GGUF loading, model download, routing, fallback, and compaction code exists.",
+      "known_gaps": [
+        "Primary model is not qualified on target hardware",
+        "Model download and dependency installation are not release-safe",
+        "Fallback behavior and tool-call parsing require stricter contracts"
+      ],
+      "paths": [
+        "omni_v2/llm/*.py"
+      ],
+      "owner": "personal_repository_owner",
+      "requirements": {
+        "audit_status": "production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified",
+        "packages": [
+          "llama-cpp-python",
+          "huggingface-hub"
+        ],
+        "models": [
+          "configured GGUF language model"
+        ],
+        "accounts_or_keys": [],
+        "hardware": []
+      },
+      "tests": {
+        "unit_or_contract": [
+          "omni_v2/tests/test_brain_polish.py",
+          "omni_v2/tests/test_compaction.py",
+          "omni_v2/tests/test_model_tiering.py",
+          "omni_v2/tests/test_router_v2.py"
+        ],
+        "integration": [],
+        "end_to_end": [],
+        "hardware": [],
+        "qualification": "not_qualified",
+        "note": "Mapped files are presence only; skips, mocks, and broad baseline failures prevent a release claim.",
+        "required_types_for_stable": [
+          "unit_or_contract",
+          "integration",
+          "end_to_end"
+        ]
+      },
+      "verified_platforms": [],
+      "platform_note": "No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.",
+      "data_access": [
+        "owner requests",
+        "prompts",
+        "plans",
+        "model responses",
+        "execution history"
+      ],
+      "network": {
+        "mode": "optional",
+        "destinations": [
+          "model download host when explicitly requested"
+        ],
+        "disclosure": "Inventory only: destination enforcement, consent, offline no-egress, and exact privacy behavior remain unqualified until B08/B11.",
+        "privacy_qualification": "not_qualified"
+      },
+      "entry_points": [
+        "omni_v2/llm/*.py"
+      ],
+      "interface_audit": {
+        "scope": "not_applicable",
+        "qualification": "not_applicable",
+        "evidence": []
+      }
+    },
+    {
+      "id": "brain.agent_execution",
+      "name": "Planning, execution, monitoring, and evaluation",
+      "area": "brain",
+      "lifecycle": "beta",
+      "implementation": "partial",
+      "target_scope": "personal_core",
+      "summary": "Planner, executor, monitor, evaluator, memory-agent, and query-engine layers exist.",
+      "known_gaps": [
+        "Policy, execution, verification, recovery, and response responsibilities overlap",
+        "Some verification methods return true without observing effects",
+        "Mock-success and generic routing remain reachable"
+      ],
+      "paths": [
+        "omni_v2/agents/planner.py",
+        "omni_v2/agents/executor.py",
+        "omni_v2/agents/monitor.py",
+        "omni_v2/agents/evaluator.py",
+        "omni_v2/agents/memory.py",
+        "omni_v2/engine/*.py"
+      ],
+      "owner": "personal_repository_owner",
+      "requirements": {
+        "audit_status": "production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified",
+        "packages": [],
+        "models": [],
+        "accounts_or_keys": [],
+        "hardware": []
+      },
+      "tests": {
+        "unit_or_contract": [
+          "omni_v2/tests/test_brain_polish.py",
+          "omni_v2/tests/test_query_engine.py",
+          "omni_v2/tests/test_hermes_refinement.py"
+        ],
+        "integration": [],
+        "end_to_end": [],
+        "hardware": [],
+        "qualification": "not_qualified",
+        "note": "Mapped files are presence only; skips, mocks, and broad baseline failures prevent a release claim.",
+        "required_types_for_stable": [
+          "unit_or_contract",
+          "integration",
+          "end_to_end"
+        ]
+      },
+      "verified_platforms": [],
+      "platform_note": "No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.",
+      "data_access": [
+        "owner requests",
+        "prompts",
+        "plans",
+        "model responses",
+        "execution history"
+      ],
+      "network": {
+        "mode": "mixed",
+        "destinations": [
+          "destinations selected by invoked tools"
+        ],
+        "disclosure": "Inventory only: destination enforcement, consent, offline no-egress, and exact privacy behavior remain unqualified until B08/B11.",
+        "privacy_qualification": "not_qualified"
+      },
+      "entry_points": [
+        "omni_v2/agents/planner.py"
+      ],
+      "interface_audit": {
+        "scope": "not_applicable",
+        "qualification": "not_applicable",
+        "evidence": []
+      }
+    },
+    {
+      "id": "brain.identity_personality",
+      "name": "Identity, personality, mood, and opinions",
+      "area": "brain",
+      "lifecycle": "beta",
+      "implementation": "real",
+      "target_scope": "personal_core",
+      "summary": "Persistent identity/personality models and deterministic opinion/mood behaviors exist with unit tests.",
+      "known_gaps": [
+        "Not qualified through the complete UI/backend flow",
+        "Personality must never hide uncertainty, denial, or failure",
+        "Personal-data consent and retention need final policy"
+      ],
+      "paths": [
+        "omni_v2/brain/identity.py",
+        "omni_v2/agents/personality.py",
+        "omni_v2/agents/opinion.py"
+      ],
+      "owner": "personal_repository_owner",
+      "requirements": {
+        "audit_status": "production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified",
+        "packages": [],
+        "models": [],
+        "accounts_or_keys": [],
+        "hardware": []
+      },
+      "tests": {
+        "unit_or_contract": [
+          "omni_v2/tests/test_identity.py",
+          "omni_v2/tests/test_personality.py",
+          "omni_v2/tests/test_opinion.py"
+        ],
+        "integration": [],
+        "end_to_end": [],
+        "hardware": [],
+        "qualification": "not_qualified",
+        "note": "Mapped files are presence only; skips, mocks, and broad baseline failures prevent a release claim.",
+        "required_types_for_stable": [
+          "unit_or_contract",
+          "integration",
+          "end_to_end"
+        ]
+      },
+      "verified_platforms": [],
+      "platform_note": "No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.",
+      "data_access": [
+        "owner requests",
+        "prompts",
+        "plans",
+        "model responses",
+        "execution history"
+      ],
+      "network": {
+        "mode": "none_expected",
+        "destinations": [],
+        "disclosure": "Inventory only: destination enforcement, consent, offline no-egress, and exact privacy behavior remain unqualified until B08/B11.",
+        "privacy_qualification": "not_qualified"
+      },
+      "entry_points": [
+        "omni_v2/brain/identity.py"
+      ],
+      "interface_audit": {
+        "scope": "not_applicable",
+        "qualification": "not_applicable",
+        "evidence": []
+      }
+    },
+    {
+      "id": "brain.goals",
+      "name": "Persistent goals and step progression",
+      "area": "brain",
+      "lifecycle": "experimental",
+      "implementation": "partial",
+      "target_scope": "post_10_candidate",
+      "summary": "Goal storage, progression, failure, follow-up, abandonment, and delegation interfaces exist.",
+      "known_gaps": [
+        "Autonomous goal execution is not qualified",
+        "External side effects and consent boundaries are incomplete",
+        "No daily-use evidence"
+      ],
+      "paths": [
+        "omni_v2/brain/goals.py"
+      ],
+      "owner": "personal_repository_owner",
+      "requirements": {
+        "audit_status": "production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified",
+        "packages": [],
+        "models": [],
+        "accounts_or_keys": [],
+        "hardware": []
+      },
+      "tests": {
+        "unit_or_contract": [
+          "omni_v2/tests/test_goals.py",
+          "omni_v2/tests/test_post_goal_flow.py"
+        ],
+        "integration": [],
+        "end_to_end": [],
+        "hardware": [],
+        "qualification": "not_qualified",
+        "note": "Mapped files are presence only; skips, mocks, and broad baseline failures prevent a release claim.",
+        "required_types_for_stable": [
+          "unit_or_contract",
+          "integration",
+          "end_to_end"
+        ]
+      },
+      "verified_platforms": [],
+      "platform_note": "No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.",
+      "data_access": [
+        "owner requests",
+        "prompts",
+        "plans",
+        "model responses",
+        "execution history"
+      ],
+      "network": {
+        "mode": "none_expected",
+        "destinations": [],
+        "disclosure": "Inventory only: destination enforcement, consent, offline no-egress, and exact privacy behavior remain unqualified until B08/B11.",
+        "privacy_qualification": "not_qualified"
+      },
+      "entry_points": [
+        "omni_v2/brain/goals.py"
+      ],
+      "interface_audit": {
+        "scope": "not_applicable",
+        "qualification": "not_applicable",
+        "evidence": []
+      }
+    },
+    {
+      "id": "brain.reflection_metacognition",
+      "name": "Reflection and metacognition",
+      "area": "brain",
+      "lifecycle": "experimental",
+      "implementation": "partial",
+      "target_scope": "post_10_candidate",
+      "summary": "Episode reflection, weakness-pattern tracking, and rule proposal/application code exists.",
+      "known_gaps": [
+        "Quality benefit is not evaluated",
+        "Self-modification governance and rollback require stronger controls",
+        "Descriptions overstate autonomous improvement"
+      ],
+      "paths": [
+        "omni_v2/brain/reflect.py",
+        "omni_v2/brain/metacog.py"
+      ],
+      "owner": "personal_repository_owner",
+      "requirements": {
+        "audit_status": "production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified",
+        "packages": [],
+        "models": [],
+        "accounts_or_keys": [],
+        "hardware": []
+      },
+      "tests": {
+        "unit_or_contract": [
+          "omni_v2/tests/test_reflect.py",
+          "omni_v2/tests/test_metacog.py"
+        ],
+        "integration": [],
+        "end_to_end": [],
+        "hardware": [],
+        "qualification": "not_qualified",
+        "note": "Mapped files are presence only; skips, mocks, and broad baseline failures prevent a release claim.",
+        "required_types_for_stable": [
+          "unit_or_contract",
+          "integration",
+          "end_to_end"
+        ]
+      },
+      "verified_platforms": [],
+      "platform_note": "No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.",
+      "data_access": [
+        "owner requests",
+        "prompts",
+        "plans",
+        "model responses",
+        "execution history"
+      ],
+      "network": {
+        "mode": "none_expected",
+        "destinations": [],
+        "disclosure": "Inventory only: destination enforcement, consent, offline no-egress, and exact privacy behavior remain unqualified until B08/B11.",
+        "privacy_qualification": "not_qualified"
+      },
+      "entry_points": [
+        "omni_v2/brain/reflect.py"
+      ],
+      "interface_audit": {
+        "scope": "not_applicable",
+        "qualification": "not_applicable",
+        "evidence": []
+      }
+    },
+    {
+      "id": "brain.subagents_harness",
+      "name": "Subagents, continual harness, and meta-harness",
+      "area": "brain",
+      "lifecycle": "experimental",
+      "implementation": "partial",
+      "target_scope": "post_10_candidate",
+      "summary": "Delegation, harness artifacts, verification loops, rollback, and meta-harness concepts are implemented to varying depth.",
+      "known_gaps": [
+        "No production autonomy qualification",
+        "Generated changes and verification boundaries need isolation",
+        "Benefits are demonstrated mostly through internal tests"
+      ],
+      "paths": [
+        "omni_v2/agents/subagents.py",
+        "omni_v2/harness/*.py",
+        "omni_v2/meta/*.py"
+      ],
+      "owner": "personal_repository_owner",
+      "requirements": {
+        "audit_status": "production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified",
+        "packages": [],
+        "models": [],
+        "accounts_or_keys": [],
+        "hardware": []
+      },
+      "tests": {
+        "unit_or_contract": [
+          "omni_v2/tests/test_subagents.py",
+          "omni_v2/tests/test_harness.py",
+          "omni_v2/tests/test_meta_harness.py"
+        ],
+        "integration": [],
+        "end_to_end": [],
+        "hardware": [],
+        "qualification": "not_qualified",
+        "note": "Mapped files are presence only; skips, mocks, and broad baseline failures prevent a release claim.",
+        "required_types_for_stable": [
+          "unit_or_contract",
+          "integration",
+          "end_to_end"
+        ]
+      },
+      "verified_platforms": [],
+      "platform_note": "No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.",
+      "data_access": [
+        "owner requests",
+        "prompts",
+        "plans",
+        "model responses",
+        "execution history"
+      ],
+      "network": {
+        "mode": "mixed",
+        "destinations": [
+          "destinations selected by delegated tools"
+        ],
+        "disclosure": "Inventory only: destination enforcement, consent, offline no-egress, and exact privacy behavior remain unqualified until B08/B11.",
+        "privacy_qualification": "not_qualified"
+      },
+      "entry_points": [
+        "omni_v2/agents/subagents.py"
+      ],
+      "interface_audit": {
+        "scope": "not_applicable",
+        "qualification": "not_applicable",
+        "evidence": []
+      }
+    },
+    {
+      "id": "memory.profile_sessions",
+      "name": "User profile and session memory",
+      "area": "memory",
+      "lifecycle": "beta",
+      "implementation": "real",
+      "target_scope": "personal_core",
+      "summary": "Profile fields, session records, daily digests, search, and persistence exist with unit tests.",
+      "known_gaps": [
+        "Cross-process integrity is not fully qualified",
+        "Sensitive inference consent and provenance need strengthening",
+        "Backup, migration, retention, and complete UI controls remain open"
+      ],
+      "paths": [
+        "omni_v2/agents/user_profile.py",
+        "omni_v2/memory/session_memory.py"
+      ],
+      "owner": "personal_repository_owner",
+      "requirements": {
+        "audit_status": "production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified",
+        "packages": [],
+        "models": [],
+        "accounts_or_keys": [],
+        "hardware": []
+      },
+      "tests": {
+        "unit_or_contract": [
+          "omni_v2/tests/test_user_profile.py",
+          "omni_v2/tests/test_session_memory.py"
+        ],
+        "integration": [],
+        "end_to_end": [],
+        "hardware": [],
+        "qualification": "not_qualified",
+        "note": "Mapped files are presence only; skips, mocks, and broad baseline failures prevent a release claim.",
+        "required_types_for_stable": [
+          "unit_or_contract",
+          "integration",
+          "end_to_end"
+        ]
+      },
+      "verified_platforms": [],
+      "platform_note": "No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.",
+      "data_access": [
+        "owner profile",
+        "sessions",
+        "stored documents",
+        "embeddings",
+        "retrieval history"
+      ],
+      "network": {
+        "mode": "none_expected",
+        "destinations": [],
+        "disclosure": "Inventory only: destination enforcement, consent, offline no-egress, and exact privacy behavior remain unqualified until B08/B11.",
+        "privacy_qualification": "not_qualified"
+      },
+      "entry_points": [
+        "omni_v2/agents/user_profile.py"
+      ],
+      "interface_audit": {
+        "scope": "not_applicable",
+        "qualification": "not_applicable",
+        "evidence": []
+      }
+    },
+    {
+      "id": "memory.stores_retrieval",
+      "name": "SQLite, vector, hybrid, and fast retrieval stores",
+      "area": "memory",
+      "lifecycle": "beta",
+      "implementation": "real",
+      "target_scope": "personal_core",
+      "summary": "Several local memory-store implementations and sparse/dense retrieval paths exist.",
+      "known_gaps": [
+        "Overlapping authoritative stores have not been consolidated",
+        "Multi-process lifecycle and corruption recovery are not fully tested",
+        "Retrieval quality lacks an owner-grounded evaluation set"
+      ],
+      "paths": [
+        "omni_v2/memory/fast_af_store.py",
+        "omni_v2/memory/hybrid_memory.py",
+        "omni_v2/memory/sqlite_store.py",
+        "omni_v2/memory/vector_store.py",
+        "omni_v2/memory/__init__.py"
+      ],
+      "owner": "personal_repository_owner",
+      "requirements": {
+        "audit_status": "production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified",
+        "packages": [
+          "numpy",
+          "configured vector/embedding backend"
+        ],
+        "models": [
+          "configured embedding model"
+        ],
+        "accounts_or_keys": [],
+        "hardware": []
+      },
+      "tests": {
+        "unit_or_contract": [
+          "omni_v2/tests/test_fast_af_db.py",
+          "omni_v2/tests/test_hybrid_memory.py",
+          "omni_v2/tests/test_knowledge_base.py",
+          "omni_v2/tests/test_query_engine.py"
+        ],
+        "integration": [],
+        "end_to_end": [],
+        "hardware": [],
+        "qualification": "not_qualified",
+        "note": "Mapped files are presence only; skips, mocks, and broad baseline failures prevent a release claim.",
+        "required_types_for_stable": [
+          "unit_or_contract",
+          "integration",
+          "end_to_end"
+        ]
+      },
+      "verified_platforms": [],
+      "platform_note": "No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.",
+      "data_access": [
+        "owner profile",
+        "sessions",
+        "stored documents",
+        "embeddings",
+        "retrieval history"
+      ],
+      "network": {
+        "mode": "optional",
+        "destinations": [
+          "configured model download or retrieval backend"
+        ],
+        "disclosure": "Inventory only: destination enforcement, consent, offline no-egress, and exact privacy behavior remain unqualified until B08/B11.",
+        "privacy_qualification": "not_qualified"
+      },
+      "entry_points": [
+        "omni_v2/memory/fast_af_store.py"
+      ],
+      "interface_audit": {
+        "scope": "not_applicable",
+        "qualification": "not_applicable",
+        "evidence": []
+      }
+    },
+    {
+      "id": "memory.graph_history_photos",
+      "name": "Knowledge graph, action history, and photo memory",
+      "area": "memory",
+      "lifecycle": "experimental",
+      "implementation": "partial",
+      "target_scope": "post_10_candidate",
+      "summary": "Knowledge-graph generation, an action journal, and photo indexing/search implementations exist.",
+      "known_gaps": [
+        "Not qualified as one coherent personal-memory system",
+        "Provenance, deletion propagation, and access policy need work",
+        "Photo and graph usefulness is not dogfooded"
+      ],
+      "paths": [
+        "omni_v2/graph/*.py",
+        "omni_v2/history/*.py",
+        "omni_v2/photos/*.py"
+      ],
+      "owner": "personal_repository_owner",
+      "requirements": {
+        "audit_status": "production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified",
+        "packages": [],
+        "models": [],
+        "accounts_or_keys": [],
+        "hardware": []
+      },
+      "tests": {
+        "unit_or_contract": [
+          "omni_v2/tests/test_knowledge_graph.py",
+          "omni_v2/tests/test_history_photos_backup.py"
+        ],
+        "integration": [],
+        "end_to_end": [],
+        "hardware": [],
+        "qualification": "not_qualified",
+        "note": "Mapped files are presence only; skips, mocks, and broad baseline failures prevent a release claim.",
+        "required_types_for_stable": [
+          "unit_or_contract",
+          "integration",
+          "end_to_end"
+        ]
+      },
+      "verified_platforms": [],
+      "platform_note": "No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.",
+      "data_access": [
+        "owner profile",
+        "sessions",
+        "stored documents",
+        "embeddings",
+        "retrieval history"
+      ],
+      "network": {
+        "mode": "optional",
+        "destinations": [
+          "configured caption/model backend"
+        ],
+        "disclosure": "Inventory only: destination enforcement, consent, offline no-egress, and exact privacy behavior remain unqualified until B08/B11.",
+        "privacy_qualification": "not_qualified"
+      },
+      "entry_points": [
+        "omni_v2/graph/*.py"
+      ],
+      "interface_audit": {
+        "scope": "not_applicable",
+        "qualification": "not_applicable",
+        "evidence": []
+      }
+    },
+    {
+      "id": "personal.calendar_contacts",
+      "name": "Local calendar and contacts",
+      "area": "personal",
+      "lifecycle": "beta",
+      "implementation": "real",
+      "target_scope": "personal_core",
+      "summary": "ICS parsing and local contact storage exist.",
+      "known_gaps": [
+        "Calendar test is wall-clock brittle",
+        "Timezone and recurring-event behavior need qualification",
+        "This is distinct from the canned CalendarTool integration"
+      ],
+      "paths": [
+        "omni_v2/personal/*.py"
+      ],
+      "owner": "personal_repository_owner",
+      "requirements": {
+        "audit_status": "production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified",
+        "packages": [],
+        "models": [],
+        "accounts_or_keys": [],
+        "hardware": []
+      },
+      "tests": {
+        "unit_or_contract": [
+          "omni_v2/tests/test_personal.py"
+        ],
+        "integration": [],
+        "end_to_end": [],
+        "hardware": [],
+        "qualification": "not_qualified",
+        "note": "Mapped files are presence only; skips, mocks, and broad baseline failures prevent a release claim.",
+        "required_types_for_stable": [
+          "unit_or_contract",
+          "integration",
+          "end_to_end"
+        ]
+      },
+      "verified_platforms": [],
+      "platform_note": "No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.",
+      "data_access": [
+        "owner commands",
+        "calendar",
+        "tasks",
+        "contacts",
+        "preferences",
+        "assistant responses"
+      ],
+      "network": {
+        "mode": "none_expected",
+        "destinations": [],
+        "disclosure": "Inventory only: destination enforcement, consent, offline no-egress, and exact privacy behavior remain unqualified until B08/B11.",
+        "privacy_qualification": "not_qualified"
+      },
+      "entry_points": [
+        "omni_v2/personal/*.py"
+      ],
+      "interface_audit": {
+        "scope": "not_applicable",
+        "qualification": "not_applicable",
+        "evidence": []
+      }
+    },
+    {
+      "id": "personal.briefing",
+      "name": "Morning briefing and wake routine",
+      "area": "personal",
+      "lifecycle": "beta",
+      "implementation": "partial",
+      "target_scope": "personal_core",
+      "summary": "Briefing and wake-routine composition exists over local sources.",
+      "known_gaps": [
+        "Not qualified against real owner data",
+        "Source availability and provenance must be explicit",
+        "External/canned sources must not contaminate real briefings"
+      ],
+      "paths": [
+        "omni_v2/briefing/*.py",
+        "omni_v2/wake/*.py"
+      ],
+      "owner": "personal_repository_owner",
+      "requirements": {
+        "audit_status": "production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified",
+        "packages": [],
+        "models": [],
+        "accounts_or_keys": [],
+        "hardware": []
+      },
+      "tests": {
+        "unit_or_contract": [
+          "omni_v2/tests/test_briefing.py",
+          "omni_v2/tests/test_wake_leaderboard.py"
+        ],
+        "integration": [],
+        "end_to_end": [],
+        "hardware": [],
+        "qualification": "not_qualified",
+        "note": "Mapped files are presence only; skips, mocks, and broad baseline failures prevent a release claim.",
+        "required_types_for_stable": [
+          "unit_or_contract",
+          "integration",
+          "end_to_end"
+        ]
+      },
+      "verified_platforms": [],
+      "platform_note": "No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.",
+      "data_access": [
+        "owner commands",
+        "calendar",
+        "tasks",
+        "contacts",
+        "preferences",
+        "assistant responses"
+      ],
+      "network": {
+        "mode": "mixed",
+        "destinations": [
+          "explicitly configured briefing sources"
+        ],
+        "disclosure": "Inventory only: destination enforcement, consent, offline no-egress, and exact privacy behavior remain unqualified until B08/B11.",
+        "privacy_qualification": "not_qualified"
+      },
+      "entry_points": [
+        "omni_v2/briefing/*.py"
+      ],
+      "interface_audit": {
+        "scope": "not_applicable",
+        "qualification": "not_applicable",
+        "evidence": []
+      }
+    },
+    {
+      "id": "personal.proactive_experience",
+      "name": "Proactive suggestions, onboarding, stats, and demo orchestration",
+      "area": "personal",
+      "lifecycle": "beta",
+      "implementation": "partial",
+      "target_scope": "personal_core",
+      "summary": "Proactive rules, greeting/onboarding state, usage statistics, and explicit demo scenes exist.",
+      "known_gaps": [
+        "Proactive usefulness and annoyance are not measured",
+        "Demo mode is not fully isolated from normal success claims",
+        "Stats and time-saved estimates need truthful definitions"
+      ],
+      "paths": [
+        "omni_v2/agents/proactive.py",
+        "omni_v2/agents/proactive_v2.py",
+        "omni_v2/agents/onboarding.py",
+        "omni_v2/agents/stats.py",
+        "omni_v2/agents/demo_mode.py",
+        "omni_v2/tools/demo_scenarios.py"
+      ],
+      "owner": "personal_repository_owner",
+      "requirements": {
+        "audit_status": "production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified",
+        "packages": [],
+        "models": [],
+        "accounts_or_keys": [],
+        "hardware": []
+      },
+      "tests": {
+        "unit_or_contract": [
+          "omni_v2/tests/test_demo_mode.py",
+          "omni_v2/tests/test_onboarding.py",
+          "omni_v2/tests/test_stats.py"
+        ],
+        "integration": [],
+        "end_to_end": [],
+        "hardware": [],
+        "qualification": "not_qualified",
+        "note": "Mapped files are presence only; skips, mocks, and broad baseline failures prevent a release claim.",
+        "required_types_for_stable": [
+          "unit_or_contract",
+          "integration",
+          "end_to_end"
+        ]
+      },
+      "verified_platforms": [],
+      "platform_note": "No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.",
+      "data_access": [
+        "owner commands",
+        "calendar",
+        "tasks",
+        "contacts",
+        "preferences",
+        "assistant responses"
+      ],
+      "network": {
+        "mode": "none_expected",
+        "destinations": [],
+        "disclosure": "Inventory only: destination enforcement, consent, offline no-egress, and exact privacy behavior remain unqualified until B08/B11.",
+        "privacy_qualification": "not_qualified"
+      },
+      "entry_points": [
+        "omni_v2/agents/proactive.py"
+      ],
+      "interface_audit": {
+        "scope": "not_applicable",
+        "qualification": "not_applicable",
+        "evidence": []
+      }
+    },
+    {
+      "id": "automation.scheduler",
+      "name": "Scheduled and recurring tasks",
+      "area": "automation",
+      "lifecycle": "beta",
+      "implementation": "real",
+      "target_scope": "personal_core",
+      "summary": "One-shot, interval, cron-style, and recurring scheduling implementations exist with persistence and tests.",
+      "known_gaps": [
+        "Restart, clock-change, timezone, and long-duration qualification remain incomplete",
+        "Scheduled effects need the same consent and verification rules as interactive actions"
+      ],
+      "paths": [
+        "omni_v2/agents/scheduler.py",
+        "omni_v2/schedule/*.py"
+      ],
+      "owner": "personal_repository_owner",
+      "requirements": {
+        "audit_status": "production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified",
+        "packages": [],
+        "models": [],
+        "accounts_or_keys": [],
+        "hardware": []
+      },
+      "tests": {
+        "unit_or_contract": [
+          "omni_v2/tests/test_recurring.py"
+        ],
+        "integration": [],
+        "end_to_end": [],
+        "hardware": [],
+        "qualification": "not_qualified",
+        "note": "Mapped files are presence only; skips, mocks, and broad baseline failures prevent a release claim.",
+        "required_types_for_stable": [
+          "unit_or_contract",
+          "integration",
+          "end_to_end"
+        ]
+      },
+      "verified_platforms": [],
+      "platform_note": "No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.",
+      "data_access": [
+        "task definitions",
+        "triggers",
+        "schedules",
+        "execution results"
+      ],
+      "network": {
+        "mode": "none_expected",
+        "destinations": [],
+        "disclosure": "Inventory only: destination enforcement, consent, offline no-egress, and exact privacy behavior remain unqualified until B08/B11.",
+        "privacy_qualification": "not_qualified"
+      },
+      "entry_points": [
+        "omni_v2/agents/scheduler.py"
+      ],
+      "interface_audit": {
+        "scope": "not_applicable",
+        "qualification": "not_applicable",
+        "evidence": []
+      }
+    },
+    {
+      "id": "automation.triggers",
+      "name": "Automation triggers and webhooks",
+      "area": "automation",
+      "lifecycle": "experimental",
+      "implementation": "partial",
+      "target_scope": "post_10_candidate",
+      "summary": "Trigger storage and webhook/time/event execution concepts exist.",
+      "known_gaps": [
+        "Authentication and exposure policy need full qualification",
+        "No stable workflow contract",
+        "Failure compensation and replay behavior are incomplete"
+      ],
+      "paths": [
+        "omni_v2/automation/*.py"
+      ],
+      "owner": "personal_repository_owner",
+      "requirements": {
+        "audit_status": "production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified",
+        "packages": [],
+        "models": [],
+        "accounts_or_keys": [],
+        "hardware": []
+      },
+      "tests": {
+        "unit_or_contract": [
+          "omni_v2/tests/test_automation.py"
+        ],
+        "integration": [],
+        "end_to_end": [],
+        "hardware": [],
+        "qualification": "not_qualified",
+        "note": "Mapped files are presence only; skips, mocks, and broad baseline failures prevent a release claim.",
+        "required_types_for_stable": [
+          "unit_or_contract",
+          "integration",
+          "end_to_end"
+        ]
+      },
+      "verified_platforms": [],
+      "platform_note": "No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.",
+      "data_access": [
+        "task definitions",
+        "triggers",
+        "schedules",
+        "execution results"
+      ],
+      "network": {
+        "mode": "required_for_network_trigger",
+        "destinations": [
+          "configured webhook and trigger destinations"
+        ],
+        "disclosure": "Inventory only: destination enforcement, consent, offline no-egress, and exact privacy behavior remain unqualified until B08/B11.",
+        "privacy_qualification": "not_qualified"
+      },
+      "entry_points": [
+        "omni_v2/automation/*.py"
+      ],
+      "interface_audit": {
+        "scope": "not_applicable",
+        "qualification": "not_applicable",
+        "evidence": []
+      }
+    },
+    {
+      "id": "automation.away_mode",
+      "name": "Away tasks, remote commands, research, reporting, and messaging",
+      "area": "automation",
+      "lifecycle": "experimental",
+      "implementation": "partial",
+      "target_scope": "post_10_candidate",
+      "summary": "Away task queueing, command polling, desktop actions, local knowledge, research, reports, and messaging adapters exist.",
+      "known_gaps": [
+        "Remote high-risk autonomy is not qualified",
+        "External messaging requires robust authentication, consent, and account setup",
+        "Research depends on network access and source-quality controls"
+      ],
+      "paths": [
+        "omni_v2/away/*.py"
+      ],
+      "owner": "personal_repository_owner",
+      "requirements": {
+        "audit_status": "production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified",
+        "packages": [],
+        "models": [],
+        "accounts_or_keys": [],
+        "hardware": []
+      },
+      "tests": {
+        "unit_or_contract": [
+          "omni_v2/tests/test_away_agent.py",
+          "omni_v2/tests/test_command_channel.py",
+          "omni_v2/tests/test_messenger.py",
+          "omni_v2/tests/test_research.py"
+        ],
+        "integration": [],
+        "end_to_end": [],
+        "hardware": [],
+        "qualification": "not_qualified",
+        "note": "Mapped files are presence only; skips, mocks, and broad baseline failures prevent a release claim.",
+        "required_types_for_stable": [
+          "unit_or_contract",
+          "integration",
+          "end_to_end"
+        ]
+      },
+      "verified_platforms": [],
+      "platform_note": "No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.",
+      "data_access": [
+        "task definitions",
+        "triggers",
+        "schedules",
+        "execution results"
+      ],
+      "network": {
+        "mode": "required_for_remote_paths",
+        "destinations": [
+          "user-configured research URLs",
+          "messaging provider",
+          "remote command endpoint"
+        ],
+        "disclosure": "Inventory only: destination enforcement, consent, offline no-egress, and exact privacy behavior remain unqualified until B08/B11.",
+        "privacy_qualification": "not_qualified"
+      },
+      "entry_points": [
+        "omni_v2/away/*.py"
+      ],
+      "interface_audit": {
+        "scope": "not_applicable",
+        "qualification": "not_applicable",
+        "evidence": []
+      }
+    },
+    {
+      "id": "automation.geofence",
+      "name": "Geofence rules and location history",
+      "area": "automation",
+      "lifecycle": "experimental",
+      "implementation": "real",
+      "target_scope": "post_10_candidate",
+      "summary": "Place/rule models, Haversine checks, location history, events, and API integration exist with substantial tests.",
+      "known_gaps": [
+        "Location privacy and retention require final policy",
+        "Mobile-origin authenticity and spoofing controls need qualification",
+        "No daily-use evidence"
+      ],
+      "paths": [
+        "omni_v2/agents/geofence.py"
+      ],
+      "owner": "personal_repository_owner",
+      "requirements": {
+        "audit_status": "production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified",
+        "packages": [],
+        "models": [],
+        "accounts_or_keys": [],
+        "hardware": []
+      },
+      "tests": {
+        "unit_or_contract": [
+          "omni_v2/tests/test_geofence.py"
+        ],
+        "integration": [],
+        "end_to_end": [],
+        "hardware": [],
+        "qualification": "not_qualified",
+        "note": "Mapped files are presence only; skips, mocks, and broad baseline failures prevent a release claim.",
+        "required_types_for_stable": [
+          "unit_or_contract",
+          "integration",
+          "end_to_end"
+        ]
+      },
+      "verified_platforms": [],
+      "platform_note": "No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.",
+      "data_access": [
+        "task definitions",
+        "triggers",
+        "schedules",
+        "execution results"
+      ],
+      "network": {
+        "mode": "lan_or_remote_optional",
+        "destinations": [
+          "paired mobile/backend endpoint"
+        ],
+        "disclosure": "Inventory only: destination enforcement, consent, offline no-egress, and exact privacy behavior remain unqualified until B08/B11.",
+        "privacy_qualification": "not_qualified"
+      },
+      "entry_points": [
+        "omni_v2/agents/geofence.py"
+      ],
+      "interface_audit": {
+        "scope": "not_applicable",
+        "qualification": "not_applicable",
+        "evidence": []
+      }
+    },
+    {
+      "id": "automation.screen_context",
+      "name": "Screen watcher and activity context",
+      "area": "automation",
+      "lifecycle": "experimental",
+      "implementation": "partial",
+      "target_scope": "post_10_candidate",
+      "summary": "Periodic screen/window capture classification and activity context APIs exist.",
+      "known_gaps": [
+        "Privacy/consent UX is not release-qualified",
+        "Classification may be heuristic or backend-dependent",
+        "No retention and redaction qualification for captured context"
+      ],
+      "paths": [
+        "omni_v2/agents/screen_watcher.py"
+      ],
+      "owner": "personal_repository_owner",
+      "requirements": {
+        "audit_status": "production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified",
+        "packages": [],
+        "models": [],
+        "accounts_or_keys": [],
+        "hardware": []
+      },
+      "tests": {
+        "unit_or_contract": [
+          "omni_v2/tests/test_screen_watcher.py"
+        ],
+        "integration": [],
+        "end_to_end": [],
+        "hardware": [],
+        "qualification": "not_qualified",
+        "note": "Mapped files are presence only; skips, mocks, and broad baseline failures prevent a release claim.",
+        "required_types_for_stable": [
+          "unit_or_contract",
+          "integration",
+          "end_to_end"
+        ]
+      },
+      "verified_platforms": [],
+      "platform_note": "No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.",
+      "data_access": [
+        "task definitions",
+        "triggers",
+        "schedules",
+        "execution results"
+      ],
+      "network": {
+        "mode": "none_expected",
+        "destinations": [],
+        "disclosure": "Inventory only: destination enforcement, consent, offline no-egress, and exact privacy behavior remain unqualified until B08/B11.",
+        "privacy_qualification": "not_qualified"
+      },
+      "entry_points": [
+        "omni_v2/agents/screen_watcher.py"
+      ],
+      "interface_audit": {
+        "scope": "not_applicable",
+        "qualification": "not_applicable",
+        "evidence": []
+      }
+    },
+    {
+      "id": "system.guardian_daemon",
+      "name": "Guardian monitoring, auto-start, and daemon control",
+      "area": "system",
+      "lifecycle": "experimental",
+      "implementation": "partial",
+      "target_scope": "post_10_candidate",
+      "summary": "Health/process/file checks, autostart backends, and daemon lifecycle controls exist.",
+      "known_gaps": [
+        "Cross-platform behavior is uneven",
+        "Background lifecycle/resource cleanup requires target-machine qualification",
+        "Monitoring should not overstate protection"
+      ],
+      "paths": [
+        "omni_v2/guardian/*.py",
+        "omni_v2/daemon/*.py"
+      ],
+      "owner": "personal_repository_owner",
+      "requirements": {
+        "audit_status": "production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified",
+        "packages": [],
+        "models": [],
+        "accounts_or_keys": [],
+        "hardware": []
+      },
+      "tests": {
+        "unit_or_contract": [
+          "omni_v2/tests/test_guardian.py",
+          "omni_v2/tests/test_daemon.py"
+        ],
+        "integration": [],
+        "end_to_end": [],
+        "hardware": [],
+        "qualification": "not_qualified",
+        "note": "Mapped files are presence only; skips, mocks, and broad baseline failures prevent a release claim.",
+        "required_types_for_stable": [
+          "unit_or_contract",
+          "integration",
+          "end_to_end"
+        ]
+      },
+      "verified_platforms": [],
+      "platform_note": "No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.",
+      "data_access": [
+        "process health",
+        "file observations",
+        "daemon state",
+        "alerts"
+      ],
+      "network": {
+        "mode": "optional",
+        "destinations": [
+          "configured remote alert destination"
+        ],
+        "disclosure": "Inventory only: destination enforcement, consent, offline no-egress, and exact privacy behavior remain unqualified until B08/B11.",
+        "privacy_qualification": "not_qualified"
+      },
+      "entry_points": [
+        "omni_v2/guardian/*.py"
+      ],
+      "interface_audit": {
+        "scope": "not_applicable",
+        "qualification": "not_applicable",
+        "evidence": []
+      }
+    },
+    {
+      "id": "tools.registry_routing",
+      "name": "Plugin routing and alias map",
+      "area": "tools",
+      "lifecycle": "experimental",
+      "implementation": "partial",
+      "target_scope": "personal_core",
+      "summary": "A plugin manager, loader, supported-action lists, and broad alias map route commands to a small plugin set.",
+      "known_gaps": [
+        "Aliases have been marketed as independent tools",
+        "Loader returns a duplicate SystemTool",
+        "Unknown actions can route to generic AI output rather than an unavailable result"
+      ],
+      "paths": [
+        "omni_v2/tools/__init__.py"
+      ],
+      "owner": "personal_repository_owner",
+      "requirements": {
+        "audit_status": "production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified",
+        "packages": [],
+        "models": [],
+        "accounts_or_keys": [],
+        "hardware": []
+      },
+      "tests": {
+        "unit_or_contract": [
+          "omni_v2/tests/test_brain_polish.py"
+        ],
+        "integration": [],
+        "end_to_end": [],
+        "hardware": [],
+        "qualification": "not_qualified",
+        "note": "Mapped files are presence only; skips, mocks, and broad baseline failures prevent a release claim.",
+        "required_types_for_stable": [
+          "unit_or_contract",
+          "integration",
+          "end_to_end"
+        ]
+      },
+      "verified_platforms": [],
+      "platform_note": "No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.",
+      "data_access": [
+        "owner commands",
+        "tool arguments/results",
+        "approved local files or application state"
+      ],
+      "network": {
+        "mode": "none_expected",
+        "destinations": [],
+        "disclosure": "Inventory only: destination enforcement, consent, offline no-egress, and exact privacy behavior remain unqualified until B08/B11.",
+        "privacy_qualification": "not_qualified"
+      },
+      "entry_points": [
+        "omni_v2/tools/__init__.py"
+      ],
+      "interface_audit": {
+        "scope": "all declared actions and routes in mapped source paths",
+        "qualification": "not_qualified",
+        "evidence": []
+      }
+    },
+    {
+      "id": "tools.files",
+      "name": "File tools",
+      "area": "tools",
+      "lifecycle": "beta",
+      "implementation": "partial",
+      "target_scope": "personal_core",
+      "summary": "Directory listing, folder creation, file writing, search, and related command routing exist.",
+      "known_gaps": [
+        "Several advertised aliases share generic execution paths",
+        "Preview, rollback, and effect verification are incomplete",
+        "Approved-root policy needs full E2E qualification"
+      ],
+      "paths": [
+        "omni_v2/tools/files.py"
+      ],
+      "owner": "personal_repository_owner",
+      "requirements": {
+        "audit_status": "production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified",
+        "packages": [],
+        "models": [],
+        "accounts_or_keys": [],
+        "hardware": []
+      },
+      "tests": {
+        "unit_or_contract": [],
+        "integration": [],
+        "end_to_end": [],
+        "hardware": [],
+        "qualification": "not_qualified",
+        "note": "Mapped files are presence only; skips, mocks, and broad baseline failures prevent a release claim.",
+        "required_types_for_stable": [
+          "unit_or_contract",
+          "integration",
+          "end_to_end"
+        ]
+      },
+      "verified_platforms": [],
+      "platform_note": "No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.",
+      "data_access": [
+        "owner commands",
+        "tool arguments/results",
+        "approved local files or application state"
+      ],
+      "network": {
+        "mode": "none_expected",
+        "destinations": [],
+        "disclosure": "Inventory only: destination enforcement, consent, offline no-egress, and exact privacy behavior remain unqualified until B08/B11.",
+        "privacy_qualification": "not_qualified"
+      },
+      "entry_points": [
+        "omni_v2/tools/files.py"
+      ],
+      "interface_audit": {
+        "scope": "all declared actions and routes in mapped source paths",
+        "qualification": "not_qualified",
+        "evidence": []
+      }
+    },
+    {
+      "id": "tools.windows_system",
+      "name": "Windows and system controls",
+      "area": "tools",
+      "lifecycle": "beta",
+      "implementation": "partial",
+      "target_scope": "personal_core",
+      "summary": "Allowlisted app launch, basic window hotkeys, screenshot, and generic system-action paths exist.",
+      "known_gaps": [
+        "Many declared actions return generic text rather than confirmed effects",
+        "Primary Windows E2E qualification is absent",
+        "Some exception paths still return successful-looking messages"
+      ],
+      "paths": [
+        "omni_v2/tools/windows.py",
+        "omni_v2/tools/system.py"
+      ],
+      "owner": "personal_repository_owner",
+      "requirements": {
+        "audit_status": "production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified",
+        "packages": [
+          "pyautogui",
+          "Windows platform APIs"
+        ],
+        "models": [],
+        "accounts_or_keys": [],
+        "hardware": [
+          "Windows desktop session"
+        ]
+      },
+      "tests": {
+        "unit_or_contract": [],
+        "integration": [],
+        "end_to_end": [],
+        "hardware": [],
+        "qualification": "not_qualified",
+        "note": "Mapped files are presence only; skips, mocks, and broad baseline failures prevent a release claim.",
+        "required_types_for_stable": [
+          "unit_or_contract",
+          "integration",
+          "end_to_end",
+          "hardware"
+        ]
+      },
+      "verified_platforms": [],
+      "platform_note": "No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.",
+      "data_access": [
+        "owner commands",
+        "tool arguments/results",
+        "approved local files or application state"
+      ],
+      "network": {
+        "mode": "none_expected",
+        "destinations": [],
+        "disclosure": "Inventory only: destination enforcement, consent, offline no-egress, and exact privacy behavior remain unqualified until B08/B11.",
+        "privacy_qualification": "not_qualified"
+      },
+      "entry_points": [
+        "omni_v2/tools/windows.py"
+      ],
+      "interface_audit": {
+        "scope": "all declared actions and routes in mapped source paths",
+        "qualification": "not_qualified",
+        "evidence": []
+      }
+    },
+    {
+      "id": "tools.browser",
+      "name": "Browser automation",
+      "area": "tools",
+      "lifecycle": "beta",
+      "implementation": "partial",
+      "target_scope": "personal_core",
+      "summary": "Legacy browser, isolated-profile browser, and Playwright browser implementations exist.",
+      "known_gaps": [
+        "Multiple overlapping implementations need consolidation",
+        "The desktop profile resolves on B01 Linux, but browser binaries and end-to-end startup are not clean-install qualified",
+        "Action verification and robust page-state contracts are incomplete"
+      ],
+      "paths": [
+        "omni_v2/tools/browser.py",
+        "omni_v2/tools/browser_v3.py",
+        "omni_v2/tools/browser_playwright.py"
+      ],
+      "owner": "personal_repository_owner",
+      "requirements": {
+        "audit_status": "production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified",
+        "packages": [
+          "Playwright and/or Selenium",
+          "compatible browser"
+        ],
+        "models": [],
+        "accounts_or_keys": [],
+        "hardware": [
+          "installed browser"
+        ]
+      },
+      "tests": {
+        "unit_or_contract": [],
+        "integration": [],
+        "end_to_end": [],
+        "hardware": [],
+        "qualification": "not_qualified",
+        "note": "Mapped files are presence only; skips, mocks, and broad baseline failures prevent a release claim.",
+        "required_types_for_stable": [
+          "unit_or_contract",
+          "integration",
+          "end_to_end",
+          "hardware"
+        ]
+      },
+      "verified_platforms": [],
+      "platform_note": "No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.",
+      "data_access": [
+        "owner commands",
+        "tool arguments/results",
+        "approved local files or application state"
+      ],
+      "network": {
+        "mode": "required",
+        "destinations": [
+          "user-requested websites and search destinations"
+        ],
+        "disclosure": "Inventory only: destination enforcement, consent, offline no-egress, and exact privacy behavior remain unqualified until B08/B11.",
+        "privacy_qualification": "not_qualified"
+      },
+      "entry_points": [
+        "omni_v2/tools/browser.py"
+      ],
+      "interface_audit": {
+        "scope": "all declared actions and routes in mapped source paths",
+        "qualification": "not_qualified",
+        "evidence": []
+      }
+    },
+    {
+      "id": "tools.desktop_productivity",
+      "name": "VS Code, media, accessibility, and OMNI utility tools",
+      "area": "tools",
+      "lifecycle": "experimental",
+      "implementation": "partial",
+      "target_scope": "personal_core_subset",
+      "summary": "VS Code, media, accessibility, and OMNI utility command handlers exist.",
+      "known_gaps": [
+        "Many action aliases are generic or shallow",
+        "Real effect verification is incomplete",
+        "Stable subset has not been selected or qualified"
+      ],
+      "paths": [
+        "omni_v2/tools/vscode.py",
+        "omni_v2/tools/media.py",
+        "omni_v2/tools/accessibility.py",
+        "omni_v2/tools/omni.py"
+      ],
+      "owner": "personal_repository_owner",
+      "requirements": {
+        "audit_status": "production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified",
+        "packages": [
+          "pyautogui",
+          "application-specific desktop interfaces"
+        ],
+        "models": [],
+        "accounts_or_keys": [],
+        "hardware": [
+          "supported desktop applications"
+        ]
+      },
+      "tests": {
+        "unit_or_contract": [],
+        "integration": [],
+        "end_to_end": [],
+        "hardware": [],
+        "qualification": "not_qualified",
+        "note": "Mapped files are presence only; skips, mocks, and broad baseline failures prevent a release claim.",
+        "required_types_for_stable": [
+          "unit_or_contract",
+          "integration",
+          "end_to_end",
+          "hardware"
+        ]
+      },
+      "verified_platforms": [],
+      "platform_note": "No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.",
+      "data_access": [
+        "owner commands",
+        "tool arguments/results",
+        "approved local files or application state"
+      ],
+      "network": {
+        "mode": "none_expected",
+        "destinations": [],
+        "disclosure": "Inventory only: destination enforcement, consent, offline no-egress, and exact privacy behavior remain unqualified until B08/B11.",
+        "privacy_qualification": "not_qualified"
+      },
+      "entry_points": [
+        "omni_v2/tools/vscode.py"
+      ],
+      "interface_audit": {
+        "scope": "all declared actions and routes in mapped source paths",
+        "qualification": "not_qualified",
+        "evidence": []
+      }
+    },
+    {
+      "id": "tools.ai",
+      "name": "AI chat, summarize, translate, and code routing",
+      "area": "tools",
+      "lifecycle": "beta",
+      "implementation": "partial",
+      "target_scope": "personal_core_subset",
+      "summary": "AI utility commands route through the local brain where available.",
+      "known_gaps": [
+        "Unavailable-model behavior must be truthful",
+        "Several labels map to one generic handler",
+        "Quality evaluation for summarize/translate/code tasks is absent"
+      ],
+      "paths": [
+        "omni_v2/tools/ai.py"
+      ],
+      "owner": "personal_repository_owner",
+      "requirements": {
+        "audit_status": "production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified",
+        "packages": [],
+        "models": [
+          "configured local language model"
+        ],
+        "accounts_or_keys": [],
+        "hardware": []
+      },
+      "tests": {
+        "unit_or_contract": [],
+        "integration": [],
+        "end_to_end": [],
+        "hardware": [],
+        "qualification": "not_qualified",
+        "note": "Mapped files are presence only; skips, mocks, and broad baseline failures prevent a release claim.",
+        "required_types_for_stable": [
+          "unit_or_contract",
+          "integration",
+          "end_to_end"
+        ]
+      },
+      "verified_platforms": [],
+      "platform_note": "No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.",
+      "data_access": [
+        "owner commands",
+        "tool arguments/results",
+        "approved local files or application state"
+      ],
+      "network": {
+        "mode": "optional",
+        "destinations": [
+          "configured model endpoint when non-local"
+        ],
+        "disclosure": "Inventory only: destination enforcement, consent, offline no-egress, and exact privacy behavior remain unqualified until B08/B11.",
+        "privacy_qualification": "not_qualified"
+      },
+      "entry_points": [
+        "omni_v2/tools/ai.py"
+      ],
+      "interface_audit": {
+        "scope": "all declared actions and routes in mapped source paths",
+        "qualification": "not_qualified",
+        "evidence": []
+      }
+    },
+    {
+      "id": "integrations.demo_connectors",
+      "name": "Gmail, calendar, smart-home, weather, and timer integration tools",
+      "area": "integrations",
+      "lifecycle": "demo",
+      "implementation": "demo",
+      "target_scope": "replace_or_remove",
+      "summary": "Plugin interfaces exist, but Gmail, calendar, smart-home, weather, and timer paths include canned or generic demo success.",
+      "known_gaps": [
+        "No real account/service integration for several claims",
+        "Canned calendar and smart-home outputs can be mistaken for real data",
+        "Setup, tokens, scopes, revocation, and confirmation are not complete"
+      ],
+      "paths": [
+        "omni_v2/tools/integrations.py"
+      ],
+      "owner": "personal_repository_owner",
+      "requirements": {
+        "audit_status": "production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified",
+        "packages": [],
+        "models": [],
+        "accounts_or_keys": [
+          "real service accounts after demo replacement"
+        ],
+        "hardware": []
+      },
+      "tests": {
+        "unit_or_contract": [],
+        "integration": [],
+        "end_to_end": [],
+        "hardware": [],
+        "qualification": "not_qualified",
+        "note": "Mapped files are presence only; skips, mocks, and broad baseline failures prevent a release claim.",
+        "required_types_for_stable": [
+          "unit_or_contract",
+          "integration",
+          "end_to_end"
+        ]
+      },
+      "verified_platforms": [],
+      "platform_note": "No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.",
+      "data_access": [
+        "canned/demo connector inputs and outputs"
+      ],
+      "network": {
+        "mode": "demo_only",
+        "destinations": [],
+        "disclosure": "Inventory only: destination enforcement, consent, offline no-egress, and exact privacy behavior remain unqualified until B08/B11.",
+        "privacy_qualification": "not_qualified"
+      },
+      "entry_points": [
+        "omni_v2/tools/integrations.py"
+      ],
+      "interface_audit": {
+        "scope": "not_applicable",
+        "qualification": "not_applicable",
+        "evidence": []
+      }
+    },
+    {
+      "id": "notifications.local_mobile",
+      "name": "Notification center, preferences, snooze, and phone delivery",
+      "area": "integrations",
+      "lifecycle": "beta",
+      "implementation": "partial",
+      "target_scope": "personal_core_subset",
+      "summary": "Local notifications, preferences, snooze state, subscriptions, and phone notification plugin paths exist with tests.",
+      "known_gaps": [
+        "Durable device-token lifecycle and revocation need qualification",
+        "Remote/mobile authentication and delivery E2E are incomplete",
+        "Notification usefulness and annoyance require dogfood evidence"
+      ],
+      "paths": [
+        "omni_v2/agents/notifications.py",
+        "omni_v2/agents/notification_prefs.py",
+        "omni_v2/tools/send_to_phone.py",
+        "omni_v2/tools/snooze.py"
+      ],
+      "owner": "personal_repository_owner",
+      "requirements": {
+        "audit_status": "production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified",
+        "packages": [
+          "optional WebSocket/push transport"
+        ],
+        "models": [],
+        "accounts_or_keys": [
+          "paired device for remote delivery"
+        ],
+        "hardware": [
+          "notification-capable device"
+        ]
+      },
+      "tests": {
+        "unit_or_contract": [
+          "omni_v2/tests/test_notifications.py",
+          "omni_v2/tests/test_notification_prefs.py"
+        ],
+        "integration": [],
+        "end_to_end": [],
+        "hardware": [],
+        "qualification": "not_qualified",
+        "note": "Mapped files are presence only; skips, mocks, and broad baseline failures prevent a release claim.",
+        "required_types_for_stable": [
+          "unit_or_contract",
+          "integration",
+          "end_to_end",
+          "hardware"
+        ]
+      },
+      "verified_platforms": [],
+      "platform_note": "No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.",
+      "data_access": [
+        "notification content",
+        "preferences",
+        "subscriptions or device tokens"
+      ],
+      "network": {
+        "mode": "lan_or_remote_optional",
+        "destinations": [
+          "paired phone, WebSocket, or push destination"
+        ],
+        "disclosure": "Inventory only: destination enforcement, consent, offline no-egress, and exact privacy behavior remain unqualified until B08/B11.",
+        "privacy_qualification": "not_qualified"
+      },
+      "entry_points": [
+        "omni_v2/agents/notifications.py"
+      ],
+      "interface_audit": {
+        "scope": "not_applicable",
+        "qualification": "not_applicable",
+        "evidence": []
+      }
+    },
+    {
+      "id": "voice.capture_stt",
+      "name": "Audio devices, push-to-talk, and speech recognition",
+      "area": "voice",
+      "lifecycle": "beta",
+      "implementation": "partial",
+      "target_scope": "personal_core",
+      "summary": "Audio device discovery, capture pipelines, push-to-talk, faster-whisper integration, and fallback paths exist.",
+      "known_gaps": [
+        "Target microphone/hardware qualification is absent",
+        "Overlapping pipeline implementations need consolidation",
+        "Audio retention, cancellation, and degraded-state UX need final validation"
+      ],
+      "paths": [
+        "omni_v2/voice/audio_device.py",
+        "omni_v2/voice/audio_device_v3.py",
+        "omni_v2/voice/pipeline.py",
+        "omni_v2/voice/pipeline_v3.py",
+        "omni_v2/voice/pipeline_v3_fixed.py",
+        "omni_v2/voice/ptt_manager.py",
+        "omni_v2/voice/stt_manager.py",
+        "omni_v2/voice/stt_simple.py",
+        "omni_v2/voice/test_mic_fixed.py",
+        "omni_v2/voice/voice_loop.py",
+        "omni_v2/voice/loop.py",
+        "omni_v2/voice/__init__.py"
+      ],
+      "owner": "personal_repository_owner",
+      "requirements": {
+        "audit_status": "production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified",
+        "packages": [
+          "sounddevice",
+          "numpy",
+          "faster-whisper or selected STT adapter"
+        ],
+        "models": [
+          "speech-recognition model"
+        ],
+        "accounts_or_keys": [],
+        "hardware": [
+          "microphone"
+        ]
+      },
+      "tests": {
+        "unit_or_contract": [
+          "omni_v2/tests/test_offline_voice.py",
+          "omni_v2/tests/test_voice_loop.py"
+        ],
+        "integration": [],
+        "end_to_end": [],
+        "hardware": [],
+        "qualification": "not_qualified",
+        "note": "Mapped files are presence only; skips, mocks, and broad baseline failures prevent a release claim.",
+        "required_types_for_stable": [
+          "unit_or_contract",
+          "integration",
+          "end_to_end",
+          "hardware"
+        ]
+      },
+      "verified_platforms": [],
+      "platform_note": "No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.",
+      "data_access": [
+        "microphone audio",
+        "transcripts",
+        "voice configuration",
+        "generated audio"
+      ],
+      "network": {
+        "mode": "optional",
+        "destinations": [
+          "configured remote STT endpoint when selected"
+        ],
+        "disclosure": "Inventory only: destination enforcement, consent, offline no-egress, and exact privacy behavior remain unqualified until B08/B11.",
+        "privacy_qualification": "not_qualified"
+      },
+      "entry_points": [
+        "omni_v2/voice/audio_device.py"
+      ],
+      "interface_audit": {
+        "scope": "not_applicable",
+        "qualification": "not_applicable",
+        "evidence": []
+      }
+    },
+    {
+      "id": "voice.tts",
+      "name": "Local and online text-to-speech",
+      "area": "voice",
+      "lifecycle": "beta",
+      "implementation": "partial",
+      "target_scope": "personal_core",
+      "summary": "SAPI/pyttsx3-style local speech and Edge TTS paths exist with selectable personas.",
+      "known_gaps": [
+        "Edge TTS is online and privacy claims have not consistently disclosed it",
+        "A single local default must be qualified",
+        "Offline mode does not yet prove that online backends are blocked"
+      ],
+      "paths": [
+        "omni_v2/voice/tts_best.py",
+        "omni_v2/voice/tts_simple.py"
+      ],
+      "owner": "personal_repository_owner",
+      "requirements": {
+        "audit_status": "production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified",
+        "packages": [
+          "pyttsx3 or selected local TTS adapter",
+          "edge-tts only in online mode"
+        ],
+        "models": [
+          "selected TTS voice/model"
+        ],
+        "accounts_or_keys": [],
+        "hardware": [
+          "audio output"
+        ]
+      },
+      "tests": {
+        "unit_or_contract": [
+          "omni_v2/tests/test_offline_voice.py",
+          "omni_v2/tests/test_voice_loop.py"
+        ],
+        "integration": [],
+        "end_to_end": [],
+        "hardware": [],
+        "qualification": "not_qualified",
+        "note": "Mapped files are presence only; skips, mocks, and broad baseline failures prevent a release claim.",
+        "required_types_for_stable": [
+          "unit_or_contract",
+          "integration",
+          "end_to_end",
+          "hardware"
+        ]
+      },
+      "verified_platforms": [],
+      "platform_note": "No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.",
+      "data_access": [
+        "microphone audio",
+        "transcripts",
+        "voice configuration",
+        "generated audio"
+      ],
+      "network": {
+        "mode": "optional",
+        "destinations": [
+          "Microsoft Edge TTS service when edge-tts is selected"
+        ],
+        "disclosure": "Inventory only: destination enforcement, consent, offline no-egress, and exact privacy behavior remain unqualified until B08/B11.",
+        "privacy_qualification": "not_qualified"
+      },
+      "entry_points": [
+        "omni_v2/voice/tts_best.py"
+      ],
+      "interface_audit": {
+        "scope": "not_applicable",
+        "qualification": "not_applicable",
+        "evidence": []
+      }
+    },
+    {
+      "id": "voice.wake_word",
+      "name": "Wake-word detection",
+      "area": "voice",
+      "lifecycle": "experimental",
+      "implementation": "partial",
+      "target_scope": "personal_core_candidate",
+      "summary": "OpenWakeWord, Porcupine, Whisper, and energy fallback implementations exist.",
+      "known_gaps": [
+        "False-positive and positive-recall measurements are absent",
+        "Some fallbacks are not true wake-word recognition",
+        "Always-listening privacy and kill-switch UX are not qualified"
+      ],
+      "paths": [
+        "omni_v2/voice/wake_word.py",
+        "omni_v2/voice/wake_word_best.py",
+        "omni_v2/voice/wake_word_v3.py"
+      ],
+      "owner": "personal_repository_owner",
+      "requirements": {
+        "audit_status": "production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified",
+        "packages": [
+          "openwakeword or pvporcupine"
+        ],
+        "models": [
+          "wake-word model"
+        ],
+        "accounts_or_keys": [
+          "Porcupine key only when that backend is selected"
+        ],
+        "hardware": [
+          "microphone"
+        ]
+      },
+      "tests": {
+        "unit_or_contract": [
+          "omni_v2/tests/test_offline_voice.py",
+          "omni_v2/tests/test_voice_loop.py"
+        ],
+        "integration": [],
+        "end_to_end": [],
+        "hardware": [],
+        "qualification": "not_qualified",
+        "note": "Mapped files are presence only; skips, mocks, and broad baseline failures prevent a release claim.",
+        "required_types_for_stable": [
+          "unit_or_contract",
+          "integration",
+          "end_to_end",
+          "hardware"
+        ]
+      },
+      "verified_platforms": [],
+      "platform_note": "No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.",
+      "data_access": [
+        "microphone audio",
+        "transcripts",
+        "voice configuration",
+        "generated audio"
+      ],
+      "network": {
+        "mode": "optional",
+        "destinations": [
+          "licensed backend or model download host"
+        ],
+        "disclosure": "Inventory only: destination enforcement, consent, offline no-egress, and exact privacy behavior remain unqualified until B08/B11.",
+        "privacy_qualification": "not_qualified"
+      },
+      "entry_points": [
+        "omni_v2/voice/wake_word.py"
+      ],
+      "interface_audit": {
+        "scope": "not_applicable",
+        "qualification": "not_applicable",
+        "evidence": []
+      }
+    },
+    {
+      "id": "voice.cloning",
+      "name": "Voice cloning",
+      "area": "voice",
+      "lifecycle": "unavailable",
+      "implementation": "placeholder",
+      "target_scope": "post_10_candidate",
+      "summary": "Recording and metadata workflow exists, but training writes metadata and marks a voice ready without training a voice model.",
+      "known_gaps": [
+        "No real model training",
+        "No cloned-voice inference artifact",
+        "Status terminology is misleading",
+        "Consent and abuse controls are incomplete"
+      ],
+      "paths": [
+        "omni_v2/voice/voice_clone.py"
+      ],
+      "owner": "personal_repository_owner",
+      "requirements": {
+        "audit_status": "production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified",
+        "packages": [
+          "audio capture dependencies; training stack is absent"
+        ],
+        "models": [
+          "no cloned-voice model is implemented"
+        ],
+        "accounts_or_keys": [],
+        "hardware": [
+          "microphone"
+        ]
+      },
+      "tests": {
+        "unit_or_contract": [
+          "omni_v2/tests/test_voice_clone.py"
+        ],
+        "integration": [],
+        "end_to_end": [],
+        "hardware": [],
+        "qualification": "not_qualified",
+        "note": "Mapped files are presence only; skips, mocks, and broad baseline failures prevent a release claim.",
+        "required_types_for_stable": [
+          "unit_or_contract",
+          "integration",
+          "end_to_end",
+          "hardware"
+        ]
+      },
+      "verified_platforms": [],
+      "platform_note": "No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.",
+      "data_access": [
+        "microphone audio",
+        "transcripts",
+        "voice configuration",
+        "generated audio"
+      ],
+      "network": {
+        "mode": "none_expected",
+        "destinations": [],
+        "disclosure": "Inventory only: destination enforcement, consent, offline no-egress, and exact privacy behavior remain unqualified until B08/B11.",
+        "privacy_qualification": "not_qualified"
+      },
+      "entry_points": [
+        "omni_v2/voice/voice_clone.py"
+      ],
+      "interface_audit": {
+        "scope": "not_applicable",
+        "qualification": "not_applicable",
+        "evidence": []
+      }
+    },
+    {
+      "id": "vision.multimodal",
+      "name": "Screen capture, OCR, and visual-language understanding",
+      "area": "vision",
+      "lifecycle": "experimental",
+      "implementation": "partial",
+      "target_scope": "post_10_candidate",
+      "summary": "Screen capture, OCR/basic analysis, multimodal routing, and LLaVA/TurboVLM wrappers exist.",
+      "known_gaps": [
+        "Several model paths are mock/demo or unqualified",
+        "No target-hardware benchmark or curated accuracy set",
+        "Capture consent, retention, and offline guarantees need qualification"
+      ],
+      "paths": [
+        "omni_v2/vision/*.py"
+      ],
+      "owner": "personal_repository_owner",
+      "requirements": {
+        "audit_status": "production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified",
+        "packages": [
+          "Pillow",
+          "pytesseract",
+          "opencv",
+          "optional model adapter"
+        ],
+        "models": [
+          "optional OCR/VLM model"
+        ],
+        "accounts_or_keys": [],
+        "hardware": [
+          "screen or image input"
+        ]
+      },
+      "tests": {
+        "unit_or_contract": [
+          "omni_v2/tests/test_vision.py"
+        ],
+        "integration": [],
+        "end_to_end": [],
+        "hardware": [],
+        "qualification": "not_qualified",
+        "note": "Mapped files are presence only; skips, mocks, and broad baseline failures prevent a release claim.",
+        "required_types_for_stable": [
+          "unit_or_contract",
+          "integration",
+          "end_to_end",
+          "hardware"
+        ]
+      },
+      "verified_platforms": [],
+      "platform_note": "No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.",
+      "data_access": [
+        "screenshots/images",
+        "OCR text",
+        "derived visual output"
+      ],
+      "network": {
+        "mode": "optional",
+        "destinations": [
+          "model download host or configured visual-model endpoint"
+        ],
+        "disclosure": "Inventory only: destination enforcement, consent, offline no-egress, and exact privacy behavior remain unqualified until B08/B11.",
+        "privacy_qualification": "not_qualified"
+      },
+      "entry_points": [
+        "omni_v2/vision/*.py"
+      ],
+      "interface_audit": {
+        "scope": "not_applicable",
+        "qualification": "not_applicable",
+        "evidence": []
+      }
+    },
+    {
+      "id": "security.guardrails_execution",
+      "name": "Guardrails and safe execution",
+      "area": "security",
+      "lifecycle": "beta",
+      "implementation": "real",
+      "target_scope": "personal_core",
+      "summary": "Path, command, JSON, prompt, argument, URL, loop, rate, nonce, and safe-execution controls exist with focused tests.",
+      "known_gaps": [
+        "Security controls are not yet enforced uniformly through every API and tool path",
+        "Mutation/adversarial E2E coverage is incomplete",
+        "Broad successful fallbacks can undermine security semantics"
+      ],
+      "paths": [
+        "omni_v2/core/guardrails.py",
+        "omni_v2/core/safe_execute.py"
+      ],
+      "owner": "personal_repository_owner",
+      "requirements": {
+        "audit_status": "production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified",
+        "packages": [],
+        "models": [],
+        "accounts_or_keys": [],
+        "hardware": []
+      },
+      "tests": {
+        "unit_or_contract": [
+          "omni_v2/tests/test_security_guardrails.py"
+        ],
+        "integration": [],
+        "end_to_end": [],
+        "hardware": [],
+        "qualification": "not_qualified",
+        "note": "Mapped files are presence only; skips, mocks, and broad baseline failures prevent a release claim.",
+        "required_types_for_stable": [
+          "unit_or_contract",
+          "integration",
+          "end_to_end"
+        ]
+      },
+      "verified_platforms": [],
+      "platform_note": "No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.",
+      "data_access": [
+        "commands",
+        "paths",
+        "policy decisions",
+        "audit state",
+        "security-specific biometrics or secrets"
+      ],
+      "network": {
+        "mode": "none_expected",
+        "destinations": [],
+        "disclosure": "Inventory only: destination enforcement, consent, offline no-egress, and exact privacy behavior remain unqualified until B08/B11.",
+        "privacy_qualification": "not_qualified"
+      },
+      "entry_points": [
+        "omni_v2/core/guardrails.py"
+      ],
+      "interface_audit": {
+        "scope": "not_applicable",
+        "qualification": "not_applicable",
+        "evidence": []
+      }
+    },
+    {
+      "id": "security.vault",
+      "name": "Credential vault",
+      "area": "security",
+      "lifecycle": "beta",
+      "implementation": "real",
+      "target_scope": "personal_core",
+      "summary": "Fernet-backed credential storage with permissions and tests exists.",
+      "known_gaps": [
+        "Cryptography is declared and resolved in the B01 core profile, but vault behavior is not release-qualified",
+        "OS credential-store integration and key lifecycle need qualification",
+        "Backup/recovery and multi-profile behavior require release tests"
+      ],
+      "paths": [
+        "omni_v2/vault/*.py"
+      ],
+      "owner": "personal_repository_owner",
+      "requirements": {
+        "audit_status": "production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified",
+        "packages": [
+          "cryptography"
+        ],
+        "models": [],
+        "accounts_or_keys": [],
+        "hardware": [
+          "OS-protected key storage not yet integrated"
+        ]
+      },
+      "tests": {
+        "unit_or_contract": [
+          "omni_v2/tests/test_vault.py"
+        ],
+        "integration": [],
+        "end_to_end": [],
+        "hardware": [],
+        "qualification": "not_qualified",
+        "note": "Mapped files are presence only; skips, mocks, and broad baseline failures prevent a release claim.",
+        "required_types_for_stable": [
+          "unit_or_contract",
+          "integration",
+          "end_to_end",
+          "hardware"
+        ]
+      },
+      "verified_platforms": [],
+      "platform_note": "No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.",
+      "data_access": [
+        "commands",
+        "paths",
+        "policy decisions",
+        "audit state",
+        "security-specific biometrics or secrets"
+      ],
+      "network": {
+        "mode": "none_expected",
+        "destinations": [],
+        "disclosure": "Inventory only: destination enforcement, consent, offline no-egress, and exact privacy behavior remain unqualified until B08/B11.",
+        "privacy_qualification": "not_qualified"
+      },
+      "entry_points": [
+        "omni_v2/vault/*.py"
+      ],
+      "interface_audit": {
+        "scope": "not_applicable",
+        "qualification": "not_applicable",
+        "evidence": []
+      }
+    },
+    {
+      "id": "security.face_lockdown",
+      "name": "Face authentication, guard monitoring, and lockdown",
+      "area": "security",
+      "lifecycle": "experimental",
+      "implementation": "partial",
+      "target_scope": "post_10_candidate",
+      "summary": "LBPH/gradient/deep verifier selection, guard monitor, machine lock, and lockdown controller code exists.",
+      "known_gaps": [
+        "OpenCV Contrib is declared in the B01 vision profile, but no native vision installation or hardware gate has run",
+        "Biometric accuracy, spoof resistance, and hardware behavior are not qualified",
+        "Security-sensitive fallbacks require explicit policy"
+      ],
+      "paths": [
+        "omni_v2/security/*.py"
+      ],
+      "owner": "personal_repository_owner",
+      "requirements": {
+        "audit_status": "production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified",
+        "packages": [
+          "opencv-contrib-python or selected verifier"
+        ],
+        "models": [
+          "optional face-verification model"
+        ],
+        "accounts_or_keys": [],
+        "hardware": [
+          "camera",
+          "target-platform lock capability"
+        ]
+      },
+      "tests": {
+        "unit_or_contract": [
+          "omni_v2/tests/test_security.py"
+        ],
+        "integration": [],
+        "end_to_end": [],
+        "hardware": [],
+        "qualification": "not_qualified",
+        "note": "Mapped files are presence only; skips, mocks, and broad baseline failures prevent a release claim.",
+        "required_types_for_stable": [
+          "unit_or_contract",
+          "integration",
+          "end_to_end",
+          "hardware"
+        ]
+      },
+      "verified_platforms": [],
+      "platform_note": "No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.",
+      "data_access": [
+        "commands",
+        "paths",
+        "policy decisions",
+        "audit state",
+        "security-specific biometrics or secrets"
+      ],
+      "network": {
+        "mode": "none_expected",
+        "destinations": [],
+        "disclosure": "Inventory only: destination enforcement, consent, offline no-egress, and exact privacy behavior remain unqualified until B08/B11.",
+        "privacy_qualification": "not_qualified"
+      },
+      "entry_points": [
+        "omni_v2/security/*.py"
+      ],
+      "interface_audit": {
+        "scope": "not_applicable",
+        "qualification": "not_applicable",
+        "evidence": []
+      }
+    },
+    {
+      "id": "skills.sdk_registry",
+      "name": "Skill SDK and local registry",
+      "area": "skills",
+      "lifecycle": "experimental",
+      "implementation": "partial",
+      "target_scope": "post_10_candidate",
+      "summary": "Decorators/helpers and a local skill registry exist.",
+      "known_gaps": [
+        "Compatibility contract is not release-stable",
+        "Permission model and isolation are incomplete",
+        "No supported third-party ecosystem"
+      ],
+      "paths": [
+        "omni_v2/sdk/*.py",
+        "omni_v2/skills/registry.py",
+        "omni_v2/skills/__init__.py"
+      ],
+      "owner": "personal_repository_owner",
+      "requirements": {
+        "audit_status": "production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified",
+        "packages": [],
+        "models": [],
+        "accounts_or_keys": [],
+        "hardware": []
+      },
+      "tests": {
+        "unit_or_contract": [
+          "omni_v2/tests/test_skill_synthesis.py"
+        ],
+        "integration": [],
+        "end_to_end": [],
+        "hardware": [],
+        "qualification": "not_qualified",
+        "note": "Mapped files are presence only; skips, mocks, and broad baseline failures prevent a release claim.",
+        "required_types_for_stable": [
+          "unit_or_contract",
+          "integration",
+          "end_to_end"
+        ]
+      },
+      "verified_platforms": [],
+      "platform_note": "No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.",
+      "data_access": [
+        "skill source",
+        "package metadata",
+        "permissions",
+        "verification/install state"
+      ],
+      "network": {
+        "mode": "none_expected",
+        "destinations": [],
+        "disclosure": "Inventory only: destination enforcement, consent, offline no-egress, and exact privacy behavior remain unqualified until B08/B11.",
+        "privacy_qualification": "not_qualified"
+      },
+      "entry_points": [
+        "omni_v2/sdk/*.py"
+      ],
+      "interface_audit": {
+        "scope": "not_applicable",
+        "qualification": "not_applicable",
+        "evidence": []
+      }
+    },
+    {
+      "id": "skills.marketplace_install",
+      "name": "Skill marketplace and installer",
+      "area": "skills",
+      "lifecycle": "experimental",
+      "implementation": "partial",
+      "target_scope": "post_10_candidate",
+      "summary": "Marketplace metadata, installation, update checks, atomic download, and local installation management exist.",
+      "known_gaps": [
+        "Publisher authenticity/signatures are missing",
+        "Supply-chain trust and rollback require qualification",
+        "Marketplace content and network service are not established"
+      ],
+      "paths": [
+        "omni_v2/skills/marketplace.py",
+        "omni_v2/skills/installer.py"
+      ],
+      "owner": "personal_repository_owner",
+      "requirements": {
+        "audit_status": "production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified",
+        "packages": [
+          "HTTP/archive/install tooling"
+        ],
+        "models": [],
+        "accounts_or_keys": [
+          "marketplace service is not established"
+        ],
+        "hardware": []
+      },
+      "tests": {
+        "unit_or_contract": [
+          "omni_v2/tests/test_marketplace.py",
+          "omni_v2/tests/test_skill_installer.py"
+        ],
+        "integration": [],
+        "end_to_end": [],
+        "hardware": [],
+        "qualification": "not_qualified",
+        "note": "Mapped files are presence only; skips, mocks, and broad baseline failures prevent a release claim.",
+        "required_types_for_stable": [
+          "unit_or_contract",
+          "integration",
+          "end_to_end"
+        ]
+      },
+      "verified_platforms": [],
+      "platform_note": "No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.",
+      "data_access": [
+        "skill source",
+        "package metadata",
+        "permissions",
+        "verification/install state"
+      ],
+      "network": {
+        "mode": "required",
+        "destinations": [
+          "configured marketplace/package hosts"
+        ],
+        "disclosure": "Inventory only: destination enforcement, consent, offline no-egress, and exact privacy behavior remain unqualified until B08/B11.",
+        "privacy_qualification": "not_qualified"
+      },
+      "entry_points": [
+        "omni_v2/skills/marketplace.py"
+      ],
+      "interface_audit": {
+        "scope": "not_applicable",
+        "qualification": "not_applicable",
+        "evidence": []
+      }
+    },
+    {
+      "id": "skills.generation",
+      "name": "Dynamic skill generation",
+      "area": "skills",
+      "lifecycle": "experimental",
+      "implementation": "partial",
+      "target_scope": "post_10_candidate",
+      "summary": "A skill-maker agent can generate candidate skill source and metadata.",
+      "known_gaps": [
+        "Generated code is untrusted",
+        "No safe automatic promotion path",
+        "Practical quality and value are not measured"
+      ],
+      "paths": [
+        "omni_v2/skills/generator.py"
+      ],
+      "owner": "personal_repository_owner",
+      "requirements": {
+        "audit_status": "production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified",
+        "packages": [],
+        "models": [
+          "configured language model"
+        ],
+        "accounts_or_keys": [],
+        "hardware": []
+      },
+      "tests": {
+        "unit_or_contract": [
+          "omni_v2/tests/test_skill_synthesis.py"
+        ],
+        "integration": [],
+        "end_to_end": [],
+        "hardware": [],
+        "qualification": "not_qualified",
+        "note": "Mapped files are presence only; skips, mocks, and broad baseline failures prevent a release claim.",
+        "required_types_for_stable": [
+          "unit_or_contract",
+          "integration",
+          "end_to_end"
+        ]
+      },
+      "verified_platforms": [],
+      "platform_note": "No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.",
+      "data_access": [
+        "skill source",
+        "package metadata",
+        "permissions",
+        "verification/install state"
+      ],
+      "network": {
+        "mode": "optional",
+        "destinations": [
+          "configured model endpoint when non-local"
+        ],
+        "disclosure": "Inventory only: destination enforcement, consent, offline no-egress, and exact privacy behavior remain unqualified until B08/B11.",
+        "privacy_qualification": "not_qualified"
+      },
+      "entry_points": [
+        "omni_v2/skills/generator.py"
+      ],
+      "interface_audit": {
+        "scope": "not_applicable",
+        "qualification": "not_applicable",
+        "evidence": []
+      }
+    },
+    {
+      "id": "skills.sandbox_verification",
+      "name": "Skill sandbox and verification",
+      "area": "skills",
+      "lifecycle": "beta",
+      "implementation": "partial",
+      "target_scope": "post_10_prerequisite",
+      "summary": "Static verification, subprocess sandboxing, and skill verification-loop code exists.",
+      "known_gaps": [
+        "Process sandbox is not a complete security boundary",
+        "OS/resource/network isolation needs stronger guarantees",
+        "Malicious-package E2E testing is incomplete"
+      ],
+      "paths": [
+        "omni_v2/skills/sandbox.py",
+        "omni_v2/skills/verifier.py"
+      ],
+      "owner": "personal_repository_owner",
+      "requirements": {
+        "audit_status": "production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified",
+        "packages": [],
+        "models": [],
+        "accounts_or_keys": [],
+        "hardware": []
+      },
+      "tests": {
+        "unit_or_contract": [
+          "omni_v2/tests/test_sandbox.py",
+          "omni_v2/tests/test_skill_verify.py"
+        ],
+        "integration": [],
+        "end_to_end": [],
+        "hardware": [],
+        "qualification": "not_qualified",
+        "note": "Mapped files are presence only; skips, mocks, and broad baseline failures prevent a release claim.",
+        "required_types_for_stable": [
+          "unit_or_contract",
+          "integration",
+          "end_to_end"
+        ]
+      },
+      "verified_platforms": [],
+      "platform_note": "No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.",
+      "data_access": [
+        "skill source",
+        "package metadata",
+        "permissions",
+        "verification/install state"
+      ],
+      "network": {
+        "mode": "none_expected",
+        "destinations": [],
+        "disclosure": "Inventory only: destination enforcement, consent, offline no-egress, and exact privacy behavior remain unqualified until B08/B11.",
+        "privacy_qualification": "not_qualified"
+      },
+      "entry_points": [
+        "omni_v2/skills/sandbox.py"
+      ],
+      "interface_audit": {
+        "scope": "not_applicable",
+        "qualification": "not_applicable",
+        "evidence": []
+      }
+    },
+    {
+      "id": "api.fastapi",
+      "name": "FastAPI HTTP and WebSocket surface",
+      "area": "api",
+      "lifecycle": "beta",
+      "implementation": "partial",
+      "target_scope": "personal_core",
+      "summary": "A broad HTTP/WebSocket API exists across a monolithic main module and domain routers.",
+      "known_gaps": [
+        "Authentication is optional by default",
+        "Thirty-three live API checks skip without a manually running service",
+        "Status/error contracts and route ownership are not fully audited",
+        "Main module is approximately 2871 lines"
+      ],
+      "paths": [
+        "backend_fastapi/*.py",
+        "backend_fastapi/core/*.py"
+      ],
+      "owner": "personal_repository_owner",
+      "requirements": {
+        "audit_status": "production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified",
+        "packages": [
+          "fastapi",
+          "uvicorn",
+          "WebSocket dependencies"
+        ],
+        "models": [],
+        "accounts_or_keys": [],
+        "hardware": []
+      },
+      "tests": {
+        "unit_or_contract": [
+          "omni_v2/tests/test_mobile.py",
+          "omni_v2/tests/test_geofence.py"
+        ],
+        "integration": [],
+        "end_to_end": [],
+        "hardware": [],
+        "qualification": "not_qualified",
+        "note": "Mapped files are presence only; skips, mocks, and broad baseline failures prevent a release claim.",
+        "required_types_for_stable": [
+          "unit_or_contract",
+          "integration",
+          "end_to_end"
+        ]
+      },
+      "verified_platforms": [],
+      "platform_note": "No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.",
+      "data_access": [
+        "requests",
+        "responses",
+        "WebSocket events",
+        "authentication/session state"
+      ],
+      "network": {
+        "mode": "lan_optional",
+        "destinations": [
+          "configured API clients"
+        ],
+        "disclosure": "Inventory only: destination enforcement, consent, offline no-egress, and exact privacy behavior remain unqualified until B08/B11.",
+        "privacy_qualification": "not_qualified"
+      },
+      "entry_points": [
+        "backend_fastapi/*.py"
+      ],
+      "interface_audit": {
+        "scope": "all declared actions and routes in mapped source paths",
+        "qualification": "not_qualified",
+        "evidence": []
+      }
+    },
+    {
+      "id": "ui.next_web",
+      "name": "Next.js web interface",
+      "area": "ui",
+      "lifecycle": "beta",
+      "implementation": "partial",
+      "target_scope": "personal_core",
+      "summary": "A cinematic Next.js interface and API proxy routes build successfully.",
+      "known_gaps": [
+        "Large monolithic client page",
+        "Successful mock execute fallback",
+        "Frontend clean install, dependency audit, lint, and build pass on B01 Linux; product startup and browser E2E remain unqualified"
+      ],
+      "paths": [
+        "frontend_next/app/*.js",
+        "frontend_next/app/**/*.js",
+        "frontend_next/app/*.css",
+        "frontend_next/components/*.js",
+        "frontend_next/next.config.js"
+      ],
+      "owner": "personal_repository_owner",
+      "requirements": {
+        "audit_status": "production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified",
+        "packages": [
+          "packages locked by frontend_next/package-lock.json"
+        ],
+        "models": [],
+        "accounts_or_keys": [],
+        "hardware": [
+          "modern browser"
+        ]
+      },
+      "tests": {
+        "unit_or_contract": [],
+        "integration": [],
+        "end_to_end": [],
+        "hardware": [],
+        "qualification": "not_qualified",
+        "note": "Mapped files are presence only; skips, mocks, and broad baseline failures prevent a release claim.",
+        "required_types_for_stable": [
+          "unit_or_contract",
+          "integration",
+          "end_to_end",
+          "hardware"
+        ]
+      },
+      "verified_platforms": [],
+      "platform_note": "No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.",
+      "data_access": [
+        "commands",
+        "responses",
+        "connection state",
+        "displayed personal data"
+      ],
+      "network": {
+        "mode": "lan_optional",
+        "destinations": [
+          "OMNI backend",
+          "Google Fonts under current styling"
+        ],
+        "disclosure": "Inventory only: destination enforcement, consent, offline no-egress, and exact privacy behavior remain unqualified until B08/B11.",
+        "privacy_qualification": "not_qualified"
+      },
+      "entry_points": [
+        "frontend_next/app/*.js"
+      ],
+      "interface_audit": {
+        "scope": "not_applicable",
+        "qualification": "not_applicable",
+        "evidence": []
+      }
+    },
+    {
+      "id": "ui.desktop",
+      "name": "Desktop HUD, tray, dashboard, and voice UI variants",
+      "area": "ui",
+      "lifecycle": "experimental",
+      "implementation": "partial",
+      "target_scope": "select_or_remove",
+      "summary": "Several desktop UI implementations exist using different toolkits and visual approaches.",
+      "known_gaps": [
+        "Overlapping interfaces have no declared canonical desktop UI",
+        "Cross-platform and accessibility behavior is unqualified",
+        "Packaging does not reliably ship/run the interfaces"
+      ],
+      "paths": [
+        "omni_v2/ui/*.py",
+        "omni_v2/ui/*.html",
+        "omni_v2/gui/*.py",
+        "omni_v2/web_ui/*.html"
+      ],
+      "owner": "personal_repository_owner",
+      "requirements": {
+        "audit_status": "production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified",
+        "packages": [
+          "selected Tkinter/PySide/desktop GUI stack"
+        ],
+        "models": [],
+        "accounts_or_keys": [],
+        "hardware": [
+          "desktop session"
+        ]
+      },
+      "tests": {
+        "unit_or_contract": [
+          "omni_v2/tests/test_desktop.py",
+          "omni_v2/tests/test_gui_agent.py"
+        ],
+        "integration": [],
+        "end_to_end": [],
+        "hardware": [],
+        "qualification": "not_qualified",
+        "note": "Mapped files are presence only; skips, mocks, and broad baseline failures prevent a release claim.",
+        "required_types_for_stable": [
+          "unit_or_contract",
+          "integration",
+          "end_to_end",
+          "hardware"
+        ]
+      },
+      "verified_platforms": [],
+      "platform_note": "No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.",
+      "data_access": [
+        "commands",
+        "responses",
+        "connection state",
+        "displayed personal data"
+      ],
+      "network": {
+        "mode": "none_expected",
+        "destinations": [],
+        "disclosure": "Inventory only: destination enforcement, consent, offline no-egress, and exact privacy behavior remain unqualified until B08/B11.",
+        "privacy_qualification": "not_qualified"
+      },
+      "entry_points": [
+        "omni_v2/ui/*.py"
+      ],
+      "interface_audit": {
+        "scope": "not_applicable",
+        "qualification": "not_applicable",
+        "evidence": []
+      }
+    },
+    {
+      "id": "mobile.pwa",
+      "name": "Mobile PWA companion",
+      "area": "mobile",
+      "lifecycle": "experimental",
+      "implementation": "partial",
+      "target_scope": "post_10_candidate",
+      "summary": "A mobile web shell, service worker, pairing UI, WebSocket/PTT/location interactions, and notifications exist.",
+      "known_gaps": [
+        "Remote/LAN threat model and durable authentication need closure",
+        "Phone/browser E2E qualification is absent",
+        "Offline shell does not imply offline assistant functionality"
+      ],
+      "paths": [
+        "mobile/*.js",
+        "mobile/*.html",
+        "mobile/*.css",
+        "mobile/*.json"
+      ],
+      "owner": "personal_repository_owner",
+      "requirements": {
+        "audit_status": "production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified",
+        "packages": [
+          "modern mobile browser"
+        ],
+        "models": [],
+        "accounts_or_keys": [],
+        "hardware": [
+          "phone or mobile browser"
+        ]
+      },
+      "tests": {
+        "unit_or_contract": [
+          "omni_v2/tests/test_mobile.py"
+        ],
+        "integration": [],
+        "end_to_end": [],
+        "hardware": [],
+        "qualification": "not_qualified",
+        "note": "Mapped files are presence only; skips, mocks, and broad baseline failures prevent a release claim.",
+        "required_types_for_stable": [
+          "unit_or_contract",
+          "integration",
+          "end_to_end",
+          "hardware"
+        ]
+      },
+      "verified_platforms": [],
+      "platform_note": "No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.",
+      "data_access": [
+        "pairing data",
+        "commands",
+        "voice/location input",
+        "notifications"
+      ],
+      "network": {
+        "mode": "lan_optional",
+        "destinations": [
+          "paired OMNI backend"
+        ],
+        "disclosure": "Inventory only: destination enforcement, consent, offline no-egress, and exact privacy behavior remain unqualified until B08/B11.",
+        "privacy_qualification": "not_qualified"
+      },
+      "entry_points": [
+        "mobile/*.js"
+      ],
+      "interface_audit": {
+        "scope": "not_applicable",
+        "qualification": "not_applicable",
+        "evidence": []
+      }
+    },
+    {
+      "id": "network.discovery_pairing",
+      "name": "LAN discovery, pairing, and mobile transport",
+      "area": "network",
+      "lifecycle": "experimental",
+      "implementation": "partial",
+      "target_scope": "post_10_candidate",
+      "summary": "mDNS/UDP discovery data, pairing codes, QR payloads, and backend mobile transport exist.",
+      "known_gaps": [
+        "Remote mode is not secure-by-default",
+        "Durable tokens/revocation and replay resistance require full E2E tests",
+        "Network exposure and host/origin policy need hardening"
+      ],
+      "paths": [
+        "omni_v2/network/*.py"
+      ],
+      "owner": "personal_repository_owner",
+      "requirements": {
+        "audit_status": "production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified",
+        "packages": [
+          "optional mDNS/network adapters"
+        ],
+        "models": [],
+        "accounts_or_keys": [],
+        "hardware": [
+          "LAN interface"
+        ]
+      },
+      "tests": {
+        "unit_or_contract": [
+          "omni_v2/tests/test_network.py",
+          "omni_v2/tests/test_mobile.py"
+        ],
+        "integration": [],
+        "end_to_end": [],
+        "hardware": [],
+        "qualification": "not_qualified",
+        "note": "Mapped files are presence only; skips, mocks, and broad baseline failures prevent a release claim.",
+        "required_types_for_stable": [
+          "unit_or_contract",
+          "integration",
+          "end_to_end",
+          "hardware"
+        ]
+      },
+      "verified_platforms": [],
+      "platform_note": "No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.",
+      "data_access": [
+        "device identity",
+        "LAN addresses",
+        "pairing tokens",
+        "transport messages"
+      ],
+      "network": {
+        "mode": "lan",
+        "destinations": [
+          "local mDNS/UDP/WebSocket peers"
+        ],
+        "disclosure": "Inventory only: destination enforcement, consent, offline no-egress, and exact privacy behavior remain unqualified until B08/B11.",
+        "privacy_qualification": "not_qualified"
+      },
+      "entry_points": [
+        "omni_v2/network/*.py"
+      ],
+      "interface_audit": {
+        "scope": "not_applicable",
+        "qualification": "not_applicable",
+        "evidence": []
+      }
+    },
+    {
+      "id": "sync.e2e",
+      "name": "End-to-end encrypted sync",
+      "area": "sync",
+      "lifecycle": "unavailable",
+      "implementation": "stub",
+      "target_scope": "post_10_candidate",
+      "summary": "A disabled E2ESyncService interface explicitly reports that sync is not implemented.",
+      "known_gaps": [
+        "No transport",
+        "No key lifecycle",
+        "No conflict resolution",
+        "No cross-device persistence or recovery"
+      ],
+      "paths": [
+        "omni_v2/sync/*.py"
+      ],
+      "owner": "personal_repository_owner",
+      "requirements": {
+        "audit_status": "production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified",
+        "packages": [],
+        "models": [],
+        "accounts_or_keys": [],
+        "hardware": []
+      },
+      "tests": {
+        "unit_or_contract": [],
+        "integration": [],
+        "end_to_end": [],
+        "hardware": [],
+        "qualification": "not_qualified",
+        "note": "Mapped files are presence only; skips, mocks, and broad baseline failures prevent a release claim.",
+        "required_types_for_stable": [
+          "unit_or_contract",
+          "integration",
+          "end_to_end"
+        ]
+      },
+      "verified_platforms": [],
+      "platform_note": "No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.",
+      "data_access": [
+        "owner state selected for synchronization",
+        "node/transport metadata"
+      ],
+      "network": {
+        "mode": "none_active",
+        "destinations": [],
+        "disclosure": "Inventory only: destination enforcement, consent, offline no-egress, and exact privacy behavior remain unqualified until B08/B11.",
+        "privacy_qualification": "not_qualified"
+      },
+      "entry_points": [
+        "omni_v2/sync/*.py"
+      ],
+      "interface_audit": {
+        "scope": "not_applicable",
+        "qualification": "not_applicable",
+        "evidence": []
+      }
+    },
+    {
+      "id": "sync.mesh",
+      "name": "Mesh state synchronization",
+      "area": "sync",
+      "lifecycle": "experimental",
+      "implementation": "partial",
+      "target_scope": "post_10_candidate",
+      "summary": "A local mesh-sync abstraction and status interface exist.",
+      "known_gaps": [
+        "Not a qualified secure cross-device sync product",
+        "Consistency, identity, transport, conflicts, and threat model remain incomplete"
+      ],
+      "paths": [
+        "omni_v2/mesh/*.py"
+      ],
+      "owner": "personal_repository_owner",
+      "requirements": {
+        "audit_status": "production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified",
+        "packages": [],
+        "models": [],
+        "accounts_or_keys": [],
+        "hardware": []
+      },
+      "tests": {
+        "unit_or_contract": [
+          "omni_v2/tests/test_mesh.py"
+        ],
+        "integration": [],
+        "end_to_end": [],
+        "hardware": [],
+        "qualification": "not_qualified",
+        "note": "Mapped files are presence only; skips, mocks, and broad baseline failures prevent a release claim.",
+        "required_types_for_stable": [
+          "unit_or_contract",
+          "integration",
+          "end_to_end"
+        ]
+      },
+      "verified_platforms": [],
+      "platform_note": "No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.",
+      "data_access": [
+        "owner state selected for synchronization",
+        "node/transport metadata"
+      ],
+      "network": {
+        "mode": "lan_optional",
+        "destinations": [
+          "configured mesh peers"
+        ],
+        "disclosure": "Inventory only: destination enforcement, consent, offline no-egress, and exact privacy behavior remain unqualified until B08/B11.",
+        "privacy_qualification": "not_qualified"
+      },
+      "entry_points": [
+        "omni_v2/mesh/*.py"
+      ],
+      "interface_audit": {
+        "scope": "not_applicable",
+        "qualification": "not_applicable",
+        "evidence": []
+      }
+    },
+    {
+      "id": "interop.mcp",
+      "name": "Model Context Protocol bridge",
+      "area": "interop",
+      "lifecycle": "experimental",
+      "implementation": "partial",
+      "target_scope": "post_10_candidate",
+      "summary": "MCP tool wrapping and server registration interfaces exist, including a fake provider used for current behavior/tests.",
+      "known_gaps": [
+        "Real server interoperability is not qualified",
+        "Permission and trust boundaries need design",
+        "Fake provider must not be represented as live integration"
+      ],
+      "paths": [
+        "omni_v2/mcp/*.py"
+      ],
+      "owner": "personal_repository_owner",
+      "requirements": {
+        "audit_status": "production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified",
+        "packages": [
+          "real MCP adapter dependency not selected"
+        ],
+        "models": [],
+        "accounts_or_keys": [
+          "configured MCP server after qualification"
+        ],
+        "hardware": []
+      },
+      "tests": {
+        "unit_or_contract": [
+          "omni_v2/tests/test_mcp.py"
+        ],
+        "integration": [],
+        "end_to_end": [],
+        "hardware": [],
+        "qualification": "not_qualified",
+        "note": "Mapped files are presence only; skips, mocks, and broad baseline failures prevent a release claim.",
+        "required_types_for_stable": [
+          "unit_or_contract",
+          "integration",
+          "end_to_end"
+        ]
+      },
+      "verified_platforms": [],
+      "platform_note": "No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.",
+      "data_access": [
+        "tool schemas",
+        "tool arguments/results",
+        "provider metadata"
+      ],
+      "network": {
+        "mode": "optional",
+        "destinations": [
+          "configured MCP server"
+        ],
+        "disclosure": "Inventory only: destination enforcement, consent, offline no-egress, and exact privacy behavior remain unqualified until B08/B11.",
+        "privacy_qualification": "not_qualified"
+      },
+      "entry_points": [
+        "omni_v2/mcp/*.py"
+      ],
+      "interface_audit": {
+        "scope": "all declared actions and routes in mapped source paths",
+        "qualification": "not_qualified",
+        "evidence": []
+      }
+    },
+    {
+      "id": "data.backup",
+      "name": "Backup and restore",
+      "area": "data",
+      "lifecycle": "beta",
+      "implementation": "real",
+      "target_scope": "personal_core",
+      "summary": "Backup creation/listing/restoration logic exists.",
+      "known_gaps": [
+        "Not all current stores have proven inclusion and consistency",
+        "Restore is not part of a release qualification flow",
+        "Encryption and retention policy need final decisions"
+      ],
+      "paths": [
+        "omni_v2/backup/*.py"
+      ],
+      "owner": "personal_repository_owner",
+      "requirements": {
+        "audit_status": "production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified",
+        "packages": [],
+        "models": [],
+        "accounts_or_keys": [],
+        "hardware": []
+      },
+      "tests": {
+        "unit_or_contract": [
+          "omni_v2/tests/test_history_photos_backup.py"
+        ],
+        "integration": [],
+        "end_to_end": [],
+        "hardware": [],
+        "qualification": "not_qualified",
+        "note": "Mapped files are presence only; skips, mocks, and broad baseline failures prevent a release claim.",
+        "required_types_for_stable": [
+          "unit_or_contract",
+          "integration",
+          "end_to_end"
+        ]
+      },
+      "verified_platforms": [],
+      "platform_note": "No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.",
+      "data_access": [
+        "local application state",
+        "backup manifests",
+        "restored data"
+      ],
+      "network": {
+        "mode": "none_expected",
+        "destinations": [],
+        "disclosure": "Inventory only: destination enforcement, consent, offline no-egress, and exact privacy behavior remain unqualified until B08/B11.",
+        "privacy_qualification": "not_qualified"
+      },
+      "entry_points": [
+        "omni_v2/backup/*.py"
+      ],
+      "interface_audit": {
+        "scope": "not_applicable",
+        "qualification": "not_applicable",
+        "evidence": []
+      }
+    },
+    {
+      "id": "files.natural_language",
+      "name": "Natural-language local file management",
+      "area": "files",
+      "lifecycle": "beta",
+      "implementation": "partial",
+      "target_scope": "personal_core_subset",
+      "summary": "Natural-language intent parsing and local file operations exist.",
+      "known_gaps": [
+        "Must be consolidated with FilesTool",
+        "Destructive action consent and rollback need qualification",
+        "Ambiguous intent handling requires adversarial tests"
+      ],
+      "paths": [
+        "omni_v2/files/*.py"
+      ],
+      "owner": "personal_repository_owner",
+      "requirements": {
+        "audit_status": "production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified",
+        "packages": [],
+        "models": [],
+        "accounts_or_keys": [],
+        "hardware": []
+      },
+      "tests": {
+        "unit_or_contract": [
+          "omni_v2/tests/test_nlfiles_remote.py"
+        ],
+        "integration": [],
+        "end_to_end": [],
+        "hardware": [],
+        "qualification": "not_qualified",
+        "note": "Mapped files are presence only; skips, mocks, and broad baseline failures prevent a release claim.",
+        "required_types_for_stable": [
+          "unit_or_contract",
+          "integration",
+          "end_to_end"
+        ]
+      },
+      "verified_platforms": [],
+      "platform_note": "No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.",
+      "data_access": [
+        "owner command",
+        "approved paths",
+        "file metadata/content",
+        "operation history"
+      ],
+      "network": {
+        "mode": "none_expected",
+        "destinations": [],
+        "disclosure": "Inventory only: destination enforcement, consent, offline no-egress, and exact privacy behavior remain unqualified until B08/B11.",
+        "privacy_qualification": "not_qualified"
+      },
+      "entry_points": [
+        "omni_v2/files/*.py"
+      ],
+      "interface_audit": {
+        "scope": "not_applicable",
+        "qualification": "not_applicable",
+        "evidence": []
+      }
+    },
+    {
+      "id": "evaluation.benchmarks",
+      "name": "Benchmarks and leaderboard",
+      "area": "evaluation",
+      "lifecycle": "experimental",
+      "implementation": "partial",
+      "target_scope": "internal_quality",
+      "summary": "Benchmark cases/results and a local leaderboard exist.",
+      "known_gaps": [
+        "Benchmarks do not yet represent the ten locked owner workflows",
+        "Performance claims are not generated from target hardware qualification"
+      ],
+      "paths": [
+        "omni_v2/benchmark/*.py",
+        "omni_v2/leaderboard/*.py"
+      ],
+      "owner": "personal_repository_owner",
+      "requirements": {
+        "audit_status": "production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified",
+        "packages": [],
+        "models": [],
+        "accounts_or_keys": [],
+        "hardware": []
+      },
+      "tests": {
+        "unit_or_contract": [
+          "omni_v2/tests/test_benchmark.py",
+          "omni_v2/tests/test_wake_leaderboard.py"
+        ],
+        "integration": [],
+        "end_to_end": [],
+        "hardware": [],
+        "qualification": "not_qualified",
+        "note": "Mapped files are presence only; skips, mocks, and broad baseline failures prevent a release claim.",
+        "required_types_for_stable": [
+          "unit_or_contract",
+          "integration",
+          "end_to_end"
+        ]
+      },
+      "verified_platforms": [],
+      "platform_note": "No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.",
+      "data_access": [
+        "benchmark cases",
+        "timings",
+        "scores",
+        "leaderboard records"
+      ],
+      "network": {
+        "mode": "none_expected",
+        "destinations": [],
+        "disclosure": "Inventory only: destination enforcement, consent, offline no-egress, and exact privacy behavior remain unqualified until B08/B11.",
+        "privacy_qualification": "not_qualified"
+      },
+      "entry_points": [
+        "omni_v2/benchmark/*.py"
+      ],
+      "interface_audit": {
+        "scope": "not_applicable",
+        "qualification": "not_applicable",
+        "evidence": []
+      }
+    },
+    {
+      "id": "personal.pda_shell",
+      "name": "Personal digital assistant shell",
+      "area": "personal",
+      "lifecycle": "experimental",
+      "implementation": "partial",
+      "target_scope": "select_or_merge",
+      "summary": "A separate personal-digital-assistant entry point composes several personal modules.",
+      "known_gaps": [
+        "Overlaps the main application and backend",
+        "No declared canonical runtime",
+        "Installation and daily-use path are unqualified"
+      ],
+      "paths": [
+        "omni_v2/pda/*.py"
+      ],
+      "owner": "personal_repository_owner",
+      "requirements": {
+        "audit_status": "production_imports_mapped_to_B01_profiles; capability-specific non-Python requirements remain unqualified",
+        "packages": [],
+        "models": [
+          "configured language model"
+        ],
+        "accounts_or_keys": [],
+        "hardware": []
+      },
+      "tests": {
+        "unit_or_contract": [],
+        "integration": [],
+        "end_to_end": [],
+        "hardware": [],
+        "qualification": "not_qualified",
+        "note": "Mapped files are presence only; skips, mocks, and broad baseline failures prevent a release claim.",
+        "required_types_for_stable": [
+          "unit_or_contract",
+          "integration",
+          "end_to_end"
+        ]
+      },
+      "verified_platforms": [],
+      "platform_note": "No release-qualified platform evidence exists through B01; target-platform qualification is scheduled in B13.",
+      "data_access": [
+        "owner commands",
+        "calendar",
+        "tasks",
+        "contacts",
+        "preferences",
+        "assistant responses"
+      ],
+      "network": {
+        "mode": "none_expected",
+        "destinations": [],
+        "disclosure": "Inventory only: destination enforcement, consent, offline no-egress, and exact privacy behavior remain unqualified until B08/B11.",
+        "privacy_qualification": "not_qualified"
+      },
+      "entry_points": [
+        "omni_v2/pda/*.py"
+      ],
+      "interface_audit": {
+        "scope": "not_applicable",
+        "qualification": "not_applicable",
+        "evidence": []
+      }
+    }
+  ]
+}

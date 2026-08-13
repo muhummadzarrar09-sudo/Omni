@@ -11,11 +11,7 @@ except ImportError:
     import logging
     logger = logging.getLogger("VSCodeToolV2")
 
-try:
-    from omni_v2.core.paths import DATA_DIR, LOGS_DIR
-except ImportError:
-    DATA_DIR = Path.home() / ".omni_v2"
-    LOGS_DIR = DATA_DIR / "logs"
+from omni_v2.core.paths import LOGS_DIR
 
 class VSCodeTool(CommandPlugin):
     metadata = CommandMetadata(

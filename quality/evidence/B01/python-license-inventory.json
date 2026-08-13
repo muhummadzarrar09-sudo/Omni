@@ -1,0 +1,481 @@
+{
+  "distributions": [
+    {
+      "license": "MIT",
+      "name": "annotated-doc",
+      "version": "0.0.5"
+    },
+    {
+      "license": "MIT",
+      "name": "annotated-types",
+      "version": "0.8.0"
+    },
+    {
+      "license": "MIT",
+      "name": "anyio",
+      "version": "4.14.2"
+    },
+    {
+      "license": "MIT License",
+      "name": "APScheduler",
+      "version": "3.11.3"
+    },
+    {
+      "license": "MIT License",
+      "name": "backports.tarfile",
+      "version": "1.2.0"
+    },
+    {
+      "license": "BSD-2-Clause",
+      "name": "boolean.py",
+      "version": "5.0"
+    },
+    {
+      "license": "MIT",
+      "name": "build",
+      "version": "1.5.0"
+    },
+    {
+      "license": "Apache-2.0",
+      "name": "CacheControl",
+      "version": "0.14.4"
+    },
+    {
+      "license": "Mozilla Public License 2.0 (MPL 2.0)",
+      "name": "certifi",
+      "version": "2026.7.22"
+    },
+    {
+      "license": "MIT-0",
+      "name": "cffi",
+      "version": "2.1.1"
+    },
+    {
+      "license": "MIT",
+      "name": "charset-normalizer",
+      "version": "3.4.9"
+    },
+    {
+      "license": "BSD-3-Clause",
+      "name": "click",
+      "version": "8.4.2"
+    },
+    {
+      "license": "Apache-2.0",
+      "name": "coverage",
+      "version": "7.15.4"
+    },
+    {
+      "license": "Apache-2.0 OR BSD-3-Clause",
+      "name": "cryptography",
+      "version": "50.0.0"
+    },
+    {
+      "license": "Apache Software License",
+      "name": "cyclonedx-python-lib",
+      "version": "11.11.1"
+    },
+    {
+      "license": "Python Software Foundation License",
+      "name": "defusedxml",
+      "version": "0.7.1"
+    },
+    {
+      "license": "BSD License; GNU General Public License (GPL); Public Domain",
+      "name": "docutils",
+      "version": "0.23"
+    },
+    {
+      "license": "MIT",
+      "name": "fastapi",
+      "version": "0.141.1"
+    },
+    {
+      "license": "MIT",
+      "name": "filelock",
+      "version": "3.32.2"
+    },
+    {
+      "license": "MIT License",
+      "name": "h11",
+      "version": "0.16.0"
+    },
+    {
+      "license": "BSD-3-Clause",
+      "name": "httpcore",
+      "version": "1.0.9"
+    },
+    {
+      "license": "MIT",
+      "name": "httptools",
+      "version": "0.8.0"
+    },
+    {
+      "license": "BSD License",
+      "name": "httpx",
+      "version": "0.28.1"
+    },
+    {
+      "license": "Apache Software License",
+      "name": "id",
+      "version": "1.6.1"
+    },
+    {
+      "license": "BSD-3-Clause",
+      "name": "idna",
+      "version": "3.18"
+    },
+    {
+      "license": "Apache-2.0",
+      "name": "importlib_metadata",
+      "version": "9.0.0"
+    },
+    {
+      "license": "MIT",
+      "name": "iniconfig",
+      "version": "2.3.0"
+    },
+    {
+      "license": "MIT License",
+      "name": "jaraco.classes",
+      "version": "3.4.0"
+    },
+    {
+      "license": "MIT",
+      "name": "jaraco.context",
+      "version": "6.1.2"
+    },
+    {
+      "license": "MIT",
+      "name": "jaraco.functools",
+      "version": "4.6.0"
+    },
+    {
+      "license": "MIT",
+      "name": "jeepney",
+      "version": "0.9.0"
+    },
+    {
+      "license": "MIT",
+      "name": "keyring",
+      "version": "25.7.0"
+    },
+    {
+      "license": "Apache-2.0",
+      "name": "license-expression",
+      "version": "30.4.4"
+    },
+    {
+      "license": "MIT License",
+      "name": "loguru",
+      "version": "0.7.3"
+    },
+    {
+      "license": "MIT License",
+      "name": "markdown-it-py",
+      "version": "4.2.0"
+    },
+    {
+      "license": "MIT License",
+      "name": "mdurl",
+      "version": "0.1.2"
+    },
+    {
+      "license": "MIT",
+      "name": "more-itertools",
+      "version": "11.1.0"
+    },
+    {
+      "license": "Apache-2.0",
+      "name": "msgpack",
+      "version": "1.2.1"
+    },
+    {
+      "license": "MIT",
+      "name": "nh3",
+      "version": "0.3.6"
+    },
+    {
+      "license": "BSD-3-Clause AND 0BSD AND MIT AND Zlib AND CC0-1.0",
+      "name": "numpy",
+      "version": "2.4.6"
+    },
+    {
+      "license": "MIT License",
+      "name": "packageurl-python",
+      "version": "0.17.6"
+    },
+    {
+      "license": "Apache-2.0 OR BSD-2-Clause",
+      "name": "packaging",
+      "version": "26.3"
+    },
+    {
+      "license": "MIT",
+      "name": "pip",
+      "version": "26.2.1"
+    },
+    {
+      "license": "Apache Software License",
+      "name": "pip-api",
+      "version": "0.0.34"
+    },
+    {
+      "license": "Apache Software License",
+      "name": "pip_audit",
+      "version": "2.10.1"
+    },
+    {
+      "license": "MIT",
+      "name": "pip-licenses",
+      "version": "5.5.5"
+    },
+    {
+      "license": "MIT",
+      "name": "pip-requirements-parser",
+      "version": "32.0.1"
+    },
+    {
+      "license": "BSD License",
+      "name": "pip-tools",
+      "version": "7.6.0"
+    },
+    {
+      "license": "MIT",
+      "name": "platformdirs",
+      "version": "4.11.2"
+    },
+    {
+      "license": "MIT License",
+      "name": "pluggy",
+      "version": "1.6.0"
+    },
+    {
+      "license": "BSD-3-Clause",
+      "name": "prettytable",
+      "version": "3.18.0"
+    },
+    {
+      "license": "BSD-3-Clause",
+      "name": "psutil",
+      "version": "7.2.2"
+    },
+    {
+      "license": "Apache Software License",
+      "name": "py-serializable",
+      "version": "2.1.0"
+    },
+    {
+      "license": "BSD-3-Clause",
+      "name": "pycparser",
+      "version": "3.0"
+    },
+    {
+      "license": "MIT",
+      "name": "pydantic",
+      "version": "2.13.4"
+    },
+    {
+      "license": "MIT",
+      "name": "pydantic_core",
+      "version": "2.46.4"
+    },
+    {
+      "license": "BSD-2-Clause",
+      "name": "Pygments",
+      "version": "2.20.0"
+    },
+    {
+      "license": "MIT",
+      "name": "pyparsing",
+      "version": "3.3.2"
+    },
+    {
+      "license": "MIT License",
+      "name": "pyproject_hooks",
+      "version": "1.2.0"
+    },
+    {
+      "license": "MIT",
+      "name": "pytest",
+      "version": "9.1.1"
+    },
+    {
+      "license": "Apache-2.0",
+      "name": "pytest-asyncio",
+      "version": "1.4.0"
+    },
+    {
+      "license": "MIT",
+      "name": "pytest-cov",
+      "version": "7.1.0"
+    },
+    {
+      "license": "BSD-3-Clause",
+      "name": "python-dotenv",
+      "version": "1.2.2"
+    },
+    {
+      "license": "Apache-2.0",
+      "name": "python-multipart",
+      "version": "0.0.32"
+    },
+    {
+      "license": "MIT License",
+      "name": "PyYAML",
+      "version": "6.0.3"
+    },
+    {
+      "license": "BSD License; Other/Proprietary License",
+      "name": "qrcode",
+      "version": "8.2"
+    },
+    {
+      "license": "Apache-2.0",
+      "name": "readme_renderer",
+      "version": "45.0"
+    },
+    {
+      "license": "Apache Software License",
+      "name": "requests",
+      "version": "2.34.2"
+    },
+    {
+      "license": "Apache Software License",
+      "name": "requests-toolbelt",
+      "version": "1.0.0"
+    },
+    {
+      "license": "Apache Software License",
+      "name": "rfc3986",
+      "version": "2.0.0"
+    },
+    {
+      "license": "MIT License",
+      "name": "rich",
+      "version": "15.0.0"
+    },
+    {
+      "license": "MIT",
+      "name": "ruff",
+      "version": "0.16.2"
+    },
+    {
+      "license": "MIT License",
+      "name": "schedule",
+      "version": "1.2.2"
+    },
+    {
+      "license": "BSD-3-Clause",
+      "name": "SecretStorage",
+      "version": "3.5.0"
+    },
+    {
+      "license": "MIT",
+      "name": "setuptools",
+      "version": "84.0.0"
+    },
+    {
+      "license": "Apache Software License",
+      "name": "sortedcontainers",
+      "version": "2.4.0"
+    },
+    {
+      "license": "BSD-3-Clause",
+      "name": "starlette",
+      "version": "1.6.0"
+    },
+    {
+      "license": "MIT",
+      "name": "tomli",
+      "version": "2.4.1"
+    },
+    {
+      "license": "MIT License",
+      "name": "tomli_w",
+      "version": "1.2.0"
+    },
+    {
+      "license": "Apache-2.0",
+      "name": "twine",
+      "version": "6.2.0"
+    },
+    {
+      "license": "PSF-2.0",
+      "name": "typing_extensions",
+      "version": "4.16.0"
+    },
+    {
+      "license": "MIT",
+      "name": "typing-inspection",
+      "version": "0.4.3"
+    },
+    {
+      "license": "MIT",
+      "name": "tzlocal",
+      "version": "5.4.4"
+    },
+    {
+      "license": "MIT",
+      "name": "urllib3",
+      "version": "2.7.0"
+    },
+    {
+      "license": "BSD-3-Clause",
+      "name": "uvicorn",
+      "version": "0.52.1"
+    },
+    {
+      "license": "Apache Software License; MIT License",
+      "name": "uvloop",
+      "version": "0.22.1"
+    },
+    {
+      "license": "MIT License",
+      "name": "watchfiles",
+      "version": "1.2.0"
+    },
+    {
+      "license": "MIT",
+      "name": "wcwidth",
+      "version": "0.8.2"
+    },
+    {
+      "license": "BSD-3-Clause",
+      "name": "websockets",
+      "version": "17.0.1"
+    },
+    {
+      "license": "MIT",
+      "name": "wheel",
+      "version": "0.47.0"
+    },
+    {
+      "license": "MIT",
+      "name": "zipp",
+      "version": "4.1.0"
+    }
+  ],
+  "expected_distribution_count": 91,
+  "inventoried_distribution_count": 91,
+  "legal_claim": "Inventory completeness only; this report is not legal advice or a license-compatibility certification.",
+  "lock": "/home/user/Omni/requirements/locks/cpython-3.11-linux-x86_64/dev.txt",
+  "missing": [],
+  "review_required": [
+    {
+      "license": "BSD License; GNU General Public License (GPL); Public Domain",
+      "name": "docutils",
+      "version": "0.23"
+    },
+    {
+      "license": "BSD License; Other/Proprietary License",
+      "name": "qrcode",
+      "version": "8.2"
+    }
+  ],
+  "schema_version": 1,
+  "scope": "exact installed distributions from the supplied hashed lock",
+  "status": "pass",
+  "unknown_licenses": [],
+  "version_mismatches": []
+}

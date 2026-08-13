@@ -1,5 +1,8 @@
 # PR #1 — OMNI V3 "Away & Jarvis Brain" — Full Feature Summary
 
+> **Document status (2026-08-11): historical or unqualified reference.** This file records earlier intent, implementation, audit, or setup work. Its completion, test-count, performance, privacy, platform, and production-readiness statements are **not current release claims**. Use the generated [Capability Matrix](CAPABILITY_MATRIX.md) and [Quality Scorecard](QUALITY_SCORECARD.md) for current truth.
+
+
 This PR is the cumulative result of the whole build: a **local, private, autonomous
 assistant** that can work while you're away, remember long-term and short-term, think
 about its own thinking, and feel like Jarvis. Everything is fully local / offline-first

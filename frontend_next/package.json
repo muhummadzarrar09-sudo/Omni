@@ -1,38 +1,47 @@
 {
   "name": "omni-v3-neomorphism-next",
   "version": "3.1.0",
-  "description": "OMNI V3 - Beautiful Neomorphism UI with Next.js 14 + Correct double box-shadow soft extruded + Three.js 2400 particles + FastAPI backend",
+  "description": "Experimental Next.js interface for the OMNI personal AI assistant",
   "private": true,
   "scripts": {
-    "dev": "next dev -p 3000",
+    "dev": "node server.js --dev",
     "build": "next build",
-    "start": "next start -p 3000",
-    "lint": "next lint",
-    "dev:backend": "cd ../backend_fastapi && uvicorn main:app --reload --port 8765",
-    "dev:all": "concurrently \"npm run dev:backend\" \"npm run dev\" --names \"FASTAPI,NEXT\" --prefix-colors \"cyan,magenta\" --kill-others",
-    "dev:all:win": "powershell -Command \"$backend = Start-Process -PassThru -NoNewWindow python -ArgumentList '-m','uvicorn','main:app','--reload','--port','8765' -WorkingDirectory '..\\backend_fastapi'; npm run dev; Stop-Process -Id $backend.Id\""
+    "start": "node server.js",
+    "lint": "eslint . --max-warnings=0",
+    "test:proxy": "node --test tests/*.test.mjs",
+    "runtime:start": "cd .. && python -m omni_v2.core.runtime_cli start",
+    "runtime:stop": "cd .. && python -m omni_v2.core.runtime_cli stop",
+    "runtime:restart": "cd .. && python -m omni_v2.core.runtime_cli restart"
   },
   "dependencies": {
-    "next": "14.2.5",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "three": "^0.160.0",
-    "framer-motion": "^11.0.8",
-    "lucide-react": "^0.363.0",
     "clsx": "^2.1.0",
-    "tailwind-merge": "^2.2.2"
+    "framer-motion": "13.1.0",
+    "lucide-react": "1.31.0",
+    "next": "16.3.0",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "sharp": "0.35.3",
+    "tailwind-merge": "^2.2.2",
+    "three": "^0.160.0"
   },
   "devDependencies": {
-    "@types/node": "^20.12.7",
-    "@types/react": "^18.3.1",
-    "@types/react-dom": "^18.3.0",
+    "@types/node": "22.18.0",
+    "@types/react": "19.1.12",
+    "@types/react-dom": "19.1.9",
     "@types/three": "^0.160.0",
     "autoprefixer": "^10.4.19",
     "concurrently": "^8.2.2",
-    "eslint": "^8.57.0",
-    "eslint-config-next": "14.2.5",
+    "eslint": "9.39.2",
+    "eslint-config-next": "16.3.0",
     "postcss": "^8.4.38",
     "tailwindcss": "^3.4.3",
     "typescript": "^5.4.5"
+  },
+  "engines": {
+    "node": ">=22.22.2 <23"
+  },
+  "packageManager": "npm@12.0.2",
+  "allowScripts": {
+    "unrs-resolver@1.12.2": true
   }
 }

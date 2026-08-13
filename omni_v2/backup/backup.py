@@ -32,10 +32,7 @@ except ImportError:
     import logging
     logger = logging.getLogger("Backup")
 
-try:
-    from omni_v2.core.paths import DATA_DIR
-except Exception:
-    DATA_DIR = Path.cwd() / "data"
+from omni_v2.core.paths import DATA_DIR
 
 # subdirs/files to back up (excludes models/ which are huge + redownloadable)
 BACKUP_INCLUDES = [

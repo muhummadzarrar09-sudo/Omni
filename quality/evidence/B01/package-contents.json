@@ -1,0 +1,23 @@
+{
+  "artifacts": [
+    {
+      "artifact": "dist/omni_agi-3.2.0-py3-none-any.whl",
+      "errors": [],
+      "kind": "wheel",
+      "members": 197,
+      "runtime_files_required": 190,
+      "status": "pass"
+    },
+    {
+      "artifact": "dist/omni_agi-3.2.0.tar.gz",
+      "errors": [],
+      "kind": "sdist",
+      "members": 207,
+      "runtime_files_required": 190,
+      "status": "pass"
+    }
+  ],
+  "runtime_files_required": 190,
+  "schema_version": 1,
+  "status": "pass"
+}

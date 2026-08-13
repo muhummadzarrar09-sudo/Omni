@@ -24,7 +24,6 @@ from __future__ import annotations
 import time
 import threading
 import random
-from pathlib import Path
 from typing import Optional, Dict, List, Any
 from collections import defaultdict
 from datetime import datetime
@@ -35,10 +34,6 @@ except ImportError:
     import logging
     logger = logging.getLogger("OpinionEngine")
 
-try:
-    from omni_v2.core.paths import DATA_DIR
-except Exception:
-    DATA_DIR = Path(__file__).resolve().parents[2] / "data"
 
 
 class OpinionEngine:

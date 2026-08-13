@@ -18,18 +18,21 @@ Privacy:
 """
 from __future__ import annotations
 import secrets
+import socket
 import time
 import hashlib
 import string
 from dataclasses import dataclass, field, asdict
 from typing import Optional, List, Dict, Any
 
-# mDNS service type for OMNI brain discovery
+from omni_v2.core.config import DEFAULT_BACKEND_PORT, DEFAULT_DISCOVERY_PORT
+
+# Compatibility aliases derive from the canonical configuration defaults.
 SERVICE_TYPE = "_omni-brain._tcp.local."
-SERVICE_PORT = 8765
+SERVICE_PORT = DEFAULT_BACKEND_PORT
 
 # Discovery protocol constants
-DISCOVERY_PORT = 47624
+DISCOVERY_PORT = DEFAULT_DISCOVERY_PORT
 DISCOVERY_MAGIC = b"OMNI-DISCOVER-v1"
 DISCOVERY_INTERVAL_SEC = 5.0
 DISCOVERY_TIMEOUT_SEC = 2.0

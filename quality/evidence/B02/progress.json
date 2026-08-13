@@ -1,0 +1,184 @@
+{
+  "schema_version": 4,
+  "batch": "B02",
+  "title": "Install, Configuration, and Startup Qualification",
+  "recorded_on": "2026-08-12",
+  "decision": "in_progress_blocked_pending_same_commit_native_arm64_and_x86_64_passes",
+  "implementation_lineage_base_commit": "4bc1c9d824c9099386f81224f2d9f95f27fb39a0",
+  "qualification_commit_rule": "the full 40-character checked-out HEAD selected at execution time",
+  "authority": {
+    "batch_status": "in_progress",
+    "next_batch": "B03",
+    "next_batch_status": "locked",
+    "closure_claimed": false,
+    "closure_evidence_present": false,
+    "platform_amendment": "quality/evidence/B00/platform-amendment-2026-08-12.json"
+  },
+  "platform_matrix": {
+    "primary_target": {
+      "name": "NVIDIA DGX Station for Windows",
+      "operating_system": "Windows 11 workstation",
+      "native_architecture": "arm64",
+      "b02_status": "not_run_required",
+      "physical_hardware_status": "deferred_to_B11_B13_B15_B16"
+    },
+    "secondary_qualification_host": {
+      "name": "Windows 11 laptop/workstation",
+      "native_architecture": "x86_64",
+      "role": "hardware-independent qualification only; not an Arm64 substitute",
+      "b02_status": "failed_diagnostics_only_latest_73cb708_ambient_node_24_selected_no_checks_cleanup_passed_remediation_unqualified"
+    },
+    "agent_host": {
+      "platform": "Linux x86_64",
+      "role": "developer validation only; not a native B02 lane"
+    }
+  },
+  "implemented_controls": [
+    "native Windows 11 workstation, process, OS, CPython, Node, and PowerShell architecture gates",
+    "architecture-matched official portable Node.js 22.22.2 archive and node.exe hash verification, explicit executable selection, and isolated Corepack/npm caches",
+    "architecture-specific exact hashed runtime locks and wheel-only exact hashed build locks",
+    "build-lock version and architecture-specific wheel-hash equality with quality/windows-native-build-contract.json",
+    "exact CMake and Ninja package and CLI identities",
+    "Visual Studio 2022 component, native compiler/linker path, explicit governed SDK 10.0.26100.0 selection, executable compilation, and PE-target verification",
+    "approved source distributions pinned by architecture, name, version, filename, SHA-256, backend, and controlled build tools",
+    "all-profile selected-sdist equality with the complete architecture source contract",
+    "cache-free resolution and installation with third-party build isolation disabled",
+    "exact installed-environment parity for isolated build, dev, and all-runtime authorities",
+    "hash-required vulnerability audits and interpreter-scoped exact license inventories for build, dev, and all",
+    "Arm64 capability marker and selected-distribution enforcement",
+    "exact local project version extraction before dev/all environment parity checks",
+    "one unattended exact-commit lifecycle, Python, package, frontend, evidence, aggregation, and cleanup path",
+    "failure-path managed stop, identity-constrained process termination, generated-environment/frontend/data/worktree removal, invariant verification, and fail-closed cleanup evidence",
+    "repository-wide rejection of unsafe unbraced PowerShell variable/colon interpolation with legitimate scoped forms permitted"
+  ],
+  "required_lane_contract": {
+    "same_exact_commit": true,
+    "required_native_architectures": [
+      "arm64",
+      "x86_64"
+    ],
+    "profiles_resolved_twice": [
+      "core",
+      "voice",
+      "vision",
+      "desktop",
+      "dev",
+      "all"
+    ],
+    "source_distribution_contract_counts": {
+      "x86_64": 12,
+      "arm64": 9
+    },
+    "build_authority": {
+      "wheel_only": true,
+      "require_hashes": true,
+      "cache_used": false,
+      "third_party_build_isolation": false,
+      "versions_and_artifact_hashes_governed": true,
+      "native_toolchain_probe_required": true
+    },
+    "required_gates": [
+      "exact commit and detached clean worktree",
+      "native Windows 11 workstation and architecture identities",
+      "exact governed portable Node.js/Corepack bootstrap with archive, executable, version, architecture, and isolated-cache proof",
+      "native Visual Studio compiler linker SDK executable and PE probe",
+      "exact wheel-only build bootstrap and CLI identities",
+      "repeatable exact hashed six-profile dependency locks",
+      "complete exact architecture source-contract equality",
+      "exact dev and all installation parity, pip check, vulnerability audit, and license inventory",
+      "installation and second installation",
+      "startup and idempotent second startup",
+      "restart with process replacement",
+      "authenticated backend and frontend readiness",
+      "stop with no owned orphan services",
+      "safe data-preserving uninstall",
+      "explicit isolated data removal and repeated uninstall",
+      "configured Python suite, fatal Ruff, and compilation",
+      "no-isolation exact-lock wheel and sdist build and artifact tests",
+      "frontend clean install, script/tree/audit/proxy/lint/build",
+      "external evidence generation and strict failure-path cleanup"
+    ],
+    "aggregate_fail_closed_on": [
+      "missing or duplicate architecture lane",
+      "lane or cleanup failure",
+      "wrong commit, architecture, OS product, or interpreter/tool architecture",
+      "emulated or wrong-target native build tools",
+      "ambient, wrong-version, wrong-architecture, or hash-drifted Node.js/Corepack evidence",
+      "build authority version, artifact-hash, or CLI drift",
+      "source-contract or capability-selection drift",
+      "installed-environment, audit, or license-scope drift",
+      "malformed, absent, unlisted, or digest-mismatched evidence"
+    ]
+  },
+  "developer_validation": {
+    "complete_exact_dev_python_suite": "739_passed_36_skipped_5_known_deprecation_warnings",
+    "package_suite": "17_passed_exactly_one_wheel_and_one_sdist_package_contents_and_twine_checks_passed",
+    "fatal_and_changed_file_ruff": "passed_E9_F63_F7_F82_and_changed_python_files",
+    "exact_dev_lock_audit": "zero_known_vulnerabilities_91_of_91_license_inventory_complete_2_declared_manual_review_entries_0_unknown",
+    "frontend": "13_proxy_tests_passed_zero_warning_lint_zero_vulnerabilities_no_unreviewed_install_scripts_complete_tree_build_passed_exact_npm_12_0_2",
+    "install_and_package_metadata_suite": "70_passed_5_known_deprecation_warnings",
+    "quality_config_links_json_compile_powershell_diff": "passed_including_authority_drift_adversarial_selftest_config_contract_local_markdown_links_tree_sitter_explicit_unsafe_variable_colon_interpolation_scan_and_git_diff_check",
+    "exact_linux_all": "not_available_dlib_evdev_pyaudio_native_build_prerequisites_missing",
+    "qualification_value": "regression_only_not_native_windows_evidence"
+  },
+  "native_execution_status": {
+    "windows_arm64": "not_run_required",
+    "windows_x86_64": "no_passing_lane",
+    "two_lane_aggregate": "not_run_required",
+    "latest_x86_64_diagnostic": {
+      "commit": "73cb708c5e55435b28d94994f252347b1732e47d",
+      "result": "failed_before_qualification_checks_because_ambient_node_v24_18_0_was_selected_outside_required_node_22_engine",
+      "cleanup_passed": true,
+      "checks_passed": [],
+      "failure": "Node.js >=22.22.2,<23 is required; found v24.18.0.",
+      "evidence_status": "operator_reported_external_windows_lane_json_not_committed",
+      "evidence_root": "C:\\b02-evidence-73cb708-20260812-214626",
+      "remediation": "governed_architecture_matched_node_22_22_2_portable_archives_hashes_explicit_paths_and_isolated_caches_implemented_unqualified",
+      "qualifying": false
+    },
+    "previous_x86_64_diagnostic": {
+      "commit": "66843dd7bfe3ca5cfbbf340bb62357cebe521a8c",
+      "result": "failed_after_detached_exact_commit_before_native_toolchain_probe_due_to_unsafe_powershell_variable_colon_interpolation",
+      "cleanup_passed": true,
+      "checks_passed": [
+        "detached_exact_commit"
+      ],
+      "evidence_status": "operator_reported_external_windows_lane_json_not_committed",
+      "corrected_by_unqualified_commit": "d681ba8efe74ae18933725ad538e68c96b360a19",
+      "qualifying": false
+    }
+  },
+  "required_absent_artifacts": [
+    "passing native Arm64 lane evidence for the selected exact commit",
+    "passing native x86_64 lane evidence for the same exact commit",
+    "validated two-lane aggregate verdict",
+    "quality/evidence/B02/closure.json"
+  ],
+  "exit_gate_status": [
+    {
+      "requirement": "Complete unattended native Windows 11 Arm64 lane",
+      "status": "blocked_not_run"
+    },
+    {
+      "requirement": "Complete unattended native Windows 11 x64 lane on the same commit",
+      "status": "blocked_no_passing_lane"
+    },
+    {
+      "requirement": "Fail-closed aggregate accepts both lane attestations and artifacts",
+      "status": "blocked_not_run"
+    },
+    {
+      "requirement": "Developer-host implementation, tests, audits, docs, and governance review",
+      "status": "pass_at_current_checkpoint_non_native_only"
+    }
+  ],
+  "nonclaims": [
+    "B02 is not closed.",
+    "B03 has not started and remains locked.",
+    "No native Windows lane has passed.",
+    "Linux developer checks and static PowerShell parsing do not qualify a Windows lane.",
+    "An x64 pass cannot qualify the Arm64 target.",
+    "Hosted Arm64 cannot qualify physical DGX GPU, model, device, performance, or sustained-use behavior.",
+    "No product-platform, release, commercial-traction, offline-no-egress, or 10/10 claim is made."
+  ]
+}

@@ -1,0 +1,119 @@
+{
+  "schema_version": 1,
+  "verified_on": "2026-08-12",
+  "authority": "OMNI Personal Core quality governance",
+  "execution": {
+    "batch_order": [
+      "B00",
+      "B01",
+      "B02",
+      "B03",
+      "B04",
+      "B05",
+      "B06",
+      "B07",
+      "B08",
+      "B09",
+      "B10",
+      "B11",
+      "B12",
+      "B13",
+      "B14",
+      "B15",
+      "B16"
+    ],
+    "current_batch": "B02",
+    "closed_batches": [
+      "B00",
+      "B01"
+    ],
+    "rules": [
+      "Execute one batch at a time in the declared order.",
+      "Do not start the next batch until the current batch has implementation, tests, audit, documentation, evidence, and exit-gate approval.",
+      "A passing test is evidence for only the behavior and environment it actually exercised.",
+      "Absence of a defect report is not evidence of correctness.",
+      "The exact release artifact, not a mutable source checkout, is the final qualification subject."
+    ],
+    "next_batch": "B02"
+  },
+  "feature_freeze": {
+    "enabled": true,
+    "begins_at": "B00",
+    "ends_after": "B16",
+    "allowed_changes": [
+      "Fix a verified defect in locked scope.",
+      "Complete, simplify, or remove a capability already required by a locked workflow.",
+      "Add tests, observability, documentation, packaging, security, migration, recovery, or release infrastructure required by an active batch.",
+      "Replace a mock, demo, placeholder, alias, or unsafe fallback with a truthful implementation or an explicit unavailable state.",
+      "Make a minimal enabling change that is necessary to close a current batch and record that necessity in batch evidence."
+    ],
+    "prohibited_changes": [
+      "Add a new end-user capability outside the locked personal-core workflows.",
+      "Expand platform promises beyond the declared Windows 11 Arm64 primary target and Windows 11 x64 secondary qualification host without formal change control and equivalent native evidence.",
+      "Add aliases or presentation surfaces to inflate capability or tool counts.",
+      "Activate E01 or later expansion work.",
+      "Claim production readiness, stability, privacy, offline behavior, security, or success without the required evidence."
+    ],
+    "exception_process": [
+      "Record the requested change and the locked workflow or exit gate it enables.",
+      "Prove that deferring it prevents the current batch from closing.",
+      "Choose the smallest safe implementation.",
+      "Add tests and documentation in the same batch.",
+      "Update capabilities.json, scorecard.json, and batch evidence when the capability, lifecycle, implementation reality, or score changes."
+    ]
+  },
+  "post_10": {
+    "locked_until": [
+      "B15 completes a 30-consecutive-day dogfood qualification with all thresholds met.",
+      "B16 qualifies the exact distributable artifacts and closes every release gate.",
+      "The release artifact is frozen and its evidence bundle is immutable."
+    ],
+    "expansion_queue": [
+      "E01",
+      "E02",
+      "E03",
+      "E04",
+      "E05",
+      "E06",
+      "E07",
+      "E08",
+      "E09",
+      "E10"
+    ],
+    "rules": [
+      "Evaluate one expansion independently against owner value, maintenance cost, privacy, risk, and fit with the core promise.",
+      "A new feature starts experimental; it cannot inherit stable status from the core release.",
+      "Every expansion must define availability, result states, consent, timeouts, cancellation, verification, tests, documentation, telemetry boundaries, and removal policy before promotion.",
+      "Expansion failure must not regress a qualified core workflow.",
+      "Commercial validation remains a separate optional track and cannot retroactively inflate the personal-core score."
+    ]
+  },
+  "claim_rules": {
+    "allowed_result_states": [
+      "success",
+      "partial",
+      "unavailable",
+      "denied",
+      "failed",
+      "demo"
+    ],
+    "stable_claim_requirements": [
+      "Lifecycle is stable in quality/capabilities.json.",
+      "Implementation reality is real.",
+      "All capability and workflow qualification checks pass on the primary platform.",
+      "No mock, demo, placeholder, stub, canned response, or unverified fallback can reach the stable path.",
+      "The release evidence identifies the exact artifact, environment, test command, timestamp, and result.",
+      "A non-empty owner, entry point, complete dependency/model/account/hardware audit, and verified platform are recorded.",
+      "Required unit/contract, integration, end-to-end, and applicable hardware test evidence is mapped and release-qualified.",
+      "Every claimed stable tool action and API endpoint has per-interface evidence of a real implementation.",
+      "Every network-capable stable feature has a current release-qualified privacy disclosure and destination inventory."
+    ],
+    "forbidden_claim_patterns": [
+      "A fallback that did not perform the requested effect reports success.",
+      "An optional integration is described as included or working when it is unconfigured.",
+      "A test count is presented without a command, environment, and current result.",
+      "Offline or local-only behavior is claimed without an enforced no-egress check.",
+      "A capability count includes aliases, demos, mocks, removed features, or unavailable integrations as working tools."
+    ]
+  }
+}

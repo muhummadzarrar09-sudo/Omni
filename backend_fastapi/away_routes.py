@@ -8,14 +8,7 @@ the only external-facing part and is configurable.
 """
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
-from pathlib import Path
-import sys
 from typing import Any, Dict, Optional
-
-THIS_FILE = Path(__file__).resolve()
-REPO_ROOT = THIS_FILE.parent.parent
-if str(REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(REPO_ROOT))
 
 from omni_v2.away.context import build_away_stack
 

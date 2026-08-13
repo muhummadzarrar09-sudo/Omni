@@ -1,8 +1,13 @@
 #!/bin/bash
 # ============================================================================
-#  OMNI V3 - REAL HARDWARE SETUP (4GB GTX 1050 Ti + others)
+#  OMNI V3 - UNQUALIFIED HARDWARE CONVENIENCE SETUP (GTX 1050 Ti)
 #
-#  One-shot installer tuned for the actual target machine. In one go it:
+#  This owner-machine helper resolves packages from indexes and downloads large
+#  model assets. It is not B01 install, artifact, portability, or hardware
+#  qualification evidence. Use docs/TROUBLESHOOTING.md for the qualified
+#  CPython 3.11/Linux x86_64 hash-lock + local-wheel workflow.
+#
+#  One-shot installer tuned for the owner's target machine. In one go it:
 #    1. Installs deps (with CUDA 121 prebuilt llama-cpp wheel for 10-series GPUs)
 #    2. Downloads the fast Qwen2.5-1.5B model (default)
 #    3. Downloads the DEEP Qwen2.5-3B model (hard-reasoning tier, ~2GB)
@@ -17,7 +22,7 @@
 #
 #  Target: GTX 1050 Ti 4GB / 16GB RAM. See README performance table.
 # ============================================================================
-set -e
+set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$REPO_ROOT"
@@ -41,7 +46,11 @@ done
 # ---------- 1. Python ----------
 PY=$(command -v python3 || command -v python)
 if [ -z "$PY" ]; then
-    echo "  ❌ Python 3 not found. Install from https://python.org"
+    echo "  ❌ CPython 3.11 not found. Install it from https://python.org"
+    exit 1
+fi
+if ! "$PY" -c 'import sys; raise SystemExit(0 if sys.version_info[:2] == (3, 11) else 1)'; then
+    echo "  ❌ OMNI requires CPython >=3.11,<3.12; found $("$PY" -VV 2>&1)."
     exit 1
 fi
 echo "  Python: $PY"
@@ -69,33 +78,31 @@ else
         --extra-index-url "https://abetlen.github.io/llama-cpp-python/whl/cu121"
 fi
 
-echo "    -> OMNI + everything (voice, vision, memory, UI, API)"
-$PY -m pip install --quiet -e ".[all]"
-$PY -m pip install --quiet opencv-contrib-python-headless pywhatkit customtkinter
+echo "    -> OMNI declared all profile (non-editable source build)"
+$PY -m pip install --quiet ".[all]"
+$PY -m pip check
 
 echo ""
 echo "  ✅ Dependencies installed."
 
-# ---------- 3. Offline TTS: ensure piper is present + set default ----------
+# ---------- 3. Offline TTS: set the per-user default ----------
 echo ""
-echo "  [2/6] Configuring OFFLINE TTS (piper)..."
-$PY -m pip install --quiet piper-tts || echo "    (piper install optional, edge fallback available)"
-# Ensure tts_allow_cloud is False (offline-first default) — it already is by
-# default; this just makes it explicit in config.
-mkdir -p data
+echo "  [2/6] Configuring OFFLINE TTS (piper from the all profile)..."
 $PY - <<'EOF'
-import json, os
-from pathlib import Path
-p = Path("data/config.json")
+import json
+from omni_v2.core.paths import get_data_dir
+
+p = get_data_dir() / "config.json"
 cfg = {}
 if p.exists():
-    try: cfg = json.loads(p.read_text(encoding="utf-8"))
-    except Exception: cfg = {}
+    try:
+        cfg = json.loads(p.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        cfg = {}
 cfg.setdefault("tts_allow_cloud", False)
 cfg.setdefault("tts_enabled", True)
-p.parent.mkdir(parents=True, exist_ok=True)
 p.write_text(json.dumps(cfg, indent=2), encoding="utf-8")
-print("    -> tts_allow_cloud=False (fully local voice)")
+print(f"    -> tts_allow_cloud=False in {p}")
 EOF
 
 echo "  ✅ Offline TTS configured (piper primary)."
@@ -116,8 +123,7 @@ fi
 
 # ---------- 5. WhatsApp messenger help ----------
 echo ""
-echo "  [5/6] WhatsApp Web messenger (Pakistan-friendly)..."
-$PY -m pip install --quiet pywhatkit || echo "    (pywhatkit optional - fallback to file channel)"
+echo "  [5/6] WhatsApp Web messenger (Pakistan-friendly; from all profile)..."
 echo "    Run: omni messenger setup-whatsapp  for the step-by-step guide."
 echo "    Run: omni messenger whatsapp-set +923001234567  to set your number."
 
@@ -135,7 +141,7 @@ echo "  Next steps:"
 echo "    omni test                       # (re)run all tests"
 echo "    omni model info                 # verify both models present"
 echo "    omni app                        # launch desktop control panel"
-echo "    omni start                      # FastAPI backend on :8765"
+echo "    omni start                      # FastAPI backend on the configured bind/port"
 echo "    omni messenger setup-whatsapp   # phone reports"
 echo ""
 echo "  Deep-tier: hard reasoning auto-swaps to the 3B model (fits 4GB VRAM)."

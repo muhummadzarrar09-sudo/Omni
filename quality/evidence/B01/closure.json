@@ -1,0 +1,188 @@
+{
+  "schema_version": 1,
+  "batch": "B01",
+  "title": "Dependency and Package Rescue",
+  "decision": "closed",
+  "closed_on": "2026-08-11",
+  "base_commit": "c4e289f7a05cd4b17849269568d6467edcc0a7d6",
+  "approval": {
+    "gate": "pass",
+    "basis": "Every B01 exit-gate requirement passed on the declared CPython 3.11 Linux x86_64 qualification environment. Whole-product failures and untested platforms remain explicitly deferred rather than being counted as B01 passes.",
+    "review_mode": "Arena Agent Mode implementation plus self-audit; no independent reviewer is claimed.",
+    "next_batch": "B02",
+    "next_batch_state": "ready_not_started"
+  },
+  "qualified_environment": {
+    "python": "CPython 3.11.2",
+    "python_contract": ">=3.11,<3.12",
+    "platform": "Linux x86_64",
+    "node": "22.22.3",
+    "npm": "12.0.2",
+    "artifact_origin": "local source build; no PyPI or release qualification is claimed"
+  },
+  "dependency_profiles": {
+    "core": 36,
+    "voice": 90,
+    "vision": 88,
+    "desktop": 26,
+    "dev": 92,
+    "all": 219
+  },
+  "lock_sha256": {
+    "all.txt": "e333fbebd8b2ae4a6e752e4ab10ee4d81ba4da6fe5bd073e7d915a6b8a7c6952",
+    "core.txt": "e4f2f3ce3be3a49a8e5cb82e237659efe982d557b056e5b38a74cf2c97869e1c",
+    "desktop.txt": "a63c542829c7e762dba6425d8f0e81655805438b51941a62a4211e2b0bb484da",
+    "dev.txt": "bc2678e12b4e77fc810a2db395a74a51630390fcff49cc4ff1094dfb4bd82b3b",
+    "vision.txt": "d0e67b6b5801c8d8db91e37ba1f59e45b9027bfe3875bfac7adf397fd376d0fa",
+    "voice.txt": "5e60468123283c8abbee017aaa8412fe25200a355c9cfcc643440cdcd9272af5"
+  },
+  "artifacts": [
+    {
+      "path": "dist/omni_agi-3.2.0-py3-none-any.whl",
+      "sha256": "55a29affff56591e5e2bff10c5d43b91579e1f11383ae6e1ada4b562aecb3461",
+      "bytes": 495796,
+      "members": 197,
+      "required_runtime_files": 190,
+      "content_gate": "pass"
+    },
+    {
+      "path": "dist/omni_agi-3.2.0.tar.gz",
+      "sha256": "48e19771aeee1cef8e7c831c2713aefd44b842be42a26c765b987840646b8ca5",
+      "bytes": 410280,
+      "members": 207,
+      "required_runtime_files": 190,
+      "content_gate": "pass"
+    }
+  ],
+  "verification": [
+    {
+      "gate": "profile_resolution",
+      "command": ".venv/bin/python scripts/resolve_profiles.py",
+      "status": "pass",
+      "result": "Six profiles resolved with exact hashes: core 36, voice 90, vision 88, desktop 26, dev 92, all 219.",
+      "evidence": "quality/evidence/B01/profile-resolution.json"
+    },
+    {
+      "gate": "exact_development_install",
+      "command": ".venv/bin/python -m pip install --require-hashes -r requirements/locks/cpython-3.11-linux-x86_64/dev.txt && .venv/bin/python -m pip check",
+      "status": "pass",
+      "result": "Exact dev lock installed; no broken requirements found."
+    },
+    {
+      "gate": "build",
+      "command": ".venv/bin/python -m build",
+      "status": "pass",
+      "result": "Built wheel and sdist from the final package inputs."
+    },
+    {
+      "gate": "artifact_content",
+      "command": ".venv/bin/python scripts/check_package_contents.py --json dist/*.whl dist/*.tar.gz",
+      "status": "pass",
+      "result": "All 190 required runtime files occur in both artifacts; wheel has 197 members and sdist has 207.",
+      "evidence": "quality/evidence/B01/package-contents.json"
+    },
+    {
+      "gate": "artifact_metadata",
+      "command": ".venv/bin/python -m twine check dist/*",
+      "status": "pass",
+      "result": "Both artifacts passed Twine metadata and README rendering checks."
+    },
+    {
+      "gate": "package_contract_tests",
+      "command": ".venv/bin/python -m pytest -q tests/package",
+      "status": "pass",
+      "result": "14 passed in 11.31s."
+    },
+    {
+      "gate": "installed_artifact_smoke",
+      "command": ".venv/bin/python scripts/smoke_installed_artifact.py dist/omni_agi-3.2.0-py3-none-any.whl",
+      "status": "pass",
+      "result": "Exact core-lock install passed outside the checkout: three package imports, CLI help and engine dispatch, two package resources, backend health, empty working directory, canonical external data root, and immutable 388-file installed package tree.",
+      "evidence": "quality/evidence/B01/installed-artifact-smoke.json"
+    },
+    {
+      "gate": "python_vulnerability_audit",
+      "command": ".venv/bin/python -m pip_audit --require-hashes -r requirements/locks/cpython-3.11-linux-x86_64/dev.txt",
+      "status": "pass",
+      "result": "87 audited dependencies; zero known vulnerabilities and zero fixes at audit time.",
+      "evidence": "quality/evidence/B01/python-vulnerability-audit.json"
+    },
+    {
+      "gate": "python_license_inventory",
+      "command": ".venv/bin/python scripts/audit_python_licenses.py requirements/locks/cpython-3.11-linux-x86_64/dev.txt",
+      "status": "pass_with_review",
+      "result": "91 expected and 91 inventoried distributions; no missing, mismatched, or unknown records. docutils 0.23 and qrcode 8.2 remain review-required; this is not legal advice.",
+      "evidence": "quality/evidence/B01/python-license-inventory.json"
+    },
+    {
+      "gate": "frontend_supply_chain",
+      "command": "cd frontend_next && npx --yes npm@12.0.2 ci && npx --yes npm@12.0.2 install-scripts ls && npx --yes npm@12.0.2 ls --all && npx --yes npm@12.0.2 audit --audit-level=low && npx --yes npm@12.0.2 run lint && npx --yes npm@12.0.2 run build",
+      "status": "pass",
+      "result": "Clean install passed; no unreviewed install scripts, no dependency-tree problems, zero known audit vulnerabilities, zero-warning lint, and successful 24-route Next.js production build.",
+      "evidence": "quality/evidence/B01/frontend-dependency-tree.json; quality/evidence/B01/frontend-vulnerability-audit.json"
+    },
+    {
+      "gate": "static_and_source_sanity",
+      "command": "compileall; fatal Ruff checks over changed Python; full Ruff checks over B01-owned scripts/tests/path modules; git diff --check; shell syntax; Make dry-run",
+      "status": "pass",
+      "result": "Compilation, undefined-name/syntax checks, B01-owned lint, path-import cleanup, whitespace checks, shell parsing, and declared Make targets passed."
+    },
+    {
+      "gate": "generated_authorities_and_links",
+      "command": ".venv/bin/python scripts/quality_baseline.py generate && .venv/bin/python scripts/quality_baseline.py check && PYTHONPATH=scripts .venv/bin/python scripts/quality_baseline_selftest.py && .venv/bin/python scripts/check_markdown_links.py --local-only README.md docs quality/evidence",
+      "status": "pass",
+      "result": "Machine-readable authorities, generated documents, inventory, schemas, execution sequence, closure references, adversarial authority self-tests, and 115 local targets across 27 Markdown files passed final validation; source digest b33434ab727a66831e00800e06134f681f93b2c415d4a2e6723c14c658ac4fc1."
+    }
+  ],
+  "exit_gate_mapping": [
+    {
+      "requirement": "All declared profiles resolve under the supported Python version",
+      "status": "pass",
+      "evidence": "Six exact CPython 3.11 Linux x86_64 locks and profile-resolution evidence."
+    },
+    {
+      "requirement": "The wheel installs in a clean environment and imports successfully",
+      "status": "pass",
+      "evidence": "Exact core-lock isolated artifact smoke outside the checkout."
+    },
+    {
+      "requirement": "CLI smoke tests pass outside the source checkout",
+      "status": "pass",
+      "evidence": "Installed omni executable help, engine information, install guidance, resources, backend health, clean-CWD, and immutable-tree probes."
+    },
+    {
+      "requirement": "The wheel and sdist contain every intended runtime package and resource",
+      "status": "pass",
+      "evidence": "190-file source-derived runtime manifest enforced against both artifacts."
+    },
+    {
+      "requirement": "No production import is absent from the declared dependency profiles",
+      "status": "pass",
+      "evidence": "AST import/profile policy tests pass; optional feature requirements remain correctly assigned to optional profiles rather than the minimal core."
+    }
+  ],
+  "whole_repository_diagnostic": {
+    "command": ".venv/bin/python -m pytest -q",
+    "status": "fail_disclosed_not_b01_gate",
+    "result": "668 passed, 33 skipped, 10 failed in 33.68s.",
+    "failures": "One date-bound calendar fixture and nine optional OpenCV/face-security cases in the exact dev environment.",
+    "owner": "B03",
+    "evidence": "quality/evidence/B01/broad-test-diagnostic.json"
+  },
+  "scope_boundaries_and_nonclaims": [
+    "B01 qualifies only CPython 3.11 on Linux x86_64; Windows and macOS are not qualified.",
+    "The voice, vision, desktop, and all profiles are resolver-qualified only; native library availability, model downloads, hardware devices, and complete runtime workflows were not exercised.",
+    "No PyPI upload, signed release, tag, release channel, or external artifact distribution is claimed.",
+    "Frontend lint/build/audit success is not frontend interaction, accessibility, or workflow qualification.",
+    "The backend health probe confirms startup and contract shape under core dependencies, not whole-product readiness.",
+    "B02 owns idempotent install/start/stop/restart and platform qualification; no B02 implementation is claimed.",
+    "B03 owns the remaining broad-suite failures and CI enforcement.",
+    "The project is not 10/10 at B01 closure; later locked batches and the dogfood/final-audit gates remain mandatory."
+  ],
+  "risk_acceptance": [
+    "License metadata for docutils 0.23 and qrcode 8.2 requires later human/legal review if distribution scope expands.",
+    "Resolved optional profiles can be very large, especially the all profile and its accelerator stack.",
+    "Local artifact qualification does not establish reproducibility on another operating system or CPU architecture.",
+    "Current source retains capability-level optional dependencies and known broad-suite failures by design; hiding them through an oversized core install was rejected."
+  ]
+}

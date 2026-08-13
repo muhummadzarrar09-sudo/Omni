@@ -40,10 +40,7 @@ except ImportError:
     import logging
     logger = logging.getLogger("Vault")
 
-try:
-    from omni_v2.core.paths import DATA_DIR
-except Exception:
-    DATA_DIR = Path.cwd() / "data"
+from omni_v2.core.paths import DATA_DIR
 
 VAULT_DIR = DATA_DIR / "brain" / "vault"
 VAULT_FILE = VAULT_DIR / "vault.json"

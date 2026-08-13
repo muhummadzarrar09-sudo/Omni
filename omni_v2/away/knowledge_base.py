@@ -27,10 +27,7 @@ except ImportError:
     import logging
     logger = logging.getLogger("KnowledgeBase")
 
-try:
-    from omni_v2.core.paths import DATA_DIR
-except Exception:
-    DATA_DIR = Path.cwd() / "data"
+from omni_v2.core.paths import DATA_DIR
 
 try:
     from omni_v2.memory.hybrid_memory import HybridMemory, get_hybrid_memory

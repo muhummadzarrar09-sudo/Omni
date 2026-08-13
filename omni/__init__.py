@@ -1,25 +1,22 @@
+"""Public Python API for the experimental OMNI personal assistant.
+
+The package exposes selected implementation objects lazily so package metadata
+and lightweight CLI commands remain usable without installing every optional
+capability profile. Importing a lazy object can still require its declared
+``core``, ``voice``, ``vision``, or ``desktop`` dependencies.
+
+OMNI is a pre-alpha personal build. Import availability is not a claim that a
+capability is stable or release-qualified; the machine-readable capability
+matrix under ``quality/`` is the source of truth in the repository.
 """
-OMNI V3 - Local, Private, Cinematic AGI
-=======================================
 
-A multi-agent local AGI powered by Qwen2.5-1.5B GGUF with:
-  - Voice I/O (faster-whisper STT, Kokoro/SAPI TTS, sounddevice mic)
-  - Vision (Moondream2 - 1.9B)
-  - 100+ tools (browser, files, code, smart home, calendar, etc.)
-  - Closed-loop self-healing (Evaluator + Hermes refinement)
-  - Persistent memory (SQLite + ChromaDB + FastAFStore)
-  - Cinematic UI (Next.js or PyQt5 neomorphism)
-  - Multi-agent orchestration (Planner -> Executor -> Monitor -> Evaluator -> Memory)
+from importlib.metadata import PackageNotFoundError, version
 
-Quick start:
-    $ pip install -e .[all]
-    $ omni model download    # fetches the LLM
-    $ omni start             # starts backend + opens UI
+try:
+    __version__ = version("omni-agi")
+except PackageNotFoundError:  # Source checkout before installation.
+    __version__ = "3.2.0"
 
-For the old Python-only test suite (no install required):
-    $ python omni.py --test
-"""
-__version__ = "3.1.0"
 __author__ = "Zarrar + Agent"
 
 
@@ -61,12 +58,23 @@ def __getattr__(name):
 
 
 __all__ = [
-    "Brain", "BrainResponse", "get_brain",
-    "PlannerAgent", "ExecutorAgent", "MonitorAgent",
-    "EvaluatorAgent", "MemoryAgent", "ProactiveAgent",
-    "CommandRegistry", "PluginManager", "CommandResult",
-    "CommandPlugin", "CommandMetadata",
-    "get_simple_stt", "get_simple_tts", "VoicePipelineV3Fixed",
+    "Brain",
+    "BrainResponse",
+    "CommandMetadata",
+    "CommandPlugin",
+    "CommandRegistry",
+    "CommandResult",
+    "EvaluatorAgent",
+    "ExecutorAgent",
+    "MemoryAgent",
+    "MonitorAgent",
+    "PlannerAgent",
+    "PluginManager",
+    "ProactiveAgent",
+    "VoicePipelineV3Fixed",
     "get_audio_v3",
+    "get_brain",
+    "get_simple_stt",
+    "get_simple_tts",
 ]
 

@@ -72,7 +72,9 @@ class ProactiveEngineV2:
         if self._initialized:
             return
         self.interval_sec = interval_sec
-        self.data_dir = data_dir or (Path(__file__).resolve().parents[2] / "data" / "proactive")
+        from omni_v2.core.paths import get_data_dir
+
+        self.data_dir = data_dir or (get_data_dir() / "proactive")
         self.data_dir.mkdir(parents=True, exist_ok=True)
         self.suggestions_file = self.data_dir / "suggestions.json"
 

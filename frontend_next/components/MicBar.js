@@ -56,7 +56,7 @@ export default function MicBar({ rms = 0, max = 0, devices = [], selectedDevice 
       <div className="neu-inset p-3 rounded-[12px] mt-3">
         <div className="font-mono text-[10px] text-[#A0AEC0] space-y-1">
           <div>Device: <span className="text-[#E2E8F0]">{selectedDevice || '[10] Realtek HD Audio Mic'}</span></div>
-          <div>STT: <span className="text-[#4ADE80]">base.en cuda int8 ✓</span> | TTS: <span className="text-[#4ADE80]">SAPI5 ✓</span></div>
+          <div>STT/TTS: <span className="text-[var(--text2)]">managed by canonical config and preflight</span></div>
           <div>Backend: <span className="text-[#4ADE80]">sounddevice primary (fixes -9999) ✓</span></div>
           <div>Portable: <span className="text-[#38BDF8]">No D:/Omni hardcode ✓</span></div>
         </div>

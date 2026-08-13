@@ -1,116 +1,87 @@
-#!/bin/bash
-# OMNI V3 - One-shot install for Unix/macOS - LATEST DEPENDENCIES
-#
-# Usage:
-#   ./install.sh                  # full install (CPU)
-#   ./install.sh --cuda cu121      # NVIDIA GPU acceleration
-#   ./install.sh --minimal        # just the brain
-#   ./install.sh --upgrade        # upgrade all packages to latest
-#
-# After install:
-#   omni model download
-#   omni test
-#   omni start
+#!/usr/bin/env bash
+# OMNI source-checkout developer installer for Unix-like hosts.
+# This is not B01 evidence and does not claim Linux/macOS product support.
+# The primary B02 target is Windows 11 Arm64; x64 is a secondary native lane. See docs/TROUBLESHOOTING.md.
 
-set -e
+set -euo pipefail
 
-echo ""
-echo "  ====================================================="
-echo "   OMNI V3 - Install (Unix/macOS) - LATEST DEPS"
-echo "  ====================================================="
-echo ""
-
-# Parse args
-CUDA=""
-MINIMAL=""
-UPGRADE=""
-for arg in "$@"; do
-    case $arg in
-        --cuda)
-            CUDA="$2"
-            shift 2
+PROFILE="core"
+FRONTEND=1
+for argument in "$@"; do
+    case "$argument" in
+        --minimal|--core) PROFILE="core" ;;
+        --all) PROFILE="all" ;;
+        --backend-only) FRONTEND=0 ;;
+        -h|--help)
+            echo "Usage: scripts/install.sh [--core|--all] [--backend-only]"
+            exit 0
             ;;
-        --minimal)
-            MINIMAL="1"
-            shift
-            ;;
-        --upgrade)
-            UPGRADE="1"
-            shift
+        *)
+            echo "ERROR: unsupported option: $argument" >&2
+            exit 2
             ;;
     esac
 done
 
-# 1. Find Python
-PY=$(command -v python3 || command -v python)
+ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+cd "$ROOT"
+PY=$(command -v python3.11 || command -v python3 || command -v python || true)
 if [ -z "$PY" ]; then
-    echo "  ❌ Python 3 not found. Install from https://python.org"
+    echo "ERROR: CPython 3.11 was not found." >&2
     exit 1
 fi
-PY_VERSION=$($PY -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
-echo "  Python: $PY ($PY_VERSION)"
+if ! "$PY" -c 'import platform, sys; raise SystemExit(0 if platform.python_implementation() == "CPython" and sys.version_info[:2] == (3, 11) else 1)'; then
+    echo "ERROR: OMNI requires CPython >=3.11,<3.12; found $("$PY" -VV 2>&1)." >&2
+    exit 1
+fi
 
-# 2. Create venv
-if [ -z "$VIRTUAL_ENV" ]; then
-    if [ ! -d ".venv" ]; then
-        echo "  Creating venv at .venv..."
-        $PY -m venv .venv
+if [ ! -x .venv/bin/python ]; then
+    if [ -d .venv ] || [ -f .venv ] || [ -L .venv ]; then
+        echo "ERROR: .venv exists but does not contain a Unix Python executable." >&2
+        exit 1
     fi
-    echo "  Activated venv: .venv"
-    source .venv/bin/activate
-    PY=python
+    "$PY" -m venv .venv
+fi
+PY="$ROOT/.venv/bin/python"
+if ! "$PY" -c 'import platform, sys; raise SystemExit(0 if platform.python_implementation() == "CPython" and sys.version_info[:2] == (3, 11) else 1)'; then
+    echo "ERROR: existing .venv is not CPython 3.11; remove it explicitly and retry." >&2
+    exit 1
 fi
 
-# 3. Upgrade pip + setuptools + wheel to LATEST
-echo "  Upgrading pip, setuptools, wheel to LATEST..."
-$PY -m pip install --upgrade --quiet pip setuptools wheel
-echo "    -> $($PY -m pip --version)"
-
-# 4. Install llama-cpp-python FIRST with prebuilt wheel
-echo "  Installing llama-cpp-python (prebuilt wheel, latest)..."
-if [ -n "$CUDA" ]; then
-    echo "    -> CUDA variant: $CUDA"
-    $PY -m pip install --upgrade "llama-cpp-python" \
-        --extra-index-url "https://abetlen.github.io/llama-cpp-python/whl/$CUDA" \
-        --quiet
-else
-    echo "    -> CPU variant (no GPU needed)"
-    $PY -m pip install --upgrade "llama-cpp-python" \
-        --extra-index-url "https://abetlen.github.io/llama-cpp-python/whl/cpu" \
-        --quiet
+# The checkout is importable even in an empty venv, so detect an installed
+# distribution rather than using find_spec before importing lifecycle deps.
+if "$PY" -c "import importlib.metadata as m; raise SystemExit(0 if any(d.metadata.get('Name', '').lower() == 'omni-agi' for d in m.distributions()) else 1)"; then
+    "$PY" -m omni_v2.core.runtime_cli stop >/dev/null
 fi
 
-# 5. Install the rest
-echo "  Installing OMNI V3 with LATEST dependencies..."
-if [ -n "$MINIMAL" ]; then
-    $PY -m pip install -e ".[brain]" --upgrade --quiet
-else
-    $PY -m pip install -e ".[all]" --upgrade --quiet
-fi
+echo "OMNI Unix developer install: profile=$PROFILE (index-resolved; not B01 evidence)"
+"$PY" -m pip install ".[${PROFILE}]"
+"$PY" -m pip check
+"$PY" -m omni_v2.core.runtime_cli --json config init >/dev/null
 
-# 6. Playwright browsers
-if [ -z "$MINIMAL" ]; then
-    echo "  Ensuring Playwright browser binaries..."
-    $PY -m playwright install chromium 2>&1 | tail -2 || true
-    echo "    -> Chromium ready"
-fi
-
-# 7. Show versions
-echo ""
-echo "  ====================================================="
-echo "  ✅ OMNI V3 installed with LATEST deps!"
-echo "  ====================================================="
-echo ""
-echo "  Installed versions:"
-for pkg in llama-cpp-python faster-whisper edge-tts openwakeword playwright fastapi uvicorn apscheduler sentence-transformers chromadb; do
-    ver=$($PY -m pip show $pkg 2>/dev/null | grep "^Version:" | awk '{print $2}')
-    if [ -n "$ver" ]; then
-        echo "    $pkg: $ver"
+if [ "$FRONTEND" -eq 1 ]; then
+    NODE=$(command -v node || true)
+    COREPACK=$(command -v corepack || true)
+    if [ -z "$NODE" ] || [ -z "$COREPACK" ]; then
+        echo "ERROR: Node.js >=22.22.2,<23 with Corepack is required for the interface." >&2
+        exit 1
     fi
-done
-echo ""
-echo "  Next steps:"
-echo "    omni model download    # fetches 1.1GB Qwen2.5-1.5B GGUF"
-echo "    omni test              # runs 4 test suites"
-echo "    omni start             # starts backend on :8765"
-echo ""
+    if ! "$NODE" --eval='const [major,minor,patch]=process.versions.node.split(".").map(Number); process.exit(major===22 && (minor>22 || (minor===22 && patch>=2)) ? 0 : 1)'; then
+        echo "ERROR: Node.js >=22.22.2,<23 is required; found $("$NODE" --version)." >&2
+        exit 1
+    fi
+    NPM=("$COREPACK" "npm@12.0.2")
+    if [ "$("${NPM[@]}" --version)" != "12.0.2" ]; then
+        echo "ERROR: Corepack could not provide npm 12.0.2 required by frontend_next/package.json." >&2
+        exit 1
+    fi
+    export OMNI_BACKEND_URL
+    OMNI_BACKEND_URL=$("$PY" -c 'from omni_v2.core.config import load_config; print(load_config().backend_url)')
+    "${NPM[@]}" --prefix frontend_next ci
+    "${NPM[@]}" --prefix frontend_next run build
+    "$PY" -m omni_v2.core.runtime_cli preflight --frontend --root "$ROOT"
+else
+    "$PY" -m omni_v2.core.runtime_cli preflight --root "$ROOT"
+fi
+
+echo "Developer installation ready. This host is not a qualified product platform."

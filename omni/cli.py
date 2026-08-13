@@ -1,17 +1,7 @@
-"""
-OMNI CLI - single entry point for everything.
-After `pip install -e .`, run `omni ...` from anywhere.
+"""Command-line entry point for the experimental OMNI personal assistant.
 
-Subcommands:
-  omni install         - print install instructions for this platform
-  omni model info      - show which GGUF model is loaded, sizes, speed
-  omni model download  - fetch the default Qwen2.5-1.5B GGUF (~1.1GB)
-  omni test            - run all 20 test suites (10/10 multi-agent + 18 phase tests)
-  omni start           - start FastAPI backend (judges can curl it)
-  omni ui              - start Next.js dev server
-  omni dev             - start both (backend + UI) and open browser
-  omni status          - health check
-  omni shell           - interactive shell (REPL) into the brain
+The lightweight commands and package inspection paths work from an installed
+wheel. Source-development commands explicitly check for checkout-only assets.
 """
 import argparse
 import sys
@@ -21,8 +11,12 @@ import os
 import json
 from pathlib import Path
 
+from omni_v2.core.config import load_config
+
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
+RUNTIME_CONFIG = load_config()
+DATA_ROOT = RUNTIME_CONFIG.data_dir
 
 # Fix Windows cp1252 console encoding FIRST (before any module prints emoji)
 try:
@@ -38,53 +32,30 @@ def _run(cmd, **kwargs):
 
 
 def cmd_install(args):
-    """Print install instructions for current platform."""
+    """Print the source-checkout installation and qualification boundary."""
     import platform
-    is_win = platform.system() == "Windows"
-    script = "install.ps1" if is_win else "install.sh"
-    print(f"\n  OMNI V3 install ({platform.system()})\n")
-    print(f"  EASIEST: one-shot install script (handles llama-cpp prebuilt wheel):")
-    print(f"     ./{script}")
-    if is_win:
-        print(f"     # or: .\\{script} -Cuda cu121   # for NVIDIA GPU")
+
+    print(f"\n  OMNI installation ({platform.system()}, CPython 3.11 required)\n")
+    if platform.system() == "Windows":
+        print("  Primary source-checkout path: install.bat")
+        print("  PowerShell equivalent: .\\scripts\\install.ps1 -Core")
+        print("  Start after installation: start.bat")
     else:
-        print(f"     # or: ./{script} --cuda cu121   # for NVIDIA GPU")
-        print(f"     # or: ./{script} --minimal      # just the brain")
-    print()
-    print(f"  Or, the manual way:")
-    print(f"     1. Create venv:")
-    print(f"        python -m venv .venv")
-    activate_cmd = "  .venv\\Scripts\\activate" if is_win else "source .venv/bin/activate"
-    print(f"        {activate_cmd}")
-    print()
-    print(f"     2. Install llama-cpp-python FIRST (prebuilt wheel, avoids MSVC build):")
-    if is_win:
-        print(f"        pip install llama-cpp-python --extra-index-url https://abetlen.github.io/llama-cpp-python/whl/cpu")
-    else:
-        print(f"        pip install llama-cpp-python --extra-index-url https://abetlen.github.io/llama-cpp-python/whl/cpu")
-    print()
-    print(f"     3. Install OMNI + everything:")
-    print(f"        pip install -e .[all]")
-    print()
-    print(f"     4. Download the LLM (one-time, 1.1GB):")
-    print(f"        omni model download")
-    print()
-    print(f"     5. Test:")
-    print(f"        omni test")
-    print()
-    print(f"     6. Run:")
-    print(f"        omni start          # FastAPI on :8765")
-    print(f"        omni dev            # backend + UI + browser")
-    print()
-    print(f"  Or, the OLD way (no install needed):")
-    print(f"     python omni.py --test    # multi-agent tests")
-    print(f"     python run_dev_all.py    # full stack (LEGACY, no longer used)")
+        print("  Developer-only source-checkout path: ./scripts/install.sh --core")
+        print("  Start after installation: ./start.sh")
+        print("  This is not a Linux/macOS product-support claim.")
+    print("\n  No public index release is qualified. Profile and lock details, exact")
+    print("  prerequisites, diagnostics, lifecycle, and uninstall instructions are in")
+    print("  docs/TROUBLESHOOTING.md. B02 remains open until fresh native Windows")
+    print("  qualification and a native CPython 3.11 Windows x64 core lock exist.")
+    print(f"\n  User data directory: {DATA_ROOT}\n")
+    return 0
 
 
 def cmd_model_info(args):
     """Show which model is loaded, size, speed, etc."""
     print(f"\n  OMNI Model Status\n")
-    model_path = REPO_ROOT / "data" / "models"
+    model_path = RUNTIME_CONFIG.models_dir
     if not model_path.exists():
         print("  ❌ No models/ dir. Run: omni model download")
         return 1
@@ -98,7 +69,6 @@ def cmd_model_info(args):
         print(f"    {g.name:<50s} {size_mb:>7.0f} MB")
     # Try to load the brain and see what it picked
     try:
-        sys.path.insert(0, str(REPO_ROOT))
         from omni_v2.llm.brain import get_brain
         brain = get_brain()
         status = brain.get_status()
@@ -115,7 +85,7 @@ def cmd_model_info(args):
 
 def cmd_model_download(args):
     """Download the default Qwen2.5-1.5B GGUF."""
-    target = REPO_ROOT / "data" / "models" / "qwen2.5-1.5b-instruct-q4_k_m.gguf"
+    target = RUNTIME_CONFIG.fast_model_path
     if target.exists():
         print(f"  ✅ Already present: {target} ({target.stat().st_size // 1024 // 1024} MB)")
         return 0
@@ -150,7 +120,7 @@ def cmd_model_download(args):
 
 def cmd_model_download_deep(args):
     """Download the deep-tier Qwen2.5-3B GGUF for hard reasoning (Phase 9 Step 2)."""
-    target = REPO_ROOT / "data" / "models" / "qwen2.5-3b-instruct-q4_k_m.gguf"
+    target = RUNTIME_CONFIG.deep_model_path
     if target.exists():
         print(f"  ✅ Already present: {target} ({target.stat().st_size // 1024 // 1024} MB)")
         return 0
@@ -297,161 +267,144 @@ def cmd_test(args):
     return 0 if all_ok else 1
 
 
-def cmd_start(args):
-    """Start the FastAPI backend."""
-    import webbrowser
-    print(f"\n  OMNI V3 - FastAPI backend on http://localhost:8765\n")
-    if not args.no_browser:
-        # Try to open in isolated Chrome
-        try:
-            sys.path.insert(0, str(REPO_ROOT))
-            from omni_v2.tools.browser_v3 import BrowserToolV3
-            browser = BrowserToolV3()
-            browser._launch_chrome_isolated("http://localhost:8765")
-        except Exception:
-            webbrowser.open("http://localhost:8765", new=2)
-    os.chdir(REPO_ROOT / "backend_fastapi")
-    cmd = [sys.executable, "-m", "uvicorn", "main:app",
-           "--host", "0.0.0.0", "--port", "8765"]
-    if args.reload:
-        cmd.append("--reload")
+def _print_lifecycle(result) -> None:
+    print(f"\n  OMNI {result.operation}: {'OK' if result.ok else 'NOT RUNNING'}")
+    for service in result.services:
+        pid = f" PID {service.pid}" if service.pid is not None else ""
+        print(f"  {service.name}: {service.status}{pid} — {service.url}")
+        print(f"    {service.detail}")
+    if result.diagnostics_path:
+        print(f"  Diagnostics: {result.diagnostics_path}")
+    print()
+
+
+def _managed_start(*, include_frontend: bool, restart_existing: bool = False):
+    from omni_v2.core.lifecycle import LifecycleError, restart, start, status
+
     try:
-        subprocess.run(cmd, check=True)
-    except KeyboardInterrupt:
-        print("\n  🛑 Stopped")
+        current = status(RUNTIME_CONFIG)
+        has_frontend = any(
+            service.name == "frontend" and service.status == "running"
+            for service in current.services
+        )
+        needs_recovery = any(
+            service.status in {"unhealthy", "unverified"} for service in current.services
+        )
+        if (
+            restart_existing
+            or needs_recovery
+            or (current.ok and include_frontend and not has_frontend)
+        ):
+            operation = restart
+        elif current.ok:
+            result = current
+            _print_lifecycle(result)
+            return result
+        else:
+            operation = start
+        result = operation(
+            config=RUNTIME_CONFIG,
+            repository_root=REPO_ROOT,
+            include_frontend=include_frontend,
+        )
+    except LifecycleError as exc:
+        print(f"  ERROR: {exc}", file=sys.stderr)
+        return None
+    _print_lifecycle(result)
+    return result
+
+
+def cmd_start(args):
+    """Start the backend through the owned process lifecycle."""
+    import webbrowser
+
+    if args.reload:
+        print("  ERROR: --reload is not supported by the managed launcher.", file=sys.stderr)
+        return 2
+    result = _managed_start(include_frontend=False)
+    if result is None or not result.ok:
+        return 1
+    if not args.no_browser:
+        webbrowser.open(RUNTIME_CONFIG.backend_docs_url, new=2)
     return 0
 
 
-def _find_npm():
-    """Locate npm.exe on Windows (venv doesn't put node on PATH)."""
-    import shutil
-    p = shutil.which("npm")
-    if p:
-        return p
-    # Common Windows install paths
-    candidates = [
-        Path(os.environ.get("APPDATA", "")) / "npm" / "npm.cmd",
-        Path("C:/Program Files/nodejs/npm.cmd"),
-        Path("C:/Program Files (x86)/nodejs/npm.cmd"),
-    ]
-    for c in candidates:
-        if c and c.exists():
-            return str(c)
-    return None
-
-
-def _ensure_node_modules(frontend: Path) -> bool:
-    """Install node_modules if missing. Returns True on success."""
-    if (frontend / "node_modules").exists():
-        return True
-    npm = _find_npm()
-    if not npm:
-        print(f"  ⚠️  npm not found on PATH. Install Node.js 18+ from https://nodejs.org")
-        print(f"      Then run: cd frontend_next && npm install")
-        return False
-    print(f"  Installing node_modules (first time, 1-2 min) using {npm}...")
-    try:
-        r = subprocess.run([npm, "install"], cwd=str(frontend), check=True,
-                           shell=True if os.name == "nt" else False)
-        return True
-    except subprocess.CalledProcessError as e:
-        print(f"  ⚠️  npm install failed (exit {e.returncode}). UI won't start.")
-        return False
-
-
 def cmd_ui(args):
-    """Start the Next.js UI."""
-    print(f"\n  OMNI V3 - Next.js UI on http://localhost:3000\n")
-    frontend = REPO_ROOT / "frontend_next"
-    if not _ensure_node_modules(frontend):
+    """Start the complete managed runtime and open its UI."""
+    import webbrowser
+
+    result = _managed_start(include_frontend=True)
+    if result is None or not result.ok:
         return 1
-    npm = _find_npm()
-    if not npm:
-        return 1
-    os.chdir(frontend)
-    try:
-        subprocess.run([npm, "run", "dev"], shell=os.name == "nt")
-    except KeyboardInterrupt:
-        print("\n  🛑 Stopped")
+    webbrowser.open(RUNTIME_CONFIG.frontend_url, new=2)
     return 0
 
 
 def cmd_dev(args):
-    """Start backend + UI, open browser. The 'everything' command."""
-    import threading
-    import webbrowser
-    print(f"\n  OMNI V3 - Dev mode (backend + UI)\n")
+    """Start backend and UI through the same managed lifecycle as production."""
+    result = _managed_start(include_frontend=True)
+    return 0 if result and result.ok else 1
 
-    # 1) Backend FIRST (foreground, but we'll background it via thread)
-    def run_backend():
-        os.chdir(REPO_ROOT / "backend_fastapi")
-        subprocess.run([sys.executable, "-m", "uvicorn", "main:app",
-                        "--port", "8765", "--host", "0.0.0.0"])
-    bt = threading.Thread(target=run_backend, daemon=True)
-    bt.start()
-    print("  ⏳ Waiting for backend to come up on :8765...")
-    time.sleep(4)
 
-    # 2) Try UI (non-fatal if it fails)
-    frontend = REPO_ROOT / "frontend_next"
-    ui_ready = _ensure_node_modules(frontend)
-    npm = _find_npm() if ui_ready else None
-    if not npm:
-        print("  ⚠️  UI skipped (no npm). Backend at http://localhost:8765 is LIVE.")
-        print("  Press Ctrl+C to stop. Open http://localhost:8765/docs in your browser.\n")
-        try:
-            bt.join()
-        except KeyboardInterrupt:
-            pass
-        return 0
+def cmd_restart(args):
+    """Replace the managed process generation and re-run readiness checks."""
+    result = _managed_start(
+        include_frontend=not args.backend_only,
+        restart_existing=True,
+    )
+    return 0 if result and result.ok else 1
 
-    def open_browser_later():
-        time.sleep(5)
-        try:
-            webbrowser.open("http://localhost:3000", new=2)
-        except Exception:
-            pass
-    threading.Thread(target=open_browser_later, daemon=True).start()
 
-    # 3) UI in foreground
-    os.chdir(frontend)
-    print("  Starting Next.js UI (Ctrl+C to stop everything)...\n")
+def cmd_stop(args):
+    """Stop only processes whose complete ownership identity matches state."""
+    from omni_v2.core.lifecycle import LifecycleError, stop
+
     try:
-        subprocess.run([npm, "run", "dev"], shell=os.name == "nt")
-    except KeyboardInterrupt:
-        print("\n  🛑 Stopped")
-    return 0
+        result = stop()
+    except LifecycleError as exc:
+        print(f"  ERROR: {exc}", file=sys.stderr)
+        return 1
+    _print_lifecycle(result)
+    return 0 if result.ok else 1
+
+
+def cmd_preflight(args):
+    """Run truthful installation and startup diagnostics."""
+    from omni_v2.core.preflight import render_report, run_preflight, write_json_report
+
+    report = run_preflight(
+        require_primary=args.primary,
+        require_frontend=args.frontend,
+        repository_root=REPO_ROOT,
+        config=RUNTIME_CONFIG,
+    )
+    write_json_report(report, RUNTIME_CONFIG.diagnostics_path)
+    render_report(report)
+    print(f"Diagnostics: {RUNTIME_CONFIG.diagnostics_path}")
+    return 0 if report.ok else 1
 
 
 def cmd_status(args):
-    """Health check - is the backend running? is the brain loaded?"""
-    import urllib.request
-    import urllib.error
-    print("\n  OMNI Status\n")
-    try:
-        with urllib.request.urlopen("http://localhost:8765/api/health", timeout=2) as r:
-            import json
-            data = json.loads(r.read())
-            print(f"  Backend:  ✅ Running (brain_ready={data.get('brain_ready')})")
-            print(f"  Brain:    {data.get('stt', {}).get('init_status', 'unknown')}")
-            print(f"  TTS:      {data.get('tts', {}).get('init_status', 'unknown')}")
-            print(f"  Audio:    {data.get('audio', 'unknown')}")
-    except urllib.error.URLError:
-        print(f"  Backend:  ❌ Not running (start with: omni start)")
+    """Inspect managed ownership state and the canonical local model path."""
+    from omni_v2.core.lifecycle import LifecycleError, status
 
-    # Check model
-    model = REPO_ROOT / "data" / "models" / "qwen2.5-1.5b-instruct-q4_k_m.gguf"
-    if model.exists():
-        print(f"  LLM:      ✅ {model.name} ({model.stat().st_size // 1024 // 1024} MB)")
+    try:
+        result = status(RUNTIME_CONFIG)
+    except LifecycleError as exc:
+        print(f"  ERROR: {exc}", file=sys.stderr)
+        return 1
+    _print_lifecycle(result)
+    model = RUNTIME_CONFIG.fast_model_path
+    if model.is_file() and model.stat().st_size > 0:
+        print(f"  LLM: present — {model} ({model.stat().st_size // 1024 // 1024} MB)")
     else:
-        print(f"  LLM:      ❌ Not found. Run: omni model download")
-    print()
+        print(f"  LLM: missing — {model} (run: omni model download)")
+    return 0
 
 
 def cmd_shell(args):
     """Interactive REPL into the brain."""
     print(f"\n  OMNI Brain REPL (type 'exit' to quit)\n")
-    sys.path.insert(0, str(REPO_ROOT))
     from omni_v2.llm.brain import get_brain
     from omni_v2.core import PluginManager
     from omni_v2.tools import get_all_tools
@@ -488,14 +441,12 @@ def cmd_shell(args):
 # Away Mode / Research / Knowledge Base (V3 Away Mode)
 # ---------------------------------------------------------------------------
 def _away_stack():
-    sys.path.insert(0, str(REPO_ROOT))
     from omni_v2.away.context import build_away_stack
     return build_away_stack()
 
 
 def cmd_kb(args):
     """Knowledge base: add files/folders/urls, query, search."""
-    sys.path.insert(0, str(REPO_ROOT))
     from omni_v2.away.knowledge_base import KnowledgeBase
     kb = KnowledgeBase()
     action = getattr(args, "kb_action", None) or "stats"
@@ -560,7 +511,6 @@ def cmd_kb(args):
 
 def cmd_research(args):
     """Run an autonomous research task and print/save the report."""
-    sys.path.insert(0, str(REPO_ROOT))
     from omni_v2.away.research import ResearchAgent
     from omni_v2.away.knowledge_base import KnowledgeBase
     agent = ResearchAgent(knowledge_base=KnowledgeBase())
@@ -580,7 +530,6 @@ def cmd_research(args):
 
 def cmd_away(args):
     """Away mode: manage the unattended task queue."""
-    sys.path.insert(0, str(REPO_ROOT))
     stack = _away_stack()
     agent = stack["away_agent"]
     action = getattr(args, "away_action", None) or "status"
@@ -631,7 +580,6 @@ def cmd_away(args):
 
 def cmd_report(args):
     """Reports: list saved reports or build a digest."""
-    sys.path.insert(0, str(REPO_ROOT))
     from omni_v2.away.reporter import Reporter
     rep = Reporter()
     action = getattr(args, "report_action", None) or "list"
@@ -665,7 +613,6 @@ def cmd_app(args):
 
 def cmd_brain(args):
     """Jarvis Brain: manage identity (self) + user model."""
-    sys.path.insert(0, str(REPO_ROOT))
     from omni_v2.brain.identity import IdentityCore
     ic = IdentityCore()
     action = getattr(args, "brain_action", None) or "status"
@@ -734,7 +681,6 @@ def cmd_brain(args):
 
 def cmd_voice(args):
     """Voice loop: hands-free 'Hey OMNI' conversation + voice-driven goals."""
-    sys.path.insert(0, str(REPO_ROOT))
     action = getattr(args, "voice_action", None) or "status"
     # build a controller for shared wiring
     from omni_v2.away.desktop import DesktopController
@@ -772,7 +718,6 @@ def cmd_voice(args):
 
 def cmd_guardian(args):
     """Proactive guardian: watch apps/processes/health + notify anomalies."""
-    sys.path.insert(0, str(REPO_ROOT))
     action = getattr(args, "guardian_action", None) or "status"
     from omni_v2.away.desktop import DesktopController
     c = DesktopController()
@@ -818,7 +763,6 @@ def cmd_guardian(args):
 
 def cmd_delegate(args):
     """Sub-agent delegation: run goal steps as parallel sub-agents."""
-    sys.path.insert(0, str(REPO_ROOT))
     from omni_v2.away.desktop import DesktopController
     c = DesktopController()
     action = getattr(args, "delegate_action", None) or "status"
@@ -845,7 +789,6 @@ def cmd_delegate(args):
 
 def cmd_router(args):
     """LLM router v2: cost-aware model selection (DGX-ready)."""
-    sys.path.insert(0, str(REPO_ROOT))
     from omni_v2.away.desktop import DesktopController
     c = DesktopController()
     action = getattr(args, "router_action", None) or "status"
@@ -882,7 +825,6 @@ def cmd_router(args):
 
 def cmd_history(args):
     """Action journal: session replay + safe undo."""
-    sys.path.insert(0, str(REPO_ROOT))
     from omni_v2.away.desktop import DesktopController
     c = DesktopController()
     action = getattr(args, "history_action", None) or "list"
@@ -909,7 +851,6 @@ def cmd_history(args):
 
 def cmd_photo(args):
     """Photo memory: caption images into the knowledge base."""
-    sys.path.insert(0, str(REPO_ROOT))
     from omni_v2.away.desktop import DesktopController
     c = DesktopController()
     action = getattr(args, "photo_action", None) or "status"
@@ -936,7 +877,6 @@ def cmd_photo(args):
 
 def cmd_backup(args):
     """Backup & restore the whole OMNI state."""
-    sys.path.insert(0, str(REPO_ROOT))
     from omni_v2.away.desktop import DesktopController
     c = DesktopController()
     action = getattr(args, "backup_action", None) or "list"
@@ -962,7 +902,6 @@ def cmd_backup(args):
 
 def cmd_file(args):
     """NL file manager: safe file operations from natural language."""
-    sys.path.insert(0, str(REPO_ROOT))
     from omni_v2.away.desktop import DesktopController
     c = DesktopController()
     action = getattr(args, "file_action", None) or "run"
@@ -983,14 +922,16 @@ def cmd_file(args):
 
 def cmd_remote(args):
     """LAN remote control: control OMNI from another device (via API)."""
-    sys.path.insert(0, str(REPO_ROOT))
     from omni_v2.away.desktop import DesktopController
     c = DesktopController()
     action = getattr(args, "remote_action", None) or "info"
     if action == "info":
         print("\n  📡 LAN Remote Control")
         print("    Start the backend with a token, then from another device on the LAN:")
-        print("      curl -X POST http://<omni-ip>:8765/api/remote/command \\")
+        print(
+            f"      curl -X POST http://<omni-ip>:{RUNTIME_CONFIG.backend_port}"
+            "/api/remote/command \\"
+        )
         print("        -H 'X-Omni-Token: <token>' -H 'Content-Type: application/json' \\")
         print("        -d '{\"command\":\"open the browser\"}'")
         print("    Endpoints: /api/remote/status · /command · /goal")
@@ -1003,7 +944,6 @@ def cmd_remote(args):
 
 def cmd_engine(args):
     """QueryEngine: the agentic tool-calling runtime."""
-    sys.path.insert(0, str(REPO_ROOT))
     from omni_v2.away.desktop import DesktopController
     c = DesktopController()
     action = getattr(args, "engine_action", None) or "info"
@@ -1019,7 +959,6 @@ def cmd_engine(args):
 
 def cmd_metaharness(args):
     """Meta-Harness: self-improvement outer loop."""
-    sys.path.insert(0, str(REPO_ROOT))
     from omni_v2.away.desktop import DesktopController
     c = DesktopController()
     action = getattr(args, "metaharness_action", None) or "info"
@@ -1040,7 +979,6 @@ def cmd_metaharness(args):
 
 def cmd_mesh(args):
     """OMNI Mesh: multi-machine state sync."""
-    sys.path.insert(0, str(REPO_ROOT))
     from omni_v2.away.desktop import DesktopController
     c = DesktopController()
     action = getattr(args, "mesh_action", None) or "export"
@@ -1060,7 +998,6 @@ def cmd_mesh(args):
 
 def cmd_gui(args):
     """GUI agent: vision-driven, sandboxed screen automation."""
-    sys.path.insert(0, str(REPO_ROOT))
     from omni_v2.away.desktop import DesktopController
     c = DesktopController()
     action = getattr(args, "gui_action", None) or "info"
@@ -1075,7 +1012,6 @@ def cmd_gui(args):
 
 def cmd_schedule(args):
     """Recurring scheduler: run OMNI actions on cron/interval schedules."""
-    sys.path.insert(0, str(REPO_ROOT))
     from omni_v2.away.desktop import DesktopController
     c = DesktopController()
     action = getattr(args, "schedule_action", None) or "list"
@@ -1137,7 +1073,6 @@ def cmd_schedule(args):
 
 def cmd_wake(args):
     """Wake routine: the 'Good morning Zarrar' scripted flow."""
-    sys.path.insert(0, str(REPO_ROOT))
     from omni_v2.away.desktop import DesktopController
     c = DesktopController()
     action = getattr(args, "wake_action", None) or "status"
@@ -1164,7 +1099,6 @@ def cmd_wake(args):
 
 def cmd_leaderboard(args):
     """Harness leaderboard: prioritize which skills/automations to improve."""
-    sys.path.insert(0, str(REPO_ROOT))
     from omni_v2.away.desktop import DesktopController
     c = DesktopController()
     action = getattr(args, "leaderboard_action", None) or "report"
@@ -1194,7 +1128,6 @@ def cmd_leaderboard(args):
 
 def cmd_personal(args):
     """Personal context: local calendar + contacts, and KB answers with citations."""
-    sys.path.insert(0, str(REPO_ROOT))
     from omni_v2.away.desktop import DesktopController
     c = DesktopController()
     action = getattr(args, "personal_action", None) or "status"
@@ -1250,7 +1183,6 @@ def cmd_personal(args):
 
 def cmd_vault(args):
     """Credential vault: encrypted local secrets with a permission gate."""
-    sys.path.insert(0, str(REPO_ROOT))
     from omni_v2.away.desktop import DesktopController
     c = DesktopController()
     action = getattr(args, "vault_action", None) or "list"
@@ -1310,7 +1242,6 @@ def cmd_vault(args):
 
 def cmd_sandbox(args):
     """Skill sandbox: run untrusted skill code in an isolated subprocess."""
-    sys.path.insert(0, str(REPO_ROOT))
     from omni_v2.away.desktop import DesktopController
     c = DesktopController()
     action = getattr(args, "sandbox_action", None) or "status"
@@ -1344,7 +1275,6 @@ def cmd_sandbox(args):
 
 def cmd_benchmark(args):
     """Self-improvement benchmark: measure how much faster/cheaper OMNI gets."""
-    sys.path.insert(0, str(REPO_ROOT))
     from omni_v2.away.desktop import DesktopController
     c = DesktopController()
     action = getattr(args, "benchmark_action", None) or "report"
@@ -1389,7 +1319,6 @@ def cmd_benchmark(args):
 
 def cmd_daemon(args):
     """OMNI daemon: always-on resident agent + auto-start."""
-    sys.path.insert(0, str(REPO_ROOT))
     from omni_v2.daemon.daemon import AutoStartManager, DaemonController
     from omni_v2.away.desktop import DesktopController
     action = getattr(args, "daemon_action", None) or "status"
@@ -1438,7 +1367,6 @@ def cmd_daemon(args):
 
 def cmd_automation(args):
     """Automation triggers: webhook/schedule/file events wake OMNI."""
-    sys.path.insert(0, str(REPO_ROOT))
     from omni_v2.away.desktop import DesktopController
     c = DesktopController()
     action = getattr(args, "automation_action", None) or "status"
@@ -1486,7 +1414,6 @@ def cmd_automation(args):
 
 def cmd_compaction(args):
     """Context auto-compaction: summarize old turns to save tokens."""
-    sys.path.insert(0, str(REPO_ROOT))
     from omni_v2.llm.compaction import Compactor
     c = Compactor()
     action = getattr(args, "compaction_action", None) or "status"
@@ -1507,7 +1434,6 @@ def cmd_compaction(args):
 
 def cmd_skill_verify(args):
     """Auto skill verification: test harness skills, roll back failures."""
-    sys.path.insert(0, str(REPO_ROOT))
     from omni_v2.away.desktop import DesktopController
     c = DesktopController()
     action = getattr(args, "sv_action", None) or "status"
@@ -1543,7 +1469,6 @@ def cmd_skill_verify(args):
 
 def cmd_mcp(args):
     """MCP: connect OMNI to the Model Context Protocol ecosystem."""
-    sys.path.insert(0, str(REPO_ROOT))
     from omni_v2.away.desktop import DesktopController
     c = DesktopController()
     action = getattr(args, "mcp_action", None) or "status"
@@ -1595,7 +1520,6 @@ def cmd_mcp(args):
 
 def cmd_harness(args):
     """Continual harness: self-refining skills/memory/lessons from trajectories."""
-    sys.path.insert(0, str(REPO_ROOT))
     from omni_v2.away.desktop import DesktopController
     c = DesktopController()
     action = getattr(args, "harness_action", None) or "status"
@@ -1649,7 +1573,6 @@ def cmd_harness(args):
 
 def cmd_graph(args):
     """Knowledge graph: build/visualize memory as a graph."""
-    sys.path.insert(0, str(REPO_ROOT))
     from omni_v2.graph.knowledge_graph import KnowledgeGraphBuilder
     from omni_v2.memory.hybrid_memory import get_hybrid_memory
     from omni_v2.memory.session_memory import SessionMemoryStore
@@ -1672,7 +1595,7 @@ def cmd_graph(args):
         return 0
 
     if action == "json":
-        out = args.out or (REPO_ROOT / "data" / "knowledge_graph.json")
+        out = args.out or (DATA_ROOT / "knowledge_graph.json")
         path = g.to_json(out)
         print(f"  ✅ Graph saved to {path}")
         return 0
@@ -1681,15 +1604,14 @@ def cmd_graph(args):
         # print a hint to open the web viewer
         print("\n  Open the web viewer:")
         print("    omni start         # FastAPI backend")
-        print("    cd frontend_next && npm run dev")
-        print("    → http://localhost:3000/knowledge-graph\n")
+        print("    omni ui")
+        print(f"    → {RUNTIME_CONFIG.frontend_url}/knowledge-graph\n")
         return 0
     return 1
 
 
 def cmd_briefing(args):
     """Morning briefing: build + deliver today's intel."""
-    sys.path.insert(0, str(REPO_ROOT))
     from omni_v2.briefing.briefing import MorningBriefing
     from omni_v2.brain.goals import GoalStack
     from omni_v2.brain.identity import IdentityCore
@@ -1724,7 +1646,6 @@ def cmd_briefing(args):
 
 def cmd_add_skill(args):
     """Skill installer: omni add-skill <url> pulls + verifies + wires a skill."""
-    sys.path.insert(0, str(REPO_ROOT))
     from omni_v2.skills.installer import SkillInstaller
     inst = SkillInstaller()
     action = getattr(args, "skill_action", None) or "install"
@@ -1751,7 +1672,6 @@ def cmd_add_skill(args):
 
 def cmd_meta(args):
     """Jarvis Brain metacognition: evaluate an outcome + feed back into a goal."""
-    sys.path.insert(0, str(REPO_ROOT))
     from omni_v2.brain.metacog import Metacog
     from omni_v2.brain.goals import GoalStack
     m = Metacog()
@@ -1808,7 +1728,6 @@ def cmd_meta(args):
 
 def cmd_reflect(args):
     """Jarvis Brain episodic reflection + pattern awareness (Step 5)."""
-    sys.path.insert(0, str(REPO_ROOT))
     from omni_v2.brain.reflect import Reflector
     from omni_v2.memory.session_memory import SessionMemoryStore
     from omni_v2.memory.hybrid_memory import get_hybrid_memory
@@ -1845,7 +1764,6 @@ def cmd_reflect(args):
 
 def cmd_goal(args):
     """Jarvis Brain goals: persistent goal stack (decompose / progress / replan)."""
-    sys.path.insert(0, str(REPO_ROOT))
     from omni_v2.brain.goals import GoalStack
     gs = GoalStack()
     action = getattr(args, "goal_action", None) or "list"
@@ -1932,7 +1850,6 @@ def cmd_goal(args):
 
 def cmd_messenger(args):
     """Messenger setup & diagnostics (WhatsApp for Pakistan / Telegram / file)."""
-    sys.path.insert(0, str(REPO_ROOT))
     from omni_v2.away.messenger import (
         load_away_config, save_away_config, whatsapp_setup_guide,
         MessengerRouter, normalize_phone, WhatsAppMessenger,
@@ -2007,7 +1924,6 @@ def cmd_messenger(args):
 
 def cmd_security(args):
     """Local camera security: enroll owner, arm/disarm guard, lock."""
-    sys.path.insert(0, str(REPO_ROOT))
     from omni_v2.security.face_auth import FaceAuth
     from omni_v2.security.guard_monitor import GuardMonitor
     from omni_v2.security.lockdown import LockdownController
@@ -2061,12 +1977,18 @@ def cmd_security(args):
 def main():
     parser = argparse.ArgumentParser(
         prog="omni",
-        description="OMNI V3 - Local, Private, Cinematic AGI",
+        description="Experimental local-first OMNI personal AI assistant",
     )
     sub = parser.add_subparsers(dest="cmd", required=False)
 
     sub.add_parser("install", help="Print install instructions")
-    sub.add_parser("status", help="Health check")
+    sub.add_parser("status", help="Inspect managed runtime status")
+    sub.add_parser("stop", help="Stop the owned runtime process tree")
+    restart_parser = sub.add_parser("restart", help="Restart and qualify the owned runtime")
+    restart_parser.add_argument("--backend-only", action="store_true")
+    preflight_parser = sub.add_parser("preflight", help="Run installation/startup diagnostics")
+    preflight_parser.add_argument("--primary", action="store_true", help="Require Windows 11 x64")
+    preflight_parser.add_argument("--frontend", action="store_true", help="Require built UI assets")
     sub.add_parser("test", help="Run all test suites").add_argument(
         "-v", "--verbose", action="store_true", help="Show full output"
     )
@@ -2078,12 +2000,12 @@ def main():
         "--deep", action="store_true", help="Download the deep-tier Qwen2.5-3B GGUF instead"
     )
 
-    s = sub.add_parser("start", help="Start FastAPI backend")
+    s = sub.add_parser("start", help="Start the managed FastAPI backend")
     s.add_argument("--no-browser", action="store_true", help="Don't open browser")
-    s.add_argument("--reload", action="store_true", help="Enable hot-reload")
+    s.add_argument("--reload", action="store_true", help="Rejected: managed startup is non-reloading")
 
-    sub.add_parser("ui", help="Start Next.js UI")
-    sub.add_parser("dev", help="Start backend + UI (everything)")
+    sub.add_parser("ui", help="Start the complete managed runtime and open its UI")
+    sub.add_parser("dev", help="Start backend + UI through the managed lifecycle")
     sub.add_parser("shell", help="Interactive brain REPL")
 
     # --- Away Mode (V3) ---
@@ -2411,6 +2333,12 @@ def main():
         return cmd_install(args)
     if cmd == "status":
         return cmd_status(args)
+    if cmd == "stop":
+        return cmd_stop(args)
+    if cmd == "restart":
+        return cmd_restart(args)
+    if cmd == "preflight":
+        return cmd_preflight(args)
     if cmd == "test":
         return cmd_test(args)
     if cmd == "model":

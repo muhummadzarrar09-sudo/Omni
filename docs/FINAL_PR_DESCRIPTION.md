@@ -1,5 +1,8 @@
 # OMNI V3 — Away Mode + Jarvis Brain: A Fully-Local, Self-Improving Assistant
 
+> **Document status (2026-08-11): historical or unqualified reference.** This file records earlier intent, implementation, audit, or setup work. Its completion, test-count, performance, privacy, platform, and production-readiness statements are **not current release claims**. Use the generated [Capability Matrix](CAPABILITY_MATRIX.md) and [Quality Scorecard](QUALITY_SCORECARD.md) for current truth.
+
+
 This PR is the cumulative result of a large multi-phase build: a **local, private,
 autonomous** assistant that works while you're away, remembers long-term & short-term,
 thinks about its own thinking, self-improves from experience, and is **DGX-ready**.

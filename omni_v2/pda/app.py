@@ -8,12 +8,7 @@ import sys
 import os
 import asyncio
 import threading
-from pathlib import Path
 from typing import Optional, Dict, Any
-
-# Setup paths
-PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
-sys.path.insert(0, str(PROJECT_ROOT))
 
 try:
     from loguru import logger
@@ -21,11 +16,7 @@ except ImportError:
     import logging
     logger = logging.getLogger("PDA")
 
-try:
-    from omni_v2.core.paths import DATA_DIR
-except ImportError:
-    DATA_DIR = PROJECT_ROOT / "data"
-    DATA_DIR.mkdir(exist_ok=True)
+from omni_v2.core.paths import DATA_DIR
 
 
 class PersonalDigitalAssistant:
@@ -39,10 +30,10 @@ class PersonalDigitalAssistant:
     - STT 4-tier (RealtimeSTT/Vosk/Google/Whisper) + TTS 3-tier (Kokoro/pyttsx3/gTTS)
     - Vision (ScreenCapture + TurboVLM Moondream2/Qwen2-VL)
     - Voice (PTT manual + Wake Word Hey OMNI)
-    - Memory (SQLite + ChromaDB) in data/ unanimous
+    - Memory (SQLite + ChromaDB) in the writable per-user data directory
     - LLM Router (Ollama local + HF + llama.cpp + TurboVLM)
     - UI: Tauri Svelte frontend + Python FastAPI sidecar (or PyQt fallback)
-    - Data: data/ inside project (unanimous, portable)
+    - Data: writable per-user directory or explicit ``OMNI_DATA_DIR`` override
     """
 
     def __init__(self, use_tauri: bool = True, use_gui: bool = True):
@@ -66,7 +57,7 @@ class PersonalDigitalAssistant:
         # Tools - 100+ tools
         self._init_tools()
 
-        # Data - Unanimous inside project/data/
+        # Writable runtime data lives outside the source/package tree.
         self._init_data()
 
         logger.info("="*70)
@@ -225,11 +216,11 @@ class PersonalDigitalAssistant:
         logger.info(f"Tools: {len(self.plugin_manager.get_all_plugins())} tools, 100+ routing ready")
 
     def _init_data(self):
-        """Data unanimous inside project/data/"""
+        """Prepare the canonical writable runtime-data directories."""
         try:
-            from omni_v2.core.paths import DATA_DIR, get_data_dir
+            from omni_v2.core.paths import get_data_dir
             data_dir = get_data_dir()
-            logger.info(f"Data: {data_dir} (unanimous inside project, migrated from ~/.omni_v2)")
+            logger.info(f"Writable runtime data: {data_dir}")
             # Ensure subdirs exist
             for sub in ["chroma", "screenshots", "logs", "models", "faces", "recordings"]:
                 (data_dir / sub).mkdir(parents=True, exist_ok=True)
