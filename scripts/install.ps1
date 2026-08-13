@@ -213,8 +213,12 @@ Invoke-Checked $venvPython -m pip check
 # CMake backends, and compiler probes cannot select an ambient CMake or Ninja.
 $venvScripts = Split-Path -Parent $venvPython
 $env:PATH = "$venvScripts;$env:PATH"
-$cmakeVersion = ((& (Join-Path $venvScripts "cmake.exe") --version | Select-Object -First 1) | Out-String).Trim()
-if ($LASTEXITCODE -ne 0 -or $cmakeVersion -ne [string]$buildContract.build_tool_cli.cmake) {
+# Avoid Select-Object -First 1 on native CMake output: it can close the
+# process's stdout early and turn a healthy invocation into a broken-pipe error.
+$cmakeOutput = @(& (Join-Path $venvScripts "cmake.exe") --version)
+$cmakeExitCode = $LASTEXITCODE
+$cmakeVersion = if ($cmakeOutput.Count -gt 0) { ([string]$cmakeOutput[0]).Trim() } else { "" }
+if ($cmakeExitCode -ne 0 -or $cmakeVersion -ne [string]$buildContract.build_tool_cli.cmake) {
     throw "The installed CMake CLI identity does not match the native build contract: '$cmakeVersion'."
 }
 $ninjaVersion = ((& (Join-Path $venvScripts "ninja.exe") --version) | Out-String).Trim()
