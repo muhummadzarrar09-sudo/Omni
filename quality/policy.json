@@ -28,13 +28,27 @@
       "B01"
     ],
     "rules": [
-      "Execute one batch at a time in the declared order.",
-      "Do not start the next batch until the current batch has implementation, tests, audit, documentation, evidence, and exit-gate approval.",
+      "Execute one batch at a time in the declared order unless a recorded dependency exception explicitly permits a limited parallel preparation track.",
+      "A permitted preparation track cannot be marked closed, release-qualified, or unlock a downstream batch until its dependency closes and its own implementation, tests, audit, documentation, evidence, and exit-gate approval pass.",
       "A passing test is evidence for only the behavior and environment it actually exercised.",
       "Absence of a defect report is not evidence of correctness.",
       "The exact release artifact, not a mutable source checkout, is the final qualification subject."
     ],
-    "next_batch": "B02"
+    "next_batch": "B02",
+    "dependency_exception": {
+      "id": "B02-B03-preparation-exception-2026-08-13",
+      "approved_on": "2026-08-13",
+      "blocked_dependency": "B02",
+      "permitted_batch": "B03",
+      "mode": "preparation_and_implementation_only",
+      "evidence": "quality/evidence/B02/b03-preparation-exception-2026-08-13.json",
+      "limits": [
+        "B02 remains in_progress and is not closed.",
+        "B03 may receive preparation and implementation work while B02 remediation remains blocked.",
+        "B03 cannot be marked closed, release-qualified, or used to advance B04 until B02 closes and every B03 exit gate passes.",
+        "The B02 native Windows Arm64/x64 same-commit aggregate remains mandatory and is not waived."
+      ]
+    }
   },
   "feature_freeze": {
     "enabled": true,

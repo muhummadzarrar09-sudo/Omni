@@ -202,7 +202,7 @@
     {
       "id": "B03",
       "title": "Continuous Verification and Flake Elimination",
-      "status": "locked",
+      "status": "in_progress",
       "depends_on": [
         "B02"
       ],
@@ -244,7 +244,17 @@
         "Backend live checks self-host their service",
         "Twenty repeated core-suite runs show zero flaky failures",
         "Lint, build, dependency, package, migration, security, and offline jobs publish inspectable summaries"
-      ]
+      ],
+      "dependency_exception": {
+        "id": "B02-B03-preparation-exception-2026-08-13",
+        "authority": "quality/policy.json",
+        "evidence": "quality/evidence/B02/b03-preparation-exception-2026-08-13.json",
+        "limits": [
+          "B03 is a preparation and implementation track only while B02 remains blocked.",
+          "B03 closure, B04 unlock, and release qualification remain prohibited until B02 is formally closed."
+        ]
+      },
+      "preparation_evidence": "quality/evidence/B03/preparation-start-2026-08-13.json"
     },
     {
       "id": "B04",

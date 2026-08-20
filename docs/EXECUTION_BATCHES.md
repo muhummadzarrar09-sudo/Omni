@@ -5,7 +5,11 @@
 **Current batch:** `B02`<br>
 **Next batch:** `B02`<br>
 **Feature freeze:** `enabled`<br>
-**Execution rule:** one batch at a time; implementation, tests, audit, documentation, evidence, and the complete exit gate must pass before the next batch starts.
+**Execution rule:** one batch at a time unless a recorded dependency exception permits a bounded preparation track; an exception cannot close a blocked dependency or unlock a later batch.
+
+## Active Dependency Exception
+
+`B02-B03-preparation-exception-2026-08-13` permits `B03` as a `preparation_and_implementation_only` track while `B02` remains open. Evidence: `quality/evidence/B02/b03-preparation-exception-2026-08-13.json`.
 
 ## Sequence
 
@@ -14,7 +18,7 @@
 | `B00` | Scope Lock and Truth Reset | `closed` | None | 2-4 focused days |
 | `B01` | Dependency and Package Rescue | `closed` | B00 | 4-8 focused days |
 | `B02` | Install, Configuration, and Startup Qualification | `in_progress` | B01 | 5-10 focused days plus Windows hardware access |
-| `B03` | Continuous Verification and Flake Elimination | `locked` | B02 | 6-12 focused days |
+| `B03` | Continuous Verification and Flake Elimination | `in_progress` | B02 | 6-12 focused days |
 | `B04` | Truthful Result Contract and Degraded Recovery | `locked` | B03 | 6-12 focused days |
 | `B05` | Canonical Capability and Tool Registry | `locked` | B04 | 8-15 focused days |
 | `B06` | API and Transport Contract Hardening | `locked` | B05 | 8-15 focused days |
@@ -225,7 +229,7 @@
 
 ### B03 — Continuous Verification and Flake Elimination
 
-**Status:** `locked`<br>
+**Status:** `in_progress`<br>
 **Depends on:** `B02`<br>
 **Solo estimate:** 6-12 focused days<br>
 **Evidence:** `quality/evidence/B03/`
@@ -938,8 +942,8 @@ These items remain locked until B16 closes the exact-artifact 10/10 freeze. A li
 
 ## Freeze and Claim Rules
 
-- Execute one batch at a time in the declared order.
-- Do not start the next batch until the current batch has implementation, tests, audit, documentation, evidence, and exit-gate approval.
+- Execute one batch at a time in the declared order unless a recorded dependency exception explicitly permits a limited parallel preparation track.
+- A permitted preparation track cannot be marked closed, release-qualified, or unlock a downstream batch until its dependency closes and its own implementation, tests, audit, documentation, evidence, and exit-gate approval pass.
 - A passing test is evidence for only the behavior and environment it actually exercised.
 - Absence of a defect report is not evidence of correctness.
 - The exact release artifact, not a mutable source checkout, is the final qualification subject.

@@ -1088,8 +1088,13 @@ try {
     $env:PATH = "$(Join-Path $buildVenv 'Scripts');$env:PATH"
     $cmakeExecutable = Join-Path $buildVenv "Scripts\cmake.exe"
     $ninjaExecutable = Join-Path $buildVenv "Scripts\ninja.exe"
-    $cmakeVersion = ((& $cmakeExecutable --version | Select-Object -First 1) | Out-String).Trim()
-    Assert-True ($LASTEXITCODE -eq 0 -and $cmakeVersion -eq [string]$nativeBuildContract.build_tool_cli.cmake) "Exact CMake 4.4.2 is unavailable in the build authority."
+    # Do not pipe the native CMake process through Select-Object -First 1:
+    # stopping the pipeline after CMake's banner can close stdout early and make
+    # a healthy cmake.exe report a non-zero broken-pipe exit code in PowerShell.
+    $cmakeOutput = @(& $cmakeExecutable --version)
+    $cmakeExitCode = $LASTEXITCODE
+    $cmakeVersion = if ($cmakeOutput.Count -gt 0) { ([string]$cmakeOutput[0]).Trim() } else { "" }
+    Assert-True ($cmakeExitCode -eq 0 -and $cmakeVersion -eq [string]$nativeBuildContract.build_tool_cli.cmake) "Exact CMake 4.4.2 is unavailable in the build authority."
     $ninjaVersion = ((& $ninjaExecutable --version) | Out-String).Trim()
     Assert-True ($LASTEXITCODE -eq 0 -and $ninjaVersion -eq [string]$nativeBuildContract.build_tool_cli.ninja) "Exact Ninja 1.13.0 is unavailable in the build authority."
     $buildLockHash = Get-FileSha256 $sourceBuildLock

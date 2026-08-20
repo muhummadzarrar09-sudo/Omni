@@ -37,6 +37,17 @@ allowlisted install script.
 
 ## B02 native Windows source-checkout path (Arm64 primary, x64 secondary)
 
+> **Temporary execution status — 2026-08-13:** B02 is **open and blocked**, not
+> closed. The latest native x64 attempt reached the exact all-profile install but
+> failed while `dlib` configured CUDA through the Visual Studio CMake generator.
+> Native Arm64 evidence and the two-lane same-commit aggregate are still absent.
+> B02 remediation is paused at the owner's direction and must resume from the
+> recorded blocker; do not treat this guide, the x64 diagnostic, or a partial
+> lane as B02 qualification. A bounded B03 preparation/implementation exception
+> is active, but it does not close B02, qualify B03, unlock B04, or waive either
+> required native lane. See
+> `quality/evidence/B02/b03-preparation-exception-2026-08-13.json`.
+
 > **Qualification boundary:** NVIDIA DGX Station for Windows on native Windows
 > 11 Arm64 is the intended primary path. B02 remains open until native Arm64 and
 > x64 lanes both produce and pass the full unattended same-commit evidence

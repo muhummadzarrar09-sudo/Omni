@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "batch": "B03",
+  "recorded_on": "2026-08-13",
+  "decision": "preparation_and_implementation_track_started_under_b02_dependency_exception",
+  "authority": "quality/policy.json execution.dependency_exception B02-B03-preparation-exception-2026-08-13",
+  "status": "in_progress_not_closeable",
+  "scope": [
+    "Deterministic CI and release-relevant verification",
+    "Flake identification and elimination",
+    "Backend self-hosted live checks",
+    "Focused frontend tests and required quality-job evidence"
+  ],
+  "nonclaims": [
+    "B02 remains open and blocked.",
+    "B03 is not complete, closed, or release-qualified.",
+    "B04 remains locked.",
+    "The B02 native Windows Arm64/x64 same-commit aggregate requirement remains mandatory."
+  ],
+  "first_work_item": "Inventory the current B03 test, CI, live-service, skip, and repeatability surfaces; then establish the minimum deterministic verification baseline."
+}
